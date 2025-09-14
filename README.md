@@ -1,5 +1,14 @@
 # SwapStreet
 
+## How to run a project
+
+### Changing to the project directory
+`cd swapstreet`
+
+### Bulding a Docker Container
+- First, make sure that the `Docker Desktop` is running in parallel
+`docker compose up --build`
+
 ## Team:
 Bulat Abdullin - 40264963\
 Evan Teboul - 40238390\
