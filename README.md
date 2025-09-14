@@ -13,7 +13,7 @@
 | Marc-Yves Malchev       | 40265238  | Sawanoza
 | Jainam Shah             | 40190627  | jainammshah12
 | Nektarios Zampetoulakis | 40211948  | NekZampe
-| Ali Zedan               |           | alizedan1
+| Ali Zedan               | 40174606  | alizedan1
 
 
 Documentation: https://bookstack.nekzampehomelab.org/
