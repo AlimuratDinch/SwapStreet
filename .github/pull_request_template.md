@@ -14,8 +14,6 @@ git checkout feature/<feature_name>
 git pull
 # Might be required if you update check the PR
 
-# Run npx
-npx expo start
 ```
 
 # Checklist
