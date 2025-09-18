@@ -17,10 +17,10 @@
 ├── 05-Implementation
 │   └── # Tech stack details, API docs, deployment/infrastructure notes
 │
-├── 07-Project-Management
+├── 06-Project-Management
 │   └── # Timeline, milestones, meeting notes, risk management
 
-├── 06-Testing
+├── 07-Testing
 │   └── # Test plans, unit/integration test docs, results
 │
 └── 08-Appendices
