@@ -1,0 +1,13 @@
+# Build Docker image
+docker build -t backend .
+
+# Run Docker container
+docker run -it --rm -p 8080:8080 backend
+
+# Stop running containers for this image
+docker ps -q --filter "ancestor=backend" | xargs -r docker stop
+
+# Rebuild image and run container
+docker stop $(docker ps -q --filter "ancestor=backend") 2>/dev/null || true
+docker build -t backend .
+docker run -it --rm -p 8080:8080 backend
