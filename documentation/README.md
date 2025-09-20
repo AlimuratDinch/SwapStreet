@@ -1,5 +1,6 @@
 # Overview of what type of docs go in each folder
 
+```
 /documentation
 │
 ├── 01-Project-Overview
@@ -25,3 +26,4 @@
 │
 └── 08-Appendices
     └── # Glossary, references, research, external resources
+```
