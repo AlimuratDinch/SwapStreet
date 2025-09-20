@@ -1,0 +1,1 @@
+-- Create all the required tables for the application
