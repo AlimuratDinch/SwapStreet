@@ -1,5 +1,5 @@
 # Description
-The database provider used for this project is PostgreSQL. It offers performance, scalability and easy configuration due to its complete docker support. Hence, the following will be a set of instruction guiding you to create the necessary database for this application without the need to physically install any other packages/applications. Everything is configured and managed by docker :)
+The database provider used for this project is PostgreSQL. It offers performance, scalability and easy configuration due to its complete docker support. Hence, the following will be a set of instruction guiding you to create the necessary database for this application without the need to physically install any other packages/applications. Everything is configured and managed by docker :))
 
 ## Folder structure:
 **.\scripts:** Contains `init.sql` and `seed.sql` which will create and populate the necessary tables for the application (docker runs them automatically).
