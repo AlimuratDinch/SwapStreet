@@ -32,4 +32,4 @@ git pull
   * [ ]  The code *provided to run the pull request* is working. **I understand that my PR will be rejected as-is otherwise.**
   * [ ]  My pull request is documented. I have explained the needs for the PR, what was left out of the it and why.
   * [ ]  I have carefully reviewd each changes made to a file and made sure the files included on the PR were actually added on purpose.
-  * [ ]  I have assignee at least **1** people to review my PR.
+  * [ ]  I have assignee at least **3** people to review my PR.
