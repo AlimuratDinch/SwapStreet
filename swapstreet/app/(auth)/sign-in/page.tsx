@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import clothImage from "../../../app/images/cloths_login_page.png";
+import clothImage from "../../../app/images/clothes_login_page.png";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
