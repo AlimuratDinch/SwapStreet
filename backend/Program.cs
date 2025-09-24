@@ -6,16 +6,15 @@ using backend.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 
-
 // Add services to the container
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add EF Core DbContext
-builder.Services.AddDbContext<CatalogDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddControllers(); // 👈 enable controllers
+builder.Services.AddControllers(); // enable controllers
 
 // Register your ICatalogService implementation
 builder.Services.AddScoped<ICatalogService, CatalogService>();
@@ -27,8 +26,8 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
-    db.Database.EnsureCreated();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
 }
 
 
