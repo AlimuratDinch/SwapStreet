@@ -1,22 +1,36 @@
 using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
+using backend.Contracts;
+using backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
 
 // Add services to the container
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add EF Core DbContext (use in-memory or PostgreSQL/SQL Server/etc.)
+// Add EF Core DbContext
 builder.Services.AddDbContext<CatalogDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllers(); // 👈 enable controllers
 
+// Register your ICatalogService implementation
+builder.Services.AddScoped<ICatalogService, CatalogService>();
+
 // Allow app to listen on all interfaces (for Docker)
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+    db.Database.EnsureCreated();
+}
+
 
 // Enable Swagger always (for dev/testing)
 app.UseSwagger();

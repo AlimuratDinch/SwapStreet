@@ -1,0 +1,94 @@
+SwapStreet Docker Compose Cheat Sheet
+=====================================
+
+1. Build/Rebuild & Start Containers
+---------------------------
+# Build images and start all containers in foreground
+docker compose -f server_docker_compose.yml up --build
+
+# Build images and start all containers in background (detached)
+docker compose -f server_docker_compose.yml up -d --build
+
+# Rebuild only the backend service
+docker compose -f server_docker_compose.yml up -d --build backend
+
+# Rebuild only the Postgres database (usually not needed unless Dockerfile changes)
+docker compose -f server_docker_compose.yml up -d --build postgres
+
+# Rebuild only pgAdmin (rarely needed)
+docker compose -f server_docker_compose.yml up -d --build pgadmin
+
+2. Stop & Remove Containers
+---------------------------
+# Stop all running containers in this Compose project
+docker compose -f server_docker_compose.yml down
+
+# Stop and remove containers, networks, and default volumes
+docker compose -f server_docker_compose.yml down --volumes --remove-orphans
+
+3. View Logs
+------------
+# Show logs for all containers
+docker compose -f server_docker_compose.yml logs -f
+
+# Show logs for a specific container
+docker compose -f server_docker_compose.yml logs -f backend
+docker compose -f server_docker_compose.yml logs -f postgres
+docker compose -f server_docker_compose.yml logs -f pgadmin
+
+4. Access Containers
+--------------------
+# Open a bash shell inside the backend container
+docker compose -f server_docker_compose.yml exec backend bash
+
+# Open a psql session inside the postgres container
+docker compose -f server_docker_compose.yml exec postgres psql -U postgres -d swapstreet-db
+
+5. Remove Orphaned Containers
+-----------------------------
+docker compose -f server_docker_compose.yml up --remove-orphans
+
+6. One-Liners for Dev Reset
+---------------------------
+# Stop all containers (even unrelated ones)
+docker stop $(docker ps -q)
+
+# Remove all containers
+docker rm $(docker ps -aq)
+
+# Rebuild and start fresh
+docker compose -f server_docker_compose.yml down --remove-orphans
+docker compose -f server_docker_compose.yml up --build -d
+
+
+7. Dev Environment Addresses
+----------------------------
+Backend Swagger -> http://localhost:8080/index.html
+PgAdmin         -> http://localhost:5050/
+
+
+8. Example .env File
+--------------------
+# ================================
+# PostgreSQL Database Configuration
+# ================================
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=********
+POSTGRES_DB=swapstreet-db
+
+# ================================
+# pgAdmin Configuration
+# ================================
+PGADMIN_DEFAULT_EMAIL=example@email.com
+PGADMIN_DEFAULT_PASSWORD=*******
+
+# ================================
+# Backend connection string
+# ================================
+ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet-db;Username=postgres;Password=********
+--------------------
+
+Tips
+----
+- Use -d for detached mode so your terminal stays free.
+- --remove-orphans cleans up containers no longer defined in the Compose file.

@@ -39,3 +39,6 @@ docker-compose.override.yml
 *.temp
 *.swp
 *.bak
+
+# Environment Variables
+.env
