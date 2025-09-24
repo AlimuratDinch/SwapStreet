@@ -7,9 +7,9 @@ namespace backend.Services;
 
 public class CatalogService : ICatalogService
 {
-    private readonly CatalogDbContext _db;
+    private readonly AppDbContext _db;
 
-    public CatalogService(CatalogDbContext db) => _db = db;
+    public CatalogService(AppDbContext db) => _db = db;
 
     // ---- CATEGORY ----
     public Category AddCategory(Category category)

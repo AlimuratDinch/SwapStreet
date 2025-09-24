@@ -3,12 +3,12 @@ using backend.Models;
 
 namespace backend.DbContexts;
 
-public class CatalogDbContext : DbContext
+public class AppDbContext : DbContext
 {
     public DbSet<Item> Items { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
 
-    public CatalogDbContext(DbContextOptions<CatalogDbContext> options) : base(options) { }
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
