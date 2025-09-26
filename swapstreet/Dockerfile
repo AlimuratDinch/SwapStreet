@@ -10,5 +10,4 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["npx", "next", "telemetry", "disable"]
 CMD ["npm", "run", "dev"]
