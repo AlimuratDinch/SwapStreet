@@ -1,0 +1,12 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%    # the required coverage value
+        threshold: 1%  # the leniency in hitting the target
+
+codecov:
+  require_ci_to_pass: yes
+  files:
+    - swapstreet/coverage/lcov.info
+    # add other coverage files (backend)
