@@ -4,4 +4,4 @@ This directory contains all documentation pertaining to the structure of the app
 * The `swapstreetClassDiagram.drawio.png` file contains the application's class diagram,
 * The `swapstreetClassDiagram.drawio` file stores the class diagram for use with draw.io.
 
-Please note that the class diagrams exclude accessor and mutator methods for better readability. All classes implicitly have these methods for each of their attributes except for IDs. All these methods are public and are visible to the objects that use them.
+Please note that the class diagrams exclude accessor and mutator methods for better readability. All classes implicitly have these methods for each of their attributes except for IDs. All these methods are public and are visible to the objects that use them. Furthermore, ellipses denote the initialization of all data members of a class. Methods bearing these ellipses contain parameters matching with the attributes of the target object. The function sets each data member to the corresponding parameter. Each parameter and corresponding data member have the same type.
