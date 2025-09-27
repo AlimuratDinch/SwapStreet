@@ -16,7 +16,7 @@ export default function LoginPage() {
 
   return (
     <div
-className="relative flex min-h-screen justify-center 
+      className="relative flex min-h-screen justify-center 
                 items-start bg-[var(--bg-color)] p-6 overflow-hidden"
     >
       {/* Background design: simple circles with hover grow */}
