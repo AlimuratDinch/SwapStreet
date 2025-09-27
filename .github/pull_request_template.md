@@ -8,7 +8,6 @@
 > Provide the code required to run the pull request. This is the code that will be used to review your pull request. **The provided code must work as-is. If a react-native error is raised while running the code, the PR will be rejected. The following code / placeholder is only provided as documentation / helper to get you started and you will need to adjust it.**
 
 ```bash
-# Assuming you are in a folder containing minicap_concordia_campus_guide_app/application folder.
 # Update the code
 git checkout feature/<feature_name>
 git pull

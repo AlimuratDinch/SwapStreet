@@ -19,14 +19,14 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 Nextjs is a file system based web development framework, which means that every new folder in the app folder
-will act as a new endpoint for our webpage. We can create the webpage by using a file name recognized by nextjs 
+will act as a new endpoint for our webpage. We can create the webpage by using a file name recognized by nextjs
 which will render the contents of the file, this file name is "page.tsx" tsx is used to create react components.
 
 For example, by adding a folder "home" with a file "page.tsx" inside we can now navigate to the endpoint "<domain_name>/home", the contents of "home" can be edited in app/home/page.tsx
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## 
+##
 
 ## Learn More
 

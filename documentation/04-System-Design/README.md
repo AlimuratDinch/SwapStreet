@@ -1,0 +1,3 @@
+This directory contains all documentation pertaining to the structure of the application. It includes domain models, system sequence diagrams, class diagrams, use case diagrams, and any description of the structure or behaviour of the application. This directory excludes implementation-specific documentation.
+* The `swapstreetDomainModel.drawio.png` file contains the domain model of the application,
+* The `swapstreetDomainModel.drawio` file contains the domain model of the application for use in the draw.io tool.

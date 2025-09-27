@@ -21,8 +21,7 @@ export default function Home() {
         className="text-center font-extrabold tracking-tight text-gray-900 
                    text-3xl sm:text-5xl md:text-6xl lg:text-7xl"
       >
-        Welcome to{" "}
-        <span className="text-[#e98b2a]">Swap</span>
+        Welcome to <span className="text-[#e98b2a]">Swap</span>
         <span className="text-[#016c5d] italic">Street!</span>
       </h1>
     </div>
