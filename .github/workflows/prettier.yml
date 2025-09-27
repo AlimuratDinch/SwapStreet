@@ -1,4 +1,4 @@
-name: Prettier Check
+name: Frontend Formatting Prettier Check
 
 on:
   pull_request:
