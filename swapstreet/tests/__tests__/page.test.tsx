@@ -7,12 +7,11 @@ describe("Home Page", () => {
   it("renders the welcome heading", () => {
     render(<Home />);
     expect(
-        screen.getByText((content, element) =>
-        element?.textContent === "Welcome to SwapStreet!"
-        )
+      screen.getByText(
+        (content, element) => element?.textContent === "Welcome to SwapStreet!",
+      ),
     ).toBeInTheDocument();
   });
-
 
   it("renders a login button with correct link", () => {
     render(<Home />);
