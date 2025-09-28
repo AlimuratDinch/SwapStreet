@@ -2,8 +2,11 @@ coverage:
   status:
     project:
       default:
-        target: 80%    # the required coverage value
-        threshold: 1%  # the leniency in hitting the target
+        target: 80%
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
 
 codecov:
   require_ci_to_pass: yes
