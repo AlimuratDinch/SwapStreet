@@ -10,12 +10,20 @@ interface AuthInputProps extends InputHTMLAttributes<HTMLInputElement> {
   id?: string; // allow explicit id (otherwise auto-generate from label)
 }
 
-export function AuthInput({ label, id, className = "", ...props }: AuthInputProps) {
+export function AuthInput({
+  label,
+  id,
+  className = "",
+  ...props
+}: AuthInputProps) {
   const inputId = id || label.toLowerCase().replace(/\s+/g, "-");
 
   return (
     <div className="w-4/5">
-      <label htmlFor={inputId} className="block text-sm font-medium text-gray-700">
+      <label
+        htmlFor={inputId}
+        className="block text-sm font-medium text-gray-700"
+      >
         {label}
       </label>
       <input
@@ -29,8 +37,8 @@ export function AuthInput({ label, id, className = "", ...props }: AuthInputProp
   );
 }
 
-export function ImageElement(){
-  return(
+export function ImageElement() {
+  return (
     <div className="w-full md:w-1/2 relative hidden md:block">
       <Image
         src={clothImage}
@@ -42,7 +50,15 @@ export function ImageElement(){
   );
 }
 
-export function PromptElement({prompt, linkText, linkHref}: {prompt: string, linkText: string, linkHref: string}) {
+export function PromptElement({
+  prompt,
+  linkText,
+  linkHref,
+}: {
+  prompt: string;
+  linkText: string;
+  linkHref: string;
+}) {
   return (
     <p className="mt-6 text-center text-sm text-gray-600">
       {prompt}{" "}

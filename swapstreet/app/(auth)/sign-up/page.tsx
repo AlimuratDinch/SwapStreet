@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { AuthInput } from "../AuthFormElements";
 import { ImageElement } from "../AuthFormElements";
 import { PromptElement } from "../AuthFormElements";
@@ -140,7 +139,6 @@ export default function RegistrationPage() {
 
         {/* Right: Cloth Image */}
         <ImageElement />
-        
       </div>
     </div>
   );

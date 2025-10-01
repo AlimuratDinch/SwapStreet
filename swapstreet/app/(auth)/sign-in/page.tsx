@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import clothImage from "../../../app/images/clothes_login_page.png";
 import { AuthInput } from "../AuthFormElements";
 import { ImageElement } from "../AuthFormElements";
 import { PromptElement } from "../AuthFormElements";
