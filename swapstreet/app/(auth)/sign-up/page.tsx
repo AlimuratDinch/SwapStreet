@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import clothImage from "../../../app/images/clothes_login_page.png";
+import { AuthInput } from "../AuthFormElements";
+import { ImageElement } from "../AuthFormElements";
+import { PromptElement } from "../AuthFormElements";
 
 export default function RegistrationPage() {
   const [name, setName] = useState("");
@@ -85,63 +86,39 @@ export default function RegistrationPage() {
               </div>
             )}
 
-            <div className="w-4/5">
-              <label className="block text-sm font-medium text-gray-700">
-                Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 
-                           focus:border-[var(--primary-color)] focus:ring focus:ring-[var(--gradient-end)]"
-              />
-            </div>
+            <AuthInput
+              label="Name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
 
-            <div className="w-4/5">
-              <label className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 
-                           focus:border-[var(--primary-color)] focus:ring focus:ring-[var(--gradient-end)]"
-              />
-            </div>
+            <AuthInput
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
 
-            <div className="w-4/5">
-              <label className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 
-                           focus:border-[var(--primary-color)] focus:ring focus:ring-[var(--gradient-end)]"
-              />
-            </div>
+            <AuthInput
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+            />
 
-            <div className="w-4/5">
-              <label className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={8}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 
-                           focus:border-[var(--primary-color)] focus:ring focus:ring-[var(--gradient-end)]"
-              />
-            </div>
+            <AuthInput
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={8}
+            />
 
             <button
               type="submit"
@@ -154,27 +131,16 @@ export default function RegistrationPage() {
           </form>
 
           {/* Sign Up prompt */}
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link
-              href="/sign-in"
-              className="ml-1 font-medium text-[var(--primary-color)] 
-                         hover:text-[var(--primary-dark)] transition"
-            >
-              Sign In
-            </Link>
-          </p>
+          <PromptElement
+            prompt="Already have an account?"
+            linkText="Sign In"
+            linkHref="/sign-in"
+          />
         </div>
 
         {/* Right: Cloth Image */}
-        <div className="w-full md:w-1/2 relative hidden md:block">
-          <Image
-            src={clothImage}
-            alt="Clothing"
-            className="object-cover h-full w-full rounded-r-2xl"
-            priority
-          />
-        </div>
+        <ImageElement />
+        
       </div>
     </div>
   );
