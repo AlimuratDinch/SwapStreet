@@ -92,3 +92,20 @@ Tips
 ----
 - Use -d for detached mode so your terminal stays free.
 - --remove-orphans cleans up containers no longer defined in the Compose file.
+
+
+
+9. Migrations:
+
+dotnet ef migrations add <name>
+dotnet ef database update
+
+
+10. Testing
+
+unit test only: dotnet test
+# Run tests and collect coverage
+dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./coverage/
+
+# Optional: generate HTML report
+reportgenerator -reports:./coverage/coverage.opencover.xml -targetdir:./coverage-report -reporttypes:Html

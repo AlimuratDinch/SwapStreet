@@ -44,7 +44,7 @@ public class CatalogService : ICatalogService
         if (cat == null) return false;
 
         // Optional: remove items in this category or throw error
-        _db.Items.RemoveRange(cat.Items);  
+        _db.Items.RemoveRange(cat.Items);
         _db.Categories.Remove(cat);
         _db.SaveChanges();
         return true;

@@ -21,6 +21,7 @@ obj/
 *.snupkg
 packages/
 .nuget/
+nuget.config
 
 # Publish output
 publish/
@@ -42,3 +43,4 @@ docker-compose.override.yml
 
 # Environment Variables
 .env
+TestResults/
