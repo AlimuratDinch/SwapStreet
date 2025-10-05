@@ -1,0 +1,46 @@
+# Build Folders
+bin/
+obj/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.vscode/
+
+# Auto-generated files
+*.log
+*.vs/
+*.DS_Store
+
+# Rider
+.idea/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+# nuget.config
+
+# Publish output
+publish/
+*.dll
+*.exe
+*.app
+
+# Docker (optional)
+docker-compose.override.yml
+
+# VS Code workspace settings
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.bak
+
+# Environment Variables
+.env
+TestResults/
