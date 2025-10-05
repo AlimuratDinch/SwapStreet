@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AuthInput } from "../AuthFormElements";
 import { ImageElement } from "../AuthFormElements";
 import { PromptElement } from "../AuthFormElements";
 
 export default function RegistrationPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,6 +33,9 @@ export default function RegistrationPage() {
       // Here you would typically make an API call to your backend
       console.log("Signing up with:", { name, email, password });
       // Add your API call here
+
+      // On success, send the user to seller onboarding to complete profile setup
+      router.push("/seller/onboarding");
     } catch (err) {
       setError("Failed to create account. Please try again.");
     }
