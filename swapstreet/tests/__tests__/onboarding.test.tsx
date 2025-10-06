@@ -5,7 +5,11 @@ import "@testing-library/jest-dom";
 
 // Mock router for client component
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), prefetch: jest.fn() }),
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
 }));
 
 describe("Seller Onboarding Page", () => {
@@ -13,7 +17,8 @@ describe("Seller Onboarding Page", () => {
     render(<Onboarding />);
     expect(
       screen.getByText(
-        (content, element) => element?.textContent === "Set up your seller profile",
+        (content, element) =>
+          element?.textContent === "Set up your seller profile",
       ),
     ).toBeInTheDocument();
   });
