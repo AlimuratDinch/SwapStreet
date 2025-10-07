@@ -53,6 +53,9 @@ docker compose up --remove-orphans
 # Stop all containers (even unrelated ones)
 docker stop $(docker ps -q)
 
+# Start all container (even unrelated ones)
+docker start $(docker ps -a -q)
+
 # Remove all containers
 docker rm $(docker ps -aq)
 
