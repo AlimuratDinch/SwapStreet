@@ -29,5 +29,4 @@ public class Listing
 
     // Navigation properties
     public Category Category { get; set; } = null!;
-    public User Creator { get; set; } = null!;
 }

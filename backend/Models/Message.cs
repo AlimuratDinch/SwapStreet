@@ -1,6 +1,6 @@
 namespace backend.Models;
 
-public class Messages
+public class Message
 {
     public int Id { get; set; }           // Primary key
     public string Content { get; set; } = "";
