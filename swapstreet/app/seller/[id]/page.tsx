@@ -1,0 +1,266 @@
+"use client";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
+type Listing = {
+  id: string;
+  name: string;
+  price: number;
+  status: string;
+  image: string;
+};
+
+type Seller = {
+  id: string;
+  name: string;
+  handle: string;
+  verified: boolean;
+  location: string;
+  avatarUrl: string;
+  bannerUrl: string;
+  stats: { totalSales: number; avgRating: number; reviews: number };
+  about: string;
+  memberSince: string;
+  listings: Listing[];
+};
+
+
+function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="text-gray-500">{icon}</div>
+      <div>
+        <div className="text-xl font-semibold text-gray-900">{value}</div>
+        <div className="text-sm text-gray-500">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function ListingCard({ item }: { item: Listing }) {
+  const statusColor =
+    item.status === "Sold Out"
+      ? "bg-red-100 text-red-700"
+      : item.status === "Low Stock"
+      ? "bg-amber-100 text-amber-700"
+      : "bg-emerald-100 text-emerald-700";
+
+  return (
+    <div className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md">
+      <div className="relative aspect-[4/3] w-full">
+        <Image src={item.image} alt={item.name} fill className="object-cover" />
+      </div>
+      <div className="flex items-start justify-between gap-3 p-4">
+        <div>
+          <h3 className="line-clamp-1 font-medium text-gray-900">{item.name}</h3>
+          <p className="mt-1 text-sm text-gray-500">${item.price.toFixed(2)}</p>
+        </div>
+        <span className={`rounded-full px-2 py-1 text-xs font-medium ${statusColor}`}>{item.status}</span>
+      </div>
+    </div>
+  );
+}
+
+export default function SellerProfilePage({ params }: { params: { id: string } }) {
+  const search = useSearchParams();
+  // Simulate auth-owned profile check. Set true to show Edit button for demonstration.
+  const isOwner = params.id === "me";
+
+  const [seller, setSeller] = useState<Seller>({
+    id: params.id,
+    name: "",
+    handle: "",
+    verified: false,
+    location: "",
+    avatarUrl: "",
+    bannerUrl: "",
+    stats: { totalSales: 0, avgRating: 0, reviews: 0 },
+    about: "",
+    memberSince: "",
+    listings: [],
+  });
+
+  // On first load, if owner, hydrate with onboarding data from localStorage
+  useEffect(() => {
+    if (!isOwner) return;
+    try {
+      const raw = localStorage.getItem("seller:me");
+      if (!raw) return;
+      const data = JSON.parse(raw) as {
+        name?: string;
+        location?: string;
+        bio?: string;
+        avatarUrl?: string | null;
+        bannerUrl?: string | null;
+      };
+      setSeller((prev) => ({
+        ...prev,
+        name: data.name?.trim() ? data.name : prev.name,
+        location: data.location?.trim() ? data.location : prev.location,
+        about: data.bio?.trim() ? data.bio : prev.about,
+        avatarUrl: data.avatarUrl || prev.avatarUrl,
+        bannerUrl: data.bannerUrl || prev.bannerUrl,
+      }));
+    } catch (e) {
+      console.error("Failed to read onboarding data", e);
+    }
+    // if coming from onboarding, we could optionally clear the flag
+    // const fromInit = search.get("init");
+  }, [isOwner, search]);
+
+  return (
+    <div className="min-h-screen bg-neutral-50">
+      {/* Banner (sits behind header content only) */}
+      <div className="relative h-40 w-full sm:h-56 border-b border-gray-200">
+        {seller.bannerUrl ? (
+          seller.bannerUrl.startsWith("blob:") ? (
+            <img src={seller.bannerUrl} alt={`${seller.name || "Seller"} banner`} className="h-full w-full object-cover" />
+          ) : (
+            <Image src={seller.bannerUrl} alt={`${seller.name || "Seller"} banner`} fill priority className="object-cover" />
+          )
+        ) : (
+          <div className="h-full w-full bg-gray-200" />
+        )}
+      </div>
+
+      <div className="mx-auto w-full max-w-6xl px-4 pb-16">
+        {/* Profile Header */}
+        <div className="flex flex-col gap-4">
+          <div className="mt-2 sm:mt-2 flex items-center gap-4">
+            <div className="relative z-10 h-20 w-20 overflow-hidden rounded-full border-4 border-white shadow-md sm:h-24 sm:w-24">
+              {seller.avatarUrl ? (
+                seller.avatarUrl.startsWith("blob:") ? (
+                  <img src={seller.avatarUrl} alt={seller.name || "Seller"} className="h-full w-full object-cover" />
+                ) : (
+                  <Image src={seller.avatarUrl} alt={seller.name || "Seller"} fill className="object-cover" />
+                )
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gray-200 text-gray-500">NA</div>
+              )}
+            </div>
+            <div className="relative z-10 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">{seller.name}</h1>
+                {seller.verified && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path d="M10 1l2.39 4.84L18 7l-4 3.9L15 17l-5-2.6L5 17l1-6.1L2 7l5.61-1.16L10 1z" />
+                    </svg>
+                    Verified
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                <span>{seller.handle}</span>
+                <span className="inline-flex items-center gap-1">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-yellow-500">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                  {seller.stats.avgRating} <span className="text-gray-400">|</span> {seller.stats.reviews} reviews
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-gray-500">
+                    <path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" />
+                  </svg>
+                  {seller.location}
+                </span>
+              </div>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <button className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                <span>Contact</span>
+              </button>
+              <button className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
+                <span>Share</span>
+              </button>
+              {isOwner && (
+                <Link
+                  href={`/seller/${seller.id}/edit`}
+                  className="hidden sm:inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800"
+                >
+                  Edit Profile
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <StatCard
+              label="Total Sales"
+              value={new Intl.NumberFormat().format(seller.stats.totalSales)}
+              icon={
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-gray-400" fill="currentColor">
+                  <path d="M3 13h2v-2H3v2zm4 0h14v-2H7v2zm-4 6h2v-2H3v2zm4 0h14v-2H7v2zM3 7h2V5H3v2zm4 0h14V5H7v2z" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="Average Rating"
+              value={seller.stats.avgRating.toFixed(1)}
+              icon={
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-gray-400" fill="currentColor">
+                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="Reviews"
+              value={new Intl.NumberFormat().format(seller.stats.reviews)}
+              icon={
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-gray-400" fill="currentColor">
+                  <path d="M21 6h-2v9H7v2c0 .55.45 1 1 1h9l4 4V7c0-.55-.45-1-1-1zM17 12V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v12l4-4h10c.55 0 1-.45 1-1z" />
+                </svg>
+              }
+            />
+          </div>
+
+          {/* About */}
+          <section className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 className="mb-3 text-lg font-semibold text-gray-900">About</h2>
+            <p className="text-gray-700">{seller.about}</p>
+          </section>
+
+          {/* Listings */}
+          <section className="mt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Listings</h2>
+              <Link href="#" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                View All
+              </Link>
+            </div>
+            {seller.listings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
+                <div className="rounded-full bg-gray-100 p-4 text-gray-400">
+                  <svg viewBox="0 0 24 24" className="h-8 w-8" fill="currentColor">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14l4-4h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">No listings yet</p>
+                  <p className="mx-auto mt-1 max-w-xl text-sm text-gray-600">
+                    This seller hasn’t added any products to their store yet. Check back soon to discover their curated collection of items.
+                  </p>
+                </div>
+                <Link
+                  href="/seller"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                >
+                  Browse Other Sellers
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {seller.listings.map((item) => (
+                  <ListingCard key={item.id} item={item} />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}

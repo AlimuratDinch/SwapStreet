@@ -58,17 +58,23 @@ export default function SellerOnboardingPage() {
     }
 
     // TODO: Replace with proper implementation to upload files and save seller profile
-    const payload = {
-      name,
-      location,
-      bio,
-      avatarFileName: avatarFile?.name ?? null,
-      bannerFileName: bannerFile?.name ?? null,
-    };
-    console.log("Creating seller profile:", payload);
+    // For now store the key onboarding values in localStorage so the profile page can initialize.
+    try {
+      const data = {
+        name,
+        location,
+        bio,
+        avatarUrl: avatarPreview || null,
+        bannerUrl: bannerPreview || null,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem("seller:me", JSON.stringify(data));
+    } catch (err) {
+      console.error("Failed to cache onboarding data", err);
+    }
 
-    // After save, navigate to home for now.
-    router.push("/");
+    // Redirect user to their profile page (dynamic route)
+    router.push("/seller/me?init=1");
   };
 
   return (
