@@ -25,9 +25,15 @@ describe("SellerOnboardingPage", () => {
     expect(screen.getByText(/set up your seller profile/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/alex johnson/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/city, country/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/share your style/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /save and continue/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /skip for now/i })).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/share your style/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /save and continue/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /skip for now/i }),
+    ).toBeInTheDocument();
   });
 
   it("shows error if display name is missing", async () => {
@@ -56,7 +62,9 @@ describe("SellerOnboardingPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
 
     await waitFor(() => {
-      expect(screen.queryByText(/please enter a display name/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/please enter a display name/i),
+      ).not.toBeInTheDocument();
       expect(mockPush).toHaveBeenCalledWith("/");
     });
   });
@@ -73,7 +81,9 @@ describe("SellerOnboardingPage", () => {
     const avatarInput = document.querySelectorAll('input[type="file"]')[0];
     const file = new File(["test"], "test.txt", { type: "text/plain" });
     fireEvent.change(avatarInput!, { target: { files: [file] } });
-    expect(screen.getByText(/avatar must be an image file/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/avatar must be an image file/i),
+    ).toBeInTheDocument();
   });
 
   it("shows avatar preview when a valid image is selected", async () => {
@@ -95,7 +105,9 @@ describe("SellerOnboardingPage", () => {
     const bannerInput = document.querySelectorAll('input[type="file"]')[1];
     const file = new File(["bad"], "banner.txt", { type: "text/plain" });
     fireEvent.change(bannerInput!, { target: { files: [file] } });
-    expect(screen.getByText(/banner must be an image file/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/banner must be an image file/i),
+    ).toBeInTheDocument();
   });
 
   it("shows banner preview when a valid image is selected", async () => {
