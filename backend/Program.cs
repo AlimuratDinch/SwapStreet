@@ -14,6 +14,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddDbContext<AuthDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddControllers(); // enable controllers
 
 // Register your ICatalogService implementation
@@ -26,8 +29,15 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    var services = scope.ServiceProvider;
+
+    // Migrate the main application database
+    var appDb = services.GetRequiredService<AppDbContext>();
+    appDb.Database.Migrate();
+
+    // Migrate the auth database
+    var authDb = services.GetRequiredService<AuthDbContext>();
+    authDb.Database.Migrate();
 }
 
 
