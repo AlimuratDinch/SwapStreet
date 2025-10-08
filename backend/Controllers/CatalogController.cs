@@ -17,7 +17,13 @@ public class CatalogController : ControllerBase
     public IActionResult GetAllItems()
     {
         var items = _catalog.GetAllItems()
-            .Select(i => new ItemResponse(i.Id, i.Title, i.Description, i.Condition, i.Price, i.ImageUrl, i.CategoryId));
+            .Select(i => new
+            {
+                id = i.Id,
+                title = i.Title,
+                description = i.Description,
+                imageUrl = i.ImageUrl
+            });
         return Ok(items);
     }
 
