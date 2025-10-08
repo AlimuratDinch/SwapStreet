@@ -16,7 +16,6 @@ type Seller = {
   id: string;
   name: string;
   handle: string;
-  verified: boolean;
   location: string;
   avatarUrl: string;
   bannerUrl: string;
@@ -72,7 +71,6 @@ export default function SellerProfilePage({ params }: { params: { id: string } }
     id: params.id,
     name: "",
     handle: "",
-    verified: false,
     location: "",
     avatarUrl: "",
     bannerUrl: "",
@@ -112,7 +110,7 @@ export default function SellerProfilePage({ params }: { params: { id: string } }
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      {/* Banner (sits behind header content only) */}
+      {/* Banner */}
       <div className="relative h-40 w-full sm:h-56 border-b border-gray-200">
         {seller.bannerUrl ? (
           seller.bannerUrl.startsWith("blob:") ? (
@@ -143,14 +141,6 @@ export default function SellerProfilePage({ params }: { params: { id: string } }
             <div className="relative z-10 flex-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">{seller.name}</h1>
-                {seller.verified && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                      <path d="M10 1l2.39 4.84L18 7l-4 3.9L15 17l-5-2.6L5 17l1-6.1L2 7l5.61-1.16L10 1z" />
-                    </svg>
-                    Verified
-                  </span>
-                )}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-600">
                 <span>{seller.handle}</span>
