@@ -31,6 +31,27 @@ cd SwapStreet
 ```
 
 3- Build & Run with Docker
+- Create a `.env` file at the root level of the repository
+```
+# ================================
+# PostgreSQL Database Configuration
+# ================================
+POSTGRES_USER=<your-db-username>
+POSTGRES_PASSWORD=<your-db-password>
+POSTGRES_DB=swapstreet_db
+
+# ================================
+# pgAdmin Configuration
+# ================================
+PGADMIN_DEFAULT_EMAIL=<your@email.com>
+PGADMIN_DEFAULT_PASSWORD=<your-pgAdmin-password>
+
+# ================================
+# Backend connection string
+# ================================
+ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_db;Username=<your-db-username>;Password=<your-db-password>
+```
+
 - Make sure `Docker Desktop` is running, then:
 ```
 docker compose up --build
