@@ -10,6 +10,8 @@ namespace backend.Services
         // User management
         Task<User> CreateUserAsync(string email, string password);
         Task<bool> ConfirmEmailAsync(Guid userId, string token);
+        Task<bool> MarkUserForDeletionAsync(Guid userId);
+        Task PermanentlyDeleteUserAsync(Guid userId); 
 
         // Password login
         Task<Session> LoginWithPasswordAsync(string email, string password);
