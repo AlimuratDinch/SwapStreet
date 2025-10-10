@@ -21,7 +21,7 @@ namespace Models.Authentication
         public bool Revoked { get; set; } = false;
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
-        public Guid? Parent { get; set; }
+        public long? Parent { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public virtual User User { get; set; }

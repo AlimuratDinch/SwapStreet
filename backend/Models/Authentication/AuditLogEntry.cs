@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace Models.Authentication
 {
-[Table("audit_log_entries", Schema = "auth")]
+    [Table("audit_log_entries", Schema = "auth")]
     public class AuditLogEntry
     {
         [Key]
@@ -18,10 +18,10 @@ namespace Models.Authentication
         public string Action { get; set; }
 
         public string IpAddress { get; set; }
-        public JsonDocument Payload { get; set; }
+        public string Payload { get; set; }
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         [ForeignKey(nameof(UserId))]
         public virtual User User { get; set; }
     }
-    }
+}

@@ -18,7 +18,7 @@ namespace Models.Authentication
         public string Provider { get; set; }
 
         [Required]
-        public JsonDocument IdentityData { get; set; }
+        public string IdentityData { get; set; }
 
         public string ProviderId { get; set; }
         public DateTimeOffset? LastSignInAt { get; set; }

@@ -15,15 +15,12 @@ namespace Models.Authentication
 
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
-        public Guid? FactorId { get; set; }
-        public DateTimeOffset? NotAfter { get; set; }
-        public string UserAgent { get; set; }
-        public string Ip { get; set; }
-        public string Tag { get; set; }
+        public DateTimeOffset? ExpiresAt { get; set; }
+        public string? Ip { get; set; }
+        public string? Tag { get; set; }
         public DateTimeOffset? ConfirmedAt { get; set; }
         public DateTimeOffset? AuthenticatedAt { get; set; }
-        public string AuthenticationMethod { get; set; }
-        public JsonDocument AmrClaims { get; set; }
+        public string? AuthenticationMethod { get; set; }
         public DateTimeOffset? DeletedAt { get; set; }
 
         [ForeignKey(nameof(UserId))]

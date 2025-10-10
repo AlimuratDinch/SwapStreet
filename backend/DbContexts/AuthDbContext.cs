@@ -19,11 +19,11 @@ public class AuthDbContext : DbContext
         modelBuilder.Entity<AuditLogEntry>().ToTable("audit_log_entries", schema: "auth");
 
         // Relationships for Auth models
-            modelBuilder.Entity<Identity>()
-                .HasOne(i => i.User)
-                .WithMany(u => u.Identities)
-                .HasForeignKey(i => i.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Identity>()
+            .HasOne(i => i.User)
+            .WithMany(u => u.Identities)
+            .HasForeignKey(i => i.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<RefreshToken>()
                 .HasOne(r => r.User)
@@ -37,10 +37,11 @@ public class AuthDbContext : DbContext
                 .HasForeignKey(s => s.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<AuditLogEntry>()
-                .HasOne(a => a.User)
-                .WithMany(u => u.AuditLogEntries)
-                .HasForeignKey(a => a.UserId)
-                .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<AuditLogEntry>()
+            .HasOne(a => a.User)
+            .WithMany(u => u.AuditLogEntries)
+            .HasForeignKey(a => a.UserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
     }
 }
