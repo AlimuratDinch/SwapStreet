@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -62,13 +62,14 @@ function ListingCard({ item }: { item: Listing }) {
   );
 }
 
-export default function SellerProfilePage({ params }: { params: { id: string } }) {
+export default function SellerProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const search = useSearchParams();
   // Simulate auth-owned profile check. Set true to show Edit button for demonstration.
-  const isOwner = params.id === "me";
+  const isOwner = id === "me";
 
   const [seller, setSeller] = useState<Seller>({
-    id: params.id,
+    id,
     name: "",
     handle: "",
     location: "",
