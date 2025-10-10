@@ -1,8 +1,10 @@
 "use client";
 import { use, useEffect, useState } from "react";
-import Image from "next/image";
+import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import DefaultAvatar from "../../images/default-avatar-icon.jpg";
+import DefaultBanner from "../../images/default-seller-banner.png";
 
 type Listing = {
   id: string;
@@ -17,8 +19,8 @@ type Seller = {
   name: string;
   handle: string;
   location: string;
-  avatarUrl: string;
-  bannerUrl: string;
+  avatarUrl: string | StaticImageData;
+  bannerUrl: string | StaticImageData;
   stats: { totalSales: number; avgRating: number; reviews: number };
   about: string;
   memberSince: string;
@@ -73,8 +75,8 @@ export default function SellerProfilePage({ params }: { params: Promise<{ id: st
     name: "",
     handle: "",
     location: "",
-    avatarUrl: "",
-    bannerUrl: "",
+    avatarUrl: DefaultAvatar,
+    bannerUrl: DefaultBanner,
     stats: { totalSales: 0, avgRating: 0, reviews: 0 },
     about: "",
     memberSince: "",
@@ -113,14 +115,10 @@ export default function SellerProfilePage({ params }: { params: Promise<{ id: st
     <div className="min-h-screen bg-neutral-50">
       {/* Banner */}
       <div className="relative h-40 w-full sm:h-56 border-b border-gray-200">
-        {seller.bannerUrl ? (
-          seller.bannerUrl.startsWith("blob:") ? (
-            <img src={seller.bannerUrl} alt={`${seller.name || "Seller"} banner`} className="h-full w-full object-cover" />
-          ) : (
-            <Image src={seller.bannerUrl} alt={`${seller.name || "Seller"} banner`} fill priority className="object-cover" />
-          )
+        {typeof seller.bannerUrl === "string" && seller.bannerUrl.startsWith("blob:") ? (
+          <img src={seller.bannerUrl} alt={`${seller.name || "Seller"} banner`} className="h-full w-full object-cover" />
         ) : (
-          <div className="h-full w-full bg-gray-200" />
+          <Image src={seller.bannerUrl} alt={`${seller.name || "Seller"} banner`} fill priority className="object-cover" />
         )}
       </div>
 
@@ -129,14 +127,10 @@ export default function SellerProfilePage({ params }: { params: Promise<{ id: st
         <div className="flex flex-col gap-4">
           <div className="mt-2 sm:mt-2 flex items-center gap-4">
             <div className="relative z-10 h-20 w-20 overflow-hidden rounded-full border-4 border-white shadow-md sm:h-24 sm:w-24">
-              {seller.avatarUrl ? (
-                seller.avatarUrl.startsWith("blob:") ? (
-                  <img src={seller.avatarUrl} alt={seller.name || "Seller"} className="h-full w-full object-cover" />
-                ) : (
-                  <Image src={seller.avatarUrl} alt={seller.name || "Seller"} fill className="object-cover" />
-                )
+              {typeof seller.avatarUrl === "string" && seller.avatarUrl.startsWith("blob:") ? (
+                <img src={seller.avatarUrl} alt={seller.name || "Seller"} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gray-200 text-gray-500">NA</div>
+                <Image src={seller.avatarUrl} alt={seller.name || "Seller"} fill className="object-cover" />
               )}
             </div>
             <div className="relative z-10 flex-1">
@@ -160,7 +154,7 @@ export default function SellerProfilePage({ params }: { params: Promise<{ id: st
               </div>
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <button
+              {/* <button
                 type="button"
                 title="Coming soon!"
                 aria-disabled="true"
@@ -168,8 +162,8 @@ export default function SellerProfilePage({ params }: { params: Promise<{ id: st
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 opacity-80 shadow-sm hover:bg-gray-50 cursor-not-allowed"
               >
                 <span>Contact</span>
-              </button>
-              <button
+              </button> */}
+              {/* <button
                 type="button"
                 title="Coming soon!"
                 aria-disabled="true"
@@ -177,14 +171,14 @@ export default function SellerProfilePage({ params }: { params: Promise<{ id: st
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 opacity-80 shadow-sm hover:bg-gray-50 cursor-not-allowed"
               >
                 <span>Share</span>
-              </button>
+              </button> */}
               {isOwner && (
                 <button
                   type="button"
                   title="Coming soon!"
                   aria-disabled="true"
                   onClick={(e) => e.preventDefault()}
-                  className="hidden sm:inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white opacity-80 shadow-sm cursor-not-allowed"
+                  className="hidden sm:inline-flex items-center gap-2 rounded-lg bg-[var(--primary-color)] px-3 py-2 text-sm font-medium text-white opacity-80 shadow-sm cursor-not-allowed"
                 >
                   Edit Profile
                 </button>
@@ -248,10 +242,12 @@ export default function SellerProfilePage({ params }: { params: Promise<{ id: st
                   </p>
                 </div>
                 <Link
-                  href="/seller"
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                  href="#"
+                  title="Coming soon!"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 opacity-80 shadow-sm cursor-not-allowed"
+                  onClick={(e) => e.preventDefault()}
                 >
-                  Browse Other Sellers
+                  Create new listing
                 </Link>
               </div>
             ) : (
