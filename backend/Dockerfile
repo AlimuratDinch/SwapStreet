@@ -5,13 +5,15 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ENV DOTNET_DISABLE_PACKAGE_SOURCE_MAPPING=true
 
 WORKDIR /src
+
+# Copy everything from the repo root (since backend is a subfolder)
 COPY . .
 
-# Restore packages (mapping disabled via ENV)
-RUN dotnet restore
+# Restore dependencies using correct relative path
+RUN dotnet restore backend/backend.csproj
 
-# Publish without restore 
-RUN dotnet publish -c Release -o /app --no-restore
+# Publish the app
+RUN dotnet publish backend/backend.csproj -c Release -o /app --no-restore
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime

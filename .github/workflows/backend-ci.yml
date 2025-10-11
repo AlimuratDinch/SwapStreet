@@ -43,12 +43,10 @@ jobs:
 
       # --- Build Docker image ---
       - name: Build backend Docker image
-        working-directory: backend
         run: docker build -t swapstreet-backend -f backend/Dockerfile .
 
       # --- Run tests and collect coverage inside Docker ---
       - name: Run tests and collect coverage
-        working-directory: backend
         run: |
           mkdir -p backend/TestResults
           docker run --rm \
