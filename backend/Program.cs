@@ -10,12 +10,26 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add EF Core DbContext
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+var isCi = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "CI";
+
+// Configure DbContexts
+if (isCi)
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseInMemoryDatabase("AppTestDb"));
+
+    builder.Services.AddDbContext<AuthDbContext>(options =>
+        options.UseInMemoryDatabase("AuthTestDb"));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+    builder.Services.AddDbContext<AuthDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
 
 builder.Services.AddControllers(); // enable controllers
 
@@ -27,17 +41,19 @@ builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+// Only apply migrations if NOT running in CI
+if (!isCi)
 {
-    var services = scope.ServiceProvider;
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
 
-    // Migrate the main application database
-    var appDb = services.GetRequiredService<AppDbContext>();
-    appDb.Database.Migrate();
+        var appDb = services.GetRequiredService<AppDbContext>();
+        appDb.Database.Migrate();
 
-    // Migrate the auth database
-    var authDb = services.GetRequiredService<AuthDbContext>();
-    authDb.Database.Migrate();
+        var authDb = services.GetRequiredService<AuthDbContext>();
+        authDb.Database.Migrate();
+    }
 }
 
 

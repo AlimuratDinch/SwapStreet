@@ -50,12 +50,13 @@ jobs:
         run: |
           mkdir -p backend/TestResults
           docker run --rm \
+            -e ASPNETCORE_ENVIRONMENT=CI \
             -v ${{ github.workspace }}/backend/TestResults:/app/TestResults \
             swapstreet-backend \
-            bash -c "dotnet test --no-build --configuration Release \
-                     /p:CollectCoverage=true \
-                     /p:CoverletOutput=TestResults/ \
-                     /p:CoverletOutputFormat=opencover"
+            dotnet test --no-build --configuration Release \
+              /p:CollectCoverage=true \
+              /p:CoverletOutput=TestResults/ \
+              /p:CoverletOutputFormat=opencover
 
       # --- SonarQube analysis ---
       - name: SonarQube Scan
