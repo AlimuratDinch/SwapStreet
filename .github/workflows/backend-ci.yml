@@ -47,12 +47,12 @@ jobs:
      
         # --- Run tests with coverage ---
       - name: Run tests and collect coverage
-        working-directory: backend.Tests
+        working-directory: backend
         env:
           ASPNETCORE_ENVIRONMENT: CI
         run: |
           mkdir -p TestResults
-          dotnet test backend.Tests.csproj --no-build --configuration Release \
+          dotnet test --no-build --configuration Release \
             /p:CollectCoverage=true \
             /p:CoverletOutput=TestResults/coverage.opencover.xml \
             /p:CoverletOutputFormat=opencover
