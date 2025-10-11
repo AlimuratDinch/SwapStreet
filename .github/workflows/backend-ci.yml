@@ -47,25 +47,12 @@ jobs:
      
         # --- Run tests with coverage ---
       - name: Run tests and collect coverage
-        working-directory: backend
+        working-directory: backend.Tests
         env:
           ASPNETCORE_ENVIRONMENT: CI
         run: |
-            mkdir -p TestResults
-            dotnet test backend.csproj --no-build --configuration Release \
-              /p:CollectCoverage=true \
-              /p:CoverletOutput=TestResults/coverage.opencover.xml \
-              /p:CoverletOutputFormat=opencover
-
-      # # --- SonarQube analysis ---
-      # - name: SonarQube Scan
-      #   uses: SonarSource/sonarqube-scan-action@v6
-      #   with:
-      #     projectBaseDir: backend
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      #     SONAR_SCANNER_OPTS: >
-      #       -Dsonar.cs.opencover.reportsPaths=backend/TestResults/**/coverage.opencover.xml
-      #       -Dsonar.coverage.exclusions=**/Migrations/**,**/Program.cs,**/Startup.cs
-      #       -Dsonar.exclusions=**/bin/**,**/obj/**
+          mkdir -p TestResults
+          dotnet test backend.Tests.csproj --no-build --configuration Release \
+            /p:CollectCoverage=true \
+            /p:CoverletOutput=TestResults/coverage.opencover.xml \
+            /p:CoverletOutputFormat=opencover
