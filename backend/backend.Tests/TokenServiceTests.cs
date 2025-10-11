@@ -1,8 +1,11 @@
+using System;
+using System.Threading.Tasks;
 using backend.Services.Auth;
 using Microsoft.EntityFrameworkCore;
 using backend.Models.Authentication;
 using Xunit;
 using AwesomeAssertions;
+using Microsoft.Extensions.Configuration;
 
 namespace backend.Tests
 {

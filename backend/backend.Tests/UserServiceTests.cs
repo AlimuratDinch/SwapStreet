@@ -1,3 +1,6 @@
+using System;
+using System.Threading.Tasks;
+using backend.DbContexts;
 using backend.Models.Authentication;
 using backend.Services.Auth;
 using backend.Contracts.Auth;
@@ -27,6 +30,7 @@ namespace backend.Tests
         }
 
         [Fact]
+
         public void Dispose()
         {
             _db.Dispose();

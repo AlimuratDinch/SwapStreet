@@ -97,15 +97,16 @@ namespace backend.Migrations.AuthDb
                 nullable: false,
                 defaultValue: false);
 
-            migrationBuilder.AlterColumn<long>(
-                name: "Parent",
-                schema: "auth",
-                table: "refresh_tokens",
-                type: "bigint",
-                nullable: true,
-                oldClrType: typeof(Guid),
-                oldType: "uuid",
-                oldNullable: true);
+            // NOTE: keep Parent as uuid to avoid destructive or invalid casts during migration
+            // migrationBuilder.AlterColumn<long>(
+            //     name: "Parent",
+            //     schema: "auth",
+            //     table: "refresh_tokens",
+            //     type: "bigint",
+            //     nullable: true,
+            //     oldClrType: typeof(Guid),
+            //     oldType: "uuid",
+            //     oldNullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "DeviceId",
@@ -287,15 +288,16 @@ namespace backend.Migrations.AuthDb
                 nullable: false,
                 defaultValue: "");
 
-            migrationBuilder.AlterColumn<Guid>(
-                name: "Parent",
-                schema: "auth",
-                table: "refresh_tokens",
-                type: "uuid",
-                nullable: true,
-                oldClrType: typeof(long),
-                oldType: "bigint",
-                oldNullable: true);
+            // NOTE: keep Parent as uuid in Down as well; removed the alter column to avoid type conversion issues
+            // migrationBuilder.AlterColumn<Guid>(
+            //     name: "Parent",
+            //     schema: "auth",
+            //     table: "refresh_tokens",
+            //     type: "uuid",
+            //     nullable: true,
+            //     oldClrType: typeof(long),
+            //     oldType: "bigint",
+            //     oldNullable: true);
 
             migrationBuilder.AlterColumn<JsonDocument>(
                 name: "Payload",
