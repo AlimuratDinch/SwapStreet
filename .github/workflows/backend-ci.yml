@@ -1,0 +1,71 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main]
+  pull_request:
+    branches: [ main]
+
+jobs:
+  backend-sonarqube:
+    name: Backend SonarQube Analysis
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # Required for auto-committing changes
+
+    steps:
+      # --- Checkout code ---
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SonarQube blame info
+
+      # --- Setup .NET SDK ---
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      # --- Auto format .NET code ---
+      - name: Run dotnet format
+        working-directory: backend
+        run: dotnet format --folder --verbosity diagnostic
+
+      # --- Auto commit formatted code (if any) ---
+      - name: Commit formatting changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format backend"
+          commit_user_name: github-actions
+          commit_user_email: actions@github.com
+          branch: ${{ github.head_ref || github.ref_name }}
+
+      # --- Build Docker image ---
+      - name: Build backend Docker image
+        run: docker build -t swapstreet-backend -f backend/Dockerfile .
+
+      # --- Run tests and collect coverage inside Docker ---
+      - name: Run tests and collect coverage
+        run: |
+          mkdir -p backend/TestResults
+          docker run --rm \
+            -v ${{ github.workspace }}/backend/TestResults:/app/TestResults \
+            swapstreet-backend \
+            bash -c "dotnet test --no-build --configuration Release \
+                     /p:CollectCoverage=true \
+                     /p:CoverletOutput=TestResults/ \
+                     /p:CoverletOutputFormat=opencover"
+
+      # --- SonarQube analysis ---
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          projectBaseDir: backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_SCANNER_OPTS: >
+            -Dsonar.cs.opencover.reportsPaths=backend/TestResults/**/coverage.opencover.xml
+            -Dsonar.coverage.exclusions=**/Migrations/**,**/Program.cs,**/Startup.cs
+            -Dsonar.exclusions=**/bin/**,**/obj/**

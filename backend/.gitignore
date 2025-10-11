@@ -43,4 +43,3 @@ docker-compose.override.yml
 
 # Environment Variables
 .env
-TestResults/
