@@ -1,9 +1,6 @@
-using System;
-using System.Threading.Tasks;
 using backend.Services.Auth;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Models.Authentication;
+using backend.Models.Authentication;
 using Xunit;
 using AwesomeAssertions;
 

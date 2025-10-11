@@ -26,6 +26,7 @@ namespace backend.Tests
             _service = new UserService(hasher, _db);
         }
 
+        [Fact]
         public void Dispose()
         {
             _db.Dispose();
@@ -109,7 +110,7 @@ namespace backend.Tests
         [Fact]
         public async Task PermanentlyDeleteUserAsync_ShouldRemoveUser()
         {
-            var user = new User { Email = "del@example.com", Username = "deluser", EncryptedPassword = "p"};
+            var user = new User { Email = "del@example.com", Username = "deluser", EncryptedPassword = "p" };
             await _db.Users.AddAsync(user);
             await _db.SaveChangesAsync();
 

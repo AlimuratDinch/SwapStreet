@@ -16,6 +16,6 @@ namespace backend.Contracts
         Category? GetCategoryById(int id);
         Category UpdateCategory(int id, Category updated);
         bool DeleteCategory(int id);
-    }  
+    }
 }
 

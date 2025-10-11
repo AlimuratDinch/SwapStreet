@@ -1,6 +1,6 @@
 using backend.Contracts.Auth;
 using Microsoft.EntityFrameworkCore;
-using Models.Authentication;
+using backend.Models.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
@@ -52,12 +52,16 @@ namespace backend.Services.Auth
 
         public async Task<string> GenerateRefreshTokenAsync(Guid userId)
         {
+            var user = await _db.Users.FindAsync(userId);
+            if (user == null) throw new Exception("User not found");
+
             var refreshToken = new RefreshToken
             {
                 UserId = userId,
+                User = user,
                 Token = Guid.NewGuid().ToString("N"),
                 CreatedAt = DateTimeOffset.UtcNow,
-                ExpiresAt = DateTimeOffset.UtcNow.AddDays(_refreshTokenExpirationDays) 
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(_refreshTokenExpirationDays)
             };
 
             _db.RefreshTokens.Add(refreshToken);
@@ -71,21 +75,21 @@ namespace backend.Services.Auth
             var refreshToken = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.Token == token);
             if (refreshToken == null || refreshToken.Revoked) return false;
 
-            
+
             return true;
         }
 
-    public async Task<string> RefreshAccessTokenAsync(string refreshToken)
-    {
-         var tokenEntry = await _db.RefreshTokens.Include(t => t.User)
-          .FirstOrDefaultAsync(t => t.Token == refreshToken && !t.Revoked);
+        public async Task<string> RefreshAccessTokenAsync(string refreshToken)
+        {
+            var tokenEntry = await _db.RefreshTokens.Include(t => t.User)
+             .FirstOrDefaultAsync(t => t.Token == refreshToken && !t.Revoked);
 
-         if (tokenEntry == null) throw new Exception("Invalid refresh token");
+            if (tokenEntry == null) throw new Exception("Invalid refresh token");
 
-             var newAccessToken = await GenerateAccessTokenAsync(tokenEntry.UserId);
+            var newAccessToken = await GenerateAccessTokenAsync(tokenEntry.UserId);
 
-             return newAccessToken; 
-    }
+            return newAccessToken;
+        }
 
 
         public async Task InvalidateRefreshTokenAsync(string refreshToken)

@@ -35,7 +35,7 @@ namespace backend.Models.Authentication
         public required string EncryptedPassword { get; set; }
 
         public DateTimeOffset? EmailConfirmedAt { get; set; }
-        
+
 
         public DateTimeOffset? LastSignInAt { get; set; } = DateTimeOffset.UtcNow;
 
@@ -58,8 +58,8 @@ namespace backend.Models.Authentication
         // public string EmailChange { get; set; }
         // public DateTimeOffset? EmailChangeSentAt { get; set; }
 
-        
+
     }
-    
-    
+
+
 }

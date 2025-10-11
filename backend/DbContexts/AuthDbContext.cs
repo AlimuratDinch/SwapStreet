@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using Models.Authentication;
+using backend.Models.Authentication;
 public class AuthDbContext : DbContext
 {
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<AuditLogEntry> AuditLogEntries { get; set; } = null!;
 
-        public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options) { }
+    public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,6 +27,6 @@ public class AuthDbContext : DbContext
             .HasForeignKey(a => a.UserId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        }
     }
+}
 
