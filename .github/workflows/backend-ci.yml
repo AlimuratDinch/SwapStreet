@@ -45,15 +45,10 @@ jobs:
       - name: Build backend Docker image
         run: docker build -t swapstreet-backend -f backend/Dockerfile .
 
-      # --- Run tests and collect coverage inside Docker ---
       - name: Run tests and collect coverage
-        run: |
-          mkdir -p backend/TestResults
-          docker run --rm \
-            -e ASPNETCORE_ENVIRONMENT=CI \
-            -v ${{ github.workspace }}/backend/TestResults:/app/TestResults \
-            swapstreet-backend \
-            dotnet test --no-build --configuration Release \
+        working-directory: backend
+        run: dotnet test --no-build --configuration Release \
+              -e ASPNETCORE_ENVIRONMENT=CI \
               /p:CollectCoverage=true \
               /p:CoverletOutput=TestResults/ \
               /p:CoverletOutputFormat=opencover
