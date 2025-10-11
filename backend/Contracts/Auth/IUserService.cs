@@ -5,12 +5,12 @@ namespace backend.Contracts.Auth
     public interface IUserService
     {
 
-        Task<User> RegisterAsync(string email, string password);
+        Task<User> RegisterAsync(string email, string username, string password);
         //Task<bool> ConfirmEmailAsync(Guid userId, string token);  TODO Later no TFA rn
         // Task<bool> MarkUserForDeletionAsync(Guid userId); TODO Later
         Task PermanentlyDeleteUserAsync(Guid userId);
         Task<User?> GetUserByEmailAsync(string email);
         Task<User?> GetUserByUsernameAsync(string username);
-        Task<string?> LoginWithPasswordAsync(string email, string password);
+        Task<bool> LoginWithPasswordAsync(string email, string password);
     }
 }
