@@ -47,8 +47,9 @@ jobs:
 
       - name: Run tests and collect coverage
         working-directory: backend
+        env:
+          ASPNETCORE_ENVIRONMENT: CI
         run: dotnet test --no-build --configuration Release \
-              -e ASPNETCORE_ENVIRONMENT=CI \
               /p:CollectCoverage=true \
               /p:CoverletOutput=TestResults/ \
               /p:CoverletOutputFormat=opencover
