@@ -99,16 +99,27 @@ export default function SellerOnboardingPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-semibold text-gray-900">Set up your seller profile</h1>
-      <p className="mt-1 text-sm text-gray-600">Tell buyers a bit about you and your style. You can edit this later.</p>
+      <h1 className="text-2xl font-semibold text-gray-900">
+        Set up your seller profile
+      </h1>
+      <p className="mt-1 text-sm text-gray-600">
+        Tell buyers a bit about you and your style. You can edit this later.
+      </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="mt-8 space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
+      >
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Display name</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Display name
+          </label>
           <input
             type="text"
             value={name}
@@ -121,7 +132,9 @@ export default function SellerOnboardingPage() {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700">City</label>
+            <label className="block text-sm font-medium text-gray-700">
+              City
+            </label>
             <input
               type="text"
               value={city}
@@ -132,7 +145,9 @@ export default function SellerOnboardingPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Province</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Province
+            </label>
             <select
               value={province}
               onChange={(e) => setProvince(e.target.value)}
@@ -158,7 +173,9 @@ export default function SellerOnboardingPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Postal code (optional)</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Postal code (optional)
+            </label>
             <input
               type="text"
               value={postalCode}
@@ -183,7 +200,9 @@ export default function SellerOnboardingPage() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Avatar image</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Avatar image
+            </label>
             <input
               type="file"
               accept="image/*"
@@ -192,12 +211,18 @@ export default function SellerOnboardingPage() {
             />
             {avatarPreview && (
               <div className="mt-3">
-                <img src={avatarPreview} alt="Avatar preview" className="h-24 w-24 rounded-full object-cover ring-1 ring-gray-200" />
+                <img
+                  src={avatarPreview}
+                  alt="Avatar preview"
+                  className="h-24 w-24 rounded-full object-cover ring-1 ring-gray-200"
+                />
               </div>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Banner image</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Banner image
+            </label>
             <input
               type="file"
               accept="image/*"
@@ -206,7 +231,11 @@ export default function SellerOnboardingPage() {
             />
             {bannerPreview && (
               <div className="mt-3">
-                <img src={bannerPreview} alt="Banner preview" className="h-24 w-full rounded-md object-cover ring-1 ring-gray-200" />
+                <img
+                  src={bannerPreview}
+                  alt="Banner preview"
+                  className="h-24 w-full rounded-md object-cover ring-1 ring-gray-200"
+                />
               </div>
             )}
           </div>
