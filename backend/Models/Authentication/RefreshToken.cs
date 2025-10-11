@@ -18,9 +18,17 @@ namespace backend.Models.Authentication
         [Required]
         public required string Token { get; set; }
 
+        public string? UserAgent { get; set; }
+
+        public string? DeviceId { get; set; }
+
+        public string? Ip { get; set; }
+
         public bool Revoked { get; set; } = false;
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+        public DateTimeOffset? ExpiresAt { get; set; }
         public long? Parent { get; set; }
 
         [ForeignKey(nameof(UserId))]

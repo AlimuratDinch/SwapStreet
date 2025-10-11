@@ -5,6 +5,11 @@ namespace backend.Contracts.Auth
     {
         Task<string> GenerateAccessTokenAsync(Guid userId);
         Task<string> GenerateRefreshTokenAsync(Guid userId);
-        Task<bool> ValidateTokenAsync(string token);
+        Task<bool> ValidateRefreshTokenAsync(string token);
+        Task<string> RefreshAccessTokenAsync(string refreshToken);
+        Task InvalidateRefreshTokenAsync(string refreshToken);
+        Task InvalidateAllRefreshTokensForUserAsync(Guid userId);
+        Task<Guid?> GetUserIdFromTokenAsync(string token);
+        Task<bool> IsTokenRevokedAsync(string token);
     }
 }
