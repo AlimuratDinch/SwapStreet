@@ -1,29 +1,24 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useState, useEffect } from "react";
 import Image from "next/image";
-
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 bg-white shadow-sm px-6 py-6 flex items-center justify-between z-[100]">
-      {/* Logo */}
       <a href="/" className="font-semibold text-2xl">
         <span className="text-[#e98b2a]">SWAP</span>
         <span className="text-[#016c5d] italic">STREET</span>
       </a>
-
-      {/* Navigation */}
       <nav className="relative">
         <ul className="flex items-center justify-center font-semibold">
-          {/* Men Mega Menu */}
           <li className="px-3 py-2">
             <button className="hover:opacity-50">Featured</button>
           </li>
           <li className="relative group px-3 py-2">
             <button className="hover:opacity-50 cursor-default">Men</button>
-
             <div
               className="fixed left-0 right-0 top-[80px] transition-all duration-500 ease-in-out 
                          opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50"
@@ -33,30 +28,26 @@ export function Header() {
                   {[
                     {
                       title: "Tops",
-                      img: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
                     {
                       title: "Bottoms",
-                      img: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
                     {
                       title: "Accessories",
-                      img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
                     {
                       title: "Portables",
-                      img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
-										{
+                    {
                       title: "Sale",
-                      img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
                   ].map((item) => (
-                    <a
-                      key={item.title}
-                      href="#"
-                      className="block group/item"
-                    >
+                    <a key={item.title} href="#" className="block group/item">
                       <p className="uppercase tracking-wider text-gray-500 font-medium text-[13px] mb-3">
                         {item.title}
                       </p>
@@ -73,10 +64,8 @@ export function Header() {
               </div>
             </div>
           </li>
-          {/* Women Mega Menu */}
           <li className="relative group px-3 py-2">
             <button className="hover:opacity-50 cursor-default">Women</button>
-
             <div
               className="fixed left-0 right-0 top-[80px] transition-all duration-500 ease-in-out 
                          opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50"
@@ -86,30 +75,26 @@ export function Header() {
                   {[
                     {
                       title: "Tops",
-                      img: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
                     {
                       title: "Bottoms",
-                      img: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
                     {
                       title: "Accessories",
-                      img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
                     {
                       title: "Portables",
-                      img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
-										{
+                    {
                       title: "Sale",
-                      img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=600&fit=crop",
+                      img: "/images/dummy-item.jpg",
                     },
                   ].map((item) => (
-                    <a
-                      key={item.title}
-                      href="#"
-                      className="block group/item"
-                    >
+                    <a key={item.title} href="#" className="block group/item">
                       <p className="uppercase tracking-wider text-gray-500 font-medium text-[13px] mb-3">
                         {item.title}
                       </p>
@@ -128,8 +113,6 @@ export function Header() {
           </li>
         </ul>
       </nav>
-
-      {/* Auth Links */}
       <nav>
         <ul className="flex items-center justify-center font-semibold space-x-2">
           <li>
@@ -192,7 +175,6 @@ export function Header() {
   );
 }
 
-// ---------- Search Bar ----------
 export function SearchBar() {
   return (
     <div className="flex items-center border rounded px-2 py-1 bg-white">
@@ -206,9 +188,13 @@ export function SearchBar() {
   );
 }
 
-// ---------- Sidebar ----------
 export function Sidebar() {
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [conditions, setConditions] = useState<string[]>([]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -230,40 +216,107 @@ export function Sidebar() {
     fetchCategories();
   }, []);
 
+  const handleFilterChange = () => {
+    const params = new URLSearchParams(searchParams);
+    if (minPrice) params.set("minPrice", minPrice);
+    else params.delete("minPrice");
+    if (maxPrice) params.set("maxPrice", maxPrice);
+    else params.delete("maxPrice");
+    if (conditions.length > 0) params.set("conditions", conditions.join(","));
+    else params.delete("conditions");
+    router.push(`/browse?${params.toString()}`);
+  };
+
+  const handleConditionToggle = (condition: string) => {
+    setConditions((prev) =>
+      prev.includes(condition)
+        ? prev.filter((c) => c !== condition)
+        : [...prev, condition]
+    );
+    handleFilterChange();
+  };
+
+  const clearFilters = () => {
+    setMinPrice("");
+    setMaxPrice("");
+    setConditions([]);
+    router.push("/browse");
+  };
+
   return (
     <aside className="w-64 bg-gray-100 border-r p-4 flex flex-col gap-6 pt-24">
       <SearchBar />
       <section>
         <h3 className="font-semibold mb-2">Filters</h3>
-        <div className="grid grid-cols-5 gap-2 mb-4">
-          {categories.map((category) => (
-            <a
-              key={category.id}
-              href={`/browse?category=${category.id}`}
-              className="w-8 h-8 bg-gray-300 rounded flex items-center justify-center text-xs"
-            >
-              {category.name}
-            </a>
+        <div className="mb-4">
+          <h4 className="text-sm font-medium mb-1">Price Range</h4>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              placeholder="Min"
+              value={minPrice}
+              onChange={(e) => {
+                setMinPrice(e.target.value);
+                handleFilterChange();
+              }}
+              className="border p-2 w-full"
+            />
+            <input
+              type="number"
+              placeholder="Max"
+              value={maxPrice}
+              onChange={(e) => {
+                setMaxPrice(e.target.value);
+                handleFilterChange();
+              }}
+              className="border p-2 w-full"
+            />
+          </div>
+        </div>
+        <div className="mb-4">
+          <h4 className="text-sm font-medium mb-1">Categories</h4>
+          <div className="grid grid-cols-2 gap-2">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => {
+                  const params = new URLSearchParams(searchParams);
+                  params.set("categoryId", category.id.toString());
+                  router.push(`/browse?${params.toString()}`);
+                }}
+                className={`rounded p-2 text-xs hover:bg-gray-400 ${
+                  searchParams.get("categoryId") === category.id.toString()
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-300"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h4 className="text-sm font-medium mb-1">Condition</h4>
+          {["New", "Like New", "Used", "Good"].map((condition) => (
+            <label key={condition} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={conditions.includes(condition)}
+                onChange={() => handleConditionToggle(condition)}
+              />
+              <span>{condition}</span>
+            </label>
           ))}
         </div>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" />
-          <span>Option 1</span>
-        </label>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" />
-          <span>Option 2</span>
-        </label>
+        <button
+          onClick={clearFilters}
+          className=" bg-red-200 rounded p-2 text-sm font-medium transition ease-in-out hover:scale-[1.03]"
+        >
+          Clear Filters
+        </button>
       </section>
     </aside>
   );
-}
-
-// ---------- Card ----------
-interface CardItemProps {
-  title: string;
-  description: string;
-  imgSrc?: string;
 }
 
 export function CardItem({ title, description, imgSrc }: CardItemProps) {
@@ -289,3 +342,17 @@ export function CardItem({ title, description, imgSrc }: CardItemProps) {
     </div>
   );
 }
+
+interface CardItemProps {
+  title: string;
+  description: string;
+  imgSrc?: string;
+}
+
+// ---------- Card ----------
+interface CardItemProps {
+  title: string;
+  description: string;
+  imgSrc?: string;
+}
+

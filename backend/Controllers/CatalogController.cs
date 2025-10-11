@@ -12,19 +12,33 @@ public class CatalogController : ControllerBase
     private readonly ICatalogService _catalog;
     public CatalogController(ICatalogService catalog) => _catalog = catalog;
 
-    // ---- ITEMS ----
     [HttpGet("items")]
-    public IActionResult GetAllItems()
+    public IActionResult GetAllItems(
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
+        [FromQuery] int? categoryId,
+        [FromQuery] string? conditions) // Changed to conditions
     {
-        var items = _catalog.GetAllItems()
-            .Select(i => new
-            {
-                id = i.Id,
-                title = i.Title,
-                description = i.Description,
-                imageUrl = i.ImageUrl
-            });
-        return Ok(items);
+        var items = _catalog.GetAllItems();
+        if (minPrice.HasValue)
+            items = items.Where(i => i.Price >= minPrice.Value);
+        if (maxPrice.HasValue)
+            items = items.Where(i => i.Price <= maxPrice.Value);
+        if (categoryId.HasValue)
+            items = items.Where(i => i.CategoryId == categoryId.Value);
+        if (!string.IsNullOrEmpty(conditions))
+        {
+            var conditionList = conditions.Split(',').Select(c => c.Trim()).ToArray();
+            items = items.Where(i => conditionList.Contains(i.Condition, StringComparer.OrdinalIgnoreCase));
+        }
+        var response = items.Select(i => new
+        {
+            id = i.Id,
+            title = i.Title,
+            description = i.Description,
+            imageUrl = i.ImageUrl
+        });
+        return Ok(response);
     }
 
     [HttpGet("items/{id}")]

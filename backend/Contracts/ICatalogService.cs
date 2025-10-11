@@ -4,17 +4,14 @@ using backend.Models;
 
 public interface ICatalogService
 {
-    // ---- ITEM METHODS ----
-    Item AddItem(Item item);
     IEnumerable<Item> GetAllItems();
-    Item? GetItemById(int id);
-    Item UpdateItem(int id, Item updated);
+    Item GetItemById(int id);
+    Item AddItem(Item item);
+    Item UpdateItem(int id, Item item);
     bool DeleteItem(int id);
-
-    // ---- CATEGORY METHODS ----
-    Category AddCategory(Category category);
     IEnumerable<Category> GetAllCategories();
-    Category? GetCategoryById(int id);
-    Category UpdateCategory(int id, Category updated);
+    Category GetCategoryById(int id);
+    Category AddCategory(Category category);
+    Category UpdateCategory(int id, Category category);
     bool DeleteCategory(int id);
 }

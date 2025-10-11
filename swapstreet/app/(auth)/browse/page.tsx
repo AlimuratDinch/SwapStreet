@@ -1,12 +1,16 @@
-// app/(auth)/browse/page.tsx
+
 import { Sidebar, CardItem, Header } from "../BrowseElements";
 
-async function fetchClothingItems(categoryId?: string) {
+async function fetchClothingItems(searchParams: Promise<{ minPrice?: string; maxPrice?: string; categoryId?: string; condition?: string }>) {
   try {
+    const params = new URLSearchParams();
+    const resolvedParams = await searchParams; // Await the searchParams Promise
+    if (resolvedParams.minPrice) params.set("minPrice", resolvedParams.minPrice);
+    if (resolvedParams.maxPrice) params.set("maxPrice", resolvedParams.maxPrice);
+    if (resolvedParams.categoryId) params.set("categoryId", resolvedParams.categoryId);
+    if (resolvedParams.condition) params.set("condition", resolvedParams.condition);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    const url = categoryId
-      ? `${apiUrl}/api/catalog/categories/${categoryId}`
-      : `${apiUrl}/api/catalog/items`;
+    const url = `${apiUrl}/api/catalog/items${params.toString() ? `?${params.toString()}` : ""}`;
     const res = await fetch(url, {
       cache: "no-store",
       credentials: "include"
@@ -14,17 +18,15 @@ async function fetchClothingItems(categoryId?: string) {
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
-    const data = await res.json();
-    // If fetching category, extract items from CategoryResponse
-    return categoryId ? data.items : data;
+    return res.json();
   } catch (error) {
     console.error("Failed to fetch clothing items:", error);
     return [];
   }
 }
 
-export default async function BrowsePage({ searchParams }: { searchParams: { category?: string } }) {
-  const items = await fetchClothingItems(searchParams.category);
+export default async function BrowsePage({ searchParams }: { searchParams: Promise<{ minPrice?: string; maxPrice?: string; categoryId?: string; condition?: string }> }) {
+  const items = await fetchClothingItems(searchParams);
 
   return (
     <div className="flex flex-col h-screen">
@@ -48,9 +50,12 @@ export default async function BrowsePage({ searchParams }: { searchParams: { cat
           )}
         </main>
       </div>
-      <button className="fixed bottom-5 right-5 w-13 h-12 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl">
+      <a
+        href="/add"
+        className="fixed bottom-5 right-5 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl"
+      >
         +
-      </button>
+      </a>
     </div>
   );
 }
