@@ -7,7 +7,7 @@ using Models.Authentication;
 using Xunit;
 using AwesomeAssertions;
 
-namespace backend.Tests.Services.Auth
+namespace backend.Tests
 {
     public class TokenServiceTests
     {
