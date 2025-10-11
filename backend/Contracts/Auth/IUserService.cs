@@ -6,10 +6,13 @@ namespace backend.Contracts.Auth
     {
 
         Task<User> RegisterAsync(string email, string password);
-        //Task<bool> ConfirmEmailAsync(Guid userId, string token);  TODO Later no TFA rn
         Task<bool> MarkUserForDeletionAsync(Guid userId);
         Task PermanentlyDeleteUserAsync(Guid userId);
         Task<User?> GetUserByEmailAsync(string email);
-        Task<bool> LoginWithPasswordAsync(string email, string password);
+        Task<bool> SignInAsync(string email, string password);
+        Task<User?> GetUserByIdAsync(Guid userId);
+        Task<bool> UpdateLastSignInAsync(Guid userId);
+
+        //TODO: Task<bool> ConfirmEmailAsync(Guid userId, string token);
     }
 }

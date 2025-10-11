@@ -12,9 +12,7 @@ namespace Models.Authentication
     {
         public User()
         {
-            Identities = new HashSet<Identity>();
             RefreshTokens = new HashSet<RefreshToken>();
-            Sessions = new HashSet<Session>();
             AuditLogEntries = new HashSet<AuditLogEntry>();
         }
 
@@ -53,9 +51,7 @@ namespace Models.Authentication
         public bool IsDeleted { get; set; } = false;
         public DateTimeOffset? DeletedAt { get; set; }
 
-        public virtual ICollection<Identity> Identities { get; set; }
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
-        public virtual ICollection<Session> Sessions { get; set; }
         public virtual ICollection<AuditLogEntry> AuditLogEntries { get; set; }
 
         
