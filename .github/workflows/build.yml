@@ -1,24 +1,30 @@
 name: Build
+
 on:
   push:
     branches:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
+
 jobs:
   frontend-sonarqube:
     name: Frontend SonarQube
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
+
       - name: Install dependencies
         run: yarn
         working-directory: swapstreet
-      - name: Test and coverage
+
+      - name: Run tests and collect coverage
         run: yarn jest --coverage
         working-directory: swapstreet
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -35,15 +41,19 @@ jobs:
         with:
           java-version: 17
           distribution: 'zulu'
-      - uses: actions/checkout@v4
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Cache SonarQube Cloud packages
         uses: actions/cache@v4
         with:
           path: ~\sonar\cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
+
       - name: Cache SonarQube Cloud scanner
         id: cache-sonar-scanner
         uses: actions/cache@v4
@@ -51,29 +61,39 @@ jobs:
           path: ${{ runner.temp }}\scanner
           key: ${{ runner.os }}-sonar-scanner
           restore-keys: ${{ runner.os }}-sonar-scanner
+
       - name: Install SonarQube Cloud scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
+
       - name: Install dotnet-coverage
         run: dotnet tool install --global dotnet-coverage
+
       - name: Begin SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         working-directory: backend
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"swapstreet" /o:"swapstreet" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin `
+            /k:"swapstreet" `
+            /o:"swapstreet" `
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+            /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+
       - name: Build backend
         shell: powershell
         working-directory: backend
         run: dotnet build --no-incremental
+
       - name: Run tests and collect coverage
         shell: powershell
         working-directory: backend
         run: dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
+
       - name: End SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
