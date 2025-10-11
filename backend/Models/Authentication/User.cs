@@ -22,7 +22,7 @@ namespace backend.Models.Authentication
 
         [Required]
         [MaxLength(255)]
-        public string Status { get; set; } = "authenticated";
+        public required string Status { get; set; } = "authenticated";
 
         [MaxLength(255)]
         [EmailAddress]

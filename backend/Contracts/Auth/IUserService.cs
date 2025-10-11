@@ -1,3 +1,4 @@
+using backend.DTOs.Auth;
 using backend.Models.Authentication;
 
 namespace backend.Contracts.Auth
@@ -11,6 +12,6 @@ namespace backend.Contracts.Auth
         Task PermanentlyDeleteUserAsync(Guid userId);
         Task<User?> GetUserByEmailAsync(string email);
         Task<User?> GetUserByUsernameAsync(string username);
-        Task<bool> LoginWithPasswordAsync(string email, string password);
+        Task<UserDto?> LoginWithPasswordAsync(string email, string password);
     }
 }

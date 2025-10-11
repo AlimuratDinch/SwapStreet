@@ -2,6 +2,7 @@ using backend.Contracts.Auth;
 using backend.Models.Authentication;
 using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
+using backend.DTOs.Auth;
 
 
 namespace backend.Services.Auth
@@ -23,7 +24,8 @@ namespace backend.Services.Auth
             {
                 Email = email,
                 EncryptedPassword = _passwordHasher.HashPassword(password),
-                Username = username
+                Username = username,
+                Status = "authenticated"
             };
 
             await _authDBContext.Users.AddAsync(user);
@@ -51,12 +53,19 @@ namespace backend.Services.Auth
             return await _authDBContext.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
-        public async Task<bool> LoginWithPasswordAsync(string emailOrUsername, string password)
+        public async Task<UserDto?> LoginWithPasswordAsync(string emailOrUsername, string password)
         {
             var user = await GetUserByEmailAsync(emailOrUsername) ?? await GetUserByUsernameAsync(emailOrUsername);
-            if (user == null) return false;
+            if (user == null) return null;
             var hashedPassword = _passwordHasher.HashPassword(password);
-            return _passwordHasher.VerifyPassword(hashedPassword, user.EncryptedPassword);
+            return _passwordHasher.VerifyPassword(hashedPassword, user.EncryptedPassword)
+                ? new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    Username = user.Username
+                }
+                : null;
         }
 
     }
