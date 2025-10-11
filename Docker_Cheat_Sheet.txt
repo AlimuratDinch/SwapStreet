@@ -109,4 +109,4 @@ reportgenerator -reports:./coverage/coverage.opencover.xml -targetdir:./coverage
 --------------------
 # Format Backend
 
-dotnet format backden.sln
+dotnet format backend.sln
