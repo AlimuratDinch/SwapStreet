@@ -30,7 +30,7 @@ jobs:
       # --- Auto format .NET code ---
       - name: Run dotnet format
         working-directory: backend
-        run: dotnet format --verbosity diagnostic
+        run: dotnet format backend.csproj
 
       # --- Auto commit formatted code (if any) ---
       - name: Commit formatting changes
