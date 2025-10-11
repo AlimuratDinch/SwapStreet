@@ -27,17 +27,17 @@ jobs:
           projectBaseDir: swapstreet
 
   backend-sonarqube:
-    name: Backend SonarQube 
+    name: Backend SonarQube
     runs-on: windows-latest
     steps:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: 17
-          distribution: 'zulu' # Alternative distribution options are available.
+          distribution: 'zulu'
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
       - name: Cache SonarQube Cloud packages
         uses: actions/cache@v4
         with:
@@ -57,12 +57,27 @@ jobs:
         run: |
           New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
-      - name: Build and analyze
+      - name: Install dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage
+      - name: Begin SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         working-directory: backend
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"swapstreet" /o:"swapstreet" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
-          dotnet build
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"swapstreet" /o:"swapstreet" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+      - name: Build backend
+        shell: powershell
+        working-directory: backend
+        run: dotnet build --no-incremental
+      - name: Run tests and collect coverage
+        shell: powershell
+        working-directory: backend
+        run: dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
+      - name: End SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: powershell
+        working-directory: backend
+        run: |
           ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
