@@ -49,7 +49,7 @@ jobs:
         working-directory: backend
         env:
           ASPNETCORE_ENVIRONMENT: CI
-        run: dotnet test --no-build --configuration Release \
+        run: dotnet test backend/backend.csproj --no-build --configuration Release \
               /p:CollectCoverage=true \
               /p:CoverletOutput=TestResults/ \
               /p:CoverletOutputFormat=opencover
