@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Models.Authentication;
-namespace backend.DbContexts
-{
+
     public class AuthDbContext : DbContext
     {
         public DbSet<User> Users { get; set; } = null!;
@@ -47,4 +46,4 @@ namespace backend.DbContexts
 
         }
     }
-}
+
