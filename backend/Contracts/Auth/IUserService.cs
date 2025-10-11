@@ -10,6 +10,7 @@ namespace backend.Contracts.Auth
         // Task<bool> MarkUserForDeletionAsync(Guid userId); TODO Later
         Task PermanentlyDeleteUserAsync(Guid userId);
         Task<User?> GetUserByEmailAsync(string email);
-        Task<bool> LoginWithPasswordAsync(string email, string password);
+        Task<User?> GetUserByUsernameAsync(string username);
+        Task<string?> LoginWithPasswordAsync(string email, string password);
     }
 }

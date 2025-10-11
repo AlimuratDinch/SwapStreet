@@ -36,6 +36,9 @@ namespace Models.Authentication
         public string EncryptedPassword { get; set; }
 
         public DateTimeOffset? EmailConfirmedAt { get; set; }
+
+        [ForeignKey("Session")]
+        public Guid? SessionId { get; set; }
         // public DateTimeOffset? InvitedAt { get; set; }
         // public string ConfirmationToken { get; set; }
         // public DateTimeOffset? ConfirmationSentAt { get; set; }
