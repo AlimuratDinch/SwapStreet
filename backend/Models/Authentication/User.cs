@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 
-namespace Models.Authentication
+namespace backend.Models.Authentication
 {
     [Table("users", Schema = "auth")]
     [Index(nameof(Email), IsUnique = true)]
@@ -28,24 +27,18 @@ namespace Models.Authentication
         [MaxLength(255)]
         [EmailAddress]
         [Required]
-        public string Email { get; set; }
+        public required string Email { get; set; }
 
         [MaxLength(255)]
-        public string Username { get; set; }
+        [Required]
+        public required string Username { get; set; }
 
-        public string EncryptedPassword { get; set; }
+        [Required]
+        public required string EncryptedPassword { get; set; }
 
         public DateTimeOffset? EmailConfirmedAt { get; set; }
+        
 
-        [ForeignKey("Session")]
-        public Guid? SessionId { get; set; }
-        // public DateTimeOffset? InvitedAt { get; set; }
-        // public string ConfirmationToken { get; set; }
-        // public DateTimeOffset? ConfirmationSentAt { get; set; }
-        // public string RecoveryToken { get; set; }
-        // public DateTimeOffset? RecoverySentAt { get; set; }
-        // public string EmailChange { get; set; }
-        // public DateTimeOffset? EmailChangeSentAt { get; set; }
         public DateTimeOffset? LastSignInAt { get; set; } = DateTimeOffset.UtcNow;
 
         public bool IsAdmin { get; set; } = false;
@@ -60,6 +53,14 @@ namespace Models.Authentication
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
         public virtual ICollection<Session> Sessions { get; set; }
         public virtual ICollection<AuditLogEntry> AuditLogEntries { get; set; }
+
+        // public DateTimeOffset? InvitedAt { get; set; }
+        // public string ConfirmationToken { get; set; }
+        // public DateTimeOffset? ConfirmationSentAt { get; set; }
+        // public string RecoveryToken { get; set; }
+        // public DateTimeOffset? RecoverySentAt { get; set; }
+        // public string EmailChange { get; set; }
+        // public DateTimeOffset? EmailChangeSentAt { get; set; }
 
         
     }

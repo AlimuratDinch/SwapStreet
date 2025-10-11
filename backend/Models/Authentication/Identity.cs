@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 
-namespace Models.Authentication
+namespace backend.Models.Authentication
 {
     [Table("identities", Schema = "auth")]
     public class Identity
@@ -15,17 +15,17 @@ namespace Models.Authentication
 
         [Required]
         [MaxLength(255)]
-        public string Provider { get; set; }
+        public required string Provider { get; set; }
 
         [Required]
-        public string IdentityData { get; set; }
+        public required string IdentityData { get; set; }
 
-        public string ProviderId { get; set; }
+        public required string ProviderId { get; set; }
         public DateTimeOffset? LastSignInAt { get; set; }
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         [ForeignKey(nameof(UserId))]
-        public virtual User User { get; set; }
+        public virtual required User User { get; set; }
     }
 }

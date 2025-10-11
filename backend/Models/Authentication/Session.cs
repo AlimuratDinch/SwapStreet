@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 
-namespace Models.Authentication
+namespace backend.Models.Authentication
 {
     [Table("sessions", Schema = "auth")]
     public class Session
@@ -24,6 +24,6 @@ namespace Models.Authentication
         public DateTimeOffset? DeletedAt { get; set; }
 
         [ForeignKey(nameof(UserId))]
-        public virtual User User { get; set; }
+        public virtual required User User { get; set; }
     }
 }

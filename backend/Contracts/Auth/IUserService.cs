@@ -1,4 +1,4 @@
-using Models.Authentication;
+using backend.Models.Authentication;
 
 namespace backend.Contracts.Auth
 {

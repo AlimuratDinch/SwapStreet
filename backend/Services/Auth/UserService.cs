@@ -1,6 +1,9 @@
 using backend.Contracts.Auth;
+using backend.Models.Authentication;
 using Microsoft.EntityFrameworkCore;
-using Models.Authentication;
+using backend.DbContexts;
+
+
 namespace backend.Services.Auth
 {
     public class UserService : IUserService

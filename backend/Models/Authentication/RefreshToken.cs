@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Models.Authentication
+namespace backend.Models.Authentication
 {
 
     [Table("refresh_tokens", Schema = "auth")]
@@ -16,7 +16,7 @@ namespace Models.Authentication
         public Guid UserId { get; set; }
 
         [Required]
-        public string Token { get; set; }
+        public required string Token { get; set; }
 
         public bool Revoked { get; set; } = false;
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
@@ -24,6 +24,6 @@ namespace Models.Authentication
         public long? Parent { get; set; }
 
         [ForeignKey(nameof(UserId))]
-        public virtual User User { get; set; }
+        public virtual required User User { get; set; }
     }
 }
