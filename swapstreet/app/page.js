@@ -8,7 +8,7 @@ import Link from 'next/link'
 
 export default function LandingPage() {
 
-  // Simulated data for environmental impact
+  // Simulated data for environmental impact (REPLACE WITH REAL DATA FROM BACKEND)
   const environmentalStats = {
     clothesSaved: 245680,
     co2Reduced: 892.5,
@@ -26,7 +26,7 @@ export default function LandingPage() {
     {
       icon: <Zap className="h-8 w-8 text-teal-500" />,
       title: "Smart Recommendations",
-      description: "Get personalized style suggestions based on your preferences and body type",
+  description: "Get AI-powered outfit ideas customized for your style and any occasion—summer, winter, formal, streetwear, and more",
       badge: "AI Powered"
     },
     {
@@ -38,7 +38,7 @@ export default function LandingPage() {
     {
       icon: <Users className="h-8 w-8 text-teal-500" />,
       title: "Community Features",
-      description: "Connect with other fashion lovers, share collections, and get style inspiration",
+      description: "Connect with other fashion lovers, share collections, message sellers for additional details, plan meetups and get style inspiration",
       badge: "Social"
     }
   ]
@@ -91,11 +91,11 @@ export default function LandingPage() {
         {/* Hero Content */}
         <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            The Future of
-            <span className="text-teal-400 block">Sustainable Fashion</span>
+            The Marketplace for
+            <span className="text-teal-400 block">Endless Outfits</span>
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
-            Buy and sell pre-loved clothing with AI-powered virtual try-ons, 
+            Discover, buy and sell secondhand clothing with AI-powered virtual try-ons, 
             personalized recommendations, and real environmental impact tracking.
           </p>
           
@@ -181,7 +181,7 @@ export default function LandingPage() {
               <Leaf className="h-12 w-12 text-green-500 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-green-700 mb-2">Carbon Footprint</h3>
               <div className="text-4xl font-bold text-green-600 mb-2">{environmentalStats.co2Reduced}T</div>
-              <p className="text-green-600">CO2 emissions prevented this year</p>
+              <p className="text-green-600">CO2 emissions prevented</p>
             </Card>
 
             <Card className="text-center p-8 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
@@ -249,7 +249,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold mb-4">1. Browse & Discover</h3>
               <p className="text-muted-foreground">
-                Explore curated collections of pre-loved fashion from trusted sellers worldwide
+                Shop secondhand fashion from people around the world. Message sellers for more details about any item.
               </p>
             </div>
 
@@ -283,7 +283,7 @@ export default function LandingPage() {
             Ready to Transform Your Wardrobe?
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Join the sustainable fashion revolution. Start buying and selling pre-loved clothes today.
+            Join the sustainable fashion revolution. Start buying and selling secondhand clothes today.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -292,9 +292,6 @@ export default function LandingPage() {
                 Get Started Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-teal-600 px-8 py-4 text-lg" asChild>
-              <Link href="/auth/sign-in">Sign In</Link>
             </Button>
           </div>
         </div>
@@ -310,9 +307,9 @@ export default function LandingPage() {
             </div>
             
             <div className="flex items-center space-x-6 text-muted-foreground">
-              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-              <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy (WIP)</Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms (WIP)</Link>
+              <Link href="/contact" className="hover:text-foreground transition-colors">Contact (WIP)</Link>
             </div>
           </div>
           
