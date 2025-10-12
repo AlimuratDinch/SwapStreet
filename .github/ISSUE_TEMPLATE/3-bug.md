@@ -1,3 +1,12 @@
+---
+name: Bug
+about: Create a bug report
+title: ''
+labels: ''
+assignees: ''
+
+---
+
 | Name    | About | Priority | Risk |  
 | -------- | ------- | ------- | ------- |
 | Bug report | Create a report to help us improve    |1- higest; 5- lowest| low, medium, high
