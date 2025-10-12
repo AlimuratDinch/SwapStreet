@@ -1,14 +1,14 @@
 
 import { Sidebar, CardItem, Header } from "../BrowseElements";
 
-async function fetchClothingItems(searchParams: Promise<{ minPrice?: string; maxPrice?: string; categoryId?: string; condition?: string }>) {
+async function fetchClothingItems(searchParams: Promise<{ minPrice?: string; maxPrice?: string; categoryId?: string; conditions?: string }>) {
   try {
     const params = new URLSearchParams();
-    const resolvedParams = await searchParams; // Await the searchParams Promise
+    const resolvedParams = await searchParams;
     if (resolvedParams.minPrice) params.set("minPrice", resolvedParams.minPrice);
     if (resolvedParams.maxPrice) params.set("maxPrice", resolvedParams.maxPrice);
     if (resolvedParams.categoryId) params.set("categoryId", resolvedParams.categoryId);
-    if (resolvedParams.condition) params.set("condition", resolvedParams.condition);
+    if (resolvedParams.conditions) params.set("conditions", resolvedParams.conditions);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
     const url = `${apiUrl}/api/catalog/items${params.toString() ? `?${params.toString()}` : ""}`;
     const res = await fetch(url, {
@@ -25,7 +25,7 @@ async function fetchClothingItems(searchParams: Promise<{ minPrice?: string; max
   }
 }
 
-export default async function BrowsePage({ searchParams }: { searchParams: Promise<{ minPrice?: string; maxPrice?: string; categoryId?: string; condition?: string }> }) {
+export default async function BrowsePage({ searchParams }: { searchParams: Promise<{ minPrice?: string; maxPrice?: string; categoryId?: string; conditions?: string }> }) {
   const items = await fetchClothingItems(searchParams);
 
   return (
@@ -35,17 +35,18 @@ export default async function BrowsePage({ searchParams }: { searchParams: Promi
         <Sidebar />
         <main className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
           {items.length > 0 ? (
-            items.map((item: { id: number; title: string; description: string; imageUrl: string }) => (
+            items.map((item: { id: number; title: string; description: string; imageUrl: string; condition: string; price: number }) => (
               <CardItem
                 key={item.id}
                 title={item.title}
                 description={item.description}
                 imgSrc={item.imageUrl}
+                price={item.price}
               />
             ))
           ) : (
             <p className="col-span-full text-center text-gray-500">
-              No items available. Try adding a new listing!
+              No items available.
             </p>
           )}
         </main>

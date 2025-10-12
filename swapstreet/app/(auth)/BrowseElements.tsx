@@ -216,6 +216,14 @@ export function Sidebar() {
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    // Sync initial conditions from URL
+    const conditionsParam = searchParams.get("conditions");
+    if (conditionsParam) {
+      setConditions(conditionsParam.split(",").map((c) => c.trim()));
+    }
+  }, [searchParams]);
+
   const handleFilterChange = () => {
     const params = new URLSearchParams(searchParams);
     if (minPrice) params.set("minPrice", minPrice);
@@ -233,7 +241,6 @@ export function Sidebar() {
         ? prev.filter((c) => c !== condition)
         : [...prev, condition]
     );
-    handleFilterChange();
   };
 
   const clearFilters = () => {
@@ -302,7 +309,10 @@ export function Sidebar() {
               <input
                 type="checkbox"
                 checked={conditions.includes(condition)}
-                onChange={() => handleConditionToggle(condition)}
+                onChange={() => {
+                  handleConditionToggle(condition);
+                  handleFilterChange();
+                }}
               />
               <span>{condition}</span>
             </label>
@@ -321,7 +331,7 @@ export function Sidebar() {
 
 export function CardItem({ title, description, imgSrc }: CardItemProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden transition ease-in-out hover:scale-[1.03]">
       <div className="bg-gray-200 h-40 flex items-center justify-center">
         {imgSrc ? (
           <Image
