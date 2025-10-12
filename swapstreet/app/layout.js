@@ -2,12 +2,12 @@
 /* So whatever is in here will be on every page */
 /* You can add headers, footers, navigation bars, etc. here */
 
-import './globals.css'
+import "./globals.css";
 
 export const metadata = {
-  title: 'SwapStreet',
-  description: '***',
-}
+  title: "SwapStreet",
+  description: "***",
+};
 
 export default function RootLayout({ children }) {
   return (
@@ -16,5 +16,5 @@ export default function RootLayout({ children }) {
         {children} {/* Renders the content of each specific page */}
       </body>
     </html>
-  )
+  );
 }

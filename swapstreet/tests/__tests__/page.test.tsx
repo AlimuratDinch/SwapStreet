@@ -8,7 +8,8 @@ describe("Home Page", () => {
     render(<Home />);
     expect(
       screen.getByText(
-        (content, element) => element?.textContent === "The Marketplace forEndless Outfits",
+        (content, element) =>
+          element?.textContent === "The Marketplace forEndless Outfits",
       ),
     ).toBeInTheDocument();
   });
