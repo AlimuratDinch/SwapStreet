@@ -25,6 +25,15 @@ code {
 
 @layer base {
   :root {
+    /* Custom SwapStreet theme variables */
+    --primary-color: #059669; /* Teal-600 */
+    --primary-dark: #047857;  /* Teal-700 */
+    --bg-color: #f9fafb;     /* Gray-50 */
+    --text-color: #222;      /* Near-black */
+    --accent-color: #f59e42; /* Orange-400 */
+    --gradient-start: #5eea8d; /* Teal-300 */
+    --gradient-end: #c3d42d;   /* Teal-400 */
+
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;

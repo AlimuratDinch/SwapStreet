@@ -46,10 +46,10 @@ export default function LoginPage() {
                         justify-start md:justify-center rounded-2xl md:rounded-l-2xl md:rounded-r-none"
         >
           {/* Brand name in top-left corner */}
-          <h2 className="absolute top-4 left-6 text-2xl font-extrabold tracking-wide">
+          {/* <h2 className="absolute top-4 left-6 text-2xl font-extrabold tracking-wide">
             <span className="text-[var(--accent-color)]">Swap</span>
             <span className="text-[var(--primary-dark)] italic">Street!</span>
-          </h2>
+          </h2> */}
 
           {/* Login Heading */}
           <h1 className="mt-12 mb-8 text-center text-3xl font-bold text-[var(--text-color)]">
