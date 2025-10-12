@@ -23,13 +23,13 @@ code {
 
 @layer base {
   :root {
-    --primary-color: #059669; 
-    --primary-dark: #047857; 
-    --bg-color: #f9fafb; 
-    --text-color: #222; 
-    --accent-color: #f59e42; 
-    --gradient-start: #5eea8d; 
-    --gradient-end: #c3d42d; 
+    --primary-color: #059669;
+    --primary-dark: #047857;
+    --bg-color: #f9fafb;
+    --text-color: #222;
+    --accent-color: #f59e42;
+    --gradient-start: #5eea8d;
+    --gradient-end: #c3d42d;
 
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
