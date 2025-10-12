@@ -28,9 +28,6 @@ By combining convenience, personalization and eco-conscious values, the platform
 ```
 git clone https://github.com/AlimuratDinch/SwapStreet
 ```
-```
-cd SwapStreet
-```
 
 3- Build & Run with Docker
 - Create a `.env` file at the root level of the repository
