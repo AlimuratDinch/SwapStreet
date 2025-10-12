@@ -138,7 +138,7 @@ export default function RegistrationPage() {
           <PromptElement
             prompt="Already have an account?"
             linkText="Sign In"
-            linkHref="/sign-in"
+            linkHref="/auth/sign-in"
           />
         </div>
 

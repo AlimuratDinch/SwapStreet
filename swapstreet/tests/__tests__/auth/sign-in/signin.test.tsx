@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import LoginPage from "@/app/(auth)/sign-in/page";
+import LoginPage from "@/app/auth/sign-in/page";
 import "@testing-library/jest-dom";
 
 describe("LoginPage", () => {

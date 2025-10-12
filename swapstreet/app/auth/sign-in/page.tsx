@@ -90,7 +90,7 @@ export default function LoginPage() {
           <PromptElement
             prompt="Don't have an account?"
             linkText="Sign Up"
-            linkHref="/sign-up"
+            linkHref="/auth/sign-up"
           />
         </div>
 
