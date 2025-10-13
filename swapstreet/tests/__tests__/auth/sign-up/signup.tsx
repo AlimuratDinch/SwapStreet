@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import RegistrationPage from "@/app/(auth)/sign-up/page";
+import RegistrationPage from "@/app/auth/sign-up/page";
 import "@testing-library/jest-dom";
 
 // Mock router for client component
