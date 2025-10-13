@@ -1,3 +1,12 @@
+---
+name: Story
+about: Create an user story
+title: ''
+labels: ''
+assignees: ''
+
+---
+
 | Name    | Story Points | Priority | Risk |  
 | -------- | ------- | ------- | ------- |
 | Story | Number    |1- higest; 5- lowest| low, medium, high
