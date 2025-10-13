@@ -135,6 +135,13 @@ export default function LandingPage() {
             >
               <Link href="/signup">Start Shopping</Link>
             </Button>
+            <Button
+              size="lg"
+              className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-4 text-lg"
+              asChild
+            >
+              <Link href="/auth/browse">(TEMPORARY BROWSE)</Link>
+            </Button>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16">
