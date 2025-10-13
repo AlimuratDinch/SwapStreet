@@ -1,24 +1,48 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AuthInput } from "../AuthFormElements";
 import { ImageElement } from "../AuthFormElements";
 import { PromptElement } from "../AuthFormElements";
 
-export default function LoginPage() {
+export default function RegistrationPage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Logging in with:", { email, password });
+    setError("");
+
+    // Basic validation
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    try {
+      // Here you would typically make an API call to your backend
+      console.log("Signing up with:", { name, email, password });
+      // Add your API call here
+
+      // On success, send the user to seller onboarding to complete profile setup
+      router.push("/seller/onboarding");
+    } catch (err) {
+      setError("Failed to create account. Please try again.");
+    }
   };
 
   return (
-    <div
-      className="relative flex min-h-screen justify-center 
-                items-start bg-[var(--bg-color)] p-6 overflow-hidden"
-    >
+    <div className="relative flex min-h-screen justify-center items-start bg-[var(--bg-color)] p-6 overflow-hidden">
       {/* Background design: simple circles with hover grow */}
       {/* Top-left circle: primary-dark with slight orange tint */}
       <div
@@ -46,20 +70,34 @@ export default function LoginPage() {
                         justify-start md:justify-center rounded-2xl md:rounded-l-2xl md:rounded-r-none"
         >
           {/* Brand name in top-left corner */}
-          <h2 className="absolute top-4 left-6 text-2xl font-extrabold tracking-wide">
+          {/* <h2 className="absolute top-4 left-6 text-2xl font-extrabold tracking-wide">
             <span className="text-[var(--accent-color)]">Swap</span>
             <span className="text-[var(--primary-dark)] italic">Street!</span>
-          </h2>
+          </h2> */}
 
           {/* Login Heading */}
           <h1 className="mt-12 mb-8 text-center text-3xl font-bold text-[var(--text-color)]">
-            Login
+            Register
           </h1>
 
           <form
             onSubmit={handleSubmit}
             className="space-y-4 flex flex-col items-center"
           >
+            {error && (
+              <div className="w-4/5 text-red-500 text-sm text-center">
+                {error}
+              </div>
+            )}
+
+            <AuthInput
+              label="Name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+
             <AuthInput
               label="Email"
               type="email"
@@ -74,6 +112,16 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={8}
+            />
+
+            <AuthInput
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={8}
             />
 
             <button
@@ -82,15 +130,15 @@ export default function LoginPage() {
                          text-sm font-semibold text-white transition 
                          hover:bg-[var(--primary-dark)] hover:cursor-pointer"
             >
-              Sign In
+              Sign Up
             </button>
           </form>
 
           {/* Sign Up prompt */}
           <PromptElement
-            prompt="Don't have an account?"
-            linkText="Sign Up"
-            linkHref="/sign-up"
+            prompt="Already have an account?"
+            linkText="Sign In"
+            linkHref="/auth/sign-in"
           />
         </div>
 

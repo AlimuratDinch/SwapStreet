@@ -8,17 +8,16 @@ describe("Home Page", () => {
     render(<Home />);
     expect(
       screen.getByText(
-        (content, element) => element?.textContent === "Welcome to SwapStreet!",
+        (content, element) =>
+          element?.textContent === "The Marketplace forEndless Outfits",
       ),
     ).toBeInTheDocument();
   });
 
-  it("renders a login button with correct link", () => {
+  it("renders a login link with correct href", () => {
     render(<Home />);
-    const loginButton = screen.getByRole("button", { name: /login/i });
-    expect(loginButton).toBeInTheDocument();
-
-    const link = loginButton.closest("a");
-    expect(link).toHaveAttribute("href", "/sign-in");
+    const loginLink = screen.getByRole("link", { name: /login/i });
+    expect(loginLink).toBeInTheDocument();
+    expect(loginLink).toHaveAttribute("href", "/auth/sign-in");
   });
 });
