@@ -16,18 +16,7 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* Browse Button */}
-      <div className="absolute top-4 left-6">
-        <Link href="/browse">
-          <button
-            className="rounded-xl px-4 sm:px-5 py-2 font-semibold shadow-md transition 
-                       bg-[#018571] text-white 
-                       hover:bg-[#016c5d] cursor-pointer text-sm sm:text-base"
-          >
-            Browse
-          </button>
-        </Link>
-      </div>
+      
 
       {/* Title */}
       <h1
