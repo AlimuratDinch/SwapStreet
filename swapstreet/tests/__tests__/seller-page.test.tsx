@@ -8,10 +8,13 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Mock next/link to a basic anchor for Jest
-jest.mock("next/link", () => ({ __esModule: true, default: (props: any) => {
-  // eslint-disable-next-line jsx-a11y/anchor-has-content
-  return <a {...props} />;
-}}));
+jest.mock("next/link", () => ({
+  __esModule: true,
+  default: (props: any) => {
+    // eslint-disable-next-line jsx-a11y/anchor-has-content
+    return <a {...props} />;
+  },
+}));
 
 // Mock next/image to a simple img and strip non-HTML props (fill, priority, etc.)
 jest.mock("next/image", () => ({
@@ -31,7 +34,7 @@ jest.mock("next/image", () => ({
     } = props || {};
 
     // Derive string src if StaticImageData provided
-    const resolvedSrc = typeof src === "string" ? src : src?.src ?? "";
+    const resolvedSrc = typeof src === "string" ? src : (src?.src ?? "");
 
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={resolvedSrc} alt={alt} sizes={sizes} {...rest} />;
@@ -41,10 +44,12 @@ jest.mock("next/image", () => ({
 // Mock the seller page itself to avoid Suspense/use(params) complexity
 jest.mock("../../app/seller/[id]/page", () => ({
   __esModule: true,
-  default: () => <div>
-    <h2>Listings</h2>
-    <section>About</section>
-  </div>,
+  default: () => (
+    <div>
+      <h2>Listings</h2>
+      <section>About</section>
+    </div>
+  ),
 }));
 
 // Import after mocks so we get the mocked component

@@ -97,7 +97,6 @@ export default function SellerProfilePage({
     } catch (e) {
       console.error("Failed to read onboarding data", e);
     }
-
   }, [isOwner, search]);
 
   return (
