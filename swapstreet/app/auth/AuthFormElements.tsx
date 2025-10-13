@@ -2,7 +2,7 @@
 
 import { InputHTMLAttributes } from "react";
 import Image from "next/image";
-import clothImage from "../../app/images/clothes_login_page.png";
+import clothImage from "../../public/images/clothes_login_page.png";
 import Link from "next/link";
 
 interface AuthInputProps extends InputHTMLAttributes<HTMLInputElement> {
