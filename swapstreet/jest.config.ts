@@ -12,6 +12,7 @@ const customJestConfig = {
   collectCoverageFrom: [
     "app/**/*.{js,jsx,ts,tsx}",
     "!app/layout.tsx",
+    "!app/layout.js",
     "!**/node_modules/**",
     "!**/.next/**",
   ],
