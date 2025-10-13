@@ -87,7 +87,7 @@ Add a `.env` file with the following structure:
 *\# ================================*  
 *POSTGRES\_USER=postgres*  
 *POSTGRES\_PASSWORD=\*\*\*\*\*\*\*\**  
-*POSTGRES\_DB=swapstreet-db*
+*POSTGRES\_DB=swapstreet_db*
 
 *\# ================================*  
 *\# pgAdmin Configuration*  

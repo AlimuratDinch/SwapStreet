@@ -4,29 +4,34 @@ The database provider used for this project is PostgreSQL. It offers performance
 ## Folder structure:
 **.\scripts:** Contains `init.sql` and `seed.sql` which will create and populate the necessary tables for the application (docker runs them automatically).
 
-**.\\.env:** Contains the user postgres login information.
+**SwapStreet\\.env:** Contains the user postgres login information.
 <br>
-<span style="color:red">**Note:**</span> You need to create this file and write the login information yourself.
+<span style="color:red">**Note:**</span> You need to create this file at the root level and write the login information yourself (if not done already).
 ```
-# Database
-POSTGRES_USER=<your-username>
+# ================================
+# PostgreSQL Database Configuration
+# ================================
+POSTGRES_USER=<your-db-username>
 POSTGRES_PASSWORD=<your-db-password>
-POSTGRES_DB=swapstreet-db
+POSTGRES_DB=swapstreet_db
 
-# pgAdmin
+# ================================
+# pgAdmin Configuration
+# ================================
 PGADMIN_DEFAULT_EMAIL=<your@email.com>
 PGADMIN_DEFAULT_PASSWORD=<your-pgAdmin-password>
+
+# ================================
+# Backend connection string
+# ================================
+ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_db;Username=<your-db-username>;Password=<your-db-password>
 ```
 
-**.\compose.yaml:** Contains the required information for docker to build the postgres database and also the database manager pgAdmin.
-
-**.\gitignore:** Ensures ```.env``` is ignored by git.
-
 ## Setup instructions
-While being inside the directory ```.\database``` run:
+While being inside the root directory ```.\SwapStreet``` run:
 <br>
 
-`docker compose up -d`
+`docker compose up --build`
 <br>
 
 This will create the database container (you should see it appear in your docker desktop application) with both the database running as well as pgAdmin.
@@ -39,7 +44,7 @@ Now to setup pgAdmin:
 - Login with your pgAdmin email and password
   - **Email:** `<your@email.com>`
   - **Password:** `<your-pgAdmin-password>` 
-- Click `Add New Server` -> **Name:** `swapstreet-db`
+- Click `Add New Server` -> **Name:** `swapstreet-server`
 - Inside `Add New Server` go to `Connection` tab -> 
   - **Host name:** postgres
   - **Port:** 5432
@@ -56,6 +61,6 @@ Now you have a PostgreSQL database running and you can manage it through pgAdmin
 <br>
 ```
     docker compose down -v
-    docker compose up -d
+    docker compose up --build
 ```
 This will delete the database container with its data volumes and re-build the container.
