@@ -243,13 +243,6 @@ export default function SellerOnboardingPage() {
 
         <div className="flex items-center justify-end gap-3">
           <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Skip for now
-          </button>
-          <button
             type="submit"
             className="rounded-lg bg-[var(--primary-color)] px-4 py-2 text-sm font-medium text-white shadow hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
           >

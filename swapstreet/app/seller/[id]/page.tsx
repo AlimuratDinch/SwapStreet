@@ -2,7 +2,6 @@
 import { use, useEffect, useState } from "react";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import DefaultAvatar from "../../images/default-avatar-icon.jpg";
 import DefaultBanner from "../../images/default-seller-banner.png";
 
@@ -55,7 +54,6 @@ export default function SellerProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const search = useSearchParams();
   // Simulate auth-owned profile check. Set true to show owner perspective
   const isOwner = id === "me";
 
@@ -97,7 +95,7 @@ export default function SellerProfilePage({
     } catch (e) {
       console.error("Failed to read onboarding data", e);
     }
-  }, [isOwner, search]);
+  }, [isOwner]);
 
   return (
     <div className="min-h-screen bg-neutral-50">
