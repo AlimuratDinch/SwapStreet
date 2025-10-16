@@ -9,7 +9,7 @@ on:
 
 
 jobs:
-  deployability-test:
+  local_deployment_check:
     runs-on: ubuntu-latest
 
     env:
@@ -51,7 +51,7 @@ jobs:
 
     - name: Wait for services to stabilize
       run: |
-        echo "Waiting for containers to become healthy..."
+        echo "Waiting for containers to become healthy"
         sleep 30
         docker-compose ps
 
