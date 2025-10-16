@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export default functiOOOOOon LandingPage() {
+export default function LandingPage() {
   // Simulated data for environmental impact (REPLACE WITH REAL DATA FROM BACKEND)
   const environmentalStats = {
     clothesSaved: 245680,
