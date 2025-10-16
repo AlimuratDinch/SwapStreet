@@ -59,12 +59,28 @@ jobs:
       run: |
         unhealthy=$(docker ps --filter "health=unhealthy" --format "{{.Names}}")
         if [ -n "$unhealthy" ]; then
-          echo " Unhealthy containers detected: $unhealthy"
+          echo "Unhealthy containers detected: $unhealthy"
           docker logs $unhealthy
           exit 1
         else
-          echo "All containers are healthy."
+          echo "All containers report healthy."
         fi
+
+    - name: Verify backend can reach database
+      run: |
+        echo "Testing backend connectivity to database..."
+        # Try accessing backend endpoint
+        set -e
+        docker logs backend || true  # Show logs for debugging
+        sleep 5
+        status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 || echo "000")
+        if [ "$status" -ne 200 ]; then
+          echo "Backend did not respond with 200 OK (status=$status). Database connection likely failed."
+          echo "---- Backend logs ----"
+          docker logs backend
+          exit 1
+        fi
+        echo "Backend responded successfully (status=$status)"
 
     - name: Stop and clean up
       if: always()
