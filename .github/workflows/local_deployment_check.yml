@@ -1,0 +1,68 @@
+name: Check Docker Compose Deployability
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+
+jobs:
+  deployability-test:
+    runs-on: ubuntu-latest
+
+    env:
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      PGADMIN_DEFAULT_EMAIL: ${{ secrets.PGADMIN_DEFAULT_EMAIL }}
+      PGADMIN_DEFAULT_PASSWORD: ${{ secrets.PGADMIN_DEFAULT_PASSWORD }}
+      ConnectionStrings__DefaultConnection: ${{ secrets.ConnectionStrings__DefaultConnection }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Set up Docker Compose plugin
+      uses: docker/setup-compose-action@v3
+
+    - name: Create mock .env file from secrets
+      run: |
+        echo "POSTGRES_USER=${POSTGRES_USER}" > .env
+        echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
+        echo "POSTGRES_DB=${POSTGRES_DB}" >> .env
+        echo "PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}" >> .env
+        echo "PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}" >> .env
+        echo "ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}" >> .env
+        cat .env
+
+    - name: Build all Docker services
+      run: docker compose -f compose.yml build
+
+    - name: Start containers in detached mode
+      run: docker compose -f compose.yml up -d
+
+    - name: Wait for services to stabilize
+      run: |
+        echo "Waiting for containers to become healthy..."
+        sleep 30
+        docker compose ps
+
+    - name: Check health of running containers
+      run: |
+        unhealthy=$(docker ps --filter "health=unhealthy" --format "{{.Names}}")
+        if [ -n "$unhealthy" ]; then
+          echo "Unhealthy containers detected: $unhealthy"
+          docker logs $unhealthy
+          exit 1
+        else
+          echo "All containers are healthy."
+        fi
+
+    - name: Stop and clean up
+      if: always()
+      run: docker compose -f compose.yml down -v
