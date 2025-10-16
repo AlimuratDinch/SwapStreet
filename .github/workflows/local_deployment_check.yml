@@ -27,8 +27,11 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Set up Docker Compose plugin
-      uses: docker/setup-compose-action@v3
+    - name: Install Docker Compose (standalone)
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y docker-compose
+        docker-compose version
 
     - name: Create mock .env file from secrets
       run: |
@@ -41,22 +44,22 @@ jobs:
         cat .env
 
     - name: Build all Docker services
-      run: docker compose -f compose.yml build
+      run: docker-compose -f compose.yml build
 
     - name: Start containers in detached mode
-      run: docker compose -f compose.yml up -d
+      run: docker-compose -f compose.yml up -d
 
     - name: Wait for services to stabilize
       run: |
         echo "Waiting for containers to become healthy..."
         sleep 30
-        docker compose ps
+        docker-compose ps
 
     - name: Check health of running containers
       run: |
         unhealthy=$(docker ps --filter "health=unhealthy" --format "{{.Names}}")
         if [ -n "$unhealthy" ]; then
-          echo "Unhealthy containers detected: $unhealthy"
+          echo " Unhealthy containers detected: $unhealthy"
           docker logs $unhealthy
           exit 1
         else
@@ -65,4 +68,4 @@ jobs:
 
     - name: Stop and clean up
       if: always()
-      run: docker compose -f compose.yml down -v
+      run: docker-compose -f compose.yml down -v
