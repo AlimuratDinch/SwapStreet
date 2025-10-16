@@ -80,7 +80,7 @@ jobs:
           docker logs backend
           exit 1
         fi
-        echo "Backend responded successfully (status=$status)"
+        echo "Backend responded successfully yeeey (status=$status)"
 
     - name: Stop and clean up
       if: always()
