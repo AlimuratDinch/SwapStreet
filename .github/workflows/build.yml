@@ -111,21 +111,26 @@ jobs:
           exit 1
         }
 
-        # Show the first 50 lines of the file for debugging
-        Write-Host "=== First lines of coverage.xml ==="
-        Get-Content "coverage.xml" -Head 50
-        Write-Host "==================================="
+        # Load XML
+        [xml]$cov = Get-Content "coverage.xml"
 
-        # Try to find any tag with 'coverage' in it
-        $coverageLines = Select-String -Path "coverage.xml" -Pattern "coverage"
+        # Get the 'module' node (assumes one main module)
+        $module = $cov.results.modules.module
 
-        if (-not $coverageLines) {
-          Write-Warning "No 'coverage' tags found in coverage.xml. Check above for structure."
-          exit 0
+        if (-not $module) {
+          Write-Error "No <module> found in coverage.xml"
+          exit 1
         }
 
-        Write-Host "Found possible coverage tags:"
-        $coverageLines | ForEach-Object { Write-Host $_.Line }
+        # Extract the line_coverage attribute
+        $lineCoverage = [double]$module.line_coverage
+        Write-Host "➡ Backend test coverage: $lineCoverage%"
+
+        # Fail if below threshold
+        if ($lineCoverage -lt 80) {
+          Write-Error "Coverage below 80% ($lineCoverage%)"
+          exit 1
+        }
 
     - name: End SonarQube analysis
       env:
