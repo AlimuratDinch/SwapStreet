@@ -74,12 +74,23 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
 
     // Migrate the main application database
-    var appDb = services.GetRequiredService<AppDbContext>();
-    appDb.Database.Migrate();
+    try
+    {
+        var appDb = services.GetRequiredService<AppDbContext>();
+        appDb.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database migration failed: {ex.Message}");
+    }
 
     // Migrate the auth database
-    var authDb = services.GetRequiredService<AuthDbContext>();
-    authDb.Database.Migrate();
+    try {
+        var authDb = services.GetRequiredService<AuthDbContext>();
+        authDb.Database.Migrate();
+    } catch (Exception ex) {
+        Console.WriteLine($"Auth database migration failed: {ex.Message}");
+    }
 }
 
 // Enable Swagger
