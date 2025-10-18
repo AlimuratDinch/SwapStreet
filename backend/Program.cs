@@ -2,12 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
 using backend.Contracts;
 using backend.Services;
-using dotenv.net;
+// using dotenv.net;
 
-// Load .env file
-DotEnv.Load(new DotEnvOptions(
-    envFilePaths: new[] { Path.Combine(Directory.GetCurrentDirectory(), ".env") }
-));
+// // Load .env file
+// DotEnv.Load(new DotEnvOptions(
+//     envFilePaths: new[] { Path.Combine(Directory.GetCurrentDirectory(), ".env") }
+// ));
 
 var builder = WebApplication.CreateBuilder(args);
 
