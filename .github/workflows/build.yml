@@ -100,12 +100,15 @@ jobs:
 
     - name: Run tests and collect coverage with threshold
       shell: pwsh
-      working-directory: backend
+      working-directory: backend/backend.Tests
       run: |
-        # Collect coverage while running tests
-        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml"
+        # Ensure dotnet-coverage is available
+        dotnet tool install --global dotnet-coverage
 
-        # Verify that coverage file exists and is not empty
+        # Run tests on the test project and collect coverage
+        dotnet-coverage collect "dotnet test --no-build --logger 'trx;LogFileName=test_results.trx'" -f xml -o "coverage.xml"
+
+        # Verify that coverage file exists and is valid
         if (!(Test-Path "coverage.xml")) {
           Write-Error "Coverage file not found!"
           exit 1
@@ -128,12 +131,15 @@ jobs:
         }
 
         $coveragePercent = [math]::Round(($totalCovered / $totalPoints) * 100, 2)
-        Write-Host "➡ Backend test coverage: $coveragePercent%"
+        Write-Host "Backend test coverage: $coveragePercent%"
 
         if ($coveragePercent -lt 80) {
           Write-Error "Coverage below 80% ($coveragePercent%)"
           exit 1
         }
+
+        # Copy coverage file to main backend folder for SonarQube
+        Copy-Item "coverage.xml" "..\coverage.xml" -Force
 
     - name: End SonarQube analysis
       env:
