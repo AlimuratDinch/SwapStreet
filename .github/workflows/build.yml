@@ -102,15 +102,28 @@ jobs:
       shell: pwsh
       working-directory: backend
       run: |
-        dotnet-coverage collect "dotnet test --logger 'trx;LogFileName=test_results.trx'" -f xml -o "coverage.xml"
+        # Collect coverage while running tests
+        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml"
 
-        # Parse total line coverage from XML
+        # Verify that coverage file exists and is not empty
+        if (!(Test-Path "coverage.xml")) {
+          Write-Error "Coverage file not found!"
+          exit 1
+        }
+
         [xml]$cov = Get-Content "coverage.xml"
-        $totalCovered = ($cov.CoverageSession.Modules.Module.Methods.Method | Measure-Object -Property sequencePointsCovered -Sum).Sum
-        $totalPoints = ($cov.CoverageSession.Modules.Module.Methods.Method | Measure-Object -Property sequencePoints -Sum).Sum
+        $methods = $cov.SelectNodes("//Method")
+
+        if ($methods.Count -eq 0) {
+          Write-Error "No coverage data available. Tests may not have executed correctly."
+          exit 1
+        }
+
+        $totalCovered = ($methods | Measure-Object -Property sequencePointsCovered -Sum).Sum
+        $totalPoints  = ($methods | Measure-Object -Property sequencePoints -Sum).Sum
 
         if ($totalPoints -eq 0) {
-          Write-Error "No coverage data found."
+          Write-Error "No sequence points found in coverage.xml."
           exit 1
         }
 
