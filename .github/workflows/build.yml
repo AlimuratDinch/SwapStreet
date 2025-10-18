@@ -99,12 +99,28 @@ jobs:
       run: dotnet build --no-incremental
 
     - name: Run tests and collect coverage with threshold
-      shell: powershell
+      shell: pwsh
       working-directory: backend
       run: |
-        dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
-        $coverage = Select-String -Path coverage.xml -Pattern "<Linecoverage>(\d+)" | ForEach-Object { [int]$_.Matches.Groups[1].Value }
-        if ($coverage -lt 80) { Write-Error "Coverage below 80% ($coverage%)" }
+        dotnet-coverage collect "dotnet test --logger 'trx;LogFileName=test_results.trx'" -f xml -o "coverage.xml"
+
+        # Parse total line coverage from XML
+        [xml]$cov = Get-Content "coverage.xml"
+        $totalCovered = ($cov.CoverageSession.Modules.Module.Methods.Method | Measure-Object -Property sequencePointsCovered -Sum).Sum
+        $totalPoints = ($cov.CoverageSession.Modules.Module.Methods.Method | Measure-Object -Property sequencePoints -Sum).Sum
+
+        if ($totalPoints -eq 0) {
+          Write-Error "No coverage data found."
+          exit 1
+        }
+
+        $coveragePercent = [math]::Round(($totalCovered / $totalPoints) * 100, 2)
+        Write-Host "➡ Backend test coverage: $coveragePercent%"
+
+        if ($coveragePercent -lt 80) {
+          Write-Error "Coverage below 80% ($coveragePercent%)"
+          exit 1
+        }
 
     - name: End SonarQube analysis
       env:
