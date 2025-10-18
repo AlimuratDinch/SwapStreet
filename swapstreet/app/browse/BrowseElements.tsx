@@ -189,7 +189,9 @@ export function SearchBar() {
 }
 
 export function Sidebar() {
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
+    [],
+  );
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [conditions, setConditions] = useState<string[]>([]);
@@ -199,10 +201,11 @@ export function Sidebar() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
         const res = await fetch(`${apiUrl}/api/catalog/categories`, {
           cache: "no-store",
-          credentials: "include"
+          credentials: "include",
         });
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -239,7 +242,7 @@ export function Sidebar() {
     setConditions((prev) =>
       prev.includes(condition)
         ? prev.filter((c) => c !== condition)
-        : [...prev, condition]
+        : [...prev, condition],
     );
   };
 
@@ -365,4 +368,3 @@ interface CardItemProps {
   description: string;
   imgSrc?: string;
 }
-
