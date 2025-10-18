@@ -1,5 +1,5 @@
 
-import { Sidebar, CardItem, Header } from "../BrowseElements";
+import { Sidebar, CardItem, Header } from "./BrowseElements";
 
 async function fetchClothingItems(searchParams: Promise<{ minPrice?: string; maxPrice?: string; categoryId?: string; conditions?: string }>) {
   try {
@@ -9,7 +9,7 @@ async function fetchClothingItems(searchParams: Promise<{ minPrice?: string; max
     if (resolvedParams.maxPrice) params.set("maxPrice", resolvedParams.maxPrice);
     if (resolvedParams.categoryId) params.set("categoryId", resolvedParams.categoryId);
     if (resolvedParams.conditions) params.set("conditions", resolvedParams.conditions);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://backend:8080";
     const url = `${apiUrl}/api/catalog/items${params.toString() ? `?${params.toString()}` : ""}`;
     const res = await fetch(url, {
       cache: "no-store",
