@@ -24,30 +24,79 @@ describe("SellerOnboardingPage", () => {
     jest.clearAllMocks();
   });
 
+  it("shows error if city is missing", async () => {
+    render(<SellerOnboardingPage />);
+    const nameInput = screen.getByPlaceholderText(/what should we call you/i);
+    fireEvent.change(nameInput, { target: { value: "Seller Name" } });
+    const submitBtn = screen.getByRole("button", {
+      name: /save and continue/i,
+    });
+    const form = submitBtn.closest("form");
+    fireEvent.submit(form!);
+    const err = await screen.findByText(/please enter your city/i);
+    expect(err).toBeInTheDocument();
+  });
+
+  it("shows error if province is not selected", async () => {
+    render(<SellerOnboardingPage />);
+    const nameInput = screen.getByPlaceholderText(/what should we call you/i);
+    const cityInput = screen.getByPlaceholderText(/^city$/i);
+    fireEvent.change(nameInput, { target: { value: "Seller Name" } });
+    fireEvent.change(cityInput, { target: { value: "Toronto" } });
+    const submitBtn = screen.getByRole("button", {
+      name: /save and continue/i,
+    });
+    const form = submitBtn.closest("form");
+    fireEvent.submit(form!);
+    const err = await screen.findByText(/please select a province/i);
+    expect(err).toBeInTheDocument();
+  });
+
+  it("shows error when postal code is invalid format", async () => {
+    render(<SellerOnboardingPage />);
+    const nameInput = screen.getByPlaceholderText(/what should we call you/i);
+    const cityInput = screen.getByPlaceholderText(/^city$/i);
+    const provinceSelect = document.querySelector("select");
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+
+    fireEvent.change(nameInput, { target: { value: "Seller Name" } });
+    fireEvent.change(cityInput, { target: { value: "Toronto" } });
+    fireEvent.change(provinceSelect!, { target: { value: "ON" } });
+    fireEvent.change(postalInput, { target: { value: "INVALID" } });
+
+    const submitBtn = screen.getByRole("button", {
+      name: /save and continue/i,
+    });
+    const form = submitBtn.closest("form");
+    fireEvent.submit(form!);
+
+    const err = await screen.findByText(/valid canadian postal code/i);
+    expect(err).toBeInTheDocument();
+  });
+
   it("renders the onboarding heading and form fields", () => {
     render(<SellerOnboardingPage />);
     expect(screen.getByText(/set up your seller profile/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/alex johnson/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/city, country/i)).toBeInTheDocument();
+    // Updated placeholders and fields
     expect(
-      screen.getByPlaceholderText(/share your style/i),
+      screen.getByPlaceholderText(/what should we call you/i),
     ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/^city$/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/a1a 1a1/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/brag a little!/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /save and continue/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /skip for now/i }),
     ).toBeInTheDocument();
   });
 
   it("shows error if display name is missing", async () => {
     render(<SellerOnboardingPage />);
-
-    const nameInput = screen.getByPlaceholderText(/alex johnson/i);
-    nameInput.removeAttribute("required");
-
-    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-
+    // Submit the form directly to bypass native required validation in JSDOM
+    const submitBtn = screen.getByRole("button", {
+      name: /save and continue/i,
+    });
+    const form = submitBtn.closest("form");
+    fireEvent.submit(form!);
     const err = await screen.findByText(/please enter a display name/i);
     expect(err).toBeInTheDocument();
   });
@@ -55,13 +104,16 @@ describe("SellerOnboardingPage", () => {
   it("submits the form with valid data", async () => {
     render(<SellerOnboardingPage />);
 
-    const nameInput = screen.getByPlaceholderText(/alex johnson/i);
-    const locationInput = screen.getByPlaceholderText(/city, country/i);
-    const bioInput = screen.getByPlaceholderText(/share your style/i);
+    const nameInput = screen.getByPlaceholderText(/what should we call you/i);
+    const cityInput = screen.getByPlaceholderText(/^city$/i);
+    const provinceSelect = document.querySelector("select");
+    const bioInput = screen.getByPlaceholderText(/brag a little!/i);
 
     fireEvent.change(nameInput, { target: { value: "Seller Name" } });
-    fireEvent.change(locationInput, { target: { value: "City, Country" } });
+    fireEvent.change(cityInput, { target: { value: "Toronto" } });
     fireEvent.change(bioInput, { target: { value: "This is my bio." } });
+    // Select a province
+    fireEvent.change(provinceSelect!, { target: { value: "ON" } });
 
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
 
@@ -69,15 +121,8 @@ describe("SellerOnboardingPage", () => {
       expect(
         screen.queryByText(/please enter a display name/i),
       ).not.toBeInTheDocument();
-      expect(mockPush).toHaveBeenCalledWith("/");
+      expect(mockPush).toHaveBeenCalledWith("/seller/me?init=1");
     });
-  });
-
-  it("navigates home when clicking 'Skip for now'", () => {
-    render(<SellerOnboardingPage />);
-    const skipButton = screen.getByRole("button", { name: /skip for now/i });
-    fireEvent.click(skipButton);
-    expect(mockPush).toHaveBeenCalledWith("/");
   });
 
   it("shows error if avatar file is not an image", () => {
@@ -110,25 +155,8 @@ describe("SellerOnboardingPage", () => {
     const file = new File(["bad"], "banner.txt", { type: "text/plain" });
     fireEvent.change(bannerInput!, { target: { files: [file] } });
     expect(
-      screen.getByText(
-        (content, element) =>
-          element?.textContent === "Set up your seller profile",
-      ),
+      screen.getByText(/banner must be an image file/i),
     ).toBeInTheDocument();
-  });
-
-  it("shows banner preview when a valid image is selected", async () => {
-    render(<SellerOnboardingPage />);
-    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
-    const imageFile = new File(["123"], "banner.png", { type: "image/png" });
-
-    fireEvent.change(bannerInput!, { target: { files: [imageFile] } });
-
-    await waitFor(() => {
-      const img = screen.getByAltText(/banner preview/i);
-      expect(img).toBeInTheDocument();
-      expect(img).toHaveAttribute("src", "blob:mock-url");
-    });
   });
 
   it("shows banner preview when a valid image is selected", async () => {
