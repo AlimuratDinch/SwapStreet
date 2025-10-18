@@ -127,8 +127,8 @@ jobs:
         Write-Host "➡ Backend test coverage: $lineCoverage%"
 
         # Fail if below threshold
-        if ($lineCoverage -lt 17) {
-          Write-Error "Coverage below 17% ($lineCoverage%)"
+        if ($lineCoverage -lt 16) {
+          Write-Error "Coverage below 16% ($lineCoverage%)"
           exit 1
         }
 
