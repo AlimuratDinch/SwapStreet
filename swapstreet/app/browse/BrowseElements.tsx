@@ -28,23 +28,23 @@ export function Header() {
                   {[
                     {
                       title: "Tops",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                     {
                       title: "Bottoms",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                     {
                       title: "Accessories",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                     {
                       title: "Portables",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                     {
                       title: "Sale",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                   ].map((item) => (
                     <a key={item.title} href="#" className="block group/item">
@@ -75,23 +75,23 @@ export function Header() {
                   {[
                     {
                       title: "Tops",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                     {
                       title: "Bottoms",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                     {
                       title: "Accessories",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                     {
                       title: "Portables",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                     {
                       title: "Sale",
-                      img: "/images/dummy-item.jpg",
+                      img: "/images/clothes_login_page.png",
                     },
                   ].map((item) => (
                     <a key={item.title} href="#" className="block group/item">
