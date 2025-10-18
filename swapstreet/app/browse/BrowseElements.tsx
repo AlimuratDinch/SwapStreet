@@ -117,7 +117,7 @@ export function Header() {
         <ul className="flex items-center justify-center font-semibold space-x-2">
           <li>
             <a
-              href="#"
+              href="..\auth\sign-in"
               className="rounded-full px-3 py-2 font-semibold bg-white bg-opacity-10 flex items-center group"
             >
               <span className="mr-2">Log in</span>
@@ -144,7 +144,7 @@ export function Header() {
           </li>
           <li>
             <a
-              href="#"
+              href="..\auth\sign-up"
               className="rounded-full px-3 py-2 font-semibold bg-white bg-opacity-10 flex items-center group"
             >
               <span className="mr-2">Sign up</span>
