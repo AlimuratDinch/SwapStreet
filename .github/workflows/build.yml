@@ -100,46 +100,25 @@ jobs:
 
     - name: Run tests and collect coverage with threshold
       shell: pwsh
-      working-directory: backend/backend.Tests
+      working-directory: backend
       run: |
-        # Ensure dotnet-coverage is available
-        dotnet tool install --global dotnet-coverage
+        # Run tests and collect coverage in XML format
+        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml"
 
-        # Run tests on the test project and collect coverage
-        dotnet-coverage collect "dotnet test --no-build --logger 'trx;LogFileName=test_results.trx'" -f xml -o "coverage.xml"
+        # Display overall line coverage percentage from XML
+        $lineCoverage = Select-String -Path "coverage.xml" -Pattern "<Linecoverage>(\d+)" | ForEach-Object { [int]$_.Matches.Groups[1].Value }
 
-        # Verify that coverage file exists and is valid
-        if (!(Test-Path "coverage.xml")) {
-          Write-Error "Coverage file not found!"
+        if (-not $lineCoverage) {
+          Write-Error "No coverage percentage found in coverage.xml"
           exit 1
         }
 
-        [xml]$cov = Get-Content "coverage.xml"
-        $methods = $cov.SelectNodes("//Method")
+        Write-Host "Backend test coverage: $lineCoverage%"
 
-        if ($methods.Count -eq 0) {
-          Write-Error "No coverage data available. Tests may not have executed correctly."
+        if ($lineCoverage -lt 80) {
+          Write-Error "Coverage below 80% ($lineCoverage%)"
           exit 1
         }
-
-        $totalCovered = ($methods | Measure-Object -Property sequencePointsCovered -Sum).Sum
-        $totalPoints  = ($methods | Measure-Object -Property sequencePoints -Sum).Sum
-
-        if ($totalPoints -eq 0) {
-          Write-Error "No sequence points found in coverage.xml."
-          exit 1
-        }
-
-        $coveragePercent = [math]::Round(($totalCovered / $totalPoints) * 100, 2)
-        Write-Host "Backend test coverage: $coveragePercent%"
-
-        if ($coveragePercent -lt 80) {
-          Write-Error "Coverage below 80% ($coveragePercent%)"
-          exit 1
-        }
-
-        # Copy coverage file to main backend folder for SonarQube
-        Copy-Item "coverage.xml" "..\coverage.xml" -Force
 
     - name: End SonarQube analysis
       env:
