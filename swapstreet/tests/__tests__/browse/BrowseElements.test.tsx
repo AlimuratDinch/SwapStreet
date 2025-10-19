@@ -2,8 +2,19 @@
  * @jest-environment jsdom
  */
 
-import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { Header, SearchBar, Sidebar, CardItem } from "@/app/browse/BrowseElements";
+import {
+  act,
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
+import {
+  Header,
+  SearchBar,
+  Sidebar,
+  CardItem,
+} from "@/app/browse/BrowseElements";
 import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 
@@ -52,7 +63,10 @@ describe("Sidebar", () => {
   it("fetches and renders categories", async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => [{ id: 1, name: "Shoes" }, { id: 2, name: "Hats" }],
+      json: async () => [
+        { id: 1, name: "Shoes" },
+        { id: 2, name: "Hats" },
+      ],
     });
 
     await act(async () => {
@@ -66,7 +80,10 @@ describe("Sidebar", () => {
   });
 
   it("sets min and max price", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => [] });
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
 
     await act(async () => {
       render(<Sidebar />);
@@ -82,7 +99,10 @@ describe("Sidebar", () => {
   });
 
   it("toggles condition filters", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => [] });
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
 
     await act(async () => {
       render(<Sidebar />);
@@ -146,7 +166,9 @@ describe("Sidebar", () => {
 // ---------------- CardItem ----------------
 describe("CardItem", () => {
   it("renders with image", () => {
-    render(<CardItem title="T-Shirt" description="Blue cotton" imgSrc="/test.jpg" />);
+    render(
+      <CardItem title="T-Shirt" description="Blue cotton" imgSrc="/test.jpg" />,
+    );
     expect(screen.getByText("T-Shirt")).toBeInTheDocument();
     expect(screen.getByText("Blue cotton")).toBeInTheDocument();
     expect(screen.getByAltText("T-Shirt")).toBeInTheDocument();

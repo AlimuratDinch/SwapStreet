@@ -57,7 +57,7 @@ describe("fetchClothingItems", () => {
       {
         cache: "no-store",
         credentials: "include",
-      }
+      },
     );
     expect(result).toEqual(mockItems);
   });
@@ -85,7 +85,7 @@ describe("fetchClothingItems", () => {
         maxPrice: "100",
         categoryId: "2",
         conditions: "Like New,New",
-      })
+      }),
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
@@ -93,7 +93,7 @@ describe("fetchClothingItems", () => {
       {
         cache: "no-store",
         credentials: "include",
-      }
+      },
     );
     expect(result).toEqual(mockItems);
   });
@@ -110,7 +110,7 @@ describe("fetchClothingItems", () => {
       Promise.resolve({
         minPrice: "20",
         categoryId: "3",
-      })
+      }),
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
@@ -118,7 +118,7 @@ describe("fetchClothingItems", () => {
       {
         cache: "no-store",
         credentials: "include",
-      }
+      },
     );
     expect(result).toEqual(mockItems);
   });
@@ -135,14 +135,14 @@ describe("fetchClothingItems", () => {
     expect(result).toEqual([]);
     expect(consoleSpy).toHaveBeenCalledWith(
       "Failed to fetch clothing items:",
-      expect.any(Error)
+      expect.any(Error),
     );
     consoleSpy.mockRestore();
   });
 
   it("should return empty array on network error", async () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(
-      new Error("Network error")
+      new Error("Network error"),
     );
 
     const consoleSpy = jest.spyOn(console, "error").mockImplementation();
@@ -151,7 +151,7 @@ describe("fetchClothingItems", () => {
     expect(result).toEqual([]);
     expect(consoleSpy).toHaveBeenCalledWith(
       "Failed to fetch clothing items:",
-      expect.any(Error)
+      expect.any(Error),
     );
     consoleSpy.mockRestore();
   });
@@ -169,7 +169,7 @@ describe("fetchClothingItems", () => {
 
     expect(global.fetch).toHaveBeenCalledWith(
       "http://custom-api:3000/api/catalog/items",
-      expect.any(Object)
+      expect.any(Object),
     );
 
     process.env.NEXT_PUBLIC_API_URL = originalEnv;
@@ -188,7 +188,7 @@ describe("BrowsePage", () => {
     });
 
     const { container } = render(
-      await BrowsePage({ searchParams: Promise.resolve({}) })
+      await BrowsePage({ searchParams: Promise.resolve({}) }),
     );
 
     expect(screen.getByTestId("header")).toBeInTheDocument();
@@ -203,7 +203,7 @@ describe("BrowsePage", () => {
     });
 
     const { container } = render(
-      await BrowsePage({ searchParams: Promise.resolve({}) })
+      await BrowsePage({ searchParams: Promise.resolve({}) }),
     );
 
     const addButton = container.querySelector('a[href="/add"]');
@@ -297,7 +297,7 @@ describe("BrowsePage", () => {
     expect(screen.getByText("50")).toBeInTheDocument();
     expect(screen.getByAltText("Test Item")).toHaveAttribute(
       "src",
-      "/test.jpg"
+      "/test.jpg",
     );
   });
 
@@ -331,7 +331,7 @@ describe("BrowsePage", () => {
     });
 
     const { container } = render(
-      await BrowsePage({ searchParams: Promise.resolve({}) })
+      await BrowsePage({ searchParams: Promise.resolve({}) }),
     );
 
     const mainContainer = container.querySelector(".flex.flex-col.h-screen");
@@ -343,7 +343,7 @@ describe("BrowsePage", () => {
       "flex-1",
       "overflow-y-auto",
       "p-6",
-      "grid"
+      "grid",
     );
   });
 });
