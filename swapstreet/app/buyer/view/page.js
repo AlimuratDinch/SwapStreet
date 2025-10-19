@@ -78,7 +78,7 @@ class ImageView extends React.Component {
             icon={<ChevronLeft/>} 
             callback={this.left}
           />
-          <div className="relative w-full h-full">
+          <div className="relative w-full m-4">
             {/*Assume that the image is valid*/}
             <img
               src={this.urlList[this.state.index]}
