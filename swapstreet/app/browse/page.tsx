@@ -1,6 +1,8 @@
+"use client";
+
 import { Sidebar, CardItem, Header } from "./BrowseElements";
 
-async function fetchClothingItems(
+export async function fetchClothingItems(
   searchParams: Promise<{
     minPrice?: string;
     maxPrice?: string;

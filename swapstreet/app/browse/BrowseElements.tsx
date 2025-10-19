@@ -243,7 +243,6 @@ export function Sidebar() {
     router.push(query ? `/browse?${query}` : "/browse");
   }, [categoryId, minPrice, maxPrice, conditions, router]);
 
-
   const handleConditionToggle = (condition: string) => {
     setConditions((prev) =>
       prev.includes(condition)
