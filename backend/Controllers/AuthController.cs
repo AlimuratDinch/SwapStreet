@@ -4,6 +4,8 @@ using backend.Services.Auth;
 using backend.DTOs.Auth;
 using System.Threading.Tasks;
 using backend.Contracts.Auth;
+using System.ComponentModel.DataAnnotations;
+using backend.Models.Authentication;
 
 namespace backend.Controllers
 {
@@ -30,10 +32,51 @@ namespace backend.Controllers
 
         // POST api/auth/signin
         [HttpPost("signin")]
-        public IActionResult SignIn()
+        public async Task<IActionResult> SignIn([FromBody] SignInDto signInDto)
         {
-            // TODO: implement signin logic
-            return Ok();
+            // 1. Checks if required fields are present and valid
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // 2. Attempts to find user by email or username
+            var (email, password) = signInDto;
+
+            bool IsValidEmail = new EmailAddressAttribute().IsValid(email);
+            User? user;
+
+            if (IsValidEmail)
+            {
+                user = await _userService.GetUserByEmailAsync(email);
+
+            }
+            else
+            {
+                user = await _userService.GetUserByUsernameAsync(email);
+            }
+
+            // 3. If user not found, return error
+
+            if (user == null)
+            {
+                return BadRequest(new { Error = "Invalid email or password." });
+            }
+
+            // 4. Verify password
+
+            var result = await _userService.LoginWithPasswordAsync(user, password);
+
+            if (result == null)
+            {
+                return BadRequest(new { Error = "Invalid email or password." });
+            }
+
+            // 5. Generate JWT token
+            var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
+            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
+
+            return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken });
         }
 
         // POST api/auth/refresh
