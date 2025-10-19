@@ -195,8 +195,14 @@ export function Sidebar() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [conditions, setConditions] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const cat = searchParams.get("categoryId");
+    if (cat) setCategoryId(cat);
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -227,16 +233,16 @@ export function Sidebar() {
     }
   }, [searchParams]);
 
-  const handleFilterChange = () => {
-    const params = new URLSearchParams(searchParams);
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (categoryId) params.set("categoryId", categoryId);
     if (minPrice) params.set("minPrice", minPrice);
-    else params.delete("minPrice");
     if (maxPrice) params.set("maxPrice", maxPrice);
-    else params.delete("maxPrice");
     if (conditions.length > 0) params.set("conditions", conditions.join(","));
-    else params.delete("conditions");
-    router.push(`/browse?${params.toString()}`);
-  };
+    const query = params.toString();
+    router.push(query ? `/browse?${query}` : "/browse");
+  }, [categoryId, minPrice, maxPrice, conditions, router]);
+
 
   const handleConditionToggle = (condition: string) => {
     setConditions((prev) =>
@@ -250,6 +256,7 @@ export function Sidebar() {
     setMinPrice("");
     setMaxPrice("");
     setConditions([]);
+    setCategoryId(null);
     router.push("/browse");
   };
 
@@ -267,7 +274,6 @@ export function Sidebar() {
               value={minPrice}
               onChange={(e) => {
                 setMinPrice(e.target.value);
-                handleFilterChange();
               }}
               className="border p-2 w-full"
             />
@@ -277,7 +283,6 @@ export function Sidebar() {
               value={maxPrice}
               onChange={(e) => {
                 setMaxPrice(e.target.value);
-                handleFilterChange();
               }}
               className="border p-2 w-full"
             />
@@ -290,12 +295,10 @@ export function Sidebar() {
               <button
                 key={category.id}
                 onClick={() => {
-                  const params = new URLSearchParams(searchParams);
-                  params.set("categoryId", category.id.toString());
-                  router.push(`/browse?${params.toString()}`);
+                  setCategoryId(category.id.toString());
                 }}
                 className={`rounded p-2 text-xs hover:bg-gray-400 ${
-                  searchParams.get("categoryId") === category.id.toString()
+                  categoryId === category.id.toString()
                     ? "bg-blue-600 text-white"
                     : "bg-gray-300"
                 }`}
@@ -314,7 +317,6 @@ export function Sidebar() {
                 checked={conditions.includes(condition)}
                 onChange={() => {
                   handleConditionToggle(condition);
-                  handleFilterChange();
                 }}
               />
               <span>{condition}</span>
