@@ -6,5 +6,5 @@ public class Category
     public string Name { get; set; } = "";
 
     // Navigation property: one category has many items
-    public ICollection<Item> Items { get; set; } = new List<Item>();
+    public List<Item> Items { get; set; } = new();
 }
