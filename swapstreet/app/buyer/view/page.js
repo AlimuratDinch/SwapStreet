@@ -1,5 +1,6 @@
 "use client";
 
+import axios from 'axios';
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -99,6 +100,14 @@ class ImageView extends React.Component {
 }
 
 export default function View() {
+  axios.get("http://localhost:8080/api/catalog/items")
+    .then(res => {
+      console.log(res);
+    })
+    .catch(error => {
+      console.log('error:', error);
+    });
+  
   return <div className="h-screen w-screen">
     <div className="flex flex-col h-full w-full">
       {testNavBar}

@@ -41,6 +41,10 @@ docker-compose.override.yml
 *.swp
 *.bak
 
+# App Settings
+# Important to ignore because `DefaultConnection` may contain sensitive data
+appsettings.json
+
 # Environment Variables
 .env
 TestResults/
