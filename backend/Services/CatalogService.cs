@@ -62,7 +62,6 @@ public class CatalogService : ICatalogService
     {
         return _db.Items.Include(i => i.Category).ToList();
     }
-
     public Item? GetItemById(int id)
     {
         return _db.Items.Include(i => i.Category).FirstOrDefault(i => i.Id == id);
