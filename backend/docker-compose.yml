@@ -1,0 +1,8 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      USE_INMEMORY_DB: "true"
+      ASPNETCORE_ENVIRONMENT: "Development"
