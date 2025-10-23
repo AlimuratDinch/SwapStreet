@@ -15,19 +15,75 @@ namespace backend.Controllers
     {
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
+        private readonly IConfiguration _config;
+        private readonly int _accessTokenExpirationMinutes;
+        private readonly int _refreshTokenExpirationDays;
 
-        public AuthController(IUserService userService, ITokenService tokenService)
+        public AuthController(IUserService userService, ITokenService tokenService, IConfiguration config)
         {
             _userService = userService;
             _tokenService = tokenService;
+            _config = config;
+
+            _accessTokenExpirationMinutes = _config.GetValue<int>("Jwt:AccessTokenExpirationMinutes");
+            _refreshTokenExpirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
+
         }
 
         // POST api/auth/register
+        //Nek
         [HttpPost("register")]
-        public IActionResult Register()
+        public async Task<IActionResult> Register([FromBody] SignUpDto signUpDto)
         {
-            // TODO: implement registration logic
-            return Ok();
+
+            // 1. Checks if required fields are present and valid
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // 2. registers new user
+            User user;
+            try
+            {
+                user = await _userService.RegisterAsync(signUpDto.Email, signUpDto.Username, signUpDto.Password);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+
+            // 3. Generate tokens ( httpOnly )
+            var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
+            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
+
+            // Set HttpOnly cookies
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
+            };
+
+            Response.Cookies.Append("access_token", accessToken, cookieOptions);
+
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
+            };
+
+            Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
+
+            return Ok(new
+            {
+                Message = "User registered successfully",
+                User = new { user.Id, user.Username, user.Email } // TODO: Remove sensitive data (only for testing) 
+            });
         }
 
         // POST api/auth/signin
@@ -80,11 +136,39 @@ namespace backend.Controllers
         }
 
         // POST api/auth/refresh
+        //Nek
         [HttpPost("refresh")]
-        public IActionResult Refresh()
+        public async Task<IActionResult> Refresh(String token)
         {
-            // TODO: implement refresh token logic
-            return Ok();
+            if (token == null || token.Length < 1) { return BadRequest(new { Error = "Invalid or empty token received" }); }
+
+            if (await _tokenService.ValidateRefreshTokenAsync(token))
+            {
+                Guid? userID = await _tokenService.GetUserIdFromTokenAsync(token);
+                if (userID.HasValue)
+                {
+                    var accessToken = await _tokenService.GenerateAccessTokenAsync(userID.Value);
+
+                    var cookieOptions = new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
+                    };
+
+                    Response.Cookies.Append("access_token", accessToken, cookieOptions);
+
+                    return Ok("Token Refreshed");
+                } else
+                {
+                    return BadRequest(new { Error = "No user found for the provided token" });
+                }
+            }
+            else
+            {
+                return BadRequest(new { Error = "Token is invalid or expired" });
+            }
         }
 
         // POST api/auth/logout
