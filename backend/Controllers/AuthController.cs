@@ -179,8 +179,17 @@ namespace backend.Controllers
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            // TODO: implement logout logic
-            return Ok();
+            // 1. Retrive userId from token
+            var userId = _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]).Result;
+
+            // 2. Invalidate tokens
+            _userService.InvalidateAllRefreshTokensForUserAsync(userId.Value).Wait();
+
+            // 3. Remove cookies
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
+
+            return Ok(new { message = "Logout successful" });
         }
 
         // PATCH api/auth/updateUsername
