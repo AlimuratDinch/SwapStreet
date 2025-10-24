@@ -10,16 +10,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc.Testing;
+using backend;
 
 namespace backend.Tests
 {
-    public class AuthControllerIntegrationTests : IClassFixture<BackendTestFactory<Program>>
+    public abstract class AuthControllerIntegrationTests : IClassFixture<BackendTestFactory<Program>>
     {
-        private readonly BackendTestFactory<Program> _factory;
+        private readonly HttpClient _client;
 
-        public AuthControllerIntegrationTests(BackendTestFactory<Program> factory)
+        internal AuthControllerIntegrationTests(BackendTestFactory<Program> factory)
     {
-        _factory = factory;
+            _client = factory.CreateClient();
     }
 
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,12 +38,11 @@ namespace backend.Tests
                 Password = "Test123!"
             };
                 
-                var client = _factory.CreateClient();
 
                 var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
                 // Act
-                 var response = await client.PostAsync("/api/auth/register", content);
+                 var response = await _client.PostAsync("/api/auth/register", content);
 
                 // Assert
                 response.IsSuccessStatusCode.Should().BeTrue("a valid registration should return a 2xx status");
@@ -65,10 +65,10 @@ namespace backend.Tests
 
             var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
-            var client = _factory.CreateClient();
+            
                  
                 // Act
-                var response = await client.PostAsync("/api/auth/register", content);
+                var response = await _client.PostAsync("/api/auth/register", content);
 
                 // Assert
                 response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest, "registration should fail with missing email");
@@ -87,15 +87,15 @@ namespace backend.Tests
                     Username = "user1",
                     Password = "Test123!"
                 };
-                var client = _factory.CreateClient();
+              
                 var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
                 // Act - first registration
-                var firstResponse = await client.PostAsync("/api/auth/register", content);
+                var firstResponse = await _client.PostAsync("/api/auth/register", content);
                 firstResponse.IsSuccessStatusCode.Should().BeTrue("first registration should succeed");
 
                 // Act - second registration with same email
-                var secondResponse = await client.PostAsync("/api/auth/register", content);
+                var secondResponse = await _client.PostAsync("/api/auth/register", content);
 
                 // Assert
                 secondResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest, "duplicate registration should fail");
@@ -116,9 +116,9 @@ namespace backend.Tests
                 };
 
                 var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-                var client = _factory.CreateClient();
+                
                 // Act
-                var response = await client.PostAsync("/api/auth/register", content);
+                var response = await _client.PostAsync("/api/auth/register", content);
 
                 // Assert
                 response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest, "registration should fail for invalid password");
@@ -140,9 +140,8 @@ namespace backend.Tests
                 Username = "refreshUser",
                 Password = "Test123!"
             };
-                var client = _factory.CreateClient();
             var content = new StringContent(JsonSerializer.Serialize(signUpDto), System.Text.Encoding.UTF8, "application/json");
-            var registerResponse = await client.PostAsync("/api/auth/register", content);
+            var registerResponse = await _client.PostAsync("/api/auth/register", content);
 
             registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed");
 
@@ -158,7 +157,7 @@ namespace backend.Tests
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
             request.Headers.Add("Cookie", $"refresh_token={refreshTokenValue}");
 
-            var response = await client.SendAsync(request);
+            var response = await _client.SendAsync(request);
 
             // Step 4: Assert response
             response.IsSuccessStatusCode.Should().BeTrue("refresh with valid token should succeed");
@@ -177,8 +176,8 @@ namespace backend.Tests
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
             // No cookie set
-            var client = _factory.CreateClient();
-            var response = await client.SendAsync(request);
+            
+            var response = await _client.SendAsync(request);
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             var body = await response.Content.ReadAsStringAsync();
@@ -190,8 +189,8 @@ namespace backend.Tests
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
             request.Headers.Add("Cookie", $"refresh_token=invalidtoken");
-            var client = _factory.CreateClient();
-            var response = await client.SendAsync(request);
+            
+            var response = await _client.SendAsync(request);
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             var body = await response.Content.ReadAsStringAsync();
