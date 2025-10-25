@@ -93,7 +93,7 @@ jobs:
       shell: pwsh
       run: |
         cd backend
-        "${{ runner.temp }}\scanner\dotnet-sonarscanner" begin `
+        & $env:RUNNER_TEMP\scanner\dotnet-sonarscanner begin `
           /k:"swapstreet" `
           /o:"swapstreet" `
           /d:sonar.host.url="https://sonarcloud.io" `
@@ -132,7 +132,7 @@ jobs:
       shell: pwsh
       run: |
         cd backend
-        "${{ runner.temp }}\scanner\dotnet-sonarscanner" end `
+        & $env:RUNNER_TEMP\scanner\dotnet-sonarscanner end `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
     - name: Debug — Locate report-task.txt
