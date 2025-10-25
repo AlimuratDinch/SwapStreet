@@ -147,6 +147,12 @@ jobs:
       run: |
         ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
+    - name: Debug — Locate report-task.txt
+      shell: powershell
+      run: |
+        Write-Host "Searching for report-task.txt..."
+        Get-ChildItem -Path $PWD -Recurse -Filter "report-task.txt" | ForEach-Object { $_.FullName }
+
     - name: Wait for SonarQube Quality Gate result
       uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
       env:
