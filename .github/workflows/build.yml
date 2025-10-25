@@ -45,7 +45,7 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
-        projectBaseDir: swapstreet
+        scanMetadataReportFile: swapstreet/.scannerwork/report-task.txt
 
   backend-sonarqube:
     name: Backend SonarQube
@@ -152,4 +152,4 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
-        projectBaseDir: backend
+        scanMetadataReportFile: backend/.scannerwork/report-task.txt
