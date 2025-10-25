@@ -1,4 +1,4 @@
-name: Build
+name: SonarQube Analysis
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -21,8 +21,16 @@ jobs:
       run: yarn
       working-directory: swapstreet
 
-    - name: Run tests and collect coverage
-      run: yarn jest --coverage
+    - name: Run tests and collect coverage with threshold
+      run: |
+        yarn jest --coverage --coverageThreshold='{
+          "global": {
+            "branches": 80,
+            "functions": 80,
+            "lines": 80,
+            "statements": 80
+          }
+        }'
       working-directory: swapstreet
 
     - name: SonarQube Scan
@@ -89,17 +97,47 @@ jobs:
           /k:"swapstreet" `
           /o:"swapstreet" `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml `
+          /d:sonar.coverage.exclusions="**/Migrations/**"
 
     - name: Build backend
       shell: powershell
       working-directory: backend
       run: dotnet build --no-incremental
 
-    - name: Run tests and collect coverage
-      shell: powershell
+    - name: Run tests and collect coverage with threshold
+      shell: pwsh
       working-directory: backend
-      run: dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
+      run: |
+        # Run tests and collect coverage in XML format
+        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml"
+
+        # Confirm file exists
+        if (!(Test-Path "coverage.xml")) {
+          Write-Error "coverage.xml not found!"
+          exit 1
+        }
+
+        # Load XML
+        [xml]$cov = Get-Content "coverage.xml"
+
+        # Get the 'module' node (assumes one main module)
+        $module = $cov.results.modules.module
+
+        if (-not $module) {
+          Write-Error "No <module> found in coverage.xml"
+          exit 1
+        }
+
+        # Extract the line_coverage attribute
+        $lineCoverage = [double]$module.line_coverage
+        Write-Host "➡ Backend test coverage: $lineCoverage%"
+
+        # Fail if below threshold
+        if ($lineCoverage -lt 16) {
+          Write-Error "Coverage below 16% ($lineCoverage%)"
+          exit 1
+        }
 
     - name: End SonarQube analysis
       env:
