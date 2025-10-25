@@ -75,7 +75,6 @@ namespace backend.Services.Auth
             var refreshToken = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.Token == token);
             if (refreshToken == null || refreshToken.Revoked) return false;
 
-
             return true;
         }
 
