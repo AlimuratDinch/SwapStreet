@@ -163,10 +163,11 @@ export default function SellerListingPage() {
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
             Title *
           </label>
           <input
+            id="title"
             type="text"
             value={title}
             onChange={handleTitleChange}
@@ -178,10 +179,11 @@ export default function SellerListingPage() {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
             Description *
           </label>
           <textarea
+            id="description"
             value={description}
             onChange={handleDescriptionChange}
             placeholder="Describe your item in detail. Include condition, size, brand, etc."
@@ -193,7 +195,7 @@ export default function SellerListingPage() {
 
         {/* Price */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="price" className="block text-sm font-medium text-gray-700">
             Price (CAD) *
           </label>
           <div className="relative mt-1">
@@ -201,6 +203,7 @@ export default function SellerListingPage() {
               <span className="text-gray-500 sm:text-sm">$</span>
             </div>
             <input
+              id="price"
               type="number"
               value={price || ""}
               onChange={handlePriceChange}
@@ -216,10 +219,11 @@ export default function SellerListingPage() {
         {/* Category and Subcategory */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700">
               Category *
             </label>
             <select
+              id="category"
               value={category}
               onChange={handleCategoryChange}
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -236,10 +240,11 @@ export default function SellerListingPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700">
               Subcategory *
             </label>
             <select
+              id="subcategory"
               value={subcategory}
               onChange={handleSubcategoryChange}
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -260,10 +265,11 @@ export default function SellerListingPage() {
 
         {/* Image Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="images" className="block text-sm font-medium text-gray-700">
             Images * (Max 5 images)
           </label>
           <input
+            id="images"
             type="file"
             accept="image/*"
             multiple
