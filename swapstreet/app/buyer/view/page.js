@@ -30,7 +30,10 @@ function ImageButton(props) {
 }
 
 function Separator() {
-  return <div className="my-5 w-full border-2 border-b-stone-400">
+  return <div className={
+    "my-5 w-full "
+    + "border-2 border-t-white border-r-white border-l-white"
+    }>
   </div>;
 }
 
@@ -68,7 +71,7 @@ class ImageView extends React.Component {
         {/*Assume that the image is valid*/}
         <img
           src={this.urlList[this.state.index]}
-          className="absolute max-h-full inset-0 m-auto"
+          className="absolute max-h-full inset-0 m-auto rounded-lg"
         />
       </div>);
   }
@@ -93,8 +96,8 @@ class ImageView extends React.Component {
         <div className="h-full flex flex-row">
           {this.renderer()}
         </div>
-        <div className="h-32 bg-stone-300">
-          Footer
+        <div className="h-32">
+          {/*TODO: insert carousel here*/}
         </div>
       </div>
     </div>
@@ -129,16 +132,52 @@ export default function View() {
         
         throw new Error(m);
       }).then(item => {
+        const tempProfile = {
+          name: "Username",
+          imageUrl: "/images/clothes_login_page.png",
+          rating: 99.6
+        };
+        
+        function Profile(props) {
+          const profile = props.profile;
+          
+          return (<div className="flex grow w-full h-full">
+            <div className="flex w-full h-full items-center justify-between">
+              <div className="flex flex-row items-center">
+                <img 
+                  src={profile.imageUrl}
+                  className="w-20 h-20 rounded-full p-4"
+                />
+                <div className="">
+                  <span className="font-bold">{profile.name}</span>
+                  <br/>
+                  Rating: {profile.rating}%
+                </div>
+              </div>
+              <Button>
+                <ChevronRight/>
+              </Button>
+            </div>
+          </div>);
+        }
         
         /*Assume that the object defines all the item's attributes. 
         That is, none of the attributes are undefined.*/
         setInfo(<div className="flex grow h-full">
-          <div className="w-3/5 bg-stone-100">
+          <div className="w-3/5">
+            {/* 
+              * TODO: articles can have more than one url. There is 
+              * logic for displaying multiple images. The `ImageView` 
+              * component's constructor accepts an array of urls for 
+              * images.
+              */}
             <ImageView urlList={new Array(item.imageUrl)}/>
           </div>
-          <div className="w-2/5 bg-stone-200 min-w-60">
-            <div className="w-full bg-stone-200 min-w-60">
-              <div className="w-full h-full p-4">
+          <div className="w-2/5 min-w-60 m-4 border-2 rounded-lg">
+            <div className="w-full h-full min-w-60">
+              <div className="p-4">
+                
+                {/*Article information*/}
                 <div className="w-full">
                   <div>
                     <div className="font-bold text-2xl">
@@ -159,6 +198,8 @@ export default function View() {
                   </div>
                 </div>
                 <Separator/>
+                
+                {/*Button list*/}
                 <div className="grid grid-cols-1 w-full">
                   
                   {/*Add links*/}
@@ -166,8 +207,10 @@ export default function View() {
                   <Button className="my-2">Add to Changing Room</Button>
                 </div>
                 <Separator/>
-                <div className="">
-                  Seller info
+                
+                {/*Profile information*/}
+                <div className="h-full">
+                  <Profile profile={tempProfile}/>
                 </div>
               </div>
             </div>
@@ -185,7 +228,7 @@ export default function View() {
   }, []);
   
   return <div className="h-screen w-screen">
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-full w-full bg-background">
       {testNavBar}
       <div className="w-full h-full">
         {info ?? ''}
