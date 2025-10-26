@@ -127,13 +127,15 @@ export default function SellerListingPage() {
       };
 
       // Save to localStorage 
-      // const existingListings = JSON.parse(localStorage.getItem("seller:listings") || "[]");
-      //existingListings.push(listingData);
-      //localStorage.setItem("seller:listings", JSON.stringify(existingListings));
+      // TODO: Change this code to save to the database 
+      
+      const existingListings = JSON.parse(localStorage.getItem("seller:listings") || "[]");
+      existingListings.push(listingData);
+      localStorage.setItem("seller:listings", JSON.stringify(existingListings));
 
       // Redirect to seller profile
-      // router.push("/seller/1"); // Assuming seller ID is 1
-      router.back(); 
+      router.push("/seller/me"); // Assuming seller ID is 1
+      // router.back(); 
     } catch (err) {
       console.error("Failed to save listing:", err);
       setError("Failed to save listing. Please try again.");
