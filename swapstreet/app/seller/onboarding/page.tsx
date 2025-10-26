@@ -1,7 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const PROVINCES: { label: string; value: string }[] = [
+  { label: "Alberta (AB)", value: "AB" },
+  { label: "British Columbia (BC)", value: "BC" },
+  { label: "Manitoba (MB)", value: "MB" },
+  { label: "New Brunswick (NB)", value: "NB" },
+  { label: "Newfoundland and Labrador (NL)", value: "NL" },
+  { label: "Nova Scotia (NS)", value: "NS" },
+  { label: "Northwest Territories (NT)", value: "NT" },
+  { label: "Nunavut (NU)", value: "NU" },
+  { label: "Ontario (ON)", value: "ON" },
+  { label: "Prince Edward Island (PE)", value: "PE" },
+  { label: "Quebec (QC)", value: "QC" },
+  { label: "Saskatchewan (SK)", value: "SK" },
+  { label: "Yukon (YT)", value: "YT" },
+];
+
+const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
@@ -16,10 +34,11 @@ export default function SellerOnboardingPage() {
   const [bannerPreview, setBannerPreview] = useState<string>("");
   const [error, setError] = useState("");
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleAvatarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
     if (!file) {
       setAvatarFile(null);
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
       setAvatarPreview("");
       return;
     }
@@ -30,13 +49,16 @@ export default function SellerOnboardingPage() {
     }
     setError("");
     setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
-  };
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    const nextUrl = URL.createObjectURL(file);
+    setAvatarPreview(nextUrl);
+  }, [avatarPreview]);
 
-  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleBannerChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
     if (!file) {
       setBannerFile(null);
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
       setBannerPreview("");
       return;
     }
@@ -46,10 +68,12 @@ export default function SellerOnboardingPage() {
     }
     setError("");
     setBannerFile(file);
-    setBannerPreview(URL.createObjectURL(file));
-  };
+    if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+    const nextUrl = URL.createObjectURL(file);
+    setBannerPreview(nextUrl);
+  }, [bannerPreview]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -68,8 +92,7 @@ export default function SellerOnboardingPage() {
     }
 
     // Postal code optional, but if provided validate Canadian format (A1A 1A1 or A1A1A1)
-    const postalRegex = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
-    if (postalCode && !postalRegex.test(postalCode.trim())) {
+    if (postalCode && !POSTAL_REGEX.test(postalCode.trim())) {
       setError("Please enter a valid Canadian postal code (e.g., A1A 1A1).");
       return;
     }
@@ -95,7 +118,14 @@ export default function SellerOnboardingPage() {
 
     // Redirect user to their profile page
     router.push("/seller/me?init=1");
-  };
+  }, [name, city, province, postalCode, bio, avatarPreview, bannerPreview, router]);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+    };
+  }, [avatarPreview, bannerPreview]);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -117,11 +147,12 @@ export default function SellerOnboardingPage() {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="display-name" className="block text-sm font-medium text-gray-700">
             Display name
           </label>
           <input
             type="text"
+            id="display-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="What should we call you in the wild world of SwapStreet?"
@@ -132,11 +163,12 @@ export default function SellerOnboardingPage() {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label htmlFor="city" className="block text-sm font-medium text-gray-700">
               City
             </label>
             <input
               type="text"
+              id="city"
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="City"
@@ -145,10 +177,11 @@ export default function SellerOnboardingPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label htmlFor="province" className="block text-sm font-medium text-gray-700">
               Province
             </label>
             <select
+              id="province"
               value={province}
               onChange={(e) => setProvince(e.target.value)}
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
@@ -157,27 +190,20 @@ export default function SellerOnboardingPage() {
               <option value="" disabled>
                 Select a province/territory
               </option>
-              <option value="AB">Alberta (AB)</option>
-              <option value="BC">British Columbia (BC)</option>
-              <option value="MB">Manitoba (MB)</option>
-              <option value="NB">New Brunswick (NB)</option>
-              <option value="NL">Newfoundland and Labrador (NL)</option>
-              <option value="NS">Nova Scotia (NS)</option>
-              <option value="NT">Northwest Territories (NT)</option>
-              <option value="NU">Nunavut (NU)</option>
-              <option value="ON">Ontario (ON)</option>
-              <option value="PE">Prince Edward Island (PE)</option>
-              <option value="QC">Quebec (QC)</option>
-              <option value="SK">Saskatchewan (SK)</option>
-              <option value="YT">Yukon (YT)</option>
+              {PROVINCES.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label htmlFor="postal-code" className="block text-sm font-medium text-gray-700">
               Postal code (optional)
             </label>
             <input
               type="text"
+              id="postal-code"
               value={postalCode}
               onChange={(e) => setPostalCode(e.target.value.toUpperCase())}
               placeholder="A1A 1A1"
@@ -188,8 +214,9 @@ export default function SellerOnboardingPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Bio</label>
+          <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
           <textarea
+            id="bio"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder={`Brag a little! What makes your mini shop special? \nShare your style and what you sell!`}
@@ -200,12 +227,13 @@ export default function SellerOnboardingPage() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label htmlFor="avatar" className="block text-sm font-medium text-gray-700">
               Avatar image
             </label>
             <input
               type="file"
               accept="image/*"
+              id="avatar"
               onChange={handleAvatarChange}
               className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[var(--primary-color)] file:px-3 file:py-2 file:text-white hover:file:bg-[var(--primary-dark)]"
             />
@@ -220,12 +248,13 @@ export default function SellerOnboardingPage() {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label htmlFor="banner" className="block text-sm font-medium text-gray-700">
               Banner image
             </label>
             <input
               type="file"
               accept="image/*"
+              id="banner"
               onChange={handleBannerChange}
               className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-[var(--primary-color)] file:px-3 file:py-2 file:text-white hover:file:bg-[var(--primary-dark)]"
             />
