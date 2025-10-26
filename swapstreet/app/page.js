@@ -109,7 +109,7 @@ export default function LandingPage() {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://png.pngtree.com/background/20250122/original/pngtree-fashion-clothing-on-hangers-at-the-show-picture-image_15460073.jpg')`,
+            backgroundImage: `url('./images/hero.jpg')`,
           }}
         >
           <div className="absolute inset-0 bg-black/40" />
