@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useParams } from 'next/navigation';
+
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import {
@@ -105,13 +107,14 @@ class ImageView extends React.Component {
 }
 
 export default function View() {
+  const params = useParams();
   const [info, setInfo] = useState(null);
   
   useEffect(() => {
     
     /* There should be logic for stashing an item from the browse page
      * to debounce fetches.*/
-    fetch(`http://localhost:8080/api/catalog/items/${1}`)
+    fetch(`http://localhost:8080/api/catalog/items/${params?.id}`)
       .then(res => {
         var m;
         
@@ -143,10 +146,10 @@ export default function View() {
           
           return (<div className="flex grow w-full h-full">
             <div className="flex w-full h-full items-center justify-between">
-              <div className="flex flex-row items-center">
+              <div className="flex flex-row items-center m-2">
                 <img 
                   src={profile.imageUrl}
-                  className="w-20 h-20 rounded-full p-4"
+                  className="w-12 h-12 mr-4 rounded-full"
                 />
                 <div className="">
                   <span className="font-bold">{profile.name}</span>
