@@ -36,7 +36,7 @@ export default defineConfig({
 
   /* Run local dev server before starting the tests (helpful in CI) */
   webServer: {
-    command: 'npm ci &&npm --prefix ./swapstreet run dev',
+    command: 'npm ci && npm --prefix ./swapstreet run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 120_000,
