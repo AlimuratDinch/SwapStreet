@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 export default function SellerListingPage() {
   const router = useRouter();
-  
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | null>(null);
@@ -17,12 +17,17 @@ export default function SellerListingPage() {
 
   // Category options
   const categories = {
-    
-    "Shirts": ["T-shirts", "Polos", "Blouses", "Shirts", "Sweaters"],
-    "Pants": ["Jeans", "Trousers", "Shorts", "Leggings", "Joggers"],
-    "Dresses": ["Long", "Short", "Mid-length", "Mini", "Maxi"],
-    "Accessories": ["Shoes", "Bags", "Jewelry", "Hats", "Scarves"],
-    "Portables": ["Backpacks", "Tote Bags", "Messenger Bags", "Wallets", "Purses"],
+    Shirts: ["T-shirts", "Polos", "Blouses", "Shirts", "Sweaters"],
+    Pants: ["Jeans", "Trousers", "Shorts", "Leggings", "Joggers"],
+    Dresses: ["Long", "Short", "Mid-length", "Mini", "Maxi"],
+    Accessories: ["Shoes", "Bags", "Jewelry", "Hats", "Scarves"],
+    Portables: [
+      "Backpacks",
+      "Tote Bags",
+      "Messenger Bags",
+      "Wallets",
+      "Purses",
+    ],
   };
 
   // Handle form input changes
@@ -30,7 +35,9 @@ export default function SellerListingPage() {
     setTitle(e.target.value);
   };
 
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleDescriptionChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     setDescription(e.target.value);
   };
 
@@ -51,22 +58,22 @@ export default function SellerListingPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const newImages = [...images, ...files];
-    
+
     if (newImages.length > 5) {
       setError("You can upload a maximum of 5 images.");
       return;
     }
 
     setImages(newImages);
-    
-    const newPreviews = files.map(file => URL.createObjectURL(file));
+
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
     setImagePreviews([...imagePreviews, ...newPreviews]);
   };
 
   const removeImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index);
     const newPreviews = imagePreviews.filter((_, i) => i !== index);
-    
+
     setImages(newImages);
     setImagePreviews(newPreviews);
   };
@@ -113,7 +120,6 @@ export default function SellerListingPage() {
     }
 
     try {
-     
       const listingData = {
         id: Date.now().toString(),
         title: title.trim(),
@@ -121,21 +127,23 @@ export default function SellerListingPage() {
         price,
         category,
         subcategory,
-        images: imagePreviews, 
+        images: imagePreviews,
         timestamp: new Date().toISOString(),
-        status: "active"
+        status: "active",
       };
 
-      // Save to localStorage 
-      // TODO: Change this code to save to the database 
-      
-      const existingListings = JSON.parse(localStorage.getItem("seller:listings") || "[]");
+      // Save to localStorage
+      // TODO: Change this code to save to the database
+
+      const existingListings = JSON.parse(
+        localStorage.getItem("seller:listings") || "[]",
+      );
       existingListings.push(listingData);
       localStorage.setItem("seller:listings", JSON.stringify(existingListings));
 
       // Redirect to seller profile
       router.push("/seller/me"); // Assuming seller ID is 1
-      // router.back(); 
+      // router.back();
     } catch (err) {
       console.error("Failed to save listing:", err);
       setError("Failed to save listing. Please try again.");
@@ -165,7 +173,10 @@ export default function SellerListingPage() {
 
         {/* Title */}
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="title"
+            className="block text-sm font-medium text-gray-700"
+          >
             Title *
           </label>
           <input
@@ -181,7 +192,10 @@ export default function SellerListingPage() {
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="description"
+            className="block text-sm font-medium text-gray-700"
+          >
             Description *
           </label>
           <textarea
@@ -197,7 +211,10 @@ export default function SellerListingPage() {
 
         {/* Price */}
         <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="price"
+            className="block text-sm font-medium text-gray-700"
+          >
             Price (CAD) *
           </label>
           <div className="relative mt-1">
@@ -221,7 +238,10 @@ export default function SellerListingPage() {
         {/* Category and Subcategory */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700"
+            >
               Category *
             </label>
             <select
@@ -242,7 +262,10 @@ export default function SellerListingPage() {
             </select>
           </div>
           <div>
-            <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="subcategory"
+              className="block text-sm font-medium text-gray-700"
+            >
               Subcategory *
             </label>
             <select
@@ -256,18 +279,22 @@ export default function SellerListingPage() {
               <option value="" disabled>
                 {category ? "Select a subcategory" : "Select a category first"}
               </option>
-              {category && categories[category as keyof typeof categories].map((sub) => (
-                <option key={sub} value={sub}>
-                  {sub}
-                </option>
-              ))}
+              {category &&
+                categories[category as keyof typeof categories].map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
 
         {/* Image Upload */}
         <div>
-          <label htmlFor="images" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="images"
+            className="block text-sm font-medium text-gray-700"
+          >
             Images * (Max 5 images)
           </label>
           <input
@@ -278,7 +305,7 @@ export default function SellerListingPage() {
             onChange={handleImageUpload}
             className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-white hover:file:bg-blue-700"
           />
-          
+
           {/* Image Previews */}
           {imagePreviews.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">

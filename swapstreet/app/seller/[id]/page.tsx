@@ -302,10 +302,9 @@ export default function SellerProfilePage({
                 <div>
                   <p className="font-medium text-gray-900">No listings yet</p>
                   <p className="mx-auto mt-1 max-w-xl text-sm text-gray-600">
-                    {isOwner 
+                    {isOwner
                       ? "You haven't added any products to your store yet. Create your first listing to get started!"
-                      : "This seller hasn't added any products to their store yet. Check back soon to discover their curated collection of items."
-                    }
+                      : "This seller hasn't added any products to their store yet. Check back soon to discover their curated collection of items."}
                   </p>
                 </div>
                 {isOwner && (
@@ -320,7 +319,10 @@ export default function SellerProfilePage({
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {seller.listings.map((listing) => (
-                  <div key={listing.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                  <div
+                    key={listing.id}
+                    className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+                  >
                     {listing.images.length > 0 && (
                       <div className="aspect-square overflow-hidden">
                         <img
@@ -331,8 +333,12 @@ export default function SellerProfilePage({
                       </div>
                     )}
                     <div className="p-4">
-                      <h3 className="font-medium text-gray-900 truncate">{listing.title}</h3>
-                      <p className="mt-1 text-sm text-gray-600 line-clamp-2">{listing.description}</p>
+                      <h3 className="font-medium text-gray-900 truncate">
+                        {listing.title}
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                        {listing.description}
+                      </p>
                       <div className="mt-2 flex items-center justify-between">
                         <span className="text-lg font-semibold text-gray-900">
                           ${listing.price.toFixed(2)}
