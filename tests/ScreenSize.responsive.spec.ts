@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 // Common viewport sizes to validate responsive behavior.
-// Adjust or extend this list to match your app's breakpoints.
 const viewports = [
   { name: 'mobile-375x667', width: 375, height: 667 },
   { name: 'mobile-390x844', width: 390, height: 844 },
