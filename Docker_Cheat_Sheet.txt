@@ -1,0 +1,112 @@
+SwapStreet Docker Compose Cheat Sheet
+=====================================
+
+1. Build/Rebuild & Start Containers
+---------------------------
+# Build images and start all containers in foreground
+docker compose up --build
+
+# Build images and start all containers in background (detached - terminal is free to use)
+docker compose up -d --build
+
+# Rebuild only the backend service
+docker compose up -d --build backend
+
+# Rebuild only the Postgres database (usually not needed unless Dockerfile changes)
+docker compose up -d --build postgres
+
+# Rebuild only pgAdmin (rarely needed)
+docker compose up -d --build pgadmin
+
+2. Stop & Remove Containers
+---------------------------
+# Stop all running containers in this Compose project
+docker compose down
+
+# Stop and remove containers, networks, and default volumes
+docker compose down -v
+
+3. View Logs
+------------
+# Show logs for all containers
+docker compose logs -f
+
+# Show logs for a specific container
+docker compose logs -f backend
+docker compose logs -f postgres
+docker compose logs -f pgadmin
+
+4. Access Containers
+--------------------
+# Open a bash shell inside the backend container
+docker compose exec backend bash
+
+# Open a psql session inside the postgres container
+docker compose exec postgres psql -U postgres -d swapstreet-db
+
+5. Remove Orphaned Containers
+-----------------------------
+docker compose up --remove-orphans
+
+6. One-Liners for Dev Reset
+---------------------------
+# Stop all containers (even unrelated ones)
+docker stop $(docker ps -q)
+
+# Remove all containers
+docker rm $(docker ps -aq)
+
+# Rebuild and start fresh
+docker compose down -v
+docker compose up --build
+
+7. Dev Environment Addresses
+----------------------------
+Backend Swagger -> http://localhost:8080/index.html
+PgAdmin         -> http://localhost:5050/
+
+
+8. Example .env File
+--------------------
+# ================================
+# PostgreSQL Database Configuration
+# ================================
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=********
+POSTGRES_DB=swapstreet_db
+
+# ================================
+# pgAdmin Configuration
+# ================================
+PGADMIN_DEFAULT_EMAIL=example@email.com
+PGADMIN_DEFAULT_PASSWORD=*******
+
+# ================================
+# Backend connection string
+# ================================
+ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_db;Username=postgres;Password=********
+--------------------
+
+9. Migrations
+--------------------
+dotnet ef migrations add <name>
+dotnet ef database update
+
+
+10. Testing
+--------------------
+# unit test only
+dotnet test
+
+# Run tests and collect coverage
+dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./coverage/
+
+# Optional: generate HTML report
+reportgenerator -reports:./coverage/coverage.opencover.xml -targetdir:./coverage-report -reporttypes:Html
+
+
+11. Formatting Code 
+--------------------
+# Format Backend
+
+dotnet format backend.sln

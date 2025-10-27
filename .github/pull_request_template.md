@@ -8,7 +8,6 @@
 > Provide the code required to run the pull request. This is the code that will be used to review your pull request. **The provided code must work as-is. If a react-native error is raised while running the code, the PR will be rejected. The following code / placeholder is only provided as documentation / helper to get you started and you will need to adjust it.**
 
 ```bash
-# Assuming you are in a folder containing minicap_concordia_campus_guide_app/application folder.
 # Update the code
 git checkout feature/<feature_name>
 git pull
@@ -23,6 +22,7 @@ git pull
   * [ ] I have added all necessary unit tests to demonstrate that my code functions as expected and is testable.
   * [ ] The code I'm asking a review for is working. **I understand that my PR will be rejected as-is otherwise.**
   * [ ] My code follows the conventions described in the `contribution guide`.
+  * [ ] My code adapts well to resizing of the page.
  
 * **Documentation** : 
   * [ ]  I have updated the documentation (README) accordingly to my changes.
@@ -32,4 +32,4 @@ git pull
   * [ ]  The code *provided to run the pull request* is working. **I understand that my PR will be rejected as-is otherwise.**
   * [ ]  My pull request is documented. I have explained the needs for the PR, what was left out of the it and why.
   * [ ]  I have carefully reviewd each changes made to a file and made sure the files included on the PR were actually added on purpose.
-  * [ ]  I have assignee at least **1** people to review my PR.
+  * [ ]  I have assignee at least **2** people to review my PR.
