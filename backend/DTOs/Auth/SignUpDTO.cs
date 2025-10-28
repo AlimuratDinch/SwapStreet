@@ -15,7 +15,7 @@ namespace backend.DTOs.Auth
         [DataType(DataType.Password)]
         public string Password { get; set; } = default!;
 
-        public void Deconstruct(out string email,out string username, out string password)
+        public void Deconstruct(out string email, out string username, out string password)
         {
             email = Email;
             username = Username;
