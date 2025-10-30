@@ -11,7 +11,7 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
+    {
         // Map Category to categories table
         modelBuilder.Entity<Category>()
             .ToTable("categories")
