@@ -36,6 +36,9 @@ namespace backend.Services.Auth
 
             await _authDBContext.Users.AddAsync(user);
             await _authDBContext.SaveChangesAsync();
+
+            Console.WriteLine($"Adding new user: {user}");
+            
             return user;
         }
 
@@ -62,6 +65,7 @@ namespace backend.Services.Auth
         public async Task<UserDto?> LoginWithPasswordAsync(User user, string password)
         {
             var hashedPassword = _passwordHasher.HashPassword(password);
+
             return _passwordHasher.VerifyPassword(hashedPassword, user.EncryptedPassword)
                 ? new UserDto
                 {

@@ -125,7 +125,7 @@ namespace backend.Controllers
 
             if (user == null)
             {
-                return BadRequest(new { Error = "Invalid email or password." });
+                return BadRequest(new { Error = "User not found." });
             }
 
             // 4. Verify password
@@ -134,7 +134,7 @@ namespace backend.Controllers
 
             if (result == null)
             {
-                return BadRequest(new { Error = "Invalid email or password." });
+                return BadRequest(new { Error = "Password incorrect." });
             }
 
              var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
