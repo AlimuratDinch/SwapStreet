@@ -29,7 +29,7 @@ namespace backend.Models.Authentication
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         public DateTimeOffset? ExpiresAt { get; set; }
-        public long? Parent { get; set; }
+        public Guid? Parent { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public virtual required User User { get; set; }
