@@ -29,8 +29,6 @@ namespace backend.Tests
             _service = new UserService(hasher, _db);
         }
 
-        [Fact]
-
         public void Dispose()
         {
             _db.Dispose();
@@ -91,7 +89,7 @@ namespace backend.Tests
             await _db.Users.AddAsync(user);
             await _db.SaveChangesAsync();
 
-            var result = await _service.LoginWithPasswordAsync("login@example.com", password);
+            var result = await _service.LoginWithPasswordAsync(user, password);
 
             result.Should().NotBeNull();
             result!.Email.Should().Be(user.Email);
@@ -106,7 +104,7 @@ namespace backend.Tests
             await _db.Users.AddAsync(user);
             await _db.SaveChangesAsync();
 
-            var result = await _service.LoginWithPasswordAsync("auser", "wrongpass");
+            var result = await _service.LoginWithPasswordAsync(user, "wrongpass");
 
             result.Should().BeNull();
         }

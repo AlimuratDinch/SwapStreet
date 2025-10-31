@@ -47,4 +47,8 @@ appsettings.json
 
 # Environment Variables
 .env
-TestResults/
+
+#Test Files
+TestResults/*
+coverage-report/*
+coverage/*

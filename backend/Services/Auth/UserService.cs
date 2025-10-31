@@ -3,6 +3,7 @@ using backend.Models.Authentication;
 using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
 using backend.DTOs.Auth;
+using System.ComponentModel.DataAnnotations;
 
 
 namespace backend.Services.Auth
@@ -20,6 +21,11 @@ namespace backend.Services.Auth
 
         public async Task<User> RegisterAsync(string email, string username, string password)
         {
+            var existingUser = await GetUserByEmailAsync(email);
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("A user with this email already exists.");
+            }
             var user = new User
             {
                 Email = email,
@@ -35,7 +41,7 @@ namespace backend.Services.Auth
 
         public async Task PermanentlyDeleteUserAsync(Guid userId)
         {
-            var user = await _authDBContext.Users.FindAsync(userId);
+            User? user = await _authDBContext.Users.FindAsync(userId);
             if (user != null)
             {
                 _authDBContext.Users.Remove(user);
@@ -53,10 +59,8 @@ namespace backend.Services.Auth
             return await _authDBContext.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
-        public async Task<UserDto?> LoginWithPasswordAsync(string emailOrUsername, string password)
+        public async Task<UserDto?> LoginWithPasswordAsync(User user, string password)
         {
-            var user = await GetUserByEmailAsync(emailOrUsername) ?? await GetUserByUsernameAsync(emailOrUsername);
-            if (user == null) return null;
             var hashedPassword = _passwordHasher.HashPassword(password);
             return _passwordHasher.VerifyPassword(hashedPassword, user.EncryptedPassword)
                 ? new UserDto
@@ -67,6 +71,5 @@ namespace backend.Services.Auth
                 }
                 : null;
         }
-
     }
 }
