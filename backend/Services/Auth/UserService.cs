@@ -21,6 +21,11 @@ namespace backend.Services.Auth
 
         public async Task<User> RegisterAsync(string email, string username, string password)
         {
+            var existingUser = await GetUserByEmailAsync(email);
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("A user with this email already exists.");
+            }
             var user = new User
             {
                 Email = email,

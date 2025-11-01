@@ -89,7 +89,7 @@ namespace backend.Tests
             await _db.Users.AddAsync(user);
             await _db.SaveChangesAsync();
 
-            var result = await _service.LoginWithPasswordAsync(user, password); 
+            var result = await _service.LoginWithPasswordAsync(user, password);
 
             result.Should().NotBeNull();
             result!.Email.Should().Be(user.Email);

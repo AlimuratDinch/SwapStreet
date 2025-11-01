@@ -43,4 +43,8 @@ docker-compose.override.yml
 
 # Environment Variables
 .env
-TestResults/
+
+#Test Files
+TestResults/*
+coverage-report/*
+coverage/*
