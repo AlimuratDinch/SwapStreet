@@ -5,24 +5,57 @@ using backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add environment variables to configuration
+builder.Configuration.AddEnvironmentVariables();
 
-// Add services to the container
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", builder =>
+    {
+        builder.WithOrigins("http://localhost:3000")
+               .AllowAnyMethod()
+               .AllowAnyHeader()
+               .AllowCredentials();
+    });
+});
+
+// Check for dev flag
+var useInMemory = Environment.GetEnvironmentVariable("USE_INMEMORY_DB") == "true";
+
+// Configure EF Core depending on flag
+if (useInMemory)
+{
+    Console.WriteLine("Using in-memory database (dev mode)");
+
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseInMemoryDatabase("AppDb"));
+    builder.Services.AddDbContext<AuthDbContext>(options =>
+        options.UseInMemoryDatabase("AuthDb"));
+}
+else
+{
+    // Build Postgres connection string from environment variables
+    var connectionString = $"Host={Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost"};" +
+                           $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
+                           $"Database={Environment.GetEnvironmentVariable("DB_NAME") ?? "swapstreet_db"};" +
+                           $"Username={Environment.GetEnvironmentVariable("DB_USER") ?? "swapstreet_user"};" +
+                           $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "securepassword123"};";
+
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString));
+    builder.Services.AddDbContext<AuthDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+
+// Add services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
 
-// Add EF Core DbContext
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddControllers(); // enable controllers
-
-// Register your ICatalogService implementation
+// Register your custom services
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 
-// Allow app to listen on all interfaces (for Docker)
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
 var app = builder.Build();
@@ -31,17 +64,30 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
 
-    // Migrate the main application database
-    var appDb = services.GetRequiredService<AppDbContext>();
-    appDb.Database.Migrate();
+    try
+    {
+        var appDb = services.GetRequiredService<AppDbContext>();
+        var authDb = services.GetRequiredService<AuthDbContext>();
 
-    // Migrate the auth database
-    var authDb = services.GetRequiredService<AuthDbContext>();
-    authDb.Database.Migrate();
+        if (!useInMemory)
+        {
+            // Migrate real DB
+            appDb.Database.Migrate();
+            authDb.Database.Migrate();
+            Console.WriteLine("Database migrations applied successfully.");
+        }
+        else
+        {
+            Console.WriteLine("Skipping migrations (in-memory mode)");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database initialization failed: {ex.Message}");
+    }
 }
 
-
-// Enable Swagger always (for dev/testing)
+// Enable Swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -50,7 +96,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
-
+app.UseCors("AllowFrontend");
 app.MapControllers();
 
 app.Run();

@@ -109,7 +109,7 @@ export default function LandingPage() {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://png.pngtree.com/background/20250122/original/pngtree-fashion-clothing-on-hangers-at-the-show-picture-image_15460073.jpg')`,
+            backgroundImage: `url('./images/hero.jpg')`,
           }}
         >
           <div className="absolute inset-0 bg-black/40" />
@@ -134,6 +134,13 @@ export default function LandingPage() {
               asChild
             >
               <Link href="/signup">Start Shopping</Link>
+            </Button>
+            <Button
+              size="lg"
+              className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-4 text-lg"
+              asChild
+            >
+              <Link href="/browse">(TEMPORARY BROWSE)</Link>
             </Button>
           </div>
 
