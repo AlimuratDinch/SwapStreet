@@ -1,13 +1,18 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import RegistrationPage from "@/app/auth/sign-up/page";
 import "@testing-library/jest-dom";
 
 // Mock router for client component
+const pushMock = jest.fn();
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push: pushMock }),
 }));
 
 describe("RegistrationPage", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders the registration form fields and button", () => {
     render(<RegistrationPage />);
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
@@ -15,7 +20,7 @@ describe("RegistrationPage", () => {
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /sign up/i }),
+      screen.getByRole("button", { name: /sign up/i })
     ).toBeInTheDocument();
   });
 
@@ -35,7 +40,7 @@ describe("RegistrationPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
     expect(
-      screen.getByText(/password must be at least 8 characters long/i),
+      screen.getByText(/password must be at least 8 characters long/i)
     ).toBeInTheDocument();
   });
 
@@ -55,5 +60,60 @@ describe("RegistrationPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
     expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+  });
+
+  it("submits successfully and navigates on success", async () => {
+    const mockResponse = { token: "abc123" };
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    } as Response);
+
+    render(<RegistrationPage />);
+    fireEvent.change(screen.getByLabelText(/name/i), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/seller/onboarding");
+    });
+  });
+
+  it("shows error message on failed API call", async () => {
+    const errorMsg = "Failed to create account";
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: false,
+      text: async () => errorMsg,
+    } as Response);
+
+    render(<RegistrationPage />);
+    fireEvent.change(screen.getByLabelText(/name/i), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "fail@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+
+    const errorEl = await screen.findByText(errorMsg);
+    expect(errorEl).toBeInTheDocument();
   });
 });
