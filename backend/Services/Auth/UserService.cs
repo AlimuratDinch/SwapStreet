@@ -64,9 +64,7 @@ namespace backend.Services.Auth
 
         public async Task<UserDto?> LoginWithPasswordAsync(User user, string password)
         {
-            var hashedPassword = _passwordHasher.HashPassword(password);
-
-            return _passwordHasher.VerifyPassword(hashedPassword, user.EncryptedPassword)
+            return _passwordHasher.VerifyPassword(password, user.EncryptedPassword)
                 ? new UserDto
                 {
                     Id = user.Id,

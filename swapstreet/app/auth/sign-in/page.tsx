@@ -35,7 +35,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         throw new Error(err || 'Login failed');
       }
 
-      router.push('/browse/page');
+      router.push('/browse');
       const data = await response.json();
       console.log('Logged in:', data);
 
