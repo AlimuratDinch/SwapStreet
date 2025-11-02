@@ -2,6 +2,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import LoginPage from "@/app/auth/sign-in/page";
 import "@testing-library/jest-dom";
 
+// Mock router for client component
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
 describe("LoginPage", () => {
   it("renders the Login heading", () => {
     render(<LoginPage />);

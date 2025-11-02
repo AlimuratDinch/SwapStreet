@@ -10,37 +10,35 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      console.log("Attempting Sign In...")
-      const response = await fetch('http://localhost:8080/api/auth/signin', {
-        method: 'POST',
+      console.log("Attempting Sign In...");
+      const response = await fetch("http://localhost:8080/api/auth/signin", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
         const err = await response.text();
-        throw new Error(err || 'Login failed');
+        throw new Error(err || "Login failed");
       }
 
-      router.push('/browse');
+      router.push("/browse");
       const data = await response.json();
-      console.log('Logged in:', data);
-
+      console.log("Logged in:", data);
     } catch (err: any) {
-      console.error('Error:', err);
+      console.error("Error:", err);
       setError(err.message);
     } finally {
       setLoading(false);

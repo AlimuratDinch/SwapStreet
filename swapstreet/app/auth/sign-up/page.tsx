@@ -16,38 +16,38 @@ export default function RegistrationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setError("Password must be at least 8 characters long");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register', {
-        method: 'POST',
+      const response = await fetch("http://localhost:8080/api/auth/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
-        body: JSON.stringify({  email, username, password }),
+        credentials: "include",
+        body: JSON.stringify({ email, username, password }),
       });
 
       if (!response.ok) {
         const errText = await response.text();
-        throw new Error(errText || 'Failed to create account');
+        throw new Error(errText || "Failed to create account");
       }
 
       const data = await response.json();
-      console.log("Register Successfull")
-      router.push('/seller/onboarding');
+      console.log("Register Successfull");
+      router.push("/seller/onboarding");
     } catch (err: any) {
-      setError(err.message || 'Failed to create account. Please try again.');
+      setError(err.message || "Failed to create account. Please try again.");
     }
   };
 
