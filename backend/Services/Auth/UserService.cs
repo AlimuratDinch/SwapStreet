@@ -61,8 +61,11 @@ namespace backend.Services.Auth
 
         public async Task<UserDto?> LoginWithPasswordAsync(User user, string password)
         {
-            var hashedPassword = _passwordHasher.HashPassword(password);
-            return _passwordHasher.VerifyPassword(hashedPassword, user.EncryptedPassword)
+            // Do NOT hash the incoming password again here. The password stored in the database
+            // is already hashed (with a random salt). To verify, pass the plain password to the
+            // hasher's Verify method which knows how to compare the plain password against the
+            // stored hash (for example bcrypt's Verify).
+            return _passwordHasher.VerifyPassword(password, user.EncryptedPassword)
                 ? new UserDto
                 {
                     Id = user.Id,
