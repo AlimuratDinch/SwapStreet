@@ -202,4 +202,115 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         var body = await response.Content.ReadAsStringAsync();
         body.Should().Contain("Token is invalid or expired");
     }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ------------------ SIGN IN TESTS -----------------------------
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [Fact]
+    public async Task SignIn_ShouldReturnOk_AndSetAccessAndRefreshCookies()
+    {
+        // Arrange - register first so user exists
+        var signUpDto = new
+        {
+            Email = "signin-success@test.com",
+            Username = "signinUser",
+            Password = "Test123!"
+        };
+        var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed before signin");
+
+        // Act - signin with same credentials
+        var signInDto = new
+        {
+            Email = "signin-success@test.com",
+            Password = "Test123!"
+        };
+        var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
+        var response = await _client.PostAsync("/api/auth/signin", signInContent);
+
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue("signin with valid credentials should succeed");
+
+        var cookies = response.Headers.GetValues("Set-Cookie");
+        cookies.Should().Contain(c => c.Contains("AccessToken"), "AccessToken cookie should be set on signin");
+        cookies.Should().Contain(c => c.Contains("RefreshToken"), "RefreshToken cookie should be set on signin");
+    }
+
+    [Fact]
+    public async Task SignIn_WithInvalidPassword_ShouldReturnBadRequest()
+    {
+        // Arrange - register a user
+        var signUpDto = new
+        {
+            Email = "signin-invalid@test.com",
+            Username = "signinInvalid",
+            Password = "Test123!"
+        };
+        var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed before signin");
+
+        // Act - attempt signin with wrong password
+        var signInDto = new
+        {
+            Email = "signin-invalid@test.com",
+            Password = "WrongPassword!"
+        };
+        var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
+        var response = await _client.PostAsync("/api/auth/signin", signInContent);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Invalid email or password");
+    }
+
+    [Fact]
+    public async Task SignIn_UserNotFound_ReturnsBadRequest()
+    {
+        // Arrange - do NOT register user
+
+        // Act - attempt signin for non-existent user
+        var signInDto = new
+        {
+            Email = "nonexistent@test.com",
+            Password = "DoesntMatter1!"
+        };
+        var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
+        var response = await _client.PostAsync("/api/auth/signin", signInContent);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("User not found");
+    }
+
+    [Fact]
+    public async Task SignIn_WithMissingPassword_ShouldReturnBadRequest()
+    {
+        // Arrange - register user first
+        var signUpDto = new
+        {
+            Email = "signin-missing@test.com",
+            Username = "signinMissing",
+            Password = "Test123!"
+        };
+        var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed before signin");
+
+        // Act - attempt signin with missing password
+        var signInDto = new
+        {
+            Email = "signin-missing@test.com",
+            Password = "" // missing/empty
+        };
+        var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
+        var response = await _client.PostAsync("/api/auth/signin", signInContent);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }
