@@ -160,8 +160,8 @@ namespace backend.Controllers
                 Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays) // refresh token typically longer-lived
             };
 
-            Response.Cookies.Append("AccessToken", accessToken, accessCookieOptions);
-            Response.Cookies.Append("RefreshToken", refreshToken, refreshCookieOptions);
+            Response.Cookies.Append("access_token", accessToken, accessCookieOptions);
+            Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
 
             // 7. Return success response
             
