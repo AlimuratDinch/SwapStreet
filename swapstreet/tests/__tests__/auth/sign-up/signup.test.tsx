@@ -20,7 +20,7 @@ describe("RegistrationPage", () => {
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /sign up/i })
+      screen.getByRole("button", { name: /sign up/i }),
     ).toBeInTheDocument();
   });
 
@@ -40,7 +40,7 @@ describe("RegistrationPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
     expect(
-      screen.getByText(/password must be at least 8 characters long/i)
+      screen.getByText(/password must be at least 8 characters long/i),
     ).toBeInTheDocument();
   });
 

@@ -26,7 +26,9 @@ describe("LoginPage", () => {
 
   it("renders the Sign In button", () => {
     render(<LoginPage />);
-    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /sign in/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders the Sign Up prompt", () => {
