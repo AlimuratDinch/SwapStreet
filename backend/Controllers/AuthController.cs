@@ -176,10 +176,42 @@ namespace backend.Controllers
 
         // POST api/auth/refresh
         [HttpPost("refresh")]
-        public IActionResult Refresh()
+        public async Task<IActionResult> Refresh()
         {
-            // TODO: implement refresh token logic
-            return Ok();
+            // Get the refresh token from cookies
+            if (!Request.Cookies.TryGetValue("refresh_token", out var refreshToken) || string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return BadRequest(new { Error = "Invalid or missing refresh token" });
+            }
+
+            // Validate the refresh token
+            if (!await _tokenService.ValidateRefreshTokenAsync(refreshToken))
+            {
+                return BadRequest(new { Error = "Token is invalid or expired" });
+            }
+
+            // Get the user ID from the token
+            Guid? userID = await _tokenService.GetUserIdFromTokenAsync(refreshToken);
+            if (!userID.HasValue)
+            {
+                return BadRequest(new { Error = "No user found for the provided token" });
+            }
+
+            // Generate a new access token
+            var accessToken = await _tokenService.GenerateAccessTokenAsync(userID.Value);
+
+            // Set the access token as an HTTP-only cookie
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // set to false in local dev if not using HTTPS
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
+            };
+
+            Response.Cookies.Append("access_token", accessToken, cookieOptions);
+
+            return Ok(new { Message = "Token refreshed successfully" });
         }
 
         // POST api/auth/logout
