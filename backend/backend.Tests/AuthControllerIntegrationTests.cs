@@ -208,14 +208,17 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     [Fact]
-    public async Task SignIn_ShouldReturnOk_AndSetAccessAndRefreshCookies()
+    public async Task SignIn_ShouldReturnOk_AndSetAccessAndRefreshCookies_AndTokensAreValid()
     {
         // Arrange - register first so user exists
+        var email = "success@test.com";
+        var password = "Test123!";
+
         var signUpDto = new
         {
-            Email = "signin-success@test.com",
+            Email = email,
             Username = "signinUser",
-            Password = "Test123!"
+            Password = password
         };
         var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
         var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
@@ -224,8 +227,8 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         // Act - signin with same credentials
         var signInDto = new
         {
-            Email = "signin-success@test.com",
-            Password = "Test123!"
+            Email = email,
+            Password = password
         };
         var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
         var response = await _client.PostAsync("/api/auth/signin", signInContent);

@@ -142,12 +142,6 @@ namespace backend.Controllers
             var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
             var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
-            // 6. Get token expiration times
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var accessTokenExpiration = tokenHandler.ReadJwtToken(accessToken).ValidTo;
-            var refreshTokenExpiration = tokenHandler.ReadJwtToken(refreshToken).ValidTo;
-
             // 6. set cookie options
             // Add HTTP-only cookies for tokens
             var accessCookieOptions = new CookieOptions
@@ -155,7 +149,7 @@ namespace backend.Controllers
                 HttpOnly = true,
                 Secure = true, // recommended for HTTPS only
                 SameSite = SameSiteMode.Strict,
-                Expires = accessTokenExpiration  // access token usually short-lived
+                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)  // access token usually short-lived
             };
 
             var refreshCookieOptions = new CookieOptions
@@ -163,7 +157,7 @@ namespace backend.Controllers
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
-                Expires = refreshTokenExpiration // refresh token typically longer-lived
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays) // refresh token typically longer-lived
             };
 
             Response.Cookies.Append("AccessToken", accessToken, accessCookieOptions);
