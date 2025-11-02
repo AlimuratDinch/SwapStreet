@@ -19,12 +19,14 @@ namespace backend.Controllers
         private readonly IConfiguration _config;
         private readonly int _accessTokenExpirationMinutes;
         private readonly int _refreshTokenExpirationDays;
+        private readonly AuthDbContext _authDbContext;
 
-        public AuthController(IUserService userService, ITokenService tokenService, IConfiguration config)
+        public AuthController(IUserService userService, ITokenService tokenService, IConfiguration config, AuthDbContext authDbContext)
         {
             _userService = userService;
             _tokenService = tokenService;
             _config = config;
+            _authDbContext = authDbContext;
 
             _accessTokenExpirationMinutes = _config.GetValue<int>("Jwt:AccessTokenExpirationMinutes");
             _refreshTokenExpirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
@@ -164,7 +166,7 @@ namespace backend.Controllers
             Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
 
             // 7. Return success response
-            
+
             return Ok(new { Message = "Login successful." });
         }
 
@@ -300,10 +302,29 @@ namespace backend.Controllers
         // DELETE api/auth/deleteUser
         [Authorize]
         [HttpDelete("deleteUser")]
-        public IActionResult DeleteUser()
+        public async Task<IActionResult> DeleteUser()
         {
-            // TODO: implement user deletion logic
-            return Ok();
+            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
+            if (!userId.HasValue) return Unauthorized();
+
+            // Begin transaction on the same scoped AuthDbContext
+            await using var tx = await _authDbContext.Database.BeginTransactionAsync();
+            try
+            {
+                await _tokenService.InvalidateAllRefreshTokensForUserAsync(userId.Value); // uses same DbContext
+                await _userService.PermanentlyDeleteUserAsync(userId.Value);               // uses same DbContext
+
+                await tx.CommitAsync();
+
+                Response.Cookies.Delete("access_token");
+                Response.Cookies.Delete("refresh_token");
+                return Ok();
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                return BadRequest(new { Error = "Delete failed" });
+            }
         }
     }
 }
