@@ -14,15 +14,18 @@ using backend;
 using System;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
+    private readonly WebApplicationFactory<Program> _factory;
 
     public AuthControllerIntegrationTests(WebApplicationFactory<Program> factory)
     {
         Environment.SetEnvironmentVariable("USE_INMEMORY_DB", "true");
 
+        _factory = factory;
         var projectDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../backend"));
 
         _client = factory.WithWebHostBuilder(builder =>
@@ -315,5 +318,78 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ------------------ DELETE USER TESTS --------------------------
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [Fact]
+    public async Task DeleteUser_ShouldReturnOk_AndRemoveUserAndTokens()
+    {
+        // Arrange - register user (register sets cookies)
+        var email = "delete@test.com";
+        var password = "Test123!";
+        var signUpDto = new { Email = email, Username = "deleteUser", Password = password };
+
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration must succeed before delete");
+
+        // Extract access_token cookie value
+        var setCookies = registerResponse.Headers.GetValues("Set-Cookie").ToArray();
+        var accessCookie = setCookies.FirstOrDefault(c => c.Contains("access_token"));
+        accessCookie.Should().NotBeNull("access_token cookie must be set on register/signin");
+        var accessToken = accessCookie.Split(';')[0].Split('=')[1];
+
+        // Act - send delete request with access token cookie
+        var request = new HttpRequestMessage(HttpMethod.Delete, "/api/auth/deleteUser");
+        request.Headers.Add("Cookie", $"access_token={accessToken}");
+        using var deleteResponse = await _client.SendAsync(request);
+
+        // Assert - success
+        deleteResponse.IsSuccessStatusCode.Should().BeTrue("delete user should return success");
+
+        // Verify user removed from DB and refresh tokens invalidated/removed
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        user.Should().BeNull("user must be removed from the database after deletion");
+
+        bool anyTokens;
+        if (user == null)
+        {
+            anyTokens = false;
+        }
+        else
+        {
+            anyTokens = await db.RefreshTokens.AnyAsync(t => t.UserId == user.Id);
+        }
+        anyTokens.Should().BeFalse("no refresh tokens should remain for deleted user");
+    }
+
+    [Fact]
+    public async Task DeleteUser_WithoutToken_ReturnsUnauthorized()
+    {
+        // Act - call delete without cookie
+        var request = new HttpRequestMessage(HttpMethod.Delete, "/api/auth/deleteUser");
+        using var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeleteUser_WithInvalidToken_ReturnsUnauthorized()
+    {
+        // Arrange - craft invalid access token
+        var request = new HttpRequestMessage(HttpMethod.Delete, "/api/auth/deleteUser");
+        request.Headers.Add("Cookie", "access_token=invalid.token.value");
+
+        using var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }
