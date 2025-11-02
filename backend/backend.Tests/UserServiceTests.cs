@@ -132,9 +132,10 @@ namespace backend.Tests
 
             public bool VerifyPassword(string password, string hashedPassword)
             {
-                // In UserService the code hashes the provided password and then calls VerifyPassword(hashedPassword, user.EncryptedPassword)
-                // So 'password' here will be the hashed input from the service.
-                return password == hashedPassword;
+                // In UserService the code takes the unhashed provided password and then calls VerifyPassword(hashedPassword, user.EncryptedPassword)
+                // So 'password' here will be the unhashed input from the service, which is then hashed and compared to the stored hash..
+                var hasher = new FakePasswordHasher();
+                return hasher.HashPassword(password) == hashedPassword;
             }
         }
     }

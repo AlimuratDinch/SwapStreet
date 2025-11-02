@@ -7,5 +7,6 @@ namespace backend.DTOs.Auth
         public string Username { get; set; } = default!;
 
     }
-
+    public record UpdateUsernameDto(string NewUsername);
+    public record UpdateEmailDto(string NewEmail);
 }

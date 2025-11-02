@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using backend.Contracts.Auth;
 using System.ComponentModel.DataAnnotations;
 using backend.Models.Authentication;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace backend.Controllers
 {
@@ -159,11 +160,33 @@ namespace backend.Controllers
                 Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
             };
 
+            // 6. set cookie options
+            // Add HTTP-only cookies for tokens
+            var accessCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // recommended for HTTPS only
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)  // access token usually short-lived
+            };
+
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays) // refresh token typically longer-lived
+            };
+
+            Response.Cookies.Append("access_token", accessToken, accessCookieOptions);
             Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
 
-            return Ok();
+            // 7. Return success response
+            
+            return Ok(new { Message = "Login successful." });
         }
 
+        // POST api/auth/refresh
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()
         {
@@ -206,28 +229,90 @@ namespace backend.Controllers
         // POST api/auth/logout
         [Authorize]
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            // TODO: implement logout logic
-            return Ok();
+            // obtain access token from cookies
+            var accessToken = Request.Cookies["access_token"];
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return Unauthorized(new { Error = "No access token provided" });
+            }
+
+            // 1. Obtain user ID from token
+            var userId = await _tokenService.GetUserIdFromTokenAsync(accessToken);
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { Error = "Invalid token" });
+            }
+            // 2. Invalidate all refresh tokens for the user
+            await _tokenService.InvalidateAllRefreshTokensForUserAsync(userId.Value);
+
+            // 3. Remove cookies
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
+
+            return Ok(new { message = "Logout successful" });
         }
 
         // PATCH api/auth/updateUsername
+        // call using {"newUsername": "newname" }
         [Authorize]
         [HttpPatch("updateUsername")]
-        public IActionResult UpdateUsername()
+        public async Task<IActionResult> UpdateUsername([FromBody] UpdateUsernameDto updateUsernameDto)
         {
-            // TODO: implement username update logic
-            return Ok();
+            if (string.IsNullOrWhiteSpace(updateUsernameDto.NewUsername))
+            {
+                return BadRequest(new { Error = "Username cannot be empty" });
+            }
+
+            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { Error = "Invalid token" });
+            }
+
+            try
+            {
+                var updatedUser = await _userService.UpdateUsernameAsync(userId.Value, updateUsernameDto.NewUsername);
+                return Ok(new { Message = "Username updated successfully", NewUsername = updatedUser.Username });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         // PATCH api/auth/updateEmail
+        // call using {"newEmail": "newemail" }
         [Authorize]
         [HttpPatch("updateEmail")]
-        public IActionResult UpdateEmail()
+        public async Task<IActionResult> UpdateEmail([FromBody] UpdateEmailDto updateEmailDto)
         {
-            // TODO: implement email update logic
-            return Ok();
+            if (string.IsNullOrWhiteSpace(updateEmailDto.NewEmail))
+            {
+                return BadRequest(new { Error = "Email cannot be empty" });
+            }
+
+            if (!new EmailAddressAttribute().IsValid(updateEmailDto.NewEmail))
+            {
+                return BadRequest(new { Error = "Invalid email format" });
+            }
+
+            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { Error = "Invalid token" });
+            }
+
+            try
+            {
+                var updatedUser = await _userService.UpdateEmailAsync(userId.Value, updateEmailDto.NewEmail);
+                return Ok(new { Message = "Email updated successfully", NewEmail = updatedUser.Email });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         // DELETE api/auth/deleteUser
