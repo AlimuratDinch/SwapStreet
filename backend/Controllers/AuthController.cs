@@ -142,7 +142,7 @@ namespace backend.Controllers
              var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
             // Set HttpOnly cookies
-            var cookieOptions = new CookieOptions
+            var accessCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
                 Secure = false,
@@ -150,32 +150,12 @@ namespace backend.Controllers
                 Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
             };
 
-            Response.Cookies.Append("access_token", accessToken, cookieOptions);
-
             var refreshCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
                 Secure = false, // <- set false for localhost dev
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
-            };
-
-            // 6. set cookie options
-            // Add HTTP-only cookies for tokens
-            var accessCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true, // recommended for HTTPS only
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)  // access token usually short-lived
-            };
-
-            var refreshCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays) // refresh token typically longer-lived
             };
 
             Response.Cookies.Append("access_token", accessToken, accessCookieOptions);
