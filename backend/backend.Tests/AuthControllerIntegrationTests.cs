@@ -47,11 +47,11 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         };
 
 
-        var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
 
         // Act
-        var response = await _client.PostAsync("/api/auth/register", content);
+        using var response = await _client.PostAsync("/api/auth/register", content);
 
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue("a valid registration should return a 2xx status");
@@ -72,11 +72,11 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Password = "Test123!"
         };
 
-        var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
 
         // Act
-        var response = await _client.PostAsync("/api/auth/register", content);
+        using var response = await _client.PostAsync("/api/auth/register", content);
 
         // Assert
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest, "registration should fail with missing email");
@@ -93,11 +93,11 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Password = "Test123!"
         };
 
-        var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
 
         // Act - first registration
-        var firstResponse = await _client.PostAsync("/api/auth/register", content);
+        using var firstResponse = await _client.PostAsync("/api/auth/register", content);
         firstResponse.IsSuccessStatusCode.Should().BeTrue("first registration should succeed");
 
         // Act - second registration with same email
@@ -118,11 +118,11 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Password = "123" // too short/weak
         };
 
-        var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
 
         // Act
-        var response = await _client.PostAsync("/api/auth/register", content);
+        using var response = await _client.PostAsync("/api/auth/register", content);
 
         // Assert
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest, "registration should fail for invalid password");
@@ -144,10 +144,10 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Username = "refreshUser",
             Password = "Test123!"
         };
-        var content = new StringContent(JsonSerializer.Serialize(signUpDto), System.Text.Encoding.UTF8, "application/json");
+        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), System.Text.Encoding.UTF8, "application/json");
 
 
-        var registerResponse = await _client.PostAsync("/api/auth/register", content);
+        using var registerResponse = await _client.PostAsync("/api/auth/register", content);
 
         registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed");
 
@@ -220,7 +220,7 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Username = "signinUser",
             Password = password
         };
-        var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
         var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
         registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed before signin");
 
@@ -230,15 +230,15 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Email = email,
             Password = password
         };
-        var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
-        var response = await _client.PostAsync("/api/auth/signin", signInContent);
+        using var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
+        using var response = await _client.PostAsync("/api/auth/signin", signInContent);
 
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue("signin with valid credentials should succeed");
 
         var cookies = response.Headers.GetValues("Set-Cookie");
-        cookies.Should().Contain(c => c.Contains("AccessToken"), "AccessToken cookie should be set on signin");
-        cookies.Should().Contain(c => c.Contains("RefreshToken"), "RefreshToken cookie should be set on signin");
+        cookies.Should().Contain(c => c.Contains("access_token"), "AccessToken cookie should be set on signin");
+        cookies.Should().Contain(c => c.Contains("refresh_token"), "RefreshToken cookie should be set on signin");
     }
 
     [Fact]
@@ -251,8 +251,8 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Username = "signinInvalid",
             Password = "Test123!"
         };
-        var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-        var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
         registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed before signin");
 
         // Act - attempt signin with wrong password
@@ -261,8 +261,8 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Email = "signin-invalid@test.com",
             Password = "WrongPassword!"
         };
-        var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
-        var response = await _client.PostAsync("/api/auth/signin", signInContent);
+        using var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
+        using var response = await _client.PostAsync("/api/auth/signin", signInContent);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -281,8 +281,8 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Email = "nonexistent@test.com",
             Password = "DoesntMatter1!"
         };
-        var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
-        var response = await _client.PostAsync("/api/auth/signin", signInContent);
+        using var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
+        using var response = await _client.PostAsync("/api/auth/signin", signInContent);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -300,8 +300,8 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Username = "signinMissing",
             Password = "Test123!"
         };
-        var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-        var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
         registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed before signin");
 
         // Act - attempt signin with missing password
@@ -310,8 +310,8 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Email = "signin-missing@test.com",
             Password = "" // missing/empty
         };
-        var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
-        var response = await _client.PostAsync("/api/auth/signin", signInContent);
+        using var signInContent = new StringContent(JsonSerializer.Serialize(signInDto), Encoding.UTF8, "application/json");
+        using var response = await _client.PostAsync("/api/auth/signin", signInContent);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
