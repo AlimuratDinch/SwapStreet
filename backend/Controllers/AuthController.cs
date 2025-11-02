@@ -318,7 +318,7 @@ namespace backend.Controllers
 
                 Response.Cookies.Delete("access_token");
                 Response.Cookies.Delete("refresh_token");
-                return Ok();
+                return Ok(new { Message = "User deleted successfully" });
             }
             catch
             {
