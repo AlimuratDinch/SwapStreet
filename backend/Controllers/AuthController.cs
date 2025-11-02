@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using backend.Contracts.Auth;
 using System.ComponentModel.DataAnnotations;
 using backend.Models.Authentication;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace backend.Controllers
 {
@@ -125,7 +126,7 @@ namespace backend.Controllers
 
             if (user == null)
             {
-                return BadRequest(new { Error = "Invalid email or password." });
+                return BadRequest(new { Error = "User not found." });
             }
 
             // 4. Verify password
@@ -141,9 +142,33 @@ namespace backend.Controllers
             var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
             var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
-            return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken });
+            // 6. set cookie options
+            // Add HTTP-only cookies for tokens
+            var accessCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // recommended for HTTPS only
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)  // access token usually short-lived
+            };
+
+            var refreshCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays) // refresh token typically longer-lived
+            };
+
+            Response.Cookies.Append("access_token", accessToken, accessCookieOptions);
+            Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
+
+            // 7. Return success response
+            
+            return Ok(new { Message = "Login successful." });
         }
 
+        // POST api/auth/refresh
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()
         {
