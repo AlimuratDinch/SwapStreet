@@ -126,7 +126,7 @@ namespace backend.Controllers
 
             if (user == null)
             {
-                return BadRequest(new { Error = "Invalid email or password." });
+                return BadRequest(new { Error = "User not found." });
             }
 
             // 4. Verify password
