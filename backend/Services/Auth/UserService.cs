@@ -36,6 +36,9 @@ namespace backend.Services.Auth
 
             await _authDBContext.Users.AddAsync(user);
             await _authDBContext.SaveChangesAsync();
+
+            Console.WriteLine($"Adding new user: {user}");
+            
             return user;
         }
 
