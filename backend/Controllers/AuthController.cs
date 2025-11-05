@@ -74,8 +74,8 @@ namespace backend.Controllers
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
             };
 
@@ -84,8 +84,8 @@ namespace backend.Controllers
             var refreshCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = false, // <- set false for localhost dev
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
             };
 
@@ -137,36 +137,34 @@ namespace backend.Controllers
 
             if (result == null)
             {
-                return BadRequest(new { Error = "Invalid email or password." });
+                return BadRequest(new { Error = "Password incorrect." });
             }
 
-            // 5. Generate JWT token
-            var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
-            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
+             var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
+             var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
-            // 6. set cookie options
-            // Add HTTP-only cookies for tokens
+            // Set HttpOnly cookies
             var accessCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // recommended for HTTPS only
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)  // access token usually short-lived
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
             };
 
             var refreshCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays) // refresh token typically longer-lived
+                Secure = false, // <- set false for localhost dev
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
             };
 
             Response.Cookies.Append("access_token", accessToken, accessCookieOptions);
             Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
 
             // 7. Return success response
-
+            
             return Ok(new { Message = "Login successful." });
         }
 
@@ -200,8 +198,8 @@ namespace backend.Controllers
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // set to false in local dev if not using HTTPS
-                SameSite = SameSiteMode.Strict,
+                Secure = false, // set to false in local dev if not using HTTPS
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
             };
 

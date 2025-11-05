@@ -1,0 +1,32 @@
+  
+  services:
+    # ==========================
+    # Backend service
+    # ==========================
+    backend:
+      build:
+        context: ./backend
+      container_name: backend
+      env_file:
+        - .env
+      ports:
+        - "8080:8080"
+      environment:
+        USE_INMEMORY_DB: "true"
+        ASPNETCORE_ENVIRONMENT: "Development"
+
+    # ==========================
+    # Frontend (Swapstreet)
+    # ==========================
+    swapstreet:
+      build: ./swapstreet
+      container_name: swapstreet-frontend
+      ports:
+        - "3000:3000"
+      volumes:
+        - ./swapstreet:/usr/app
+        - /usr/app/node_modules
+      environment:
+        NODE_ENV: development
+      depends_on:
+        - backend

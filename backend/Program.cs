@@ -38,11 +38,8 @@ if (useInMemory)
 else
 {
     // Build Postgres connection string from environment variables
-    var connectionString = $"Host={Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost"};" +
-                           $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
-                           $"Database={Environment.GetEnvironmentVariable("DB_NAME") ?? "swapstreet_db"};" +
-                           $"Username={Environment.GetEnvironmentVariable("DB_USER") ?? "swapstreet_user"};" +
-                           $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "securepassword123"};";
+    var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
+                       ?? throw new InvalidOperationException("Connection string not set.");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
