@@ -51,11 +51,9 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
 
 
         using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
 
         // Act
-        using var response = await _client.PostAsync("/api/auth/register", content);
         using var response = await _client.PostAsync("/api/auth/register", content);
 
         // Assert
@@ -78,11 +76,9 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         };
 
         using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
 
         // Act
-        using var response = await _client.PostAsync("/api/auth/register", content);
         using var response = await _client.PostAsync("/api/auth/register", content);
 
         // Assert
@@ -101,11 +97,9 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         };
 
         using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
 
         // Act - first registration
-        using var firstResponse = await _client.PostAsync("/api/auth/register", content);
         using var firstResponse = await _client.PostAsync("/api/auth/register", content);
         firstResponse.IsSuccessStatusCode.Should().BeTrue("first registration should succeed");
 
@@ -128,11 +122,9 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         };
 
         using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
 
         // Act
-        using var response = await _client.PostAsync("/api/auth/register", content);
         using var response = await _client.PostAsync("/api/auth/register", content);
 
         // Assert
@@ -156,10 +148,8 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Password = "Test123!"
         };
         using var content = new StringContent(JsonSerializer.Serialize(signUpDto), System.Text.Encoding.UTF8, "application/json");
-        using var content = new StringContent(JsonSerializer.Serialize(signUpDto), System.Text.Encoding.UTF8, "application/json");
 
 
-        using var registerResponse = await _client.PostAsync("/api/auth/register", content);
         using var registerResponse = await _client.PostAsync("/api/auth/register", content);
 
         registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed");
