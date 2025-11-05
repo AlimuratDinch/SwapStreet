@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
 using backend.Contracts;
 using backend.Services;
+using backend.Services.Auth;
+using backend.Contracts.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,11 +38,8 @@ if (useInMemory)
 else
 {
     // Build Postgres connection string from environment variables
-    var connectionString = $"Host={Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost"};" +
-                           $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
-                           $"Database={Environment.GetEnvironmentVariable("DB_NAME") ?? "swapstreet_db"};" +
-                           $"Username={Environment.GetEnvironmentVariable("DB_USER") ?? "swapstreet_user"};" +
-                           $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "securepassword123"};";
+    var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
+                       ?? throw new InvalidOperationException("Connection string not set.");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
@@ -53,8 +52,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
-// Register your custom services
+// Register services
 builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
@@ -99,4 +101,6 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
+
+public partial class Program { }

@@ -17,7 +17,7 @@ public class CatalogController : ControllerBase
         [FromQuery] decimal? minPrice,
         [FromQuery] decimal? maxPrice,
         [FromQuery] int? categoryId,
-        [FromQuery] string? conditions) 
+        [FromQuery] string? conditions)
     {
         var items = _catalog.GetAllItems();
         if (minPrice.HasValue)

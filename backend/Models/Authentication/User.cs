@@ -59,7 +59,15 @@ namespace backend.Models.Authentication
         // public DateTimeOffset? EmailChangeSentAt { get; set; }
 
 
+         public override string ToString()
+    {
+        return $"Email={Email}, Username={Username}, Status={Status}, PasswordHash={EncryptedPassword}";
     }
+
+
+    }
+
+    
 
 
 }
