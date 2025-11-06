@@ -212,15 +212,15 @@ namespace backend.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            // obtain access token from cookies
-            var accessToken = Request.Cookies["access_token"];
-            if (string.IsNullOrEmpty(accessToken))
+            // obtain refresh token from cookies
+            var refreshToken = Request.Cookies["refresh_token"];
+            if (string.IsNullOrEmpty(refreshToken))
             {
-                return Unauthorized(new { Error = "No access token provided" });
+                return Unauthorized(new { Error = "No token provided" });
             }
 
             // 1. Obtain user ID from token
-            var userId = await _tokenService.GetUserIdFromTokenAsync(accessToken);
+            var userId = await _tokenService.GetUserIdFromTokenAsync(refreshToken);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -301,11 +301,13 @@ namespace backend.Controllers
         [HttpDelete("deleteUser")]
         public async Task<IActionResult> DeleteUser()
         {
-            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
-            Console.WriteLine("Deleting user with ID: " + userId.Value);
-            if (!userId.HasValue) return Unauthorized(new { Error = "Invalid token for ID: " + userId });
+            var refresh_token = Request.Cookies["refresh_token"];
+            if (string.IsNullOrEmpty(refresh_token)) return Unauthorized(new { Error = "No token provided" });
 
-            
+            var userId = await _tokenService.GetUserIdFromTokenAsync(refresh_token);
+            if (!userId.HasValue) return Unauthorized(new { Error = "Invalid token" });
+
+            // Proceed with user deletion
 
             // Begin transaction on the same scoped AuthDbContext
             await using var tx = await _authDbContext.Database.BeginTransactionAsync();
@@ -323,7 +325,7 @@ namespace backend.Controllers
             catch
             {
                 await tx.RollbackAsync();
-                return BadRequest(new { Error = "Delete failed" });
+                return StatusCode(500, new { Error = "Delete failed" });
             }
         }
     }

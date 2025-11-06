@@ -34,9 +34,14 @@ if (useInMemory)
     Console.WriteLine("Using in-memory database (dev mode)");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseInMemoryDatabase("AppDb"));
+        options
+        .UseInMemoryDatabase("AppDb")
+        .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning)));
     builder.Services.AddDbContext<AuthDbContext>(options =>
-        options.UseInMemoryDatabase("AuthDb"));
+        options
+        .UseInMemoryDatabase("AuthDb")
+        .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+        );
 }
 else
 {
