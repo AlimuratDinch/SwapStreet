@@ -2,12 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
 using backend.Contracts;
 using backend.Services;
-// using dotenv.net;
-
-// // Load .env file
-// DotEnv.Load(new DotEnvOptions(
-//     envFilePaths: new[] { Path.Combine(Directory.GetCurrentDirectory(), ".env") }
-// ));
+using backend.Services.Auth;
+using backend.Contracts.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,77 +15,77 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", builder =>
     {
-        builder.WithOrigins("http://localhost:3000") // Explicitly allow frontend
+        builder.WithOrigins("http://localhost:3000")
                .AllowAnyMethod()
                .AllowAnyHeader()
-               .AllowCredentials(); // If authentication is used
+               .AllowCredentials();
     });
 });
 
-// Add EF Core DbContext with single connection string
-var connectionString = $"Host={Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost"};" +
-                       $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
-                       $"Database={Environment.GetEnvironmentVariable("DB_NAME") ?? "swapstreet_db"};" +
-                       $"Username={Environment.GetEnvironmentVariable("DB_USER") ?? "swapstreet_user"};" +
-                       $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "securepassword123"};";
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+// Check for dev flag
+var useInMemory = Environment.GetEnvironmentVariable("USE_INMEMORY_DB") == "true";
+
+// Configure EF Core depending on flag
+if (useInMemory)
+{
+    Console.WriteLine("Using in-memory database (dev mode)");
+
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseInMemoryDatabase("AppDb"));
+    builder.Services.AddDbContext<AuthDbContext>(options =>
+        options.UseInMemoryDatabase("AuthDb"));
+}
+else
+{
+    // Build Postgres connection string from environment variables
+    var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
+                       ?? throw new InvalidOperationException("Connection string not set.");
+
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString));
+    builder.Services.AddDbContext<AuthDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
 
 // Add services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
-// Add EF Core DbContext
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddControllers(); // enable controllers
-
-// Register your ICatalogService implementation
+// Register services
 builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 
-// Allow app to listen on all interfaces (for Docker)
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    try
-    {
-        db.Database.OpenConnection();
-        Console.WriteLine("Database connection successful!");
-        db.Database.CloseConnection();
-        // db.Database.Migrate(); // Disabled to avoid conflicts
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database connection failed: {ex.Message}");
-    }
     var services = scope.ServiceProvider;
 
-    // Migrate the main application database
     try
     {
         var appDb = services.GetRequiredService<AppDbContext>();
-        appDb.Database.Migrate();
+        var authDb = services.GetRequiredService<AuthDbContext>();
+
+        if (!useInMemory)
+        {
+            // Migrate real DB
+            appDb.Database.Migrate();
+            authDb.Database.Migrate();
+            Console.WriteLine("Database migrations applied successfully.");
+        }
+        else
+        {
+            Console.WriteLine("Skipping migrations (in-memory mode)");
+        }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database migration failed: {ex.Message}");
-    }
-
-    // Migrate the auth database
-    try {
-        var authDb = services.GetRequiredService<AuthDbContext>();
-        authDb.Database.Migrate();
-    } catch (Exception ex) {
-        Console.WriteLine($"Auth database migration failed: {ex.Message}");
+        Console.WriteLine($"Database initialization failed: {ex.Message}");
     }
 }
 
@@ -102,7 +98,9 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
-app.UseCors("AllowFrontend"); // Before MapControllers
+app.UseCors("AllowFrontend");
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
+
+public partial class Program { }

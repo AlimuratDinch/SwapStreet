@@ -8,17 +8,16 @@ import { PromptElement } from "../AuthFormElements";
 
 export default function RegistrationPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const [username, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Basic validation
     if (password.length < 8) {
       setError("Password must be at least 8 characters long");
       return;
@@ -30,14 +29,25 @@ export default function RegistrationPage() {
     }
 
     try {
-      // Here you would typically make an API call to your backend
-      console.log("Signing up with:", { name, email, password });
-      // Add your API call here
+      const response = await fetch("http://localhost:8080/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email, username, password }),
+      });
 
-      // On success, send the user to seller onboarding to complete profile setup
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || "Failed to create account");
+      }
+
+      const data = await response.json();
+      console.log("Register Successfull");
       router.push("/seller/onboarding");
-    } catch (err) {
-      setError("Failed to create account. Please try again.");
+    } catch (err: any) {
+      setError(err.message || "Failed to create account. Please try again.");
     }
   };
 
@@ -93,7 +103,7 @@ export default function RegistrationPage() {
             <AuthInput
               label="Name"
               type="text"
-              value={name}
+              value={username}
               onChange={(e) => setName(e.target.value)}
               required
             />
