@@ -136,7 +136,7 @@ namespace backend.Controllers
 
             if (result == null)
             {
-                return BadRequest(new { Error = "Password incorrect." });
+                return BadRequest(new { Error = "Invalid email or password." });
             }
 
              var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
