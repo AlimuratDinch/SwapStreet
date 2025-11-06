@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using backend.Contracts.Auth;
 using System.ComponentModel.DataAnnotations;
 using backend.Models.Authentication;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace backend.Controllers
 {
@@ -303,7 +302,10 @@ namespace backend.Controllers
         public async Task<IActionResult> DeleteUser()
         {
             var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
-            if (!userId.HasValue) return Unauthorized();
+            Console.WriteLine("Deleting user with ID: " + userId.Value);
+            if (!userId.HasValue) return Unauthorized(new { Error = "Invalid token for ID: " + userId });
+
+            
 
             // Begin transaction on the same scoped AuthDbContext
             await using var tx = await _authDbContext.Database.BeginTransactionAsync();

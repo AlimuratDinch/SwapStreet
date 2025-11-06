@@ -4,6 +4,9 @@ using backend.Contracts;
 using backend.Services;
 using backend.Services.Auth;
 using backend.Contracts.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +54,42 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+
+// Authentication & Authorization (JWT)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        // Accept token from Authorization header OR from the access_token cookie
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // If no token found in header, check the access_token cookie (we set this in AuthController)
+                if (string.IsNullOrEmpty(context.Token))
+                {
+                    if (context.Request.Cookies.TryGetValue("access_token", out var tokenFromCookie))
+                    {
+                        context.Token = tokenFromCookie;
+                    }
+                }
+                return Task.CompletedTask;
+            }
+        };
+
+        var jwtSecret = builder.Configuration["Jwt:Secret"];
+        var key = string.IsNullOrEmpty(jwtSecret) ? Array.Empty<byte>() : Encoding.UTF8.GetBytes(jwtSecret);
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // Register services
 builder.Services.AddScoped<ICatalogService, CatalogService>();
