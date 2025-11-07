@@ -7,6 +7,10 @@ using backend.Contracts.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using backend.Models;
+using Minio;
+using Minio.DataModel.Args;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +63,7 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+builder.Services.Configure<MinioSettings>(builder.Configuration.GetSection("Minio"));
 
 // Authentication & Authorization (JWT)
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -104,6 +109,18 @@ builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
+// Register MinIO client as singleton
+builder.Services.AddSingleton<IMinioClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MinioSettings>>().Value;
+
+    return new MinioClient()
+        .WithEndpoint(settings.Endpoint)
+        .WithCredentials(settings.AccessKey, settings.SecretKey)
+        .WithSSL(settings.WithSSL)
+        .Build();
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -114,6 +131,16 @@ using (var scope = app.Services.CreateScope())
     {
         var appDb = services.GetRequiredService<AppDbContext>();
         var authDb = services.GetRequiredService<AuthDbContext>();
+
+        var client = scope.ServiceProvider.GetRequiredService<IMinioClient>();
+    var settings = scope.ServiceProvider.GetRequiredService<IOptions<MinioSettings>>().Value;
+
+    bool found = await client.BucketExistsAsync(
+        new BucketExistsArgs().WithBucket(settings.BucketName)
+    );
+
+    if (!found)
+        await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(settings.BucketName));
 
         if (!useInMemory)
         {
