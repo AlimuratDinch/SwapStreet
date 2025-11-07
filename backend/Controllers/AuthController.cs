@@ -207,7 +207,6 @@ namespace backend.Controllers
         }
 
         // POST api/auth/logout
-        [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -236,7 +235,6 @@ namespace backend.Controllers
 
         // PATCH api/auth/updateUsername
         // call using {"newUsername": "newname" }
-        [Authorize]
         [HttpPatch("updateUsername")]
         public async Task<IActionResult> UpdateUsername([FromBody] UpdateUsernameDto updateUsernameDto)
         {
@@ -264,7 +262,6 @@ namespace backend.Controllers
 
         // PATCH api/auth/updateEmail
         // call using {"newEmail": "newemail" }
-        [Authorize]
         [HttpPatch("updateEmail")]
         public async Task<IActionResult> UpdateEmail([FromBody] UpdateEmailDto updateEmailDto)
         {

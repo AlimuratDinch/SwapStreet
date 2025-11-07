@@ -315,4 +315,387 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ------------------ LOGOUT TESTS -----------------------------
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [Fact]
+    public async Task Logout_WithValidAccessToken_ShouldReturnOk_AndDeleteCookies()
+    {
+        // Arrange - register a user to get tokens
+        var signUpDto = new
+        {
+            Email = "logout@test.com",
+            Username = "logoutUser",
+            Password = "Test123!"
+        };
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed");
+
+        // Extract access token from Set-Cookie
+        var accessCookie = registerResponse.Headers.GetValues("Set-Cookie")
+            .FirstOrDefault(c => c.Contains("access_token"));
+        accessCookie.Should().NotBeNull("access token cookie should exist");
+
+        var accessTokenValue = accessCookie.Split(';')[0].Split('=')[1];
+
+        // Act - logout with valid token
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout");
+        request.Headers.Add("Cookie", $"access_token={accessTokenValue}");
+
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue("logout with valid token should succeed");
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        responseBody.Should().Contain("Logout successful", "response should contain success message");
+
+        // Check that cookies are deleted (Set-Cookie headers should be present with expired dates)
+        var setCookies = response.Headers.GetValues("Set-Cookie").ToList();
+        var hasAccessTokenDeletion = setCookies.Any(c => c.Contains("access_token"));
+        var hasRefreshTokenDeletion = setCookies.Any(c => c.Contains("refresh_token"));
+        
+        // Cookies should be deleted (Set-Cookie headers should be present to delete them)
+        hasAccessTokenDeletion.Should().BeTrue("access_token cookie should be deleted via Set-Cookie header");
+        hasRefreshTokenDeletion.Should().BeTrue("refresh_token cookie should be deleted via Set-Cookie header");
+    }
+
+    [Fact]
+    public async Task Logout_WithMissingAccessToken_ShouldReturnUnauthorized()
+    {
+        // Arrange - no token provided
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout");
+        // No cookie set
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("No access token provided");
+    }
+
+    [Fact]
+    public async Task Logout_WithInvalidAccessToken_ShouldReturnUnauthorized()
+    {
+        // Arrange - invalid token
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout");
+        request.Headers.Add("Cookie", $"access_token=invalidtoken");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Invalid token");
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ------------------ UPDATE USERNAME TESTS --------------------
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [Fact]
+    public async Task UpdateUsername_WithValidToken_ShouldReturnOk_AndUpdateUsername()
+    {
+        // Arrange - register a user to get tokens
+        var signUpDto = new
+        {
+            Email = "updateuser@test.com",
+            Username = "oldUsername",
+            Password = "Test123!"
+        };
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed");
+
+        // Extract access token
+        var accessCookie = registerResponse.Headers.GetValues("Set-Cookie")
+            .FirstOrDefault(c => c.Contains("access_token"));
+        accessCookie.Should().NotBeNull("access token cookie should exist");
+        var accessTokenValue = accessCookie.Split(';')[0].Split('=')[1];
+
+        // Act - update username
+        var updateDto = new
+        {
+            NewUsername = "newUsername"
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateUsername")
+        {
+            Content = updateContent
+        };
+        request.Headers.Add("Cookie", $"access_token={accessTokenValue}");
+
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue("update username with valid token should succeed");
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        responseBody.Should().Contain("Username updated successfully", "response should contain success message");
+        responseBody.Should().Contain("newUsername", "response should contain new username");
+    }
+
+    [Fact]
+    public async Task UpdateUsername_WithEmptyUsername_ShouldReturnBadRequest()
+    {
+        // Arrange - register a user to get tokens
+        var signUpDto = new
+        {
+            Email = "updateuser-empty@test.com",
+            Username = "user1",
+            Password = "Test123!"
+        };
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed");
+
+        // Extract access token
+        var accessCookie = registerResponse.Headers.GetValues("Set-Cookie")
+            .FirstOrDefault(c => c.Contains("access_token"));
+        accessCookie.Should().NotBeNull("access token cookie should exist");
+        var accessTokenValue = accessCookie!.Split(';')[0].Split('=')[1];
+
+        // Act - update with empty username
+        var updateDto = new
+        {
+            NewUsername = ""
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateUsername")
+        {
+            Content = updateContent
+        };
+        request.Headers.Add("Cookie", $"access_token={accessTokenValue}");
+
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Username cannot be empty");
+    }
+
+    [Fact]
+    public async Task UpdateUsername_WithMissingToken_ShouldReturnUnauthorized()
+    {
+        // Arrange - no token provided
+        var updateDto = new
+        {
+            NewUsername = "newUsername"
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateUsername")
+        {
+            Content = updateContent
+        };
+        // No cookie set
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task UpdateUsername_WithInvalidToken_ShouldReturnUnauthorized()
+    {
+        // Arrange - invalid token
+        var updateDto = new
+        {
+            NewUsername = "newUsername"
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateUsername")
+        {
+            Content = updateContent
+        };
+        request.Headers.Add("Cookie", $"access_token=invalidtoken");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Invalid token");
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ------------------ UPDATE EMAIL TESTS ------------------------
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [Fact]
+    public async Task UpdateEmail_WithValidToken_ShouldReturnOk_AndUpdateEmail()
+    {
+        // Arrange - register a user to get tokens
+        var signUpDto = new
+        {
+            Email = "updateemail@test.com",
+            Username = "updateEmailUser",
+            Password = "Test123!"
+        };
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed");
+
+        // Extract access token
+        var accessCookie = registerResponse.Headers.GetValues("Set-Cookie")
+            .FirstOrDefault(c => c.Contains("access_token"));
+        accessCookie.Should().NotBeNull("access token cookie should exist");
+        var accessTokenValue = accessCookie.Split(';')[0].Split('=')[1];
+
+        // Act - update email
+        var updateDto = new
+        {
+            NewEmail = "newemail@test.com"
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateEmail")
+        {
+            Content = updateContent
+        };
+        request.Headers.Add("Cookie", $"access_token={accessTokenValue}");
+
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue("update email with valid token should succeed");
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        responseBody.Should().Contain("Email updated successfully", "response should contain success message");
+        responseBody.Should().Contain("newemail@test.com", "response should contain new email");
+    }
+
+    [Fact]
+    public async Task UpdateEmail_WithEmptyEmail_ShouldReturnBadRequest()
+    {
+        // Arrange - register a user to get tokens
+        var signUpDto = new
+        {
+            Email = "updateemail-empty@test.com",
+            Username = "user1",
+            Password = "Test123!"
+        };
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed");
+
+        // Extract access token
+        var accessCookie = registerResponse.Headers.GetValues("Set-Cookie")
+            .FirstOrDefault(c => c.Contains("access_token"));
+        accessCookie.Should().NotBeNull("access token cookie should exist");
+        var accessTokenValue = accessCookie!.Split(';')[0].Split('=')[1];
+
+        // Act - update with empty email
+        var updateDto = new
+        {
+            NewEmail = ""
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateEmail")
+        {
+            Content = updateContent
+        };
+        request.Headers.Add("Cookie", $"access_token={accessTokenValue}");
+
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Email cannot be empty");
+    }
+
+    [Fact]
+    public async Task UpdateEmail_WithInvalidEmailFormat_ShouldReturnBadRequest()
+    {
+        // Arrange - register a user to get tokens
+        var signUpDto = new
+        {
+            Email = "updateemail-invalid@test.com",
+            Username = "user1",
+            Password = "Test123!"
+        };
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration should succeed");
+
+        // Extract access token
+        var accessCookie = registerResponse.Headers.GetValues("Set-Cookie")
+            .FirstOrDefault(c => c.Contains("access_token"));
+        accessCookie.Should().NotBeNull("access token cookie should exist");
+        var accessTokenValue = accessCookie!.Split(';')[0].Split('=')[1];
+
+        // Act - update with invalid email format
+        var updateDto = new
+        {
+            NewEmail = "notanemail"
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateEmail")
+        {
+            Content = updateContent
+        };
+        request.Headers.Add("Cookie", $"access_token={accessTokenValue}");
+
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Invalid email format");
+    }
+
+    [Fact]
+    public async Task UpdateEmail_WithMissingToken_ShouldReturnUnauthorized()
+    {
+        // Arrange - no token provided
+        var updateDto = new
+        {
+            NewEmail = "newemail@test.com"
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateEmail")
+        {
+            Content = updateContent
+        };
+        // No cookie set
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task UpdateEmail_WithInvalidToken_ShouldReturnUnauthorized()
+    {
+        // Arrange - invalid token
+        var updateDto = new
+        {
+            NewEmail = "newemail@test.com"
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateEmail")
+        {
+            Content = updateContent
+        };
+        request.Headers.Add("Cookie", $"access_token=invalidtoken");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Invalid token");
+    }
 }

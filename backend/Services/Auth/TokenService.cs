@@ -115,6 +115,37 @@ namespace backend.Services.Auth
 
         public async Task<Guid?> GetUserIdFromTokenAsync(string token)
         {
+            if (string.IsNullOrWhiteSpace(token))
+                return null;
+
+            // Check if it's a JWT access token (starts with "eyJ" which is base64 for "{"")
+            if (token.StartsWith("eyJ"))
+            {
+                try
+                {
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var key = Encoding.UTF8.GetBytes(_config["Jwt:Secret"] ?? "");
+                    
+                    var validationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateLifetime = false
+                    };
+
+                    var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+                    var jwtToken = (JwtSecurityToken)validatedToken;
+                    
+                    var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
+                    if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
+                    {
+                        return userId;
+                    }
+                }
+                catch{/* no operation */}
+            }
             var refreshToken = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.Token == token && !t.Revoked);
             return refreshToken?.UserId;
         }
