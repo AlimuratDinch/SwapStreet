@@ -14,18 +14,18 @@ namespace backend.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IUserAccountService _userAccountService;
         private readonly ITokenService _tokenService;
         private readonly IConfiguration _config;
         private readonly int _accessTokenExpirationMinutes;
         private readonly int _refreshTokenExpirationDays;
-        private readonly AuthDbContext _authDbContext;
 
-        public AuthController(IUserService userService, ITokenService tokenService, IConfiguration config, AuthDbContext authDbContext)
+        public AuthController(IUserService userService, IUserAccountService userAccountService, ITokenService tokenService, IConfiguration config)
         {
             _userService = userService;
+            _userAccountService = userAccountService;
             _tokenService = tokenService;
             _config = config;
-            _authDbContext = authDbContext;
 
             _accessTokenExpirationMinutes = _config.GetValue<int>("Jwt:AccessTokenExpirationMinutes");
             _refreshTokenExpirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
@@ -310,22 +310,16 @@ namespace backend.Controllers
             // Proceed with user deletion
 
             // Begin transaction on the same scoped AuthDbContext
-            await using var tx = await _authDbContext.Database.BeginTransactionAsync();
             try
             {
-                await _tokenService.InvalidateAllRefreshTokensForUserAsync(userId.Value); // uses same DbContext
-                await _userService.PermanentlyDeleteUserAsync(userId.Value);               // uses same DbContext
-
-                await tx.CommitAsync();
-
+                await _userAccountService.DeleteUserAndTokensAsync(userId.Value);
                 Response.Cookies.Delete("access_token");
                 Response.Cookies.Delete("refresh_token");
                 return Ok(new { Message = "User deleted successfully" });
             }
-            catch
+            catch(Exception ex)
             {
-                await tx.RollbackAsync();
-                return StatusCode(500, new { Error = "Delete failed" });
+                return StatusCode(500, new { Error = ex.Message });
             }
         }
     }
