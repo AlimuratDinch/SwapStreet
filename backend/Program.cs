@@ -66,7 +66,11 @@ builder.Services.AddControllers();
 builder.Services.Configure<MinioSettings>(builder.Configuration.GetSection("Minio"));
 
 // Authentication & Authorization (JWT)
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
     .AddJwtBearer(options =>
     {
         // Accept token from Authorization header OR from the access_token cookie
@@ -82,6 +86,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         context.Token = tokenFromCookie;
                     }
                 }
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                context.NoResult();
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
                 return Task.CompletedTask;
             }
         };
@@ -106,57 +120,7 @@ builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
-
-// Configure authentication if JWT secret is available
-var jwtSecret = builder.Configuration["Jwt:Secret"];
-var hasJwtSecret = !string.IsNullOrEmpty(jwtSecret);
-if (hasJwtSecret)
-{
-    builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        var key = Encoding.UTF8.GetBytes(jwtSecret!);
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = false // Allow expired tokens for testing
-        };
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                var token = context.Request.Cookies["access_token"];
-                if (!string.IsNullOrEmpty(token))
-                {
-                    context.Token = token;
-                }
-                return Task.CompletedTask;
-            },
-            OnAuthenticationFailed = context =>
-            {
-                context.NoResult();
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                context.HandleResponse();
-                return Task.CompletedTask;
-            }
-        };
-    });
-
-    builder.Services.AddAuthorization(options =>
-    {
-        options.FallbackPolicy = null;
-    });
-}
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
@@ -219,11 +183,6 @@ app.UseSwaggerUI(c =>
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
-if (hasJwtSecret)
-{
-    app.UseAuthentication();
-    app.UseAuthorization();
-}
 app.MapControllers();
 
 await app.RunAsync();
