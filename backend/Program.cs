@@ -87,16 +87,6 @@ builder.Services.AddAuthentication(options =>
                     }
                 }
                 return Task.CompletedTask;
-            },
-            OnAuthenticationFailed = context =>
-            {
-                context.NoResult();
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                context.HandleResponse();
-                return Task.CompletedTask;
             }
         };
 
