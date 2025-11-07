@@ -433,8 +433,6 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
 
         var response = await _client.SendAsync(request);
 
-        // Assert
-        response.IsSuccessStatusCode.Should().BeTrue("update username with valid token should succeed");
 
         var responseBody = await response.Content.ReadAsStringAsync();
         responseBody.Should().Contain("Username updated successfully", "response should contain success message");

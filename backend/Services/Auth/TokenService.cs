@@ -118,36 +118,46 @@ namespace backend.Services.Auth
             if (string.IsNullOrWhiteSpace(token))
                 return null;
 
-            // Check if it's a JWT access token (starts with "eyJ" which is base64 for "{"")
-            if (token.StartsWith("eyJ"))
-            {
-                try
-                {
-                    var tokenHandler = new JwtSecurityTokenHandler();
-                    var key = Encoding.UTF8.GetBytes(_config["Jwt:Secret"] ?? "");
-                    
-                    var validationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(key),
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
-                        ValidateLifetime = false
-                    };
-
-                    var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
-                    var jwtToken = (JwtSecurityToken)validatedToken;
-                    
-                    var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
-                    if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
-                    {
-                        return userId;
-                    }
-                }
-                catch{/* no operation */}
-            }
             var refreshToken = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.Token == token && !t.Revoked);
             return refreshToken?.UserId;
+        }
+
+        public async Task<Guid?> GetUserIdFromAccessTokenAsync(string accessToken)
+        {
+            if (string.IsNullOrWhiteSpace(accessToken))
+                return null;
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(_config["Jwt:Secret"] ?? "");
+                
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = false // Allow expired tokens for validation
+                };
+
+                var principal = tokenHandler.ValidateToken(accessToken, validationParameters, out SecurityToken validatedToken);
+                var jwtToken = (JwtSecurityToken)validatedToken;
+                
+                // Extract user ID from the 'sub' claim
+                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
+                if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
+                {
+                    return userId;
+                }
+            }
+            catch
+            {
+                // If JWT parsing fails, return null
+                return null;
+            }
+
+            return null;
         }
 
         public async Task<bool> IsTokenRevokedAsync(string token)

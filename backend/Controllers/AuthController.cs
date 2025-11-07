@@ -217,8 +217,8 @@ namespace backend.Controllers
                 return Unauthorized(new { Error = "No access token provided" });
             }
 
-            // 1. Obtain user ID from token
-            var userId = await _tokenService.GetUserIdFromTokenAsync(accessToken);
+            // 1. Obtain user ID from access token
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(accessToken);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -243,7 +243,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Username cannot be empty" });
             }
 
-            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -275,7 +275,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Invalid email format" });
             }
 
-            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
