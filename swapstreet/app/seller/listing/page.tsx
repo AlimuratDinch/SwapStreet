@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SellerListingPage() {
@@ -11,25 +11,44 @@ export default function SellerListingPage() {
   const [condition, setCondition] = useState<string>("Good");
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [category, setCategory] = useState<string>("");
-  const [subcategory, setSubcategory] = useState<string>("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Category options
-  const categories = {
-    Shirts: ["T-shirts", "Polos", "Blouses", "Shirts", "Sweaters"],
-    Pants: ["Jeans", "Trousers", "Shorts", "Leggings", "Joggers"],
-    Dresses: ["Long", "Short", "Mid-length", "Mini", "Maxi"],
-    Accessories: ["Shoes", "Bags", "Jewelry", "Hats", "Scarves"],
-    Portables: [
-      "Backpacks",
-      "Tote Bags",
-      "Messenger Bags",
-      "Wallets",
-      "Purses",
-    ],
-  };
+
+  // Check authentication and fetch categories
+  useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setError("You must be logged in to create a listing.");
+      // Optionally redirect to login after a delay
+      setTimeout(() => router.push('/login'), 2000);
+      return;
+    }
+    setAccessToken(token);
+
+    // Fetch categories from backend
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("http://localhost:8080/api/catalog/categories");
+        if (!response.ok) throw new Error("Failed to fetch categories");
+        const data = await response.json();
+        setCategories(data);
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+        setError("Failed to load categories. Please refresh the page.");
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, [router]);
 
   // Handle form input changes
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,13 +67,13 @@ export default function SellerListingPage() {
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCategory(e.target.value);
-    setSubcategory(""); // Reset subcategory when category changes
+    const selectedId = Number(e.target.value);
+    const selectedCategory = categories.find(cat => cat.id === selectedId);
+    
+    setCategoryId(selectedId);
+    setCategory(selectedCategory?.name || "");
   };
 
-  const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSubcategory(e.target.value);
-  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -114,47 +133,52 @@ export default function SellerListingPage() {
       return;
     }
 
-    if (!category) {
+    if (!categoryId) {
       setError("Please select a category.");
       setIsSubmitting(false);
       return;
     }
 
-    if (!subcategory) {
-      setError("Please select a subcategory.");
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
-      const listingData = {
-        id: Date.now().toString(),
-        title: title.trim(),
-        description: description.trim(),
-        price,
-        condition,
-        category,
-        subcategory,
-        images: imagePreviews,
-        timestamp: new Date().toISOString(),
-        status: "active",
-      };
+      // TODO: Upload images to MinIO first
+      // For now, using a placeholder image URL
+      const imageUrl = imagePreviews[0] || "https://via.placeholder.com/400";
 
-      // Save to localStorage
-      // TODO: Change this code to save to the database
+      // Create listing via backend API
+      const response = await fetch("http://localhost:8080/api/catalog/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Note: Backend doesn't have auth middleware yet, but including for future
+          ...(accessToken && { "Authorization": `Bearer ${accessToken}` }),
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim(),
+          condition: condition,
+          price: price,
+          imageUrl: imageUrl,
+          categoryId: categoryId,
+        }),
+      });
 
-      const existingListings = JSON.parse(
-        localStorage.getItem("seller:listings") || "[]",
-      );
-      existingListings.push(listingData);
-      localStorage.setItem("seller:listings", JSON.stringify(existingListings));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to create listing: ${response.statusText}`);
+      }
 
-      // Redirect to seller profile
-      router.push("/seller/me"); // Assuming seller ID is 1
-      // router.back();
+      const createdItem = await response.json();
+      console.log("Listing created successfully:", createdItem);
+
+      // Redirect to seller profile or item page
+      router.push("/seller/me");
     } catch (err) {
       console.error("Failed to save listing:", err);
-      setError("Failed to save listing. Please try again.");
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : "Failed to save listing. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -266,58 +290,31 @@ export default function SellerListingPage() {
           </select>
         </div>
 
-        {/* Category and Subcategory */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Category *
-            </label>
-            <select
-              id="category"
-              value={category}
-              onChange={handleCategoryChange}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="" disabled>
-                Select a category
+        {/* Category */}
+        <div>
+          <label
+            htmlFor="category"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Category *
+          </label>
+          <select
+            id="category"
+            value={categoryId || ""}
+            onChange={handleCategoryChange}
+            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+            disabled={isLoadingCategories}
+          >
+            <option value="" disabled>
+              {isLoadingCategories ? "Loading categories..." : "Select a category"}
+            </option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
               </option>
-              {Object.keys(categories).map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="subcategory"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Subcategory *
-            </label>
-            <select
-              id="subcategory"
-              value={subcategory}
-              onChange={handleSubcategoryChange}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-              disabled={!category}
-            >
-              <option value="" disabled>
-                {category ? "Select a subcategory" : "Select a category first"}
-              </option>
-              {category &&
-                categories[category as keyof typeof categories].map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-            </select>
-          </div>
+            ))}
+          </select>
         </div>
 
         {/* Image Upload */}
