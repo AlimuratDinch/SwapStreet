@@ -8,6 +8,7 @@ export default function SellerListingPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | null>(null);
+  const [condition, setCondition] = useState<string>("Good");
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [category, setCategory] = useState<string>("");
@@ -101,6 +102,12 @@ export default function SellerListingPage() {
       return;
     }
 
+    if (!condition) {
+      setError("Please select a condition.");
+      setIsSubmitting(false);
+      return;
+    }
+
     if (!images.length) {
       setError("Please upload at least one image.");
       setIsSubmitting(false);
@@ -125,6 +132,7 @@ export default function SellerListingPage() {
         title: title.trim(),
         description: description.trim(),
         price,
+        condition,
         category,
         subcategory,
         images: imagePreviews,
@@ -233,6 +241,29 @@ export default function SellerListingPage() {
               required
             />
           </div>
+        </div>
+
+        {/* Condition */}
+        <div>
+          <label
+            htmlFor="condition"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Condition *
+          </label>
+          <select
+            id="condition"
+            value={condition}
+            onChange={(e) => setCondition(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="New">New - Never used, with tags</option>
+            <option value="Like New">Like New - Excellent condition, barely used</option>
+            <option value="Good">Good - Normal wear, no major flaws</option>
+            <option value="Fair">Fair - Visible wear, some flaws</option>
+            <option value="Poor">Poor - Significant wear or damage</option>
+          </select>
         </div>
 
         {/* Category and Subcategory */}
