@@ -132,7 +132,7 @@ namespace backend.Controllers
 
             // 4. Verify password
 
-            var result = await _userService.LoginWithPasswordAsync(user, password);
+            var result = _userService.LoginWithPassword(user, password);
 
             if (result == null)
             {
@@ -219,7 +219,7 @@ namespace backend.Controllers
             }
 
             // 1. Obtain user ID from access token
-            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(access_token);
+            var userId = _tokenService.GetUserIdFromAccessToken(access_token);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -244,7 +244,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Username cannot be empty" });
             }
 
-            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
+            var userId = _tokenService.GetUserIdFromAccessToken(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -276,7 +276,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Invalid email format" });
             }
 
-            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
+            var userId = _tokenService.GetUserIdFromAccessToken(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -301,7 +301,7 @@ namespace backend.Controllers
             var access_token = Request.Cookies["access_token"];
             if (string.IsNullOrEmpty(access_token)) return Unauthorized(new { Error = "No token provided" });
 
-            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(access_token);
+            var userId = _tokenService.GetUserIdFromAccessToken(access_token);
             if (!userId.HasValue) return Unauthorized(new { Error = "Invalid token" });
 
             // Proceed with user deletion
