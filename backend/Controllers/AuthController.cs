@@ -208,19 +208,18 @@ namespace backend.Controllers
         }
 
         // POST api/auth/logout
-        [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
             // obtain refresh token from cookies
-            var refreshToken = Request.Cookies["refresh_token"];
-            if (string.IsNullOrEmpty(refreshToken))
+            var access_token = Request.Cookies["access_token"];
+            if (string.IsNullOrEmpty(access_token))
             {
                 return Unauthorized(new { Error = "No token provided" });
             }
 
-            // 1. Obtain user ID from token
-            var userId = await _tokenService.GetUserIdFromTokenAsync(refreshToken);
+            // 1. Obtain user ID from access token
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(access_token);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -237,7 +236,6 @@ namespace backend.Controllers
 
         // PATCH api/auth/updateUsername
         // call using {"newUsername": "newname" }
-        [Authorize]
         [HttpPatch("updateUsername")]
         public async Task<IActionResult> UpdateUsername([FromBody] UpdateUsernameDto updateUsernameDto)
         {
@@ -246,7 +244,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Username cannot be empty" });
             }
 
-            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -265,7 +263,6 @@ namespace backend.Controllers
 
         // PATCH api/auth/updateEmail
         // call using {"newEmail": "newemail" }
-        [Authorize]
         [HttpPatch("updateEmail")]
         public async Task<IActionResult> UpdateEmail([FromBody] UpdateEmailDto updateEmailDto)
         {
@@ -279,7 +276,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Invalid email format" });
             }
 
-            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -301,10 +298,10 @@ namespace backend.Controllers
         [HttpDelete("deleteUser")]
         public async Task<IActionResult> DeleteUser()
         {
-            var refresh_token = Request.Cookies["refresh_token"];
-            if (string.IsNullOrEmpty(refresh_token)) return Unauthorized(new { Error = "No token provided" });
+            var access_token = Request.Cookies["access_token"];
+            if (string.IsNullOrEmpty(access_token)) return Unauthorized(new { Error = "No token provided" });
 
-            var userId = await _tokenService.GetUserIdFromTokenAsync(refresh_token);
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(access_token);
             if (!userId.HasValue) return Unauthorized(new { Error = "Invalid token" });
 
             // Proceed with user deletion

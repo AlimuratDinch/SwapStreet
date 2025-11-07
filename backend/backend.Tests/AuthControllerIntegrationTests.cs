@@ -396,4 +396,30 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ------------------ Update Email TESTS --------------------------
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Fact]
+    public async Task UpdateEmail_WithInvalidToken_ShouldReturnUnauthorized()
+    {
+        // Arrange - invalid token
+        var updateDto = new
+        {
+            NewEmail = "newemail@test.com"
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateEmail")
+        {
+            Content = updateContent
+        };
+        request.Headers.Add("Cookie", $"access_token=invalidtoken");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("Invalid token");
+    }
 }

@@ -11,6 +11,9 @@ using backend.Models;
 using Minio;
 using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -107,9 +110,59 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 
+// Configure authentication if JWT secret is available
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+var hasJwtSecret = !string.IsNullOrEmpty(jwtSecret);
+if (hasJwtSecret)
+{
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        var key = Encoding.UTF8.GetBytes(jwtSecret!);
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = false // Allow expired tokens for testing
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Cookies["access_token"];
+                if (!string.IsNullOrEmpty(token))
+                {
+                    context.Token = token;
+                }
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                context.NoResult();
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+    builder.Services.AddAuthorization(options =>
+    {
+        options.FallbackPolicy = null;
+    });
+}
+
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
-// Register MinIO client as singleton
 builder.Services.AddSingleton<IMinioClient>(sp =>
 {
     var settings = sp.GetRequiredService<IOptions<MinioSettings>>().Value;
@@ -144,7 +197,6 @@ using (var scope = app.Services.CreateScope())
 
         if (!useInMemory)
         {
-            // Migrate real DB
             appDb.Database.Migrate();
             authDb.Database.Migrate();
             Console.WriteLine("Database migrations applied successfully.");
@@ -160,7 +212,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Enable Swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -170,6 +221,12 @@ app.UseSwaggerUI(c =>
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+
+if (hasJwtSecret)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 app.MapControllers();
 
 await app.RunAsync();
