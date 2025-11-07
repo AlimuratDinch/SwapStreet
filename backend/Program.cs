@@ -4,6 +4,10 @@ using backend.Contracts;
 using backend.Services;
 using backend.Services.Auth;
 using backend.Contracts.Auth;
+using backend.Models;
+using Minio;
+using Minio.DataModel.Args;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,11 +42,8 @@ if (useInMemory)
 else
 {
     // Build Postgres connection string from environment variables
-    var connectionString = $"Host={Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost"};" +
-                           $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
-                           $"Database={Environment.GetEnvironmentVariable("DB_NAME") ?? "swapstreet_db"};" +
-                           $"Username={Environment.GetEnvironmentVariable("DB_USER") ?? "swapstreet_user"};" +
-                           $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "securepassword123"};";
+    var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
+                       ?? throw new InvalidOperationException("Connection string not set.");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
@@ -54,6 +55,7 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+builder.Services.Configure<MinioSettings>(builder.Configuration.GetSection("Minio"));
 
 // Register services
 builder.Services.AddScoped<ICatalogService, CatalogService>();
@@ -62,6 +64,18 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
+
+// Register MinIO client as singleton
+builder.Services.AddSingleton<IMinioClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MinioSettings>>().Value;
+
+    return new MinioClient()
+        .WithEndpoint(settings.Endpoint)
+        .WithCredentials(settings.AccessKey, settings.SecretKey)
+        .WithSSL(settings.WithSSL)
+        .Build();
+});
 
 var app = builder.Build();
 
@@ -73,6 +87,16 @@ using (var scope = app.Services.CreateScope())
     {
         var appDb = services.GetRequiredService<AppDbContext>();
         var authDb = services.GetRequiredService<AuthDbContext>();
+
+        var client = scope.ServiceProvider.GetRequiredService<IMinioClient>();
+    var settings = scope.ServiceProvider.GetRequiredService<IOptions<MinioSettings>>().Value;
+
+    bool found = await client.BucketExistsAsync(
+        new BucketExistsArgs().WithBucket(settings.BucketName)
+    );
+
+    if (!found)
+        await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(settings.BucketName));
 
         if (!useInMemory)
         {

@@ -18,6 +18,10 @@ docker compose up -d --build postgres
 # Rebuild only pgAdmin (rarely needed)
 docker compose up -d --build pgadmin
 
+# Use lighter setup ( frontend + in-mem sqlite backend (2 containers for quick API testing))
+docker compose -f compose-lite.yml up --build
+
+
 2. Stop & Remove Containers
 ---------------------------
 # Stop all running containers in this Compose project
