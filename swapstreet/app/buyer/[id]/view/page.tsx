@@ -123,6 +123,9 @@ export default function View() {
         throw new Error(m);
       })
       .then((item) => {
+        /*
+         * TODO: fetch users from the user database.
+         */
         const tempProfile = {
           name: "Username",
           imageUrl: "/images/clothes_login_page.png",
@@ -173,16 +176,20 @@ export default function View() {
                   {/*Article information*/}
                   <div className="w-full">
                     <div>
-                      <div className="font-bold text-2xl">{item.title}</div>
+                      <div className="font-bold text-2xl" id="itemTitle">
+                        {item.title}
+                      </div>
                       {item.description}
                       <br />
-                      <span className="font-bold text-2xl">
+                      <span className="font-bold text-2xl" id="itemPrice">
                         CAD ${item.price}
                       </span>
                     </div>
                     <br />
                     <div>
-                      <span className="font-bold">Condition:</span>
+                      <span className="font-bold" id="itemCondition">
+                        Condition:
+                      </span>
                       {" " + item.condition}
                     </div>
                   </div>

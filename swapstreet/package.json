@@ -13,6 +13,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
+    "enzyme": "^3.11.0",
     "lucide-react": "^0.545.0",
     "net": "^1.0.2",
     "next": "15.5.3",
