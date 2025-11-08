@@ -1,4 +1,8 @@
-namespace YourApp.Controllers;
+using backend.Contracts;
+using backend.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+namespace backend.Controllers;
 
 [ApiController]
 [Route("api/tryon")]
@@ -13,7 +17,7 @@ public class TryOnController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost("path_from_url_access_token")]
+    [HttpPost("api/virtual-tryon")]
     public async Task<ActionResult<TryOnResponseDto>> TryOnFromUrl([FromBody] TryOnRequestDto request)
     {
         try

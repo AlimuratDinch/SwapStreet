@@ -7,6 +7,7 @@ public class AppDbContext : DbContext
 {
     public DbSet<Item> Items { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
+    public DbSet<TryOnImage> TryOnImages { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -59,5 +60,26 @@ public class AppDbContext : DbContext
             .HasOne(i => i.Category)
             .WithMany(c => c.Items)
             .HasForeignKey(i => i.CategoryId);
+        
+        // Map TryOnImage to try_on_images table
+        modelBuilder.Entity<TryOnImage>()
+            .ToTable("try_on_images")
+            .HasKey(t => t.Id);
+        modelBuilder.Entity<TryOnImage>()
+            .Property(t => t.Id)
+            .HasColumnName("id");
+        modelBuilder.Entity<TryOnImage>()
+            .Property(t => t.UserId)
+            .HasColumnName("user_id")
+            .IsRequired();
+        modelBuilder.Entity<TryOnImage>()
+            .Property(t => t.PersonalImagePath)
+            .HasColumnName("personal_image_path")
+            .HasMaxLength(512)
+            .IsRequired();
+        modelBuilder.Entity<TryOnImage>()
+            .Property(t => t.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
     }
 }

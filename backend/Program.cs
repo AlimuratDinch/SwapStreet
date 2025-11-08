@@ -47,7 +47,9 @@ else
     // Build Postgres connection string from environment variables
     var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
                        ?? throw new InvalidOperationException("Connection string not set.");
-
+    var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") 
+                       ?? throw new InvalidOperationException("Gemini API key not set.");
+    builder.Configuration["Gemini:ApiKey"] = geminiKey;
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
     builder.Services.AddDbContext<AuthDbContext>(options =>

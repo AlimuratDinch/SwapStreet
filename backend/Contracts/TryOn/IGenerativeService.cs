@@ -1,6 +1,6 @@
-namespace YourApp.Contracts;
+namespace backend.Contracts;
 
-public interface IGeminiImageGenerationService
+public interface IGenerativeService
 {
     Task<byte[]> GenerateImageAsync(byte[] userImage, byte[] clothingImage);
 }

@@ -1,4 +1,4 @@
-namespace YourApp.DTOs;
+namespace backend.DTOs;
 
 public class TryOnRequestDto
 {

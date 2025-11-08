@@ -1,4 +1,4 @@
-namespace YourApp.Contracts;
+namespace backend.Contracts;
 
 public interface ITryOnService
 {
