@@ -8,10 +8,14 @@ import DefaultBanner from "../../images/default-seller-banner.png";
 // Listing model (minimal fields for UI)
 type Listing = {
   id: string;
-  name: string;
+  title: string;
+  description: string;
   price: number;
+  category: string;
+  subcategory: string;
+  images: string[];
+  timestamp: string;
   status: string;
-  image: string;
 };
 
 // Seller model
@@ -96,6 +100,22 @@ export default function SellerProfilePage({
       console.error("Failed to read onboarding data", e);
     }
   }, [isOwner]);
+
+  // Load listings from localStorage
+  useEffect(() => {
+    try {
+      const listingsData = localStorage.getItem("seller:listings");
+      if (listingsData) {
+        const listings = JSON.parse(listingsData) as Listing[];
+        setSeller((prev) => ({
+          ...prev,
+          listings: listings,
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to read listings data", e);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -259,6 +279,14 @@ export default function SellerProfilePage({
           <section className="mt-4">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Listings</h2>
+              {isOwner && (
+                <Link
+                  href="/seller/listing"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                >
+                  Create new listing
+                </Link>
+              )}
             </div>
             {seller.listings.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
@@ -274,21 +302,56 @@ export default function SellerProfilePage({
                 <div>
                   <p className="font-medium text-gray-900">No listings yet</p>
                   <p className="mx-auto mt-1 max-w-xl text-sm text-gray-600">
-                    This seller hasn’t added any products to their store yet.
-                    Check back soon to discover their curated collection of
-                    items.
+                    {isOwner
+                      ? "You haven't added any products to your store yet. Create your first listing to get started!"
+                      : "This seller hasn't added any products to their store yet. Check back soon to discover their curated collection of items."}
                   </p>
                 </div>
-                <Link
-                  href="#"
-                  title="Coming soon!"
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 opacity-80 shadow-sm cursor-not-allowed"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  Create new listing
-                </Link>
+                {isOwner && (
+                  <Link
+                    href="/seller/listing"
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700"
+                  >
+                    Create your first listing
+                  </Link>
+                )}
               </div>
-            ) : null}
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {seller.listings.map((listing) => (
+                  <div
+                    key={listing.id}
+                    className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+                  >
+                    {listing.images.length > 0 && (
+                      <div className="aspect-square overflow-hidden">
+                        <img
+                          src={listing.images[0]}
+                          alt={listing.title}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <h3 className="font-medium text-gray-900 truncate">
+                        {listing.title}
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                        {listing.description}
+                      </p>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-lg font-semibold text-gray-900">
+                          ${listing.price.toFixed(2)}
+                        </span>
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                          {listing.category}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       </div>
