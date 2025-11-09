@@ -207,7 +207,6 @@ namespace backend.Controllers
         }
 
         // POST api/auth/logout
-        [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -218,8 +217,8 @@ namespace backend.Controllers
                 return Unauthorized(new { Error = "No access token provided" });
             }
 
-            // 1. Obtain user ID from token
-            var userId = await _tokenService.GetUserIdFromTokenAsync(accessToken);
+            // 1. Obtain user ID from access token
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(accessToken);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -236,7 +235,6 @@ namespace backend.Controllers
 
         // PATCH api/auth/updateUsername
         // call using {"newUsername": "newname" }
-        [Authorize]
         [HttpPatch("updateUsername")]
         public async Task<IActionResult> UpdateUsername([FromBody] UpdateUsernameDto updateUsernameDto)
         {
@@ -245,7 +243,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Username cannot be empty" });
             }
 
-            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -264,7 +262,6 @@ namespace backend.Controllers
 
         // PATCH api/auth/updateEmail
         // call using {"newEmail": "newemail" }
-        [Authorize]
         [HttpPatch("updateEmail")]
         public async Task<IActionResult> UpdateEmail([FromBody] UpdateEmailDto updateEmailDto)
         {
@@ -278,7 +275,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Invalid email format" });
             }
 
-            var userId = await _tokenService.GetUserIdFromTokenAsync(Request.Cookies["access_token"]);
+            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
