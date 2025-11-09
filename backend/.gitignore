@@ -48,3 +48,5 @@ docker-compose.override.yml
 TestResults/*
 coverage-report/*
 coverage/*
+
+.config/*
