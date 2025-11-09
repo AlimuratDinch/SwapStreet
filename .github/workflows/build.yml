@@ -98,6 +98,7 @@ jobs:
           /o:"swapstreet" `
           /d:sonar.host.url="https://sonarcloud.io" `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+          /d:sonar.projectBaseDir="backend" `
           /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml `
           /d:sonar.coverage.exclusions="**/Migrations/**"
 
@@ -141,6 +142,14 @@ jobs:
         Start-Sleep -Seconds 3
         Write-Host "Searching for report-task.txt..."
         Get-ChildItem -Path $PWD -Recurse -Filter "report-task.txt" | ForEach-Object { $_.FullName }
+
+    - name: Verify report-task.txt exists
+      shell: pwsh
+      run: |
+        if (!(Test-Path "backend/.scannerwork/report-task.txt")) {
+          Write-Error "SonarQube report not generated. Check the end step logs."
+          exit 1
+        }
 
     - name: Wait for SonarQube Quality Gate result
       uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
