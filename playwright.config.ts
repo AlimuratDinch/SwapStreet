@@ -42,7 +42,7 @@ export default defineConfig({
     timeout: 120_000,
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for browser + device combinations (desktop / tablet / mobile) */
   projects: [
       // Desktop browsers
       { name: "chromium-desktop", use: { ...devices["Desktop Chrome"] } },
