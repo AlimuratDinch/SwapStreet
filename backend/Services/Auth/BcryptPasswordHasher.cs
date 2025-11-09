@@ -2,6 +2,7 @@ using backend.Contracts.Auth;
 
 namespace backend.Services.Auth
 {
+    //TODO: Add salt and pepper to hash
     public class BcryptPasswordHasher : IPasswordHasher
     {
         public string HashPassword(string password)

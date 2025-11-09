@@ -2,12 +2,15 @@ using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
 using backend.Contracts;
 using backend.Services;
-// using dotenv.net;
-
-// // Load .env file
-// DotEnv.Load(new DotEnvOptions(
-//     envFilePaths: new[] { Path.Combine(Directory.GetCurrentDirectory(), ".env") }
-// ));
+using backend.Services.Auth;
+using backend.Contracts.Auth;
+using backend.Models;
+using Minio;
+using Minio.DataModel.Args;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,81 +22,169 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", builder =>
     {
-        builder.WithOrigins("http://localhost:3000") // Explicitly allow frontend
+        builder.WithOrigins("http://localhost:3000")
                .AllowAnyMethod()
                .AllowAnyHeader()
-               .AllowCredentials(); // If authentication is used
+               .AllowCredentials();
     });
 });
 
-// Add EF Core DbContext with single connection string
-var connectionString = $"Host={Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost"};" +
-                       $"Port={Environment.GetEnvironmentVariable("DB_PORT") ?? "5432"};" +
-                       $"Database={Environment.GetEnvironmentVariable("DB_NAME") ?? "swapstreet_db"};" +
-                       $"Username={Environment.GetEnvironmentVariable("DB_USER") ?? "swapstreet_user"};" +
-                       $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "securepassword123"};";
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+// Check for dev flag
+var useInMemory = Environment.GetEnvironmentVariable("USE_INMEMORY_DB") == "true";
+
+// Configure EF Core depending on flag
+if (useInMemory)
+{
+    Console.WriteLine("Using in-memory database (dev mode)");
+
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseInMemoryDatabase("AppDb"));
+    builder.Services.AddDbContext<AuthDbContext>(options =>
+        options.UseInMemoryDatabase("AuthDb"));
+}
+else
+{
+    // Build Postgres connection string from environment variables
+    var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
+                       ?? throw new InvalidOperationException("Connection string not set.");
+
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString));
+    builder.Services.AddDbContext<AuthDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
 
 // Add services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+builder.Services.Configure<MinioSettings>(builder.Configuration.GetSection("Minio"));
 
-// Add EF Core DbContext
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddControllers(); // enable controllers
-
-// Register your ICatalogService implementation
+// Register services
 builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 
-// Allow app to listen on all interfaces (for Docker)
+// Configure authentication if JWT secret is available
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+var hasJwtSecret = !string.IsNullOrEmpty(jwtSecret);
+if (hasJwtSecret)
+{
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        var key = Encoding.UTF8.GetBytes(jwtSecret!);
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = false // Allow expired tokens for testing
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Cookies["access_token"];
+                if (!string.IsNullOrEmpty(token))
+                {
+                    context.Token = token;
+                }
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                context.NoResult();
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+    builder.Services.AddAuthorization(options =>
+    {
+        options.FallbackPolicy = null;
+    });
+}
+
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
+
+builder.Services.AddSingleton<IMinioClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MinioSettings>>().Value;
+
+    return new MinioClient()
+        .WithEndpoint(settings.Endpoint)
+        .WithCredentials(settings.AccessKey, settings.SecretKey)
+        .WithSSL(settings.WithSSL)
+        .Build();
+});
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    try
-    {
-        db.Database.OpenConnection();
-        Console.WriteLine("Database connection successful!");
-        db.Database.CloseConnection();
-        // db.Database.Migrate(); // Disabled to avoid conflicts
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database connection failed: {ex.Message}");
-    }
     var services = scope.ServiceProvider;
 
-    // Migrate the main application database
     try
     {
         var appDb = services.GetRequiredService<AppDbContext>();
-        appDb.Database.Migrate();
+        var authDb = services.GetRequiredService<AuthDbContext>();
+
+        var client = scope.ServiceProvider.GetRequiredService<IMinioClient>();
+    var settings = scope.ServiceProvider.GetRequiredService<IOptions<MinioSettings>>().Value;
+
+    bool found = await client.BucketExistsAsync(
+        new BucketExistsArgs().WithBucket(settings.BucketName)
+    );
+
+    if (!found)
+        await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(settings.BucketName));
+
+        if (!useInMemory)
+        {
+            appDb.Database.Migrate();
+            authDb.Database.Migrate();
+            Console.WriteLine("Database migrations applied successfully.");
+            
+            // Seed initial categories if database is empty
+            if (!appDb.Categories.Any())
+            {
+                Console.WriteLine("Seeding initial categories...");
+                var categories = new[]
+                {
+                    new Category { Name = "Tops" },
+                    new Category { Name = "Bottoms" },
+                    new Category { Name = "Accessories" },
+                    new Category { Name = "Portables" },
+                    new Category { Name = "Sale" }
+                };
+                appDb.Categories.AddRange(categories);
+                appDb.SaveChanges();
+                Console.WriteLine("Categories seeded successfully.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Skipping migrations (in-memory mode)");
+        }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database migration failed: {ex.Message}");
-    }
-
-    // Migrate the auth database
-    try {
-        var authDb = services.GetRequiredService<AuthDbContext>();
-        authDb.Database.Migrate();
-    } catch (Exception ex) {
-        Console.WriteLine($"Auth database migration failed: {ex.Message}");
+        Console.WriteLine($"Database initialization failed: {ex.Message}");
     }
 }
 
-// Enable Swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -102,7 +193,15 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
-app.UseCors("AllowFrontend"); // Before MapControllers
+app.UseCors("AllowFrontend");
+
+if (hasJwtSecret)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
+
+public partial class Program { }
