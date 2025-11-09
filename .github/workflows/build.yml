@@ -33,12 +33,20 @@ jobs:
         }'
       working-directory: swapstreet
 
+    - name: Verify coverage file
+      run: |
+        ls -l coverage
+        cat coverage/lcov.info | head -n 20
+      working-directory: swapstreet
+
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v6
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
         projectBaseDir: swapstreet
+        args: >
+          -Dsonar.projectKey=swapstreet -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
 
     - name: Wait for SonarQube Quality Gate result
       uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
@@ -50,6 +58,7 @@ jobs:
   backend-sonarqube:
     name: Backend SonarQube
     runs-on: windows-latest
+    needs: frontend-sonarqube
     steps:
     - name: Set up JDK 17
       uses: actions/setup-java@v4
