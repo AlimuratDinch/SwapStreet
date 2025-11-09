@@ -4,7 +4,7 @@
 
 import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import View from "@/app/buyer/[id]/view/page"; 
+import View from "@/app/buyer/[id]/view/page";
 
 jest.mock("next/navigation", () => ({
   useParams: () => ({ id: "123" }),
