@@ -40,6 +40,13 @@ jobs:
       with:
         projectBaseDir: swapstreet
 
+    - name: Wait for SonarQube Quality Gate result
+      uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        scanMetadataReportFile: swapstreet/.scannerwork/report-task.txt
+
   backend-sonarqube:
     name: Backend SonarQube
     runs-on: windows-latest
