@@ -50,6 +50,7 @@ jobs:
   backend-sonarqube:
     name: Backend SonarQube
     runs-on: windows-latest
+    needs: frontend-sonarqube
     steps:
     - name: Set up JDK 17
       uses: actions/setup-java@v4
