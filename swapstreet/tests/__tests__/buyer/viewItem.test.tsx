@@ -53,9 +53,9 @@ describe("View Page", () => {
     expect(screen.getByText(/Rating: 99.6/)).toBeInTheDocument();
 
     // Click Profile button
-    const profileButton = screen.getAllByRole("button").find((b) =>
-      b.innerHTML.includes("ChevronRight")
-    );
+    const profileButton = screen
+      .getAllByRole("button")
+      .find((b) => b.innerHTML.includes("ChevronRight"));
     if (profileButton) fireEvent.click(profileButton);
   });
 
@@ -94,22 +94,18 @@ describe("View Page", () => {
   });
 
   it("renders error message for 500 response", async () => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ status: 500 }),
-    ) as jest.Mock;
+    global.fetch = jest.fn(() => Promise.resolve({ status: 500 })) as jest.Mock;
 
     render(<View />);
     await waitFor(() => {
       expect(
-        screen.getByText("Server error, cannot acquire article information.")
+        screen.getByText("Server error, cannot acquire article information."),
       ).toBeInTheDocument();
     });
   });
 
   it("renders error message for unknown status", async () => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({ status: 404 }),
-    ) as jest.Mock;
+    global.fetch = jest.fn(() => Promise.resolve({ status: 404 })) as jest.Mock;
 
     render(<View />);
     await waitFor(() => {
@@ -118,7 +114,9 @@ describe("View Page", () => {
   });
 
   it("renders empty info if fetch rejects", async () => {
-    global.fetch = jest.fn(() => Promise.reject(new Error("Network error"))) as jest.Mock;
+    global.fetch = jest.fn(() =>
+      Promise.reject(new Error("Network error")),
+    ) as jest.Mock;
 
     render(<View />);
     await waitFor(() => {
