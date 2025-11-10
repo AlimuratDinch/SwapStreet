@@ -5,7 +5,8 @@ namespace backend.DTOs.Image
         Listing,
         Banner,
         Profile,
-        TryOn
+        TryOn,
+        Generated
     }
 }
 

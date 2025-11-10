@@ -51,7 +51,7 @@ namespace backend.Services
             var fileName = $"{type.ToString().ToLower()}/{Guid.NewGuid()}_{file.FileName}";
 
             // ===== Determine bucket =====
-            var bucket = type == UploadType.TryOn ? _settings.PrivateBucketName : _settings.PublicBucketName;
+            var bucket = type == UploadType.TryOn || type == UploadType.Generated ? _settings.PrivateBucketName : _settings.PublicBucketName;
 
             using var stream = file.OpenReadStream();
             await _minio.PutObjectAsync(new PutObjectArgs()
@@ -62,7 +62,7 @@ namespace backend.Services
                 .WithContentType(file.ContentType));
 
             // ===== Return URL =====
-            if (type == UploadType.TryOn)
+            if (type == UploadType.TryOn || type == UploadType.Generated )
                 return await GetPrivateFileUrlAsync(fileName); // pre-signed URL
             else
                 return GetPublicFileUrl(fileName);             // direct URL
@@ -77,18 +77,24 @@ namespace backend.Services
                 .WithBucket(_settings.PrivateBucketName)
                 .WithObject(fileName)
                 .WithExpiry(expiryInSeconds));
-                
+
             // replace it with localhost so the browser can access it
             return url.Replace("minio:9000", "localhost:9000");
         }
 
 
-        // Get URL for public file (no expiry)
+        // Generate URL for public file (no expiry)
         public string GetPublicFileUrl(string objectName)
         {
             return $"http://localhost:9000/{_settings.PublicBucketName}/{objectName}";
         }
 
+        // Regenerate URL for an existing private file
+        public async Task<string> RegeneratePrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600)
+        {
+            // Simply call the existing method
+            return await GetPrivateFileUrlAsync(fileName, expiryInSeconds);
+        }
         public (long maxSize, int maxWidth, int maxHeight) GetConstraints(UploadType type)
         {
             return type switch
@@ -97,6 +103,7 @@ namespace backend.Services
                 UploadType.Banner => (3 * 1024 * 1024, 1200, 400),    // 3MB, max 1200x400
                 UploadType.Profile => (2 * 1024 * 1024, 500, 500),     // 2MB, max 500x500
                 UploadType.TryOn => (5 * 1024 * 1024, 2000, 2000),   // 5MB, max 2000x2000
+                UploadType.Generated => (5 * 1024 * 1024, 2000, 2000),   // 5MB, max 2000x2000
                 _ => throw new ArgumentOutOfRangeException(nameof(type), "Unknown upload type")
             };
         }

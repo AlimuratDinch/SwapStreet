@@ -30,23 +30,23 @@ services:
     networks:
       - app-net
 
-  # # ==========================
-  # # Frontend (SwapStreet) – uncomment when needed
-  # # ==========================
-  # swapstreet:
-  #   build: ./swapstreet
-  #   container_name: swapstreet-frontend
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - ./swapstreet:/usr/app
-  #     - /usr/app/node_modules
-  #   environment:
-  #     NODE_ENV: development
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - app-net
+  # ==========================
+  # Frontend (SwapStreet) – uncomment when needed
+  # ==========================
+  swapstreet:
+    build: ./swapstreet
+    container_name: swapstreet-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./swapstreet:/usr/app
+      - /usr/app/node_modules
+    environment:
+      NODE_ENV: development
+    depends_on:
+      - backend
+    networks:
+      - app-net
 
   # ==========================
   # MinIO (internal only)
