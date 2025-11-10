@@ -151,6 +151,23 @@ using (var scope = app.Services.CreateScope())
             appDb.Database.Migrate();
             authDb.Database.Migrate();
             Console.WriteLine("Database migrations applied successfully.");
+            
+            // Seed initial categories if database is empty
+            if (!appDb.Categories.Any())
+            {
+                Console.WriteLine("Seeding initial categories...");
+                var categories = new[]
+                {
+                    new Category { Name = "Tops" },
+                    new Category { Name = "Bottoms" },
+                    new Category { Name = "Accessories" },
+                    new Category { Name = "Portables" },
+                    new Category { Name = "Sale" }
+                };
+                appDb.Categories.AddRange(categories);
+                appDb.SaveChanges();
+                Console.WriteLine("Categories seeded successfully.");
+            }
         }
         else
         {
