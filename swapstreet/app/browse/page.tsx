@@ -67,7 +67,7 @@ export default async function BrowsePage({
                 <CardItem
                   key={item.id}
                   title={item.title}
-                  description={item.description} 
+                  description={item.description}
                   imgSrc={item.imageUrl}
                   price={item.price ?? 0}
                 />
