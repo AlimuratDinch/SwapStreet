@@ -72,10 +72,14 @@ namespace backend.Services
         // Generate pre-signed URL for private files
         public async Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600)
         {
-            return await _minio.PresignedGetObjectAsync(new PresignedGetObjectArgs()
+            // MinIO client generates a pre-signed URL
+            var url = await _minio.PresignedGetObjectAsync(new PresignedGetObjectArgs()
                 .WithBucket(_settings.PrivateBucketName)
                 .WithObject(fileName)
                 .WithExpiry(expiryInSeconds));
+                
+            // replace it with localhost so the browser can access it
+            return url.Replace("minio:9000", "localhost:9000");
         }
 
 

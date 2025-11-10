@@ -156,8 +156,41 @@ using (var scope = app.Services.CreateScope())
         {
             bool exists = await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket));
             if (!exists)
+            {
                 await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucket));
+
+                // If this is the public bucket, make it readable by everyone
+                if (bucket == settings.PublicBucketName)
+                {
+                    var policyJson = @"
+                    {
+                        ""Version"": ""2012-10-17"",
+                        ""Statement"": [
+                            {
+                                ""Effect"": ""Allow"",
+                                ""Principal"": ""*"",
+                                ""Action"": [
+                                    ""s3:GetBucketLocation"",
+                                    ""s3:ListBucket""
+                                ],
+                                ""Resource"": [ ""arn:aws:s3:::" + bucket + @""" ]
+                            },
+                            {
+                                ""Effect"": ""Allow"",
+                                ""Principal"": ""*"",
+                                ""Action"": [ ""s3:GetObject"" ],
+                                ""Resource"": [ ""arn:aws:s3:::" + bucket + @"/*"" ]
+                            }
+                        ]
+                    }";
+
+                    await client.SetPolicyAsync(new SetPolicyArgs()
+                        .WithBucket(bucket)
+                        .WithPolicy(policyJson));
+                }
+            }
         }
+
 
         if (!useInMemory)
         {
