@@ -116,6 +116,7 @@ if (hasJwtSecret)
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
     });
+}
 
 builder.Services.AddAuthorization();
 
