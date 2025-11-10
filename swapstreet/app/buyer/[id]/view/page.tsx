@@ -163,7 +163,7 @@ export default function View() {
             <div className="w-full sm:w-3/5 flex justify-center">
               <ImageView urlList={[item.imageUrl]} />
             </div>
-            
+
             <div className="w-full sm:w-2/5 sm:min-w-60 m-0 sm:m-4 border-2 rounded-lg">
               <div className="p-4">
                 <div>
@@ -171,7 +171,10 @@ export default function View() {
                     {item.title}
                   </div>
                   <p className="text-sm sm:text-base">{item.description}</p>
-                  <span className="font-bold text-2xl block mt-2" id="itemPrice">
+                  <span
+                    className="font-bold text-2xl block mt-2"
+                    id="itemPrice"
+                  >
                     CAD ${item.price}
                   </span>
                   <div className="mt-2">
@@ -181,9 +184,9 @@ export default function View() {
                     {" " + item.condition}
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex flex-col w-full">
                   <Button className="my-2 w-full">Buy Now</Button>
                   <Button className="my-2 w-full">Add to Changing Room</Button>
@@ -195,7 +198,7 @@ export default function View() {
                 <Profile profile={tempProfile} />
               </div>
             </div>
-          </div>
+          </div>,
         );
       })
       .catch((e) => {
