@@ -122,7 +122,7 @@ namespace backend.Services.Auth
             return refreshToken?.UserId;
         }
 
-        public async Task<Guid?> GetUserIdFromAccessTokenAsync(string accessToken)
+        public Guid? GetUserIdFromAccessToken(string accessToken)
         {
             if (string.IsNullOrWhiteSpace(accessToken))
                 return null;
