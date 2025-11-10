@@ -11,6 +11,9 @@ using backend.Models;
 using Minio;
 using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using backend.Data.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -150,24 +153,9 @@ using (var scope = app.Services.CreateScope())
         {
             appDb.Database.Migrate();
             authDb.Database.Migrate();
+            await DatabaseSeeder.SeedAsync(appDb);
             Console.WriteLine("Database migrations applied successfully.");
             
-            // Seed initial categories if database is empty
-            if (!appDb.Categories.Any())
-            {
-                Console.WriteLine("Seeding initial categories...");
-                var categories = new[]
-                {
-                    new Category { Name = "Tops" },
-                    new Category { Name = "Bottoms" },
-                    new Category { Name = "Accessories" },
-                    new Category { Name = "Portables" },
-                    new Category { Name = "Sale" }
-                };
-                appDb.Categories.AddRange(categories);
-                appDb.SaveChanges();
-                Console.WriteLine("Categories seeded successfully.");
-            }
         }
         else
         {
