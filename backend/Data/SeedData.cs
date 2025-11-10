@@ -37,5 +37,19 @@ namespace backend.Data.Seed
             new Item { Id = 19, Title = "Laptop Sleeve", Description = "Protective portable sleeve for laptops.", Condition = "Used", Price = 15.00m, ImageUrl = "/images/clothes_login_page.png", CategoryId = 4 },
             new Item { Id = 20, Title = "Sale Skirt", Description = "Flowy skirt at a discount.", Condition = "New", Price = 18.99m, ImageUrl = "/images/clothes_login_page.png", CategoryId = 5 }
         };
+
+        public static List<Profile> Profiles => new()
+        {
+            new Profile { Id = System.Guid.NewGuid() },
+            new Profile { Id = System.Guid.NewGuid() }
+        };
+
+        public static List<Wishlist> Wishlists => new()
+        {
+            new Wishlist { Id = System.Guid.NewGuid(), UserId = Profiles[0].Id, ItemId = Items[0].Id },
+            new Wishlist { Id = System.Guid.NewGuid(), UserId = Profiles[0].Id, ItemId = Items[1].Id },
+            new Wishlist { Id = System.Guid.NewGuid(), UserId = Profiles[1].Id, ItemId = Items[2].Id }
+        };
+
     }
 }
