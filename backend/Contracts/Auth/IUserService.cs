@@ -12,7 +12,7 @@ namespace backend.Contracts.Auth
         Task PermanentlyDeleteUserAsync(Guid userId);
         Task<User?> GetUserByEmailAsync(string email);
         Task<User?> GetUserByUsernameAsync(string username);
-        Task<UserDto?> LoginWithPasswordAsync(User user, string password);
+        UserDto? LoginWithPassword(User user, string password);
         Task<User> UpdateUsernameAsync(Guid userId, string newUsername);
         Task<User> UpdateEmailAsync(Guid userId, string newEmail);
     }

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using backend.Contracts.Auth;
 using System.ComponentModel.DataAnnotations;
 using backend.Models.Authentication;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace backend.Controllers
 {
@@ -15,14 +14,16 @@ namespace backend.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IUserAccountService _userAccountService;
         private readonly ITokenService _tokenService;
         private readonly IConfiguration _config;
         private readonly int _accessTokenExpirationMinutes;
         private readonly int _refreshTokenExpirationDays;
 
-        public AuthController(IUserService userService, ITokenService tokenService, IConfiguration config)
+        public AuthController(IUserService userService, IUserAccountService userAccountService, ITokenService tokenService, IConfiguration config)
         {
             _userService = userService;
+            _userAccountService = userAccountService;
             _tokenService = tokenService;
             _config = config;
 
@@ -131,11 +132,11 @@ namespace backend.Controllers
 
             // 4. Verify password
 
-            var result = await _userService.LoginWithPasswordAsync(user, password);
+            var result = _userService.LoginWithPassword(user, password);
 
             if (result == null)
             {
-                return BadRequest(new { Error = "Password incorrect." });
+                return BadRequest(new { Error = "Invalid email or password." });
             }
 
              var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
@@ -210,15 +211,15 @@ namespace backend.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            // obtain access token from cookies
-            var accessToken = Request.Cookies["access_token"];
-            if (string.IsNullOrEmpty(accessToken))
+            // obtain refresh token from cookies
+            var access_token = Request.Cookies["access_token"];
+            if (string.IsNullOrEmpty(access_token))
             {
-                return Unauthorized(new { Error = "No access token provided" });
+                return Unauthorized(new { Error = "No token provided" });
             }
 
             // 1. Obtain user ID from access token
-            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(accessToken);
+            var userId = _tokenService.GetUserIdFromAccessToken(access_token);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -243,7 +244,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Username cannot be empty" });
             }
 
-            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
+            var userId = _tokenService.GetUserIdFromAccessToken(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -275,7 +276,7 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Invalid email format" });
             }
 
-            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(Request.Cookies["access_token"]);
+            var userId = _tokenService.GetUserIdFromAccessToken(Request.Cookies["access_token"]);
             if (!userId.HasValue)
             {
                 return Unauthorized(new { Error = "Invalid token" });
@@ -295,10 +296,28 @@ namespace backend.Controllers
         // DELETE api/auth/deleteUser
         [Authorize]
         [HttpDelete("deleteUser")]
-        public IActionResult DeleteUser()
+        public async Task<IActionResult> DeleteUser()
         {
-            // TODO: implement user deletion logic
-            return Ok();
+            var access_token = Request.Cookies["access_token"];
+            if (string.IsNullOrEmpty(access_token)) return Unauthorized(new { Error = "No token provided" });
+
+            var userId = _tokenService.GetUserIdFromAccessToken(access_token);
+            if (!userId.HasValue) return Unauthorized(new { Error = "Invalid token" });
+
+            // Proceed with user deletion
+
+            // Begin transaction on the same scoped AuthDbContext
+            try
+            {
+                await _userAccountService.DeleteUserAndTokensAsync(userId.Value);
+                Response.Cookies.Delete("access_token");
+                Response.Cookies.Delete("refresh_token");
+                return Ok(new { Message = "User deleted successfully" });
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, new { Error = ex.Message });
+            }
         }
     }
 }
