@@ -4,13 +4,15 @@ using backend.Contracts;
 using backend.Services;
 using backend.Services.Auth;
 using backend.Contracts.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using backend.Models;
 using Minio;
 using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using backend.Data.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,9 +41,14 @@ if (useInMemory)
     Console.WriteLine("Using in-memory database (dev mode)");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseInMemoryDatabase("AppDb"));
+        options
+        .UseInMemoryDatabase("AppDb")
+        .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning)));
     builder.Services.AddDbContext<AuthDbContext>(options =>
-        options.UseInMemoryDatabase("AuthDb"));
+        options
+        .UseInMemoryDatabase("AuthDb")
+        .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+        );
 }
 else
 {
@@ -61,62 +68,52 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.Configure<MinioSettings>(builder.Configuration.GetSection("Minio"));
 
-// Register services
-builder.Services.AddScoped<ICatalogService, CatalogService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
-
-// Configure authentication if JWT secret is available
-var jwtSecret = builder.Configuration["Jwt:Secret"];
-var hasJwtSecret = !string.IsNullOrEmpty(jwtSecret);
-if (hasJwtSecret)
-{
-    builder.Services.AddAuthentication(options =>
+// Authentication & Authorization (JWT)
+builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     })
     .AddJwtBearer(options =>
     {
-        var key = Encoding.UTF8.GetBytes(jwtSecret!);
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = false // Allow expired tokens for testing
-        };
+        // Accept token from Authorization header OR from the access_token cookie
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                var token = context.Request.Cookies["access_token"];
-                if (!string.IsNullOrEmpty(token))
+                // If no token found in header, check the access_token cookie (we set this in AuthController)
+                if (string.IsNullOrEmpty(context.Token))
                 {
-                    context.Token = token;
+                    if (context.Request.Cookies.TryGetValue("access_token", out var tokenFromCookie))
+                    {
+                        context.Token = tokenFromCookie;
+                    }
                 }
-                return Task.CompletedTask;
-            },
-            OnAuthenticationFailed = context =>
-            {
-                context.NoResult();
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                context.HandleResponse();
                 return Task.CompletedTask;
             }
         };
+
+        var jwtSecret = builder.Configuration["Jwt:Secret"];
+        var key = string.IsNullOrEmpty(jwtSecret) ? Array.Empty<byte>() : Encoding.UTF8.GetBytes(jwtSecret);
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
     });
 
-    builder.Services.AddAuthorization(options =>
-    {
-        options.FallbackPolicy = null;
-    });
-}
+builder.Services.AddAuthorization();
+
+// Register services
+builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
@@ -181,11 +178,6 @@ app.UseSwaggerUI(c =>
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
-if (hasJwtSecret)
-{
-    app.UseAuthentication();
-    app.UseAuthorization();
-}
 app.MapControllers();
 
 await app.RunAsync();
