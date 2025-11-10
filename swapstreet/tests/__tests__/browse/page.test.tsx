@@ -56,7 +56,6 @@ describe("fetchClothingItems", () => {
       "http://backend:8080/api/catalog/items",
       {
         cache: "no-store",
-        credentials: "include",
       },
     );
     expect(result).toEqual(mockItems);

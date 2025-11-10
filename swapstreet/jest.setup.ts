@@ -15,3 +15,5 @@ if (!(global as any).URL.revokeObjectURL) {
     value: jest.fn(),
   });
 }
+
+process.env.NEXT_PUBLIC_API_URL = "http://backend:8080";
