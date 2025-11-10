@@ -23,7 +23,6 @@ export async function fetchClothingItems(
     const url = `${apiUrl}/api/catalog/items${params.toString() ? `?${params.toString()}` : ""}`;
     const res = await fetch(url, {
       cache: "no-store",
-      // credentials: "include",
     });
     console.log("URL used:", url);
     if (!res.ok) {
