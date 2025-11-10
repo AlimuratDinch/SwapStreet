@@ -62,7 +62,7 @@ namespace backend.Services.Auth
             return await _authDBContext.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
-        public async Task<UserDto?> LoginWithPasswordAsync(User user, string password)
+        public UserDto? LoginWithPassword(User user, string password)
         {
             // Do NOT hash the incoming password again here. The password stored in the database
             // is already hashed (with a random salt). To verify, pass the plain password to the
