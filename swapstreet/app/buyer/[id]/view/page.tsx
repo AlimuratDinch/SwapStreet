@@ -87,9 +87,8 @@ class ImageView extends React.Component {
   render() {
     return (
       <div className="w-full h-full">
-        <div className="flex flex-col grow h-full">
+        <div className="min-h-[50vh] flex flex-col grow h-full">
           <div className="h-full flex flex-row">{this.renderer()}</div>
-          <div className="h-32">{/*TODO: insert carousel here*/}</div>
         </div>
       </div>
     );
@@ -160,60 +159,44 @@ export default function View() {
         /*Assume that the object defines all the item's attributes. 
         That is, none of the attributes are undefined.*/
         setInfo(
-          <div className="flex grow h-full">
-            <div className="w-3/5">
-              {/*
-               * TODO: articles can have more than one url. There is
-               * logic for displaying multiple images. The `ImageView`
-               * component's constructor accepts an array of urls for
-               * images.
-               */}
-              <ImageView urlList={new Array(item.imageUrl)} />
+          <div className="flex flex-col sm:flex-row grow h-full p-2 sm:p-4">
+            <div className="w-full sm:w-3/5 flex justify-center">
+              <ImageView urlList={[item.imageUrl]} />
             </div>
-            <div className="w-2/5 min-w-60 m-4 border-2 rounded-lg">
-              <div className="w-full h-full min-w-60">
-                <div className="p-4">
-                  {/*Article information*/}
-                  <div className="w-full">
-                    <div>
-                      <div className="font-bold text-2xl" id="itemTitle">
-                        {item.title}
-                      </div>
-                      {item.description}
-                      <br />
-                      <span className="font-bold text-2xl" id="itemPrice">
-                        CAD ${item.price}
-                      </span>
-                    </div>
-                    <br />
-                    <div>
-                      <span className="font-bold" id="itemCondition">
-                        Condition:
-                      </span>
-                      {" " + item.condition}
-                    </div>
+            
+            <div className="w-full sm:w-2/5 sm:min-w-60 m-0 sm:m-4 border-2 rounded-lg">
+              <div className="p-4">
+                <div>
+                  <div className="font-bold text-2xl" id="itemTitle">
+                    {item.title}
                   </div>
-                  <Separator />
-
-                  {/*Button list*/}
-                  <div className="grid grid-cols-1 w-full">
-                    {/*Add links*/}
-                    <Button className="my-2">Buy Now</Button>
-                    <Button className="my-2">Add to Changing Room</Button>
-                  </div>
-                  <Separator />
-
-                  {/*Profile information*/}
-                  <div className="h-full">
-                    <Profile profile={tempProfile} />
+                  <p className="text-sm sm:text-base">{item.description}</p>
+                  <span className="font-bold text-2xl block mt-2" id="itemPrice">
+                    CAD ${item.price}
+                  </span>
+                  <div className="mt-2">
+                    <span className="font-bold" id="itemCondition">
+                      Condition:
+                    </span>
+                    {" " + item.condition}
                   </div>
                 </div>
+                
+                <Separator />
+                
+                <div className="flex flex-col w-full">
+                  <Button className="my-2 w-full">Buy Now</Button>
+                  <Button className="my-2 w-full">Add to Changing Room</Button>
+                </div>
+
+                <Separator />
+
+                {/* Profile */}
+                <Profile profile={tempProfile} />
               </div>
             </div>
-          </div>,
+          </div>
         );
-
-        return;
       })
       .catch((e) => {
         setInfo(
@@ -227,7 +210,7 @@ export default function View() {
   }, []);
 
   return (
-    <div className="h-screen w-screen">
+    <div className="h-screen w-full">
       <div className="flex flex-col h-full w-full bg-background">
         {testNavBar}
         <div className="w-full h-full">{info ?? ""}</div>
