@@ -26,6 +26,20 @@ namespace backend.Data.Seed
                 await context.Items.AddRangeAsync(SeedData.Items);
                 await context.SaveChangesAsync();
             }
+
+            // Seed Profiles
+            if (!context.Profiles.Any())
+            {
+                await context.Profiles.AddRangeAsync(SeedData.Profiles);
+                await context.SaveChangesAsync();
+            }
+
+            // Seed Wishlists
+            if (!context.Wishlists.Any())
+            {
+                await context.Wishlists.AddRangeAsync(SeedData.Wishlists);
+                await context.SaveChangesAsync();
+            }
         }
     }
 }
