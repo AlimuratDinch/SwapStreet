@@ -16,9 +16,11 @@ export function Header() {
         <ul className="flex items-center justify-center font-semibold">
           <li className="px-3 py-2">
             <button className="hover:opacity-50">Featured</button>
-          </li>          
+          </li>
           <li className="relative group px-3 py-2">
-            <button className="hover:opacity-50 cursor-default">Collections</button>
+            <button className="hover:opacity-50 cursor-default">
+              Collections
+            </button>
             <div
               className="fixed left-0 right-0 top-[80px] transition-all duration-500 ease-in-out 
                          opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50"
