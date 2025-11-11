@@ -50,6 +50,10 @@ PGADMIN_DEFAULT_PASSWORD=<your-pgAdmin-password>
 # ================================
 ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_db;Username=<your-db-username>;Password=<your-db-password>
 ```
+- Create a `.env` file in the swapstreet directory
+```
+NEXT_PUBLIC_API_URL=http://backend:8080
+```
 
 - Make sure `Docker Desktop` is running, then:
 ```
