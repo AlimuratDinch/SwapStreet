@@ -1,4 +1,6 @@
-version: "3.9"
+# =======================================================
+# Lite Docker Compose for SwapStreet ( in-mem backend DB)
+# =======================================================
 
 services:
   # ==========================
@@ -15,16 +17,21 @@ services:
     environment:
       USE_INMEMORY_DB: "true"
       ASPNETCORE_ENVIRONMENT: "Development"
-      # MinIO config
-      MINIO_ENDPOINT: http://minio:9000
+      # MinIO config – internal endpoint only
+      MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET_NAME: swapstreet-files
+      MINIO_PUBLIC_BUCKET: public
+      MINIO_PRIVATE_BUCKET: private
+      MINIO_USE_SSL: false
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy          # Wait for MinIO to be ready
+    networks:
+      - app-net
 
   # ==========================
-  # Frontend (Swapstreet)
+  # Frontend (SwapStreet) – uncomment when needed
   # ==========================
   swapstreet:
     build: ./swapstreet
@@ -38,23 +45,54 @@ services:
       NODE_ENV: development
     depends_on:
       - backend
+    networks:
+      - app-net
 
   # ==========================
-  # MinIO (Non-persistent)
+  # MinIO (internal only)
   # ==========================
   minio:
     image: minio/minio:latest
     container_name: minio
     command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Web Console
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
-    # No volumes here → non-persistent storage
+    volumes:
+      - minio_data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
+    expose:
+      - "9000"          # Only inside Docker network
+    ports:
+      - "9001:9001"     # Console (optional)
+    networks:
+      - app-net
+
+  # ==========================
+  # NGINX – public gateway
+  # ==========================
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "9000:9000"     # Browser → localhost:9000
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro   # ← Mount config
+    depends_on:
+      - minio
+    networks:
+      - app-net
+
+# ==========================
+# Networks & Volumes
+# ==========================
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  minio_data:

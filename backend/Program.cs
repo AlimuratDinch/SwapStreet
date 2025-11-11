@@ -66,10 +66,21 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
-builder.Services.Configure<MinioSettings>(builder.Configuration.GetSection("Minio"));
 
-// Authentication & Authorization (JWT)
-builder.Services.AddAuthentication(options =>
+
+// Register services
+builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
+
+// Configure authentication if JWT secret is available
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+var hasJwtSecret = !string.IsNullOrEmpty(jwtSecret);
+if (hasJwtSecret)
+{
+    builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -105,6 +116,7 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
     });
+}
 
 builder.Services.AddAuthorization();
 
@@ -118,14 +130,19 @@ builder.Services.AddScoped<IWishlistService, WishlistService>();
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
+
+// Register MinIO client
 builder.Services.AddSingleton<IMinioClient>(sp =>
 {
-    var settings = sp.GetRequiredService<IOptions<MinioSettings>>().Value;
+    var endpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "minio:9000";
+    var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "minioadmin";
+    var secretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "minioadmin";
+    var useSsl = bool.TryParse(Environment.GetEnvironmentVariable("MINIO_USE_SSL"), out var ssl) && ssl;
 
     return new MinioClient()
-        .WithEndpoint(settings.Endpoint)
-        .WithCredentials(settings.AccessKey, settings.SecretKey)
-        .WithSSL(settings.WithSSL)
+        .WithEndpoint(endpoint)
+        .WithCredentials(accessKey, secretKey)
+        .WithSSL(useSsl)
         .Build();
 });
 
@@ -141,14 +158,49 @@ using (var scope = app.Services.CreateScope())
         var authDb = services.GetRequiredService<AuthDbContext>();
 
         var client = scope.ServiceProvider.GetRequiredService<IMinioClient>();
-    var settings = scope.ServiceProvider.GetRequiredService<IOptions<MinioSettings>>().Value;
+        var settings = scope.ServiceProvider.GetRequiredService<IOptions<MinioSettings>>().Value;
 
-    bool found = await client.BucketExistsAsync(
-        new BucketExistsArgs().WithBucket(settings.BucketName)
-    );
+        var buckets = new[] { settings.PublicBucketName, settings.PrivateBucketName };
 
-    if (!found)
-        await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(settings.BucketName));
+        foreach (var bucket in buckets)
+        {
+            bool exists = await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket));
+            if (!exists)
+            {
+                await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucket));
+
+                // If this is the public bucket, make it readable by everyone
+                if (bucket == settings.PublicBucketName)
+                {
+                    var policyJson = @"
+                    {
+                        ""Version"": ""2012-10-17"",
+                        ""Statement"": [
+                            {
+                                ""Effect"": ""Allow"",
+                                ""Principal"": ""*"",
+                                ""Action"": [
+                                    ""s3:GetBucketLocation"",
+                                    ""s3:ListBucket""
+                                ],
+                                ""Resource"": [ ""arn:aws:s3:::" + bucket + @""" ]
+                            },
+                            {
+                                ""Effect"": ""Allow"",
+                                ""Principal"": ""*"",
+                                ""Action"": [ ""s3:GetObject"" ],
+                                ""Resource"": [ ""arn:aws:s3:::" + bucket + @"/*"" ]
+                            }
+                        ]
+                    }";
+
+                    await client.SetPolicyAsync(new SetPolicyArgs()
+                        .WithBucket(bucket)
+                        .WithPolicy(policyJson));
+                }
+            }
+        }
+
 
         if (!useInMemory)
         {
