@@ -31,15 +31,15 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. */
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    actionTimeout: 10_000,
+    actionTimeout: 10000,
   },
 
     /* Run local dev server before starting the tests (helpful in CI) */
   webServer: {
-    command: 'npm --prefix swapstreet ci && npm --prefix swapstreet run dev',
+    command: 'npm ci && npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
-    timeout: 120_000,
+    timeout: 120000,
   },
 
   /* Configure projects for browser + device combinations (desktop / tablet / mobile) */
