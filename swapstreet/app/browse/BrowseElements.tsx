@@ -16,56 +16,9 @@ export function Header() {
         <ul className="flex items-center justify-center font-semibold">
           <li className="px-3 py-2">
             <button className="hover:opacity-50">Featured</button>
-          </li>
+          </li>          
           <li className="relative group px-3 py-2">
-            <button className="hover:opacity-50 cursor-default">Men</button>
-            <div
-              className="fixed left-0 right-0 top-[80px] transition-all duration-500 ease-in-out 
-                         opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50"
-            >
-              <div className="bg-white rounded-xl shadow-xl p-10 max-w-[1400px] mx-auto">
-                <div className="grid grid-cols-5 gap-12">
-                  {[
-                    {
-                      title: "Tops",
-                      img: "/images/clothes_login_page.png",
-                    },
-                    {
-                      title: "Bottoms",
-                      img: "/images/clothes_login_page.png",
-                    },
-                    {
-                      title: "Accessories",
-                      img: "/images/clothes_login_page.png",
-                    },
-                    {
-                      title: "Portables",
-                      img: "/images/clothes_login_page.png",
-                    },
-                    {
-                      title: "Sale",
-                      img: "/images/clothes_login_page.png",
-                    },
-                  ].map((item) => (
-                    <a key={item.title} href="#" className="block group/item">
-                      <p className="uppercase tracking-wider text-gray-500 font-medium text-[13px] mb-3">
-                        {item.title}
-                      </p>
-                      <img
-                        src={item.img}
-                        alt={item.title}
-                        className="w-full aspect-square object-cover rounded-xl shadow-sm 
-                                   transition-transform duration-300 ease-in-out 
-                                   group-hover/item:scale-[1.03]"
-                      />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </li>
-          <li className="relative group px-3 py-2">
-            <button className="hover:opacity-50 cursor-default">Women</button>
+            <button className="hover:opacity-50 cursor-default">Collections</button>
             <div
               className="fixed left-0 right-0 top-[80px] transition-all duration-500 ease-in-out 
                          opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50"
