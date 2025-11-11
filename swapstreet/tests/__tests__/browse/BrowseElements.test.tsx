@@ -43,8 +43,7 @@ describe("Header", () => {
     expect(screen.getByText(/SWAP/)).toBeInTheDocument();
     expect(screen.getByText(/STREET/)).toBeInTheDocument();
     expect(screen.getByText(/Featured/)).toBeInTheDocument();
-    expect(screen.getByText(/Men/)).toBeInTheDocument();
-    expect(screen.getByText(/Women/)).toBeInTheDocument();
+    expect(screen.getByText(/Collections/)).toBeInTheDocument();
     expect(screen.getByText(/Log in/)).toBeInTheDocument();
     expect(screen.getByText(/Sign up/)).toBeInTheDocument();
   });
