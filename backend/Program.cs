@@ -114,6 +114,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
