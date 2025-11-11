@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom";
+process.env.NEXT_PUBLIC_API_URL = "http://backend:8080";
 
 if (!(global as any).URL.createObjectURL) {
   Object.defineProperty((global as any).URL, "createObjectURL", {

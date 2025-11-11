@@ -56,7 +56,6 @@ describe("fetchClothingItems", () => {
       "http://backend:8080/api/catalog/items",
       {
         cache: "no-store",
-        credentials: "include",
       },
     );
     expect(result).toEqual(mockItems);
@@ -92,7 +91,6 @@ describe("fetchClothingItems", () => {
       "http://backend:8080/api/catalog/items?minPrice=50&maxPrice=100&categoryId=2&conditions=Like+New%2CNew",
       {
         cache: "no-store",
-        credentials: "include",
       },
     );
     expect(result).toEqual(mockItems);
@@ -117,7 +115,6 @@ describe("fetchClothingItems", () => {
       "http://backend:8080/api/catalog/items?minPrice=20&categoryId=3",
       {
         cache: "no-store",
-        credentials: "include",
       },
     );
     expect(result).toEqual(mockItems);

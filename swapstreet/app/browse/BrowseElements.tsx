@@ -357,15 +357,10 @@ export function CardItem({ title, description, imgSrc }: CardItemProps) {
   );
 }
 
-interface CardItemProps {
-  title: string;
-  description: string;
-  imgSrc?: string;
-}
-
 // ---------- Card ----------
 interface CardItemProps {
   title: string;
   description: string;
   imgSrc?: string;
+  price: number;
 }

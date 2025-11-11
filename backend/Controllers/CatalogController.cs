@@ -35,8 +35,10 @@ public class CatalogController : ControllerBase
         {
             id = i.Id,
             title = i.Title,
-            description = i.Description,
-            imageUrl = i.ImageUrl
+            description = $"{i.Description} -- ${i.Price:F2}",
+            imageUrl = i.ImageUrl,
+            condition = i.Condition,
+            categoryId = i.CategoryId
         });
         return Ok(response);
     }
