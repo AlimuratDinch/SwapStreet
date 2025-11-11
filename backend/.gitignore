@@ -44,9 +44,27 @@ docker-compose.override.yml
 # Environment Variables
 .env
 
-#Test Files
+# Test Files
 TestResults/*
 coverage-report/*
 coverage/*
+CodeCoverage/*
+
+# Local Files for Backend
+backend.runtimeconfig.json
+backend.staticwebassets.endpoints.json
+coverlet.collector.deps
+nuget.config
+web.config
+backend.deps.json
+backend.Tests.deps.json
+coverlet.collector.deps.json
+coverlet.collector.pdb
+coverlet.collector.targets
+coverlet.core.xml
+coverlet.core.pdb
+ubuntu/*
+alpine/*
+macos/*
 
 .config/*
