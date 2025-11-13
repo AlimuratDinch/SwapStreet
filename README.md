@@ -6,9 +6,9 @@
 
 
 ## Release Demos
-- Release 1:  
-- Release 2:  
-- Release 3:  
+- [Release 1](https://drive.google.com/file/d/1Fg40fxtmJ5qpnbLegLKkTHmqGPsn3B3i/view?usp=sharing)  
+- Release 2  
+- Release 3  
 
 ## Project Summary
 SwapStreet is a web and mobile marketplace for refurbished and second-hand clothing, designed to make fashion more affordable, accessible and sustainable. 
