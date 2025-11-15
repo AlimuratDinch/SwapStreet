@@ -19,12 +19,12 @@ export async function fetchClothingItems(
       params.set("categoryId", resolvedParams.categoryId);
     if (resolvedParams.conditions)
       params.set("conditions", resolvedParams.conditions);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://backend:8080";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const url = `${apiUrl}/api/catalog/items${params.toString() ? `?${params.toString()}` : ""}`;
     const res = await fetch(url, {
       cache: "no-store",
-      credentials: "include",
     });
+    console.log("URL used:", url);
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
@@ -68,7 +68,7 @@ export default async function BrowsePage({
                   title={item.title}
                   description={item.description}
                   imgSrc={item.imageUrl}
-                  price={item.price}
+                  price={item.price ?? 0}
                 />
               ),
             )

@@ -4,13 +4,16 @@ using backend.Contracts;
 using backend.Services;
 using backend.Services.Auth;
 using backend.Contracts.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using backend.Models;
 using Minio;
 using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using backend.Data.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,24 +35,34 @@ builder.Services.AddCors(options =>
 // Check for dev flag
 var useInMemory = Environment.GetEnvironmentVariable("USE_INMEMORY_DB") == "true";
 
+// Configure Gemini API (required for both in-memory and production)
+var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") 
+                   ?? throw new InvalidOperationException("Gemini API key not set.");
+var geminiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL") 
+                   ?? throw new InvalidOperationException("Gemini API URL not set.");
+builder.Configuration["Gemini:ApiKey"] = geminiKey;
+builder.Configuration["Gemini:ApiUrl"] = geminiUrl;
+
 // Configure EF Core depending on flag
 if (useInMemory)
 {
     Console.WriteLine("Using in-memory database (dev mode)");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseInMemoryDatabase("AppDb"));
+        options
+        .UseInMemoryDatabase("AppDb")
+        .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning)));
     builder.Services.AddDbContext<AuthDbContext>(options =>
-        options.UseInMemoryDatabase("AuthDb"));
+        options
+        .UseInMemoryDatabase("AuthDb")
+        .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+        );
 }
 else
 {
     // Build Postgres connection string from environment variables
     var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
                        ?? throw new InvalidOperationException("Connection string not set.");
-    var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") 
-                       ?? throw new InvalidOperationException("Gemini API key not set.");
-    builder.Configuration["Gemini:ApiKey"] = geminiKey;
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
     builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -60,13 +73,14 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
-builder.Services.Configure<MinioSettings>(builder.Configuration.GetSection("Minio"));
+
 
 // Register services
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
 
 // Configure authentication if JWT secret is available
 var jwtSecret = builder.Configuration["Jwt:Secret"];
@@ -80,55 +94,65 @@ if (hasJwtSecret)
     })
     .AddJwtBearer(options =>
     {
-        var key = Encoding.UTF8.GetBytes(jwtSecret!);
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = false // Allow expired tokens for testing
-        };
+        // Accept token from Authorization header OR from the access_token cookie
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                var token = context.Request.Cookies["access_token"];
-                if (!string.IsNullOrEmpty(token))
+                // If no token found in header, check the access_token cookie (we set this in AuthController)
+                if (string.IsNullOrEmpty(context.Token))
                 {
-                    context.Token = token;
+                    if (context.Request.Cookies.TryGetValue("access_token", out var tokenFromCookie))
+                    {
+                        context.Token = tokenFromCookie;
+                    }
                 }
-                return Task.CompletedTask;
-            },
-            OnAuthenticationFailed = context =>
-            {
-                context.NoResult();
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                context.HandleResponse();
                 return Task.CompletedTask;
             }
         };
-    });
 
-    builder.Services.AddAuthorization(options =>
-    {
-        options.FallbackPolicy = null;
+        var jwtSecret = builder.Configuration["Jwt:Secret"];
+        var key = string.IsNullOrEmpty(jwtSecret) ? Array.Empty<byte>() : Encoding.UTF8.GetBytes(jwtSecret);
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
     });
 }
 
+builder.Services.AddAuthorization();
+
+// Register services
+builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddScoped<IGenerativeService, GenerativeService>();
+builder.Services.AddScoped<ITryOnService, backend.Services.VirtualTryOn.TryOnService>();
+builder.Services.AddHttpClient(); // Required for IHttpClientFactory used by GenerativeService
+
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
+
+// Register MinIO client
 builder.Services.AddSingleton<IMinioClient>(sp =>
 {
-    var settings = sp.GetRequiredService<IOptions<MinioSettings>>().Value;
+    var endpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "minio:9000";
+    var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "minioadmin";
+    var secretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "minioadmin";
+    var useSsl = bool.TryParse(Environment.GetEnvironmentVariable("MINIO_USE_SSL"), out var ssl) && ssl;
 
     return new MinioClient()
-        .WithEndpoint(settings.Endpoint)
-        .WithCredentials(settings.AccessKey, settings.SecretKey)
-        .WithSSL(settings.WithSSL)
+        .WithEndpoint(endpoint)
+        .WithCredentials(accessKey, secretKey)
+        .WithSSL(useSsl)
         .Build();
 });
 
@@ -144,37 +168,57 @@ using (var scope = app.Services.CreateScope())
         var authDb = services.GetRequiredService<AuthDbContext>();
 
         var client = scope.ServiceProvider.GetRequiredService<IMinioClient>();
-    var settings = scope.ServiceProvider.GetRequiredService<IOptions<MinioSettings>>().Value;
+        var settings = scope.ServiceProvider.GetRequiredService<IOptions<MinioSettings>>().Value;
 
-    bool found = await client.BucketExistsAsync(
-        new BucketExistsArgs().WithBucket(settings.BucketName)
-    );
+        var buckets = new[] { settings.PublicBucketName, settings.PrivateBucketName };
 
-    if (!found)
-        await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(settings.BucketName));
+        foreach (var bucket in buckets)
+        {
+            bool exists = await client.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket));
+            if (!exists)
+            {
+                await client.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucket));
+
+                // If this is the public bucket, make it readable by everyone
+                if (bucket == settings.PublicBucketName)
+                {
+                    var policyJson = @"
+                    {
+                        ""Version"": ""2012-10-17"",
+                        ""Statement"": [
+                            {
+                                ""Effect"": ""Allow"",
+                                ""Principal"": ""*"",
+                                ""Action"": [
+                                    ""s3:GetBucketLocation"",
+                                    ""s3:ListBucket""
+                                ],
+                                ""Resource"": [ ""arn:aws:s3:::" + bucket + @""" ]
+                            },
+                            {
+                                ""Effect"": ""Allow"",
+                                ""Principal"": ""*"",
+                                ""Action"": [ ""s3:GetObject"" ],
+                                ""Resource"": [ ""arn:aws:s3:::" + bucket + @"/*"" ]
+                            }
+                        ]
+                    }";
+
+                    await client.SetPolicyAsync(new SetPolicyArgs()
+                        .WithBucket(bucket)
+                        .WithPolicy(policyJson));
+                }
+            }
+        }
+
 
         if (!useInMemory)
         {
             appDb.Database.Migrate();
             authDb.Database.Migrate();
+            await DatabaseSeeder.SeedAsync(appDb);
             Console.WriteLine("Database migrations applied successfully.");
             
-            // Seed initial categories if database is empty
-            if (!appDb.Categories.Any())
-            {
-                Console.WriteLine("Seeding initial categories...");
-                var categories = new[]
-                {
-                    new Category { Name = "Tops" },
-                    new Category { Name = "Bottoms" },
-                    new Category { Name = "Accessories" },
-                    new Category { Name = "Portables" },
-                    new Category { Name = "Sale" }
-                };
-                appDb.Categories.AddRange(categories);
-                appDb.SaveChanges();
-                Console.WriteLine("Categories seeded successfully.");
-            }
         }
         else
         {
@@ -194,14 +238,9 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty;
 });
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
-if (hasJwtSecret)
-{
-    app.UseAuthentication();
-    app.UseAuthorization();
-}
 app.MapControllers();
 
 await app.RunAsync();

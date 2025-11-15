@@ -2,10 +2,12 @@ using backend.Contracts;
 using backend.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Hosting;
 using backend.Services;
 using backend.Contracts.Auth;
 using backend.DbContexts;
+using Minio;
+using Minio.DataModel.Args;
+using Microsoft.Extensions.Options;
 
 namespace backend.Services.VirtualTryOn
 {
@@ -15,28 +17,32 @@ namespace backend.Services.VirtualTryOn
         private readonly ITokenService _tokenService;
         private readonly IGenerativeService _geminiService;
         private readonly ILogger<TryOnService> _logger;
-        private readonly IWebHostEnvironment _environment;
+        private readonly IMinioClient _minio;
+        private readonly MinioSettings _minioSettings;
 
         public TryOnService(
             AppDbContext context,
             ITokenService tokenService,
             IGenerativeService geminiService,
             ILogger<TryOnService> logger,
-            IWebHostEnvironment environment)
+            IMinioClient minio,
+            IOptions<MinioSettings> minioSettings)
         {
             _context = context;
             _tokenService = tokenService;
             _geminiService = geminiService;
             _logger = logger;
-            _environment = environment;
+            _minio = minio;
+            _minioSettings = minioSettings.Value;
         }
 
         public async Task<string> ProcessTryOnRequestAsync(string accessToken, string pathFromUrl)
         {
             // 1. Get user ID from access token
-            var userId = await _tokenService.GetUserIdFromAccessTokenAsync(accessToken);
+            var userId = _tokenService.GetUserIdFromAccessToken(accessToken);
             _logger.LogInformation("Processing try-on request for user: {UserId}", userId);
             Guid actualId = userId ?? Guid.Empty;
+            
             // 2. Find user's personal image
             var personalImagePath = await FindTryOnImageByUserIdAsync(actualId);
             if (string.IsNullOrEmpty(personalImagePath))
@@ -54,7 +60,7 @@ namespace backend.Services.VirtualTryOn
                 clothingImageBytes);
 
             // 5. Store generated image
-            var generatedImagePath = await StoreImageAsync(personalImagePath, generatedImageBytes);
+            var generatedImagePath = await StoreImageAsync(generatedImageBytes);
 
             // 6. Save to database
             var tryOnImage = new TryOnImage
@@ -86,35 +92,65 @@ namespace backend.Services.VirtualTryOn
 
         private async Task<byte[]> GetImageBytesAsync(string imagePath)
         {
-            //TO DO 
-            // If using local storage
-            var fullPath = Path.Combine(_environment.WebRootPath ?? "", imagePath);
+            // Extract object name and determine bucket from path
+            var (objectName, bucket) = ExtractObjectNameAndBucket(imagePath);
 
-            if (!File.Exists(fullPath))
-            {
-                throw new FileNotFoundException($"Image not found: {imagePath}");
-            }
+            // Download from MinIO
+            using var memoryStream = new MemoryStream();
+            await _minio.GetObjectAsync(new GetObjectArgs()
+                .WithBucket(bucket)
+                .WithObject(objectName)
+                .WithCallbackStream(async stream => await stream.CopyToAsync(memoryStream)));
 
-            return await File.ReadAllBytesAsync(fullPath);
-
-            // If using S3/MinIO, implement S3 client logic here
+            return memoryStream.ToArray();
         }
 
-        private async Task<string> StoreImageAsync(string personalImagePath, byte[] imageBytes)
+        private async Task<string> StoreImageAsync(byte[] imageBytes)
         {
-            // TO DO
-            // Generate unique filename
-            var fileName = $"tryon_{Guid.NewGuid()}.png";
-            var imagesFolder = Path.Combine(_environment.WebRootPath, "images", "generated");
+            var fileName = $"generated/{Guid.NewGuid()}.png";
+            var bucket = _minioSettings.PrivateBucketName; 
 
-            Directory.CreateDirectory(imagesFolder);
+            // Upload to MinIO
+            using var stream = new MemoryStream(imageBytes);
+            await _minio.PutObjectAsync(new PutObjectArgs()
+                .WithBucket(bucket)
+                .WithObject(fileName)
+                .WithStreamData(stream)
+                .WithObjectSize(imageBytes.Length)
+                .WithContentType("image/png"));
 
-            var filePath = Path.Combine(imagesFolder, fileName);
-            await File.WriteAllBytesAsync(filePath, imageBytes);
+            return fileName;
+        }
 
-            return $"/images/generated/{fileName}";
+        private (string objectName, string bucket) ExtractObjectNameAndBucket(string imagePath)
+        {
+            // If it's a URL, extract the object name
+            if (Uri.TryCreate(imagePath, UriKind.Absolute, out var uri))
+            {
+                // Handle URLs like: http://localhost:9000/private/tryon/guid_filename.png
+                // or pre-signed URLs
+                var pathParts = uri.AbsolutePath.TrimStart('/').Split('/', 2);
+                if (pathParts.Length == 2)
+                {
+                    var bucketName = pathParts[0];
+                    // URL decode the object name to handle encoded characters (e.g., %20 for spaces)
+                    var objectName = Uri.UnescapeDataString(pathParts[1]);
+                    _logger.LogInformation("Extracted bucket: {Bucket}, object: {Object} from URL: {Url}", 
+                        bucketName, objectName, imagePath);
+                    return (objectName, bucketName);
+                }
+            }
 
-            // If using S3/MinIO, implement S3 upload logic here
+            // If it's already an object name (e.g., "tryon/guid_filename.png")
+            // URL decode it in case it's already encoded
+            var decodedPath = Uri.UnescapeDataString(imagePath);
+            if (decodedPath.StartsWith("tryon/", StringComparison.OrdinalIgnoreCase) ||
+                decodedPath.StartsWith("generated/", StringComparison.OrdinalIgnoreCase))
+            {
+                return (decodedPath, _minioSettings.PrivateBucketName);
+            }
+
+            return (decodedPath, _minioSettings.PrivateBucketName);
         }
     }
 }

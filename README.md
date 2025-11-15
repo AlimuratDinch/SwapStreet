@@ -6,9 +6,9 @@
 
 
 ## Release Demos
-- Release 1:  
-- Release 2:  
-- Release 3:  
+- [Release 1](https://drive.google.com/file/d/1Fg40fxtmJ5qpnbLegLKkTHmqGPsn3B3i/view?usp=sharing)  
+- Release 2  
+- Release 3  
 
 ## Project Summary
 SwapStreet is a web and mobile marketplace for refurbished and second-hand clothing, designed to make fashion more affordable, accessible and sustainable. 
@@ -50,6 +50,12 @@ PGADMIN_DEFAULT_PASSWORD=<your-pgAdmin-password>
 # ================================
 ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_db;Username=<your-db-username>;Password=<your-db-password>
 ```
+- Create a `.env` file in the swapstreet directory
+```
+NEXT_PUBLIC_API_URL=http://backend:8080
+```
+Depending on your OS, you may need to change "backend" to "localhost". 
+we have found Mac/unix users need "backend" and others need "localhost"
 
 - Make sure `Docker Desktop` is running, then:
 ```
