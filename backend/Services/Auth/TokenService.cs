@@ -16,13 +16,17 @@ namespace backend.Services.Auth
         private readonly int _accessTokenExpirationMinutes;
         private readonly int _refreshTokenExpirationDays;
 
+        private readonly string _jwtSecret;
+
         public TokenService(AuthDbContext db, IConfiguration config)
         {
             _db = db;
             _config = config;
 
-            _accessTokenExpirationMinutes = _config.GetValue<int>("Jwt:AccessTokenExpirationMinutes");
-            _refreshTokenExpirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
+            _accessTokenExpirationMinutes = _config.GetValue<int>("JWT_ACCESS_TOKEN_EXPIRATION_MINUTES", 60);
+            _refreshTokenExpirationDays = _config.GetValue<int>("REFRESH_TOKEN_EXPIRATION_DAYS", 30);
+
+            _jwtSecret = _config["JWT_SECRET"] ?? "402375d38deb9c479fb043f369d1b2d2";
         }
 
         public async Task<string> GenerateAccessTokenAsync(Guid userId)
@@ -31,17 +35,19 @@ namespace backend.Services.Auth
             if (user == null) throw new Exception("User not found");
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_config["Jwt:Secret"]);
+            var key = Encoding.UTF8.GetBytes(_jwtSecret);
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim("username", user.Username ?? ""),
+                new Claim("isAdmin", user.IsAdmin.ToString())
+            };
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(
-                [
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                    new Claim("username", user.Username ?? ""),
-                    new Claim("isAdmin", user.IsAdmin.ToString())
-                ]),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
@@ -113,7 +119,7 @@ namespace backend.Services.Auth
             await _db.SaveChangesAsync();
         }
 
-        public async Task<Guid?> GetUserIdFromTokenAsync(string token)
+        public async Task<Guid?> GetUserIdFromRefreshTokenAsync(string token)
         {
             if (string.IsNullOrWhiteSpace(token))
                 return null;
@@ -130,35 +136,43 @@ namespace backend.Services.Auth
             try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes(_config["Jwt:Secret"] ?? "");
-                
+                var key = Encoding.UTF8.GetBytes(_jwtSecret);
+
                 var validationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateIssuer = false,
                     ValidateAudience = false,
-                    ValidateLifetime = false // Allow expired tokens for validation
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
                 };
 
-                var principal = tokenHandler.ValidateToken(accessToken, validationParameters, out SecurityToken validatedToken);
-                var jwtToken = (JwtSecurityToken)validatedToken;
-                
-                // Extract user ID from the 'sub' claim
-                var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
-                if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
-                {
+                var principal = tokenHandler.ValidateToken(accessToken, validationParameters, out _);
+
+                var userIdClaim = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (Guid.TryParse(userIdClaim, out var userId))
                     return userId;
-                }
+
+                return null;
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                // Token expired
+                return null;
+            }
+            catch (SecurityTokenException)
+            {
+                // Invalid token
+                return null;
             }
             catch
             {
-                // If JWT parsing fails, return null
+                // Other errors
                 return null;
             }
-
-            return null;
         }
+
 
         public async Task<bool> IsTokenRevokedAsync(string token)
         {

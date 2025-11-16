@@ -20,7 +20,7 @@ public class UserAccountService : IUserAccountService
             await _tokenService.InvalidateAllRefreshTokensForUserAsync(userId);
             await _userService.PermanentlyDeleteUserAsync(userId);
             await transaction.CommitAsync();
-                
+
         }
         catch (Exception ex)
         {

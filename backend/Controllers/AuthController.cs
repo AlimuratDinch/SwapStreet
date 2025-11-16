@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using backend.Contracts.Auth;
 using System.ComponentModel.DataAnnotations;
 using backend.Models.Authentication;
+using System.Security.Claims;
 
 namespace backend.Controllers
 {
@@ -17,7 +18,6 @@ namespace backend.Controllers
         private readonly IUserAccountService _userAccountService;
         private readonly ITokenService _tokenService;
         private readonly IConfiguration _config;
-        private readonly int _accessTokenExpirationMinutes;
         private readonly int _refreshTokenExpirationDays;
 
         public AuthController(IUserService userService, IUserAccountService userAccountService, ITokenService tokenService, IConfiguration config)
@@ -27,7 +27,6 @@ namespace backend.Controllers
             _tokenService = tokenService;
             _config = config;
 
-            _accessTokenExpirationMinutes = _config.GetValue<int>("Jwt:AccessTokenExpirationMinutes");
             _refreshTokenExpirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
 
         }
@@ -69,16 +68,6 @@ namespace backend.Controllers
             var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
             var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
-            // Set HttpOnly cookies
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
-            };
-
-            Response.Cookies.Append("access_token", accessToken, cookieOptions);
 
             var refreshCookieOptions = new CookieOptions
             {
@@ -93,7 +82,7 @@ namespace backend.Controllers
             return Ok(new
             {
                 Message = "User registered successfully",
-                User = new { user.Id, user.Username, user.Email } // TODO: Remove sensitive data (only for testing) 
+                AccessToken = accessToken
             });
         }
 
@@ -142,15 +131,6 @@ namespace backend.Controllers
              var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
              var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
-            // Set HttpOnly cookies
-            var accessCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
-            };
-
             var refreshCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
@@ -159,12 +139,15 @@ namespace backend.Controllers
                 Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
             };
 
-            Response.Cookies.Append("access_token", accessToken, accessCookieOptions);
             Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
 
             // 7. Return success response
             
-            return Ok(new { Message = "Login successful." });
+            return Ok(new
+            {
+                Message = "Login successful.",
+                AccessToken = accessToken
+            });
         }
 
         // POST api/auth/refresh
@@ -184,7 +167,7 @@ namespace backend.Controllers
             }
 
             // Get the user ID from the token
-            Guid? userID = await _tokenService.GetUserIdFromTokenAsync(refreshToken);
+            Guid? userID = await _tokenService.GetUserIdFromRefreshTokenAsync(refreshToken);
             if (!userID.HasValue)
             {
                 return BadRequest(new { Error = "No user found for the provided token" });
@@ -193,66 +176,52 @@ namespace backend.Controllers
             // Generate a new access token
             var accessToken = await _tokenService.GenerateAccessTokenAsync(userID.Value);
 
-            // Set the access token as an HTTP-only cookie
-            var cookieOptions = new CookieOptions
+
+            return Ok(new
             {
-                HttpOnly = true,
-                Secure = false, // set to false in local dev if not using HTTPS
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes)
-            };
-
-            Response.Cookies.Append("access_token", accessToken, cookieOptions);
-
-            return Ok(new { Message = "Token refreshed successfully" });
+                Message = "Token refreshed successfully",
+                AccessToken = accessToken
+            });
         }
 
         // POST api/auth/logout
+        [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            // obtain refresh token from cookies
-            var access_token = Request.Cookies["access_token"];
-            if (string.IsNullOrEmpty(access_token))
-            {
-                return Unauthorized(new { Error = "No token provided" });
-            }
-
-            // 1. Obtain user ID from access token
-            var userId = _tokenService.GetUserIdFromAccessToken(access_token);
-            if (!userId.HasValue)
+            // 1. Get the user ID from the JWT claims
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { Error = "Invalid token" });
             }
-            // 2. Invalidate all refresh tokens for the user
-            await _tokenService.InvalidateAllRefreshTokensForUserAsync(userId.Value);
 
-            // 3. Remove cookies
-            Response.Cookies.Delete("access_token");
+            // 2. Invalidate all refresh tokens for this user
+            await _tokenService.InvalidateAllRefreshTokensForUserAsync(userId);
+
+            // 3. Remove the HTTP-only refresh token cookie
             Response.Cookies.Delete("refresh_token");
 
             return Ok(new { message = "Logout successful" });
         }
 
+
         // PATCH api/auth/updateUsername
         // call using {"newUsername": "newname" }
+        [Authorize]
         [HttpPatch("updateUsername")]
         public async Task<IActionResult> UpdateUsername([FromBody] UpdateUsernameDto updateUsernameDto)
         {
             if (string.IsNullOrWhiteSpace(updateUsernameDto.NewUsername))
-            {
                 return BadRequest(new { Error = "Username cannot be empty" });
-            }
 
-            var userId = _tokenService.GetUserIdFromAccessToken(Request.Cookies["access_token"]);
-            if (!userId.HasValue)
-            {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
                 return Unauthorized(new { Error = "Invalid token" });
-            }
 
             try
             {
-                var updatedUser = await _userService.UpdateUsernameAsync(userId.Value, updateUsernameDto.NewUsername);
+                var updatedUser = await _userService.UpdateUsernameAsync(userId, updateUsernameDto.NewUsername);
                 return Ok(new { Message = "Username updated successfully", NewUsername = updatedUser.Username });
             }
             catch (Exception ex)
@@ -261,30 +230,23 @@ namespace backend.Controllers
             }
         }
 
-        // PATCH api/auth/updateEmail
-        // call using {"newEmail": "newemail" }
+        [Authorize]
         [HttpPatch("updateEmail")]
         public async Task<IActionResult> UpdateEmail([FromBody] UpdateEmailDto updateEmailDto)
         {
             if (string.IsNullOrWhiteSpace(updateEmailDto.NewEmail))
-            {
                 return BadRequest(new { Error = "Email cannot be empty" });
-            }
 
             if (!new EmailAddressAttribute().IsValid(updateEmailDto.NewEmail))
-            {
                 return BadRequest(new { Error = "Invalid email format" });
-            }
 
-            var userId = _tokenService.GetUserIdFromAccessToken(Request.Cookies["access_token"]);
-            if (!userId.HasValue)
-            {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
                 return Unauthorized(new { Error = "Invalid token" });
-            }
 
             try
             {
-                var updatedUser = await _userService.UpdateEmailAsync(userId.Value, updateEmailDto.NewEmail);
+                var updatedUser = await _userService.UpdateEmailAsync(userId, updateEmailDto.NewEmail);
                 return Ok(new { Message = "Email updated successfully", NewEmail = updatedUser.Email });
             }
             catch (Exception ex)
@@ -293,31 +255,25 @@ namespace backend.Controllers
             }
         }
 
-        // DELETE api/auth/deleteUser
         [Authorize]
         [HttpDelete("deleteUser")]
         public async Task<IActionResult> DeleteUser()
         {
-            var access_token = Request.Cookies["access_token"];
-            if (string.IsNullOrEmpty(access_token)) return Unauthorized(new { Error = "No token provided" });
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(new { Error = "Invalid token" });
 
-            var userId = _tokenService.GetUserIdFromAccessToken(access_token);
-            if (!userId.HasValue) return Unauthorized(new { Error = "Invalid token" });
-
-            // Proceed with user deletion
-
-            // Begin transaction on the same scoped AuthDbContext
             try
             {
-                await _userAccountService.DeleteUserAndTokensAsync(userId.Value);
-                Response.Cookies.Delete("access_token");
+                await _userAccountService.DeleteUserAndTokensAsync(userId);
                 Response.Cookies.Delete("refresh_token");
                 return Ok(new { Message = "User deleted successfully" });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new { Error = ex.Message });
             }
         }
+
     }
 }

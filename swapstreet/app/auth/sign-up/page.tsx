@@ -14,42 +14,52 @@ export default function RegistrationPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return;
+  if (password.length < 8) {
+    setError("Password must be at least 8 characters long");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError("Passwords do not match");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:8080/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ email, username, password }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(errText || "Failed to create account");
     }
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
+    const data = await response.json();
+
+    // Store access token in sessionStorage
+    if (data.accessToken) {
+      sessionStorage.setItem("accessToken", data.accessToken);
+      console.log("Access token stored:", data.accessToken);
+    } else {
+      throw new Error("Access token not returned from backend");
     }
 
-    try {
-      const response = await fetch("http://localhost:8080/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ email, username, password }),
-      });
+    console.log("Register Successful");
+    router.push("/seller/onboarding");
+  } catch (err: any) {
+    setError(err.message || "Failed to create account. Please try again.");
+  }
+};
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(errText || "Failed to create account");
-      }
-
-      const data = await response.json();
-      console.log("Register Successfull");
-      router.push("/seller/onboarding");
-    } catch (err: any) {
-      setError(err.message || "Failed to create account. Please try again.");
-    }
-  };
 
   return (
     <div className="relative flex min-h-screen justify-center items-start bg-[var(--bg-color)] p-6 overflow-hidden">

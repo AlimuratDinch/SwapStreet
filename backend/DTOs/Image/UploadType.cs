@@ -10,4 +10,3 @@ namespace backend.DTOs.Image
     }
 }
 
-     

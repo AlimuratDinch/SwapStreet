@@ -22,9 +22,7 @@ export default function LoginPage() {
       console.log("Attempting Sign In...");
       const response = await fetch("http://localhost:8080/api/auth/signin", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
@@ -34,9 +32,17 @@ export default function LoginPage() {
         throw new Error(err || "Login failed");
       }
 
-      router.push("/browse");
       const data = await response.json();
-      console.log("Logged in:", data);
+
+      // Store only the access token in sessionStorage
+      if (data.accessToken) {
+        sessionStorage.setItem("accessToken", data.accessToken);
+        console.log("Access token stored:", data.accessToken);
+      } else {
+        throw new Error("Access token not returned from backend");
+      }
+
+      router.push("/browse");
     } catch (err: any) {
       console.error("Error:", err);
       setError(err.message);

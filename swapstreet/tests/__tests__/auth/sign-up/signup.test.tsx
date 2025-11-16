@@ -8,9 +8,24 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
+// Mock sessionStorage
+const sessionStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+})();
+Object.defineProperty(window, "sessionStorage", {
+  value: sessionStorageMock,
+});
+
 describe("RegistrationPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    sessionStorage.clear();
   });
 
   it("renders the registration form fields and button", () => {
@@ -19,97 +34,67 @@ describe("RegistrationPage", () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /sign up/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign up/i })).toBeInTheDocument();
   });
 
-  it("shows error if password is too short", () => {
+  it("shows error if password is too short", async () => {
     render(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
-    });
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: "short" },
-    });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: "short" },
-    });
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: "Test User" } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "test@example.com" } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: "short" } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "short" } });
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
-    expect(
-      screen.getByText(/password must be at least 8 characters long/i),
-    ).toBeInTheDocument();
+
+    const errorEl = await screen.findByText(/password must be at least 8 characters long/i);
+    expect(errorEl).toBeInTheDocument();
   });
 
-  it("shows error if passwords do not match", () => {
+  it("shows error if passwords do not match", async () => {
     render(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
-    });
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: "password321" },
-    });
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: "Test User" } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "test@example.com" } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: "password123" } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "password321" } });
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
-    expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+
+    const errorEl = await screen.findByText(/passwords do not match/i);
+    expect(errorEl).toBeInTheDocument();
   });
 
   it("submits successfully and navigates on success", async () => {
-    const mockResponse = { token: "abc123" };
+    const mockToken = "abc123";
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse,
+      json: async () => ({ accessToken: mockToken }),
     } as Response);
 
     render(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
-    });
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: "password123" },
-    });
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: "Test User" } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "test@example.com" } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: "password123" } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "password123" } });
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
-    await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith("/seller/onboarding");
-    });
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/seller/onboarding"));
+
+    // Optionally verify token stored if your component does so
+    expect(sessionStorage.getItem("accessToken")).toBe(mockToken);
   });
 
   it("shows error message on failed API call", async () => {
     const errorMsg = "Failed to create account";
+
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
       text: async () => errorMsg,
     } as Response);
 
     render(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
-    });
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "fail@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: "password123" },
-    });
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: "Test User" } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "fail@example.com" } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: "password123" } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "password123" } });
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 

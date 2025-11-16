@@ -34,9 +34,9 @@ namespace backend.Tests
 
             // Mock IConfiguration
             var inMemorySettings = new System.Collections.Generic.Dictionary<string, string> {
-                {"Jwt:Secret", "123456789012345678901234567890123"},
-                {"Jwt:AccessTokenExpirationMinutes", "15"},
-                {"Jwt:RefreshTokenExpirationDays", "30"}
+                {"Jwt:Secret", "402375d38deb9c479fb043f369d1b2d2"},
+                {"Jwt:RefreshTokenExpirationDays", "30"},
+                {"Jwt:AccessTokenExpirationMinutes", "60"}
             };
             IConfiguration configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(inMemorySettings)
@@ -198,10 +198,10 @@ namespace backend.Tests
             await db.SaveChangesAsync();
 
             // revoked -> null
-            (await service.GetUserIdFromTokenAsync(token)).Should().BeNull();
+            (await service.GetUserIdFromRefreshTokenAsync(token)).Should().BeNull();
 
             // missing -> null
-            (await service.GetUserIdFromTokenAsync("nope")).Should().BeNull();
+            (await service.GetUserIdFromRefreshTokenAsync("nope")).Should().BeNull();
         }
     }
 }

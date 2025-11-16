@@ -62,7 +62,7 @@ namespace backend.Services
                 .WithContentType(file.ContentType));
 
             // ===== Return URL =====
-            if (type == UploadType.TryOn || type == UploadType.Generated )
+            if (type == UploadType.TryOn || type == UploadType.Generated)
                 return await GetPrivateFileUrlAsync(fileName); // pre-signed URL
             else
                 return GetPublicFileUrl(fileName);             // direct URL

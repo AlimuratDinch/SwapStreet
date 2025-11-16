@@ -8,9 +8,24 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
+// Mock sessionStorage
+const sessionStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+})();
+Object.defineProperty(window, "sessionStorage", {
+  value: sessionStorageMock,
+});
+
 describe("LoginPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    sessionStorage.clear();
   });
 
   it("renders the Login heading", () => {
@@ -26,9 +41,7 @@ describe("LoginPage", () => {
 
   it("renders the Sign In button", () => {
     render(<LoginPage />);
-    expect(
-      screen.getByRole("button", { name: /sign in/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
   });
 
   it("renders the Sign Up prompt", () => {
@@ -36,15 +49,16 @@ describe("LoginPage", () => {
     expect(screen.getByText(/don't have an account\?/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute(
       "href",
-      "/auth/sign-up",
+      "/auth/sign-up"
     );
   });
 
-  it("calls handleSubmit on successful form submit", async () => {
+  it("calls handleSubmit on successful form submit and stores access token", async () => {
     // Mock fetch success
+    const mockToken = "abc123";
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ token: "abc123" }),
+      json: async () => ({ accessToken: mockToken }),
     } as Response);
 
     render(<LoginPage />);
@@ -57,12 +71,19 @@ describe("LoginPage", () => {
     fireEvent.submit(form!);
 
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/browse"));
+
+    // Check token stored in sessionStorage
+    expect(sessionStorage.getItem("accessToken")).toBe(mockToken);
     expect(global.fetch).toHaveBeenCalled();
   });
 
-  it("shows error message on failed login", async () => {
-    // Mock fetch failure
+  it("handles failed login and logs error", async () => {
     const errorMsg = "Login failed";
+
+    // Spy on console.error
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    // Mock fetch failure
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
       text: async () => errorMsg,
@@ -76,5 +97,14 @@ describe("LoginPage", () => {
     fireEvent.change(emailInput, { target: { value: "fail@example.com" } });
     fireEvent.change(passwordInput, { target: { value: "wrongpass" } });
     fireEvent.submit(form!);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Error:",
+        expect.objectContaining({ message: errorMsg })
+      );
+    });
+
+    consoleSpy.mockRestore();
   });
 });
