@@ -128,8 +128,8 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Invalid email or password." });
             }
 
-             var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
-             var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
+            var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
+            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
             var refreshCookieOptions = new CookieOptions
             {
@@ -142,7 +142,7 @@ namespace backend.Controllers
             Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
 
             // 7. Return success response
-            
+
             return Ok(new
             {
                 Message = "Login successful.",

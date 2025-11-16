@@ -334,42 +334,42 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
     // ------------------ DELETE USER TESTS --------------------------
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        [Fact]
-        public async Task DeleteUser_ShouldReturnOk_AndRemoveCookies()
-        {
-            // Arrange - register user
-            var email = "delete@test.com";
-            var password = "Test123!";
-            var signUpDto = new { Email = email, Username = "deleteUser", Password = password };
+    [Fact]
+    public async Task DeleteUser_ShouldReturnOk_AndRemoveCookies()
+    {
+        // Arrange - register user
+        var email = "delete@test.com";
+        var password = "Test123!";
+        var signUpDto = new { Email = email, Username = "deleteUser", Password = password };
 
-            using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-            using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
-            registerResponse.IsSuccessStatusCode.Should().BeTrue("registration must succeed before delete");
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration must succeed before delete");
 
-            // Extract access token from response body
-            var responseBody = await registerResponse.Content.ReadAsStringAsync();
-            var json = JsonSerializer.Deserialize<JsonElement>(responseBody);
-            var accessToken = json.GetProperty("accessToken").GetString();
-            accessToken.Should().NotBeNullOrEmpty("access token must be returned on register");
+        // Extract access token from response body
+        var responseBody = await registerResponse.Content.ReadAsStringAsync();
+        var json = JsonSerializer.Deserialize<JsonElement>(responseBody);
+        var accessToken = json.GetProperty("accessToken").GetString();
+        accessToken.Should().NotBeNullOrEmpty("access token must be returned on register");
 
-            // Extract refresh_token cookie value
-            var setCookies = registerResponse.Headers.GetValues("Set-Cookie").ToArray();
-            var refreshCookie = setCookies.FirstOrDefault(c => c.Contains("refresh_token"));
-            refreshCookie.Should().NotBeNull("refresh_token cookie must be set on register");
-            var refreshToken = refreshCookie.Split(';')[0].Split('=')[1];
+        // Extract refresh_token cookie value
+        var setCookies = registerResponse.Headers.GetValues("Set-Cookie").ToArray();
+        var refreshCookie = setCookies.FirstOrDefault(c => c.Contains("refresh_token"));
+        refreshCookie.Should().NotBeNull("refresh_token cookie must be set on register");
+        var refreshToken = refreshCookie.Split(';')[0].Split('=')[1];
 
-            // Act - send delete request with access token in Authorization header
-            var request = new HttpRequestMessage(HttpMethod.Delete, "/api/auth/deleteUser");
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-            request.Headers.Add("Cookie", $"refresh_token={refreshToken}");
-            using var deleteResponse = await _client.SendAsync(request);
+        // Act - send delete request with access token in Authorization header
+        var request = new HttpRequestMessage(HttpMethod.Delete, "/api/auth/deleteUser");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Add("Cookie", $"refresh_token={refreshToken}");
+        using var deleteResponse = await _client.SendAsync(request);
 
-            // Assert - success
-            deleteResponse.IsSuccessStatusCode.Should().BeTrue("delete user should return success");
+        // Assert - success
+        deleteResponse.IsSuccessStatusCode.Should().BeTrue("delete user should return success");
 
-            var deleteCookies = deleteResponse.Headers.GetValues("Set-Cookie");
-            deleteCookies.Should().Contain(c => c.StartsWith("refresh_token=;"), "refresh_token cookie should be cleared");
-        }
+        var deleteCookies = deleteResponse.Headers.GetValues("Set-Cookie");
+        deleteCookies.Should().Contain(c => c.StartsWith("refresh_token=;"), "refresh_token cookie should be cleared");
+    }
 
 
     [Fact]
@@ -458,5 +458,5 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         var body = await response.Content.ReadAsStringAsync();
     }
-    
+
 }
