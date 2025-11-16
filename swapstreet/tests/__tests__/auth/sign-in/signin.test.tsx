@@ -13,9 +13,15 @@ const sessionStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 Object.defineProperty(window, "sessionStorage", {
@@ -41,7 +47,9 @@ describe("LoginPage", () => {
 
   it("renders the Sign In button", () => {
     render(<LoginPage />);
-    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /sign in/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders the Sign Up prompt", () => {
@@ -49,7 +57,7 @@ describe("LoginPage", () => {
     expect(screen.getByText(/don't have an account\?/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute(
       "href",
-      "/auth/sign-up"
+      "/auth/sign-up",
     );
   });
 
@@ -81,7 +89,9 @@ describe("LoginPage", () => {
     const errorMsg = "Login failed";
 
     // Spy on console.error
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     // Mock fetch failure
     global.fetch = jest.fn().mockResolvedValueOnce({
@@ -101,7 +111,7 @@ describe("LoginPage", () => {
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
         "Error:",
-        expect.objectContaining({ message: errorMsg })
+        expect.objectContaining({ message: errorMsg }),
       );
     });
 

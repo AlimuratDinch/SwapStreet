@@ -1,5 +1,11 @@
 "use client";
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 
 // Define the context type
@@ -47,7 +53,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const isAuthenticated = !!accessToken;
 
   return (
-    <AuthContext.Provider value={{ userId, accessToken, login, logout, isAuthenticated }}>
+    <AuthContext.Provider
+      value={{ userId, accessToken, login, logout, isAuthenticated }}
+    >
       {children}
     </AuthContext.Provider>
   );
