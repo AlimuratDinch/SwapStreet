@@ -104,7 +104,10 @@ export default function RegistrationPage() {
             className="space-y-4 flex flex-col items-center"
           >
             {error && (
-              <div className="w-4/5 text-red-500 text-sm text-center">
+              <div
+                role="alert"
+                className="w-4/5 text-red-500 text-sm text-center"
+              >
                 {error}
               </div>
             )}

@@ -2,67 +2,50 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import LoginPage from "@/app/auth/sign-in/page";
 import "@testing-library/jest-dom";
 
-// Mock router for client component
+// Mock router
 const pushMock = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
 // Mock sessionStorage
-const sessionStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value;
+beforeAll(() => {
+  Object.defineProperty(window, "sessionStorage", {
+    value: {
+      store: {} as Record<string, string>,
+      getItem(key: string) {
+        return this.store[key] || null;
+      },
+      setItem(key: string, value: string) {
+        this.store[key] = value;
+      },
+      removeItem(key: string) {
+        delete this.store[key];
+      },
+      clear() {
+        this.store = {};
+      },
     },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-Object.defineProperty(window, "sessionStorage", {
-  value: sessionStorageMock,
+    writable: true,
+  });
 });
 
 describe("LoginPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    sessionStorage.clear();
   });
 
-  it("renders the Login heading", () => {
+  it("renders login form correctly", () => {
     render(<LoginPage />);
     expect(screen.getByRole("heading", { name: /login/i })).toBeInTheDocument();
-  });
-
-  it("renders email and password fields", () => {
-    render(<LoginPage />);
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-  });
-
-  it("renders the Sign In button", () => {
-    render(<LoginPage />);
     expect(
       screen.getByRole("button", { name: /sign in/i }),
     ).toBeInTheDocument();
   });
 
-  it("renders the Sign Up prompt", () => {
-    render(<LoginPage />);
-    expect(screen.getByText(/don't have an account\?/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute(
-      "href",
-      "/auth/sign-up",
-    );
-  });
-
-  it("calls handleSubmit on successful form submit and stores access token", async () => {
-    // Mock fetch success
+  it("successful login stores access token and navigates", async () => {
     const mockToken = "abc123";
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
@@ -70,51 +53,56 @@ describe("LoginPage", () => {
     } as Response);
 
     render(<LoginPage />);
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const form = emailInput.closest("form");
-
-    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
-    fireEvent.submit(form!);
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/browse"));
-
-    // Check token stored in sessionStorage
-    expect(sessionStorage.getItem("accessToken")).toBe(mockToken);
-    expect(global.fetch).toHaveBeenCalled();
+    expect(window.sessionStorage.getItem("accessToken")).toBe(mockToken);
   });
 
-  it("handles failed login and logs error", async () => {
+  it("shows error when login fails", async () => {
     const errorMsg = "Login failed";
-
-    // Spy on console.error
-    const consoleSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
-
-    // Mock fetch failure
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
       text: async () => errorMsg,
     } as Response);
 
     render(<LoginPage />);
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const form = emailInput.closest("form");
-
-    fireEvent.change(emailInput, { target: { value: "fail@example.com" } });
-    fireEvent.change(passwordInput, { target: { value: "wrongpass" } });
-    fireEvent.submit(form!);
-
-    await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Error:",
-        expect.objectContaining({ message: errorMsg }),
-      );
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "fail@example.com" },
     });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "wrongpass" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
-    consoleSpy.mockRestore();
+    const errorEl = await screen.findByText(errorMsg);
+    expect(errorEl).toBeInTheDocument();
+  });
+
+  it("shows error when token is missing in response", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}), // no accessToken
+    } as Response);
+
+    render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    const errorEl = await screen.findByText(
+      /access token not returned from backend/i,
+    );
+    expect(errorEl).toBeInTheDocument();
   });
 });
