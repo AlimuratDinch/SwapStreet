@@ -56,7 +56,22 @@ export default function LoginPage() {
       className="relative flex min-h-screen justify-center 
               items-start bg-[var(--bg-color)] p-6 overflow-hidden"
     >
-      {/* ... your existing layout ... */}
+      {/* Background design: simple circles with hover grow */}
+      {/* Top-left circle: primary-dark with slight orange tint */}
+      <div
+        className="absolute -top-32 -left-32 w-96 h-96 rounded-full 
+                      bg-[rgba(1,108,93,0.15)]  
+                      transition-transform duration-500 ease-in-out hover:scale-110"
+      ></div>
+
+      {/* Bottom-right circle: primary-dark */}
+      <div
+        className="absolute bottom-[-100px] right-[-100px] w-72 h-72 rounded-full 
+                      bg-[rgba(1,108,93,0.15)]  
+                      transition-transform duration-500 ease-in-out hover:scale-110"
+      ></div>
+
+      {/* Gradient border wrapper */}
       <div
         className="mt-10 md:mt-16 w-full max-w-5xl rounded-2xl 
                 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] 
