@@ -14,7 +14,7 @@ namespace backend.Services
     public class WishlistService : IWishlistService
     {
         private readonly AppDbContext _context;
-        
+
         public WishlistService(AppDbContext context)
         {
             _context = context;

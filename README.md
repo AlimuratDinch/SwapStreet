@@ -33,22 +33,44 @@ git clone https://github.com/AlimuratDinch/SwapStreet
 - Create a `.env` file at the root level of the repository
 ```
 # ================================
+# Frontend
+# ================================
+NODE_ENV=development
+
+# ================================
 # PostgreSQL Database Configuration
 # ================================
-POSTGRES_USER=<your-db-username>
-POSTGRES_PASSWORD=<your-db-password>
-POSTGRES_DB=swapstreet_db
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=Password123
+POSTGRES_DB=swapstreet-db
 
 # ================================
 # pgAdmin Configuration
 # ================================
-PGADMIN_DEFAULT_EMAIL=<your@email.com>
-PGADMIN_DEFAULT_PASSWORD=<your-pgAdmin-password>
+PGADMIN_DEFAULT_EMAIL=admin@example.com
+PGADMIN_DEFAULT_PASSWORD=Password123
 
 # ================================
-# Backend connection string
+# .NET Backend
 # ================================
-ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_db;Username=<your-db-username>;Password=<your-db-password>
+DOTNET_ENVIRONMENT=Development
+ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet-db;Username=admin;Password=Password123
+ASPNETCORE_URLS=http://+:8080
+MINIO_ENDPOINT=minio:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+JWT_SECRET=13d0a95d51d9e78934cfba29210183a90620c23d
+REFRESH_TOKEN_EXPIRATION_DAYS=30
+JWT_ACCESS_TOKEN_EXPIRATION_MINUTES=60
+
+# ================================
+# Minio
+# ================================
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_PUBLIC_BUCKET=public
+MINIO_PRIVATE_BUCKET=private
+MINIO_USE_SSL=false
 ```
 - Create a `.env` file in the swapstreet directory
 ```

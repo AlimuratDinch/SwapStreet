@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using backend.Data.Seed;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,7 +54,7 @@ if (useInMemory)
 else
 {
     // Build Postgres connection string from environment variables
-    var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") 
+    var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
                        ?? throw new InvalidOperationException("Connection string not set.");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
@@ -67,56 +68,44 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
-
 // Register services
 builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
 
-// Configure authentication if JWT secret is available
-var jwtSecret = builder.Configuration["Jwt:Secret"];
-var hasJwtSecret = !string.IsNullOrEmpty(jwtSecret);
-if (hasJwtSecret)
+var jwtSecret = builder.Configuration["JWT_SECRET"]
+              ?? "402375d38deb9c479fb043f369d1b2d2";
+
+var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
+
+var accessTokenMinutesString = builder.Configuration["JWT_ACCESS_TOKEN_EXPIRATION_MINUTES"];
+var accessTokenMinutes = int.TryParse(accessTokenMinutesString, out var minutes) ? minutes : 60;
+
+var refreshTokenDaysString = builder.Configuration["REFRESH_TOKEN_EXPIRATION_DAYS"];
+var refreshTokenDays = int.TryParse(refreshTokenDaysString, out var days) ? days : 30;
+
+// JWT Authentication setup
+builder.Services.AddAuthentication(options =>
 {
-    builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        // Accept token from Authorization header OR from the access_token cookie
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                // If no token found in header, check the access_token cookie (we set this in AuthController)
-                if (string.IsNullOrEmpty(context.Token))
-                {
-                    if (context.Request.Cookies.TryGetValue("access_token", out var tokenFromCookie))
-                    {
-                        context.Token = tokenFromCookie;
-                    }
-                }
-                return Task.CompletedTask;
-            }
-        };
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
 
-        var jwtSecret = builder.Configuration["Jwt:Secret"];
-        var key = string.IsNullOrEmpty(jwtSecret) ? Array.Empty<byte>() : Encoding.UTF8.GetBytes(jwtSecret);
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = key
+    };
+});
 
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key)
-        };
-    });
-}
 
 builder.Services.AddAuthorization();
 
@@ -208,7 +197,7 @@ using (var scope = app.Services.CreateScope())
             authDb.Database.Migrate();
             await DatabaseSeeder.SeedAsync(appDb);
             Console.WriteLine("Database migrations applied successfully.");
-            
+
         }
         else
         {
@@ -231,6 +220,8 @@ app.UseSwaggerUI(c =>
 //app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 await app.RunAsync();

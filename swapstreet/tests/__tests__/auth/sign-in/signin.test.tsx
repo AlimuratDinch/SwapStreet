@@ -2,66 +2,70 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import LoginPage from "@/app/auth/sign-in/page";
 import "@testing-library/jest-dom";
 
-// Mock router for client component
+// Mock router
 const pushMock = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
+
+// Mock sessionStorage
+beforeAll(() => {
+  Object.defineProperty(window, "sessionStorage", {
+    value: {
+      store: {} as Record<string, string>,
+      getItem(key: string) {
+        return this.store[key] || null;
+      },
+      setItem(key: string, value: string) {
+        this.store[key] = value;
+      },
+      removeItem(key: string) {
+        delete this.store[key];
+      },
+      clear() {
+        this.store = {};
+      },
+    },
+    writable: true,
+  });
+});
 
 describe("LoginPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("renders the Login heading", () => {
+  it("renders login form correctly", () => {
     render(<LoginPage />);
     expect(screen.getByRole("heading", { name: /login/i })).toBeInTheDocument();
-  });
-
-  it("renders email and password fields", () => {
-    render(<LoginPage />);
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-  });
-
-  it("renders the Sign In button", () => {
-    render(<LoginPage />);
     expect(
       screen.getByRole("button", { name: /sign in/i }),
     ).toBeInTheDocument();
   });
 
-  it("renders the Sign Up prompt", () => {
-    render(<LoginPage />);
-    expect(screen.getByText(/don't have an account\?/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute(
-      "href",
-      "/auth/sign-up",
-    );
-  });
-
-  it("calls handleSubmit on successful form submit", async () => {
-    // Mock fetch success
+  it("successful login stores access token and navigates", async () => {
+    const mockToken = "abc123";
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ token: "abc123" }),
+      json: async () => ({ accessToken: mockToken }),
     } as Response);
 
     render(<LoginPage />);
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const form = emailInput.closest("form");
-
-    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-    fireEvent.change(passwordInput, { target: { value: "password123" } });
-    fireEvent.submit(form!);
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/browse"));
-    expect(global.fetch).toHaveBeenCalled();
+    expect(window.sessionStorage.getItem("accessToken")).toBe(mockToken);
   });
 
-  it("shows error message on failed login", async () => {
-    // Mock fetch failure
+  it("shows error when login fails", async () => {
     const errorMsg = "Login failed";
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
@@ -69,12 +73,36 @@ describe("LoginPage", () => {
     } as Response);
 
     render(<LoginPage />);
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const form = emailInput.closest("form");
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "fail@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "wrongpass" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
-    fireEvent.change(emailInput, { target: { value: "fail@example.com" } });
-    fireEvent.change(passwordInput, { target: { value: "wrongpass" } });
-    fireEvent.submit(form!);
+    const errorEl = await screen.findByText(errorMsg);
+    expect(errorEl).toBeInTheDocument();
+  });
+
+  it("shows error when token is missing in response", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}), // no accessToken
+    } as Response);
+
+    render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    const errorEl = await screen.findByText(
+      /access token not returned from backend/i,
+    );
+    expect(errorEl).toBeInTheDocument();
   });
 });

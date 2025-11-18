@@ -9,7 +9,7 @@ namespace backend.Contracts.Auth
         Task<string> RefreshAccessTokenAsync(string refreshToken);
         Task InvalidateRefreshTokenAsync(string refreshToken);
         Task InvalidateAllRefreshTokensForUserAsync(Guid userId);
-        Task<Guid?> GetUserIdFromTokenAsync(string token);
+        Task<Guid?> GetUserIdFromRefreshTokenAsync(string token);
         Guid? GetUserIdFromAccessToken(string accessToken);
         Task<bool> IsTokenRevokedAsync(string token);
     }
