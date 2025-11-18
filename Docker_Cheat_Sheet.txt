@@ -71,25 +71,7 @@ PgAdmin         -> http://localhost:5050/
 
 
 8. Example .env File
---------------------
-# ================================
-# PostgreSQL Database Configuration
-# ================================
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=********
-POSTGRES_DB=swapstreet_db
-
-# ================================
-# pgAdmin Configuration
-# ================================
-PGADMIN_DEFAULT_EMAIL=example@email.com
-PGADMIN_DEFAULT_PASSWORD=*******
-
-# ================================
-# Backend connection string
-# ================================
-ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_db;Username=postgres;Password=********
---------------------
+> Moved to .en.example File
 
 9. Migrations
 --------------------

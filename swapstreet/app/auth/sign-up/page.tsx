@@ -44,7 +44,16 @@ export default function RegistrationPage() {
       }
 
       const data = await response.json();
-      console.log("Register Successfull");
+
+      // Store access token in sessionStorage
+      if (data.accessToken) {
+        sessionStorage.setItem("accessToken", data.accessToken);
+        console.log("Access token stored:", data.accessToken);
+      } else {
+        throw new Error("Access token not returned from backend");
+      }
+
+      console.log("Register Successful");
       router.push("/seller/onboarding");
     } catch (err: any) {
       setError(err.message || "Failed to create account. Please try again.");
@@ -95,7 +104,10 @@ export default function RegistrationPage() {
             className="space-y-4 flex flex-col items-center"
           >
             {error && (
-              <div className="w-4/5 text-red-500 text-sm text-center">
+              <div
+                role="alert"
+                className="w-4/5 text-red-500 text-sm text-center"
+              >
                 {error}
               </div>
             )}

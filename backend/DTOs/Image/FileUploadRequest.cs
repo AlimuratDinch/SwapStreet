@@ -7,12 +7,12 @@ using Microsoft.AspNetCore.Http;
 
 namespace backend.DTOs.Image
 {
-public class FileUploadRequest
-{
-    [Required]
-    public IFormFile File { get; set; }
+    public class FileUploadRequest
+    {
+        [Required]
+        public IFormFile File { get; set; }
 
-    [Required]
-    public UploadType Type { get; set; }
-}
+        [Required]
+        public UploadType Type { get; set; }
+    }
 }

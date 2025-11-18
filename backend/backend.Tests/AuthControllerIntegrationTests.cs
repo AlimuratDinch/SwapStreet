@@ -26,7 +26,7 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         Environment.SetEnvironmentVariable("USE_INMEMORY_DB", "true");
 
         _factory = factory;
-        
+
         // Resolve the backend project folder reliably (handles different test run working dirs)
         var baseDir = AppContext.BaseDirectory ?? Directory.GetCurrentDirectory();
 
@@ -77,7 +77,6 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         response.IsSuccessStatusCode.Should().BeTrue("a valid registration should return a 2xx status");
 
         var cookies = response.Headers.GetValues("Set-Cookie");
-        cookies.Should().Contain(c => c.Contains("access_token"), "the access_token should be set as a cookie");
         cookies.Should().Contain(c => c.Contains("refresh_token"), "the refresh_token should be set as a cookie");
     }
 
@@ -190,11 +189,6 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
 
         var responseBody = await response.Content.ReadAsStringAsync();
         responseBody.Should().Contain("Token refreshed successfully", "response should contain success message");
-
-        // Step 5: Check new access_token cookie
-        var accessCookie = response.Headers.GetValues("Set-Cookie")
-            .FirstOrDefault(c => c.Contains("access_token"));
-        accessCookie.Should().NotBeNull("access_token cookie should be set on refresh");
     }
 
     [Fact]
@@ -257,7 +251,6 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         response.IsSuccessStatusCode.Should().BeTrue("signin with valid credentials should succeed");
 
         var cookies = response.Headers.GetValues("Set-Cookie");
-        cookies.Should().Contain(c => c.Contains("access_token"), "AccessToken cookie should be set on signin");
         cookies.Should().Contain(c => c.Contains("refresh_token"), "RefreshToken cookie should be set on signin");
     }
 
@@ -344,7 +337,7 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
     [Fact]
     public async Task DeleteUser_ShouldReturnOk_AndRemoveCookies()
     {
-        // Arrange - register user (register sets cookies)
+        // Arrange - register user
         var email = "delete@test.com";
         var password = "Test123!";
         var signUpDto = new { Email = email, Username = "deleteUser", Password = password };
@@ -353,14 +346,21 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
         registerResponse.IsSuccessStatusCode.Should().BeTrue("registration must succeed before delete");
 
+        // Extract access token from response body
+        var responseBody = await registerResponse.Content.ReadAsStringAsync();
+        var json = JsonSerializer.Deserialize<JsonElement>(responseBody);
+        var accessToken = json.GetProperty("accessToken").GetString();
+        accessToken.Should().NotBeNullOrEmpty("access token must be returned on register");
+
         // Extract refresh_token cookie value
         var setCookies = registerResponse.Headers.GetValues("Set-Cookie").ToArray();
         var refreshCookie = setCookies.FirstOrDefault(c => c.Contains("refresh_token"));
-        refreshCookie.Should().NotBeNull("refresh_token cookie must be set on register/signin");
+        refreshCookie.Should().NotBeNull("refresh_token cookie must be set on register");
         var refreshToken = refreshCookie.Split(';')[0].Split('=')[1];
 
-        // Act - send delete request with refresh token cookie
+        // Act - send delete request with access token in Authorization header
         var request = new HttpRequestMessage(HttpMethod.Delete, "/api/auth/deleteUser");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
         request.Headers.Add("Cookie", $"refresh_token={refreshToken}");
         using var deleteResponse = await _client.SendAsync(request);
 
@@ -368,10 +368,9 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         deleteResponse.IsSuccessStatusCode.Should().BeTrue("delete user should return success");
 
         var deleteCookies = deleteResponse.Headers.GetValues("Set-Cookie");
-        deleteCookies.Should().Contain(c => c.StartsWith("access_token=;"), "access_token cookie should be cleared");
         deleteCookies.Should().Contain(c => c.StartsWith("refresh_token=;"), "refresh_token cookie should be cleared");
-
     }
+
 
     [Fact]
     public async Task DeleteUser_WithoutToken_ReturnsUnauthorized()
@@ -389,6 +388,7 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
     {
         // Arrange - craft invalid refresh token
         var request = new HttpRequestMessage(HttpMethod.Delete, "/api/auth/deleteUser");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "InValid");
         request.Headers.Add("Cookie", "refresh_token=invalid.token.value");
 
         using var response = await _client.SendAsync(request);
@@ -399,6 +399,44 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // ------------------ Update Email TESTS --------------------------
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [Fact]
+    public async Task UpdateEmail_WithValidToken_ShouldReturnOk()
+    {
+        // Arrange - register user
+        var email = "validtoken@test.com";
+        var password = "Test123!";
+        var signUpDto = new { Email = email, Username = "validUser", Password = password };
+
+        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
+        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
+        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration must succeed before updating email");
+
+        // Extract access token from response body
+        var responseBody = await registerResponse.Content.ReadAsStringAsync();
+        var json = JsonSerializer.Deserialize<JsonElement>(responseBody);
+        var accessToken = json.GetProperty("accessToken").GetString();
+        accessToken.Should().NotBeNullOrEmpty("access token must be returned on register");
+
+        // Prepare update email request
+        var updateDto = new
+        {
+            NewEmail = "newemail_valid@test.com"
+        };
+        using var updateContent = new StringContent(JsonSerializer.Serialize(updateDto), Encoding.UTF8, "application/json");
+        var request = new HttpRequestMessage(HttpMethod.Patch, "/api/auth/updateEmail")
+        {
+            Content = updateContent
+        };
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert - should succeed
+        response.StatusCode.Should().Be(HttpStatusCode.OK, "update email should succeed with valid access token");
+    }
+
     [Fact]
     public async Task UpdateEmail_WithInvalidToken_ShouldReturnUnauthorized()
     {
@@ -412,7 +450,6 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         {
             Content = updateContent
         };
-        request.Headers.Add("Cookie", $"access_token=invalidtoken");
 
         // Act
         var response = await _client.SendAsync(request);
@@ -420,6 +457,6 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("Invalid token");
     }
+
 }

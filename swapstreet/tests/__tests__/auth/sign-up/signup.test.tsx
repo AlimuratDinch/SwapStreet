@@ -63,7 +63,7 @@ describe("RegistrationPage", () => {
   });
 
   it("submits successfully and navigates on success", async () => {
-    const mockResponse = { token: "abc123" };
+    const mockResponse = { accessToken: "abc123" }; // <-- must match component
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
@@ -114,6 +114,57 @@ describe("RegistrationPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
     const errorEl = await screen.findByText(errorMsg);
+    expect(errorEl).toBeInTheDocument();
+  });
+
+  it("shows error if response does not contain accessToken", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}), // missing accessToken
+    } as Response);
+
+    render(<RegistrationPage />);
+    fireEvent.change(screen.getByLabelText(/name/i), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+
+    const errorEl = await screen.findByText(
+      /access token not returned from backend/i,
+    );
+    expect(errorEl).toBeInTheDocument();
+  });
+
+  it("shows error on network failure during registration", async () => {
+    global.fetch = jest.fn().mockRejectedValueOnce(new Error("Network error"));
+
+    render(<RegistrationPage />);
+    fireEvent.change(screen.getByLabelText(/name/i), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+
+    const errorEl = await screen.findByText(/network error/i);
     expect(errorEl).toBeInTheDocument();
   });
 });

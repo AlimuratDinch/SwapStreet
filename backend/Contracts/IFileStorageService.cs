@@ -7,7 +7,7 @@ using backend.DTOs.Image;
 
 namespace backend.Contracts
 {
-public interface IFileStorageService
+    public interface IFileStorageService
     {
         Task<string> UploadFileAsync(IFormFile file, UploadType type);
         Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600);
