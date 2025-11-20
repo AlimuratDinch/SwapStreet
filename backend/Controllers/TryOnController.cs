@@ -24,10 +24,15 @@ public class TryOnController : ControllerBase
         _logger = logger;
     }
 
+    [Authorize]
     [HttpPost("virtual-tryon")]
-    [Consumes("multipart/form-data")]
-    public async Task<IActionResult> TryOnFromUrl([FromForm] TryOnRequestDto request)
-    {
+    [Consumes("application/json")]
+    public async Task<IActionResult> TryOnFromUrl([FromBody] TryOnRequestDto request)
+    {   
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(new { Error = "Invalid token" });
+
         try
         {
             _logger.LogInformation("Received try-on request");
@@ -38,47 +43,27 @@ public class TryOnController : ControllerBase
                 return BadRequest(new { error = "Request body is required" });
             }
 
-            // Get access token from request body or Authorization header/cookie
-            string? accessToken = request.AccessToken;
+            // Get access token from Authorization header or cookie
             
-            if (string.IsNullOrEmpty(accessToken))
-            {
-                // Try to get from Authorization header
-                if (Request.Headers.ContainsKey("Authorization"))
-                {
-                    var authHeader = Request.Headers["Authorization"].ToString();
-                    if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        accessToken = authHeader.Substring(7).Trim();
-                    }
-                    else
-                    {
-                        accessToken = authHeader.Trim();
-                    }
-                }
-            }
-            
-            if (string.IsNullOrEmpty(accessToken))
-            {
-                accessToken = Request.Cookies["access_token"];
-            }
+            // if(string.IsNullOrEmpty(request.UserImageUrl))
+            // {
+            //     return BadRequest(new { error = "User image URL is required" });
+            // }
 
-            if (string.IsNullOrEmpty(accessToken))
+            if (string.IsNullOrEmpty(request.ClothingImageUrl))
             {
-                return Unauthorized(new { error = "Access token is required" });
-            }
-
-            if (string.IsNullOrEmpty(request.ClothingImagePath))
-            {
-                return BadRequest(new { error = "Clothing image path is required" });
+                return BadRequest(new { error = "Clothing image URL is required" });
             }
 
             _logger.LogInformation("Starting try-on processing...");
 
             // Process the try-on request (automatically fetches user image from DB)
             var generatedImagePath = await _tryOnService.ProcessTryOnRequestAsync(
-                accessToken,
-                request.ClothingImagePath);
+                userId,
+                request.ClothingImageUrl);
+            
+            // var generatedImagePath = await _tryOnService.ProcessTryOnFromUrlsAsync(
+            //     request.UserImageUrl);
 
             _logger.LogInformation("Try-on processing completed. Generated path: {Path}", generatedImagePath);
 
@@ -117,7 +102,7 @@ public class TryOnController : ControllerBase
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "HTTP error while downloading images or calling Gemini API");
+            _logger.LogError(ex, "HTTP error while downloading images or calling Virtual Try-On API");
             return StatusCode(500, new { error = $"HTTP error: {ex.Message}" });
         }
         catch (TimeoutException ex)

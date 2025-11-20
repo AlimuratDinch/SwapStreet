@@ -37,12 +37,12 @@ builder.Services.AddCors(options =>
 var useInMemory = Environment.GetEnvironmentVariable("USE_INMEMORY_DB") == "true";
 
 // Configure Gemini API (required for both in-memory and production)
-var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") 
+var geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") 
                    ?? throw new InvalidOperationException("Gemini API key not set.");
-var geminiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL") 
+var geminiApiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL") 
                    ?? throw new InvalidOperationException("Gemini API URL not set.");
-builder.Configuration["Gemini:ApiKey"] = geminiKey;
-builder.Configuration["Gemini:ApiUrl"] = geminiUrl;
+builder.Configuration["Gemini:ApiKey"] = geminiApiKey;
+builder.Configuration["Gemini:ApiUrl"] = geminiApiUrl;
 
 // Configure EF Core depending on flag
 if (useInMemory)

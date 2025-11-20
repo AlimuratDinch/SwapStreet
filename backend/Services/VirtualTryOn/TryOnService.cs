@@ -36,15 +36,11 @@ namespace backend.Services.VirtualTryOn
             _minioSettings = minioSettings.Value;
         }
 
-        public async Task<string> ProcessTryOnRequestAsync(string accessToken, string pathFromUrl)
+        public async Task<string> ProcessTryOnRequestAsync(Guid userId, string clothingImageUrl)
         {
-            // 1. Get user ID from access token
-            var userId = _tokenService.GetUserIdFromAccessToken(accessToken);
-            _logger.LogInformation("Processing try-on request for user: {UserId}", userId);
-            Guid actualId = userId ?? Guid.Empty;
             
             // 2. Find user's personal image
-            var personalImagePath = await FindTryOnImageByUserIdAsync(actualId);
+            var personalImagePath = await FindTryOnImageByUserIdAsync(userId);
             if (string.IsNullOrEmpty(personalImagePath))
             {
                 throw new FileNotFoundException("Personal image not found for user");
@@ -52,15 +48,15 @@ namespace backend.Services.VirtualTryOn
 
             // 3. Get images (personal and clothing)
             var personalImageBytes = await GetImageBytesAsync(personalImagePath);
-            var clothingImageBytes = await GetImageBytesAsync(pathFromUrl);
+            var clothingImageBytes = await GetImageBytesAsync(clothingImageUrl);
 
-            // 4. Generate new image using Gemini
+            // 4. Generate new image using Virtual Try-On API
             var generatedImageBytes = await _geminiService.GenerateImageAsync(
                 personalImageBytes,
                 clothingImageBytes);
 
             // 5. Store generated image
-            var generatedImagePath = await StoreImageAsync(generatedImageBytes);
+            var generatedImagePath = await StoreImageAsync(generatedImageBytes, actualId.ToString());
 
             // 6. Save to database
             var tryOnImage = new TryOnImage
@@ -96,18 +92,27 @@ namespace backend.Services.VirtualTryOn
             var (objectName, bucket) = ExtractObjectNameAndBucket(imagePath);
 
             // Download from MinIO
-            using var memoryStream = new MemoryStream();
-            await _minio.GetObjectAsync(new GetObjectArgs()
-                .WithBucket(bucket)
-                .WithObject(objectName)
-                .WithCallbackStream(async stream => await stream.CopyToAsync(memoryStream)));
+            var memoryStream = new MemoryStream();
+            try
+            {
+                await _minio.GetObjectAsync(new GetObjectArgs()
+                    .WithBucket(bucket)
+                    .WithObject(objectName)
+                    .WithCallbackStream(async stream => await stream.CopyToAsync(memoryStream)));
 
-            return memoryStream.ToArray();
+                // Reset position to beginning before reading
+                memoryStream.Position = 0;
+                return memoryStream.ToArray();
+            }
+            finally
+            {
+                memoryStream.Dispose();
+            }
         }
 
-        private async Task<string> StoreImageAsync(byte[] imageBytes)
+        private async Task<string> StoreImageAsync(byte[] imageBytes, string userId)
         {
-            var fileName = $"generated/{Guid.NewGuid()}.png";
+            var fileName = $"generated/{userId}/{Guid.NewGuid()}.png";
             var bucket = _minioSettings.PrivateBucketName; 
 
             // Upload to MinIO
@@ -152,5 +157,32 @@ namespace backend.Services.VirtualTryOn
 
             return (decodedPath, _minioSettings.PrivateBucketName);
         }
+
+        // public async Task<string> ProcessTryOnFromUrlsAsync(string userImageUrl, string clothingImageUrl)
+        // {
+        //     _logger.LogInformation("Processing try-on request from URLs. User: {UserUrl}, Clothing: {ClothingUrl}", 
+        //         userImageUrl, clothingImageUrl);
+
+        //     // 1. Get images from MinIO using the URLs
+        //     var userImageBytes = await GetImageBytesAsync(userImageUrl);
+        //     var clothingImageBytes = await GetImageBytesAsync(clothingImageUrl);
+
+        //     _logger.LogInformation("Downloaded images. User: {UserSize} bytes, Clothing: {ClothingSize} bytes", 
+        //         userImageBytes.Length, clothingImageBytes.Length);
+
+        //     // 2. Generate new image using GenerativeService
+        //     var generatedImageBytes = await _geminiService.GenerateImageAsync(
+        //         userImageBytes,
+        //         clothingImageBytes);
+
+        //     _logger.LogInformation("Image generation completed. Generated size: {Size} bytes", generatedImageBytes.Length);
+
+        //     // 3. Store generated image
+        //     var generatedImagePath = await StoreImageAsync(generatedImageBytes);
+
+        //     _logger.LogInformation("Try-on image generated and stored: {Path}", generatedImagePath);
+
+        //     return generatedImagePath;
+        // }
     }
 }

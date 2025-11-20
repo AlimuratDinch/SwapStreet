@@ -26,6 +26,8 @@ public class GenerativeService : IGenerativeService
     {
         var apiKey = _configuration["Gemini:ApiKey"];
         var apiUrl = _configuration["Gemini:ApiUrl"];
+        const string GeminiModel = "gemini-2.5-flash-image";
+        const string GeminiMethod = "generateContent";
 
         if (string.IsNullOrEmpty(apiKey))
             throw new InvalidOperationException("Gemini API key not configured");
@@ -35,6 +37,16 @@ public class GenerativeService : IGenerativeService
 
         _logger.LogInformation("Generating image with Gemini API. User image size: {UserSize} bytes, Clothing image size: {ClothingSize} bytes", 
             userImage.Length, clothingImage.Length);
+        
+        // Construct URL: baseUrl/models/{model}:{method}
+        // Example: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent
+        var baseUrl = apiUrl.TrimEnd('/');
+        // Remove /models/ if it's already in the base URL to avoid duplication
+        if (baseUrl.EndsWith("/models", StringComparison.OrdinalIgnoreCase))
+        {
+            baseUrl = baseUrl.Substring(0, baseUrl.Length - "/models".Length);
+        }
+        var fullApiUrl = $"{baseUrl}/models/{GeminiModel}:{GeminiMethod}";
 
         var client = _httpClientFactory.CreateClient();
         client.Timeout = TimeSpan.FromMinutes(3); // Image generation can take time
@@ -43,59 +55,48 @@ public class GenerativeService : IGenerativeService
         var userImageBase64 = Convert.ToBase64String(userImage);
         var clothingImageBase64 = Convert.ToBase64String(clothingImage);
 
+        // Define the prompt for virtual try-on
+        const string promptText = "Create a photorealistic image of the person wearing the provided clothing item. Precisely maintain the person's facial features, hairstyle, skin tone, and original pose. Adapt the clothing to fit naturally on the person's body, respecting proper draping, shadows, and fabric textures. Preserve the original lighting conditions and background. Ensure seamless integration of the clothing while maintaining the image's original resolution and quality.";
+
         // Determine request format based on API URL
         // If it's a Google Gemini API, use the standard format
         // Otherwise, use a simpler format that might work with custom endpoints
-        object requestBody;
-        
-        if (apiUrl.Contains("googleapis.com", StringComparison.OrdinalIgnoreCase) || 
-            apiUrl.Contains("generativelanguage.googleapis.com", StringComparison.OrdinalIgnoreCase))
+        var requestBody = new
         {
-            // Standard Gemini API format
-            // Create parts array with explicit type to avoid compilation issues
-            var textPart = new { text = "Create a photorealistic image of the person wearing the provided clothing item. Precisely maintain the person's facial features, hairstyle, skin tone, and original pose. Adapt the clothing to fit naturally on the person's body, respecting proper draping, shadows, and fabric textures. Preserve the original lighting conditions and background. Ensure seamless integration of the clothing while maintaining the image's original resolution and quality." };
-            var userImagePart = new { inline_data = new { mime_type = "image/jpeg", data = userImageBase64 } };
-            var clothingImagePart = new { inline_data = new { mime_type = "image/jpeg", data = clothingImageBase64 } };
-            
-            var parts = new object[] { textPart, userImagePart, clothingImagePart };
-            
-            var contentItem = new { parts = parts };
-            var contents = new[] { contentItem };
-            
-            var generationConfig = new
+            contents = new[]
+            {
+                new
+                {
+                    parts = new object[]
+                    {
+                        // 1. Text Prompt Part
+                        new { text = promptText },
+                        
+                        // 2. User Image Part
+                        new { inlineData = new { mimeType = "image/jpeg", data = userImageBase64 } },
+                        
+                        // 3. Clothing Image Part
+                        new { inlineData = new { mimeType = "image/jpeg", data = clothingImageBase64 } }
+                    }
+                }
+            },
+        
+            // Configuration sections (ensure these keys are camelCase in the final JSON)
+            generationConfig = new
             {
                 temperature = 0.4,
                 topK = 32,
-                topP = 0.8,
-                maxOutputTokens = 8192
-            };
-            
-            var safetySettings = new[]
+                topP = 0.8
+            },
+        
+            safetySettings = new[]
             {
                 new { category = "HARM_CATEGORY_HARASSMENT", threshold = "BLOCK_MEDIUM_AND_ABOVE" },
                 new { category = "HARM_CATEGORY_HATE_SPEECH", threshold = "BLOCK_MEDIUM_AND_ABOVE" },
                 new { category = "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold = "BLOCK_MEDIUM_AND_ABOVE" },
                 new { category = "HARM_CATEGORY_DANGEROUS_CONTENT", threshold = "BLOCK_MEDIUM_AND_ABOVE" }
-            };
-            
-            requestBody = new
-            {
-                contents = contents,
-                generationConfig = generationConfig,
-                safetySettings = safetySettings
-            };
-        }
-        else
-        {
-            // Custom API format - try a simpler structure
-            // This might need to be adjusted based on your actual API
-            requestBody = new
-            {
-                userImage = userImageBase64,
-                clothingImage = clothingImageBase64,
-                prompt = "Create a photorealistic image of the person wearing the provided clothing item. Precisely maintain the person's facial features, hairstyle, skin tone, and original pose. Adapt the clothing to fit naturally on the person's body, respecting proper draping, shadows, and fabric textures. Preserve the original lighting conditions and background. Ensure seamless integration of the clothing while maintaining the image's original resolution and quality."
-            };
-        }
+            }
+        };
 
         var jsonOptions = new JsonSerializerOptions
         {
@@ -112,7 +113,7 @@ public class GenerativeService : IGenerativeService
             Encoding.UTF8,
             "application/json");
 
-        var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{fullApiUrl}?key={apiKey}")
         {
             Content = content
         };
@@ -150,94 +151,25 @@ public class GenerativeService : IGenerativeService
             using var jsonDoc = JsonDocument.Parse(responseContent);
             var root = jsonDoc.RootElement;
             
-            string? generatedImageBase64 = null;
-            
-            // Try different response formats
-            // Format 1: Standard Gemini API format - candidates[0].content.parts[0].inlineData.data
-            if (root.TryGetProperty("candidates", out var candidates) && candidates.GetArrayLength() > 0)
-            {
-                var firstCandidate = candidates[0];
-                if (firstCandidate.TryGetProperty("content", out var candidateContent))
-                {
-                    if (candidateContent.TryGetProperty("parts", out var parts) && parts.GetArrayLength() > 0)
-                    {
-                        var firstPart = parts[0];
-                        if (firstPart.TryGetProperty("inlineData", out var inlineData))
-                        {
-                            if (inlineData.TryGetProperty("data", out var data))
-                            {
-                                generatedImageBase64 = data.GetString();
-                                _logger.LogInformation("Found image in candidates[0].content.parts[0].inlineData.data");
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Format 2: Direct generated_image field
-            if (string.IsNullOrEmpty(generatedImageBase64) && root.TryGetProperty("generated_image", out var generatedImage))
-            {
-                generatedImageBase64 = generatedImage.GetString();
-                _logger.LogInformation("Found image in generated_image field");
-            }
-            
-            // Format 3: GeneratedImage field (PascalCase)
-            if (string.IsNullOrEmpty(generatedImageBase64) && root.TryGetProperty("GeneratedImage", out var generatedImageAlt))
-            {
-                generatedImageBase64 = generatedImageAlt.GetString();
-                _logger.LogInformation("Found image in GeneratedImage field");
-            }
-            
-            // Format 4: Try deserializing as GeminiResponse
-            if (string.IsNullOrEmpty(generatedImageBase64))
-            {
-                var result = JsonSerializer.Deserialize<GeminiResponse>(responseContent, jsonOptions);
-                if (result != null)
-                {
-                    try
-                    {
-                        generatedImageBase64 = result.GeneratedImageValue;
-                        _logger.LogInformation("Found image using GeminiResponse deserialization");
-                    }
-                    catch
-                    {
-                        // Ignore and continue
-                    }
-                }
-            }
+            var generatedImageBase64 = root.GetProperty("candidates")[0]
+            .GetProperty("content")
+            .GetProperty("parts")[0]
+            .GetProperty("inlineData")
+            .GetProperty("data").GetString();
 
             if (string.IsNullOrEmpty(generatedImageBase64))
             {
-                _logger.LogError("Could not find generated image in response. Response structure: {Response}", responseContent);
-                throw new InvalidOperationException($"Could not find generated image in API response. Response keys: {string.Join(", ", root.EnumerateObject().Select(p => p.Name))}");
+                throw new InvalidOperationException("Could not find generated image (base64 data) in API response.");
             }
 
-            // Decode base64 image
-            try
-            {
-                var imageBytes = Convert.FromBase64String(generatedImageBase64);
-                _logger.LogInformation("Successfully generated image. Size: {Size} bytes", imageBytes.Length);
-                return imageBytes;
-            }
-            catch (FormatException ex)
-            {
-                _logger.LogError(ex, "Failed to decode base64 image from Gemini API response");
-                throw new InvalidOperationException("Failed to decode base64 image from API response", ex);
-            }
-        }
-        catch (TaskCanceledException ex)
-        {
-            _logger.LogError(ex, "Request to Gemini API timed out");
-            throw new TimeoutException("Request to Gemini API timed out", ex);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "HTTP error occurred while calling Gemini API");
-            throw;
+            var imageBytes = Convert.FromBase64String(generatedImageBase64);
+            _logger.LogInformation("Successfully generated image. Size: {Size} bytes", imageBytes.Length);
+            
+            return imageBytes;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error occurred while generating image");
+            _logger.LogError(ex, "An error occurred during image generation.");
             throw;
         }
     }

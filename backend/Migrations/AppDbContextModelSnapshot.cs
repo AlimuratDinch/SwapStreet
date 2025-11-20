@@ -101,6 +101,34 @@ namespace backend.Migrations
                     b.ToTable("profiles");
                 });
 
+            modelBuilder.Entity("backend.Models.TryOnImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("PersonalImagePath")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("personal_image_path");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("try_on_images", (string)null);
+                });
+
             modelBuilder.Entity("backend.Models.Wishlist", b =>
                 {
                     b.Property<Guid>("Id")

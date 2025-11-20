@@ -1,7 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace backend.DTOs;
 
 public class TryOnRequestDto
 {
-    public string AccessToken { get; set; }
-    public string ClothingImagePath { get; set; }
+    [Required(ErrorMessage = "User image URL is required")]
+    public string UserImageUrl { get; set; } = default!;
+    
+    [Required(ErrorMessage = "Clothing image URL is required")]
+    public string ClothingImageUrl { get; set; } = default!;
 }
