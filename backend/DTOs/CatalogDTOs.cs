@@ -38,3 +38,30 @@ public record UpdateItemRequest(
     string ImageUrl,
     int CategoryId
 );
+
+// ---- LISTING DTOS ----
+public record CreateListingRequest(
+    string Name,
+    int Price,
+    string Description,
+    Guid ProfileId,
+    Guid TagId
+);
+
+public record ListingResponse(
+    Guid Id,
+    string Name,
+    int Price,
+    string Description,
+    Guid ProfileId,
+    Guid TagId
+);
+
+public record ListingUpdateRequest(
+    Guid Id,
+    string Name,
+    int Price,
+    string Description,
+    Guid ProfileId,
+    Guid TagId
+);

@@ -134,4 +134,30 @@ public class CatalogController : ControllerBase
     {
         return _catalog.DeleteCategory(id) ? NoContent() : NotFound();
     }
+    
+    [HttpPost("listings")]
+    public IActionResult AddListing([FromBody] CreateListingRequest r)
+    {
+        try
+        {
+            Listing listing = _catalog.AddListing(r);
+            
+            return Ok(new ListingResponse(
+                listing.Id, 
+                listing.Name, 
+                listing.Price,
+                listing.Description,
+                listing.ProfileId,
+                listing.TagId
+            ));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (OutOfMemoryException)
+        {
+            return StatusCode(500);
+        }
+    }
 }

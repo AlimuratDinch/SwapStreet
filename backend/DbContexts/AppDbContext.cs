@@ -9,6 +9,8 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories { get; set; } = null!;
     public DbSet<Profile> Profiles { get; set; } = null!;
     public DbSet<Wishlist> Wishlists { get; set; } = null!;
+    public DbSet<Listing> Listings { get; set; } = null!;
+    public DbSet<Tag> Tags { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -26,7 +28,9 @@ public class AppDbContext : DbContext
             .HasColumnName("name")
             .HasMaxLength(50)
             .IsRequired();
-
+        
+        // XXX: Remove once someone refactors the frontend to use 
+        // `Listing` instead of `Item`
         // Map Item to items table
         modelBuilder.Entity<Item>()
             .ToTable("items")
@@ -61,5 +65,56 @@ public class AppDbContext : DbContext
             .HasOne(i => i.Category)
             .WithMany(c => c.Items)
             .HasForeignKey(i => i.CategoryId);
+        
+        // Map `Listing` to table
+        modelBuilder.Entity<Listing>()
+            .ToTable("listings")
+            .HasKey(l => l.Id);
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Id)
+            .HasColumnName("id");
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Name)
+            .HasColumnName("name")
+            .HasMaxLength(255);
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Price)
+            .HasColumnName("price");
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Description)
+            .HasColumnName("description")
+            .HasMaxLength(32767);
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.ProfileId)
+            .HasColumnName("profile_id");
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.TagId)
+            .HasColumnName("tag_id");
+        
+        // Foreign keys for `Listing`
+        modelBuilder.Entity<Listing>()
+            .HasOne(l => l.Profile)
+            .WithMany(p => p.Listings)
+            .HasForeignKey(l => l.ProfileId);
+        modelBuilder.Entity<Listing>()
+            .HasOne(l => l.Tag)
+            .WithOne(t => t.Listing)
+            .HasForeignKey<Listing>(l => l.TagId);
+        
+        // Profile
+        modelBuilder.Entity<Profile>()
+            .ToTable("profiles")
+            .HasKey(p => p.Id);
+        modelBuilder.Entity<Profile>()
+            .Property(p => p.Id)
+            .HasColumnName("id");
+        
+        // Tag
+        modelBuilder.Entity<Tag>()
+            .ToTable("tags")
+            .HasKey(t => t.Id);
+        modelBuilder.Entity<Tag>()
+            .Property(t => t.Id)
+            .HasColumnName("id");
     }
 }

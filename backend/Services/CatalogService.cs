@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.Contracts;
 using backend.Models;
 using backend.DbContexts;
+using backend.DTOs;
 
 namespace backend.Services;
 
@@ -91,5 +92,71 @@ public class CatalogService : ICatalogService
         _db.Items.Remove(item);
         _db.SaveChanges();
         return true;
+    }
+    
+    public Listing AddListing(CreateListingRequest request)
+    {
+        Profile? profile = _db.Profiles.Find(request.ProfileId);
+        if (profile == null)
+            throw new KeyNotFoundException("Invalid profile");
+        
+        Tag? tag = _db.Tags.Find(request.TagId);
+        if (tag == null)
+            throw new KeyNotFoundException("Invalid tag");
+        
+        Listing? listing = new Listing {
+            Name = request.Name,
+            Price = request.Price,
+            Description = request.Description,
+            ProfileId = request.ProfileId,
+            TagId = request.TagId,
+            Profile = profile,
+            Tag = tag
+        };
+        // May throw an `OutOfMemoryException` exception
+        
+        _db.Listings.Add(listing);
+        _db.SaveChanges();
+        return listing;
+    }
+    
+    public IEnumerable<Listing> GetAllListings()
+    {
+        return _db.Listings;
+    }
+    
+    
+    public bool UpdateListing(Listing updated)
+    {
+        Listing? existing = _db.Listings.Find(updated.Id);
+        
+        if (existing == null)
+            return true;
+        
+        existing.Name = updated.Name;
+        existing.Price = updated.Price;
+        existing.Description = updated.Description;
+        existing.ProfileId = updated.ProfileId;
+        existing.TagId = updated.TagId;
+        
+        existing.Profile = updated.Profile;
+        existing.TagId = updated.TagId;
+        // Don't update the id, it is static.
+        
+        _db.SaveChanges();
+        return false;
+    }
+    
+    public bool DeleteListing(Guid guid)
+    {
+        Listing? existing = _db.Listings.Find(guid);
+        
+        if (existing == null)
+            return true;
+        
+        _db.Listings.Remove(existing);
+        _db.SaveChanges();
+        
+        return false;
     }
 }
