@@ -7,6 +7,11 @@ on:
   pull_request:
     types: [ opened, synchronize, reopened ]
 
+env:
+  # --- GLOBAL CONFIGURATION ---
+  BACKEND_REQUIRED_COVERAGE: 16 # Set back to your threshold (e.g., 16 or 80)
+  FRONTEND_REQUIRED_COVERAGE: 80 
+
 jobs:
   frontend-sonarqube:
     name: Frontend SonarQube
@@ -21,14 +26,14 @@ jobs:
       run: yarn
       working-directory: swapstreet
 
-    - name: Run tests and collect coverage with threshold
+    - name: Run tests and collect coverage (Jest)
       run: |
         yarn jest --coverage --coverageThreshold='{
           "global": {
-            "branches": 80,
-            "functions": 80,
-            "lines": 80,
-            "statements": 80
+            "branches": ${{ env.FRONTEND_REQUIRED_COVERAGE }},
+            "functions": ${{ env.FRONTEND_REQUIRED_COVERAGE }},
+            "lines": ${{ env.FRONTEND_REQUIRED_COVERAGE }},
+            "statements": ${{ env.FRONTEND_REQUIRED_COVERAGE }}
           }
         }'
       working-directory: swapstreet
@@ -114,40 +119,57 @@ jobs:
       working-directory: backend
       run: dotnet build --no-incremental
 
-    - name: Run tests and collect coverage with threshold
+    # --------------------------------------------------------
+    # CRITICAL SECTION: UPDATED PARSING LOGIC
+    # --------------------------------------------------------
+    - name: Run tests and collect coverage
       shell: pwsh
       working-directory: backend
       run: |
-        # Run tests and collect coverage in XML format using settings from root
-        # We use ../coverage.settings.xml because the working-directory is 'backend'
-        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "../coverage.settings.xml"
+        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml"
 
-        # Confirm file exists
         if (!(Test-Path "coverage.xml")) {
           Write-Error "coverage.xml not found!"
           exit 1
         }
+        Write-Host "✅ coverage.xml file generated."
 
-        # Load XML
+    - name: Enforce Coverage Threshold
+      shell: pwsh
+      working-directory: backend
+      run: |
+        $requiredCoverage = [double]${{ env.BACKEND_REQUIRED_COVERAGE }}
+        Write-Host "--- Enforcing Minimum Coverage: $requiredCoverage% ---"
+
         [xml]$cov = Get-Content "coverage.xml"
+        
+        # FIX: Get all modules first
+        $allModules = $cov.results.modules.module
 
-        # Get the 'module' node (assumes one main module)
-        $module = $cov.results.modules.module
+        # DEBUG: Print all modules found to see what is dragging the score down
+        Write-Host "🔍 Modules found in coverage report:"
+        foreach ($m in $allModules) {
+            Write-Host "   - $($m.name): $($m.line_coverage)%"
+        }
+
+        # FIX: Specifically select 'backend.dll' to ignore test projects/dependencies
+        $module = $allModules | Where-Object { $_.name -eq "backend.dll" }
 
         if (-not $module) {
-          Write-Error "No <module> found in coverage.xml"
+          Write-Error "❌ Could not find 'backend.dll' in coverage.xml."
           exit 1
         }
 
-        # Extract the line_coverage attribute
         $lineCoverage = [double]$module.line_coverage
-        Write-Host "➡ Backend test coverage: $lineCoverage%"
+        Write-Host "➡ TARGET Backend test coverage: $lineCoverage%"
 
-        # Fail if below threshold
-        if ($lineCoverage -lt 16) {
-          Write-Error "Coverage below 16% ($lineCoverage%)"
-          exit 1
+        if ($lineCoverage -lt $requiredCoverage) {
+          Write-Error "FAILURE: Coverage below $requiredCoverage% ($lineCoverage%)"
+          exit 1 
+        } else {
+          Write-Host "SUCCESS: Coverage $lineCoverage% meets or exceeds $requiredCoverage%."
         }
+    # --------------------------------------------------------
 
     - name: End SonarQube analysis
       env:
