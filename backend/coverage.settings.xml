@@ -5,6 +5,8 @@
       <Exclude>
         <Source>.*[\/]Migrations[\/].*</Source>
         <Source>.*[\/]Models[\/].*</Source>
+        <Source>.*[\/]DbContexts[\/].*</Source>
+        <Source>.*[\/]DTOs[\/].*</Source>
       </Exclude>
     </Sources>
   </CodeCoverage>
