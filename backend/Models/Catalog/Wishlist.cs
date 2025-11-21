@@ -7,14 +7,14 @@ public class WishList
     public Guid Id { get; set; }
 
     [Required]
-    public Guid ProfileID { get; set; }
+    public Guid ProfileId { get; set; }
 
-    [ForeignKey("ProfileID")]
+    [ForeignKey("ProfileId")]
     public Profile? Profile { get; set; } 
 
     [Required]
     public Guid ListingId { get; set; }
 
-    [ForeignKey("LsitingId")]
+    [ForeignKey("ListingId")]
     public Listing? Listing { get; set; }
 }

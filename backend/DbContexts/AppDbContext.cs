@@ -112,13 +112,14 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Listing>().ToTable("listings");
         modelBuilder.Entity<Listing>()
             .Property(l => l.Price)
-            .HasColumnType("real"); // Use 'real' for Float/Single precision
+            .HasColumnType("decimal(10,2)");
+
 
         // Relationships for Listing
         modelBuilder.Entity<Listing>()
             .HasOne(l => l.Profile) // Seller
             .WithMany()
-            .HasForeignKey(l => l.ProfileID);
+            .HasForeignKey(l => l.ProfileId);
 
         modelBuilder.Entity<Listing>()
             .HasOne(l => l.Tag) // Characteristics
@@ -130,14 +131,14 @@ public class AppDbContext : DbContext
         // JUNCTION/ASSOCIATION TABLES
         // =======================================================
 
-        // ListingImage (formerly Listing_images)
+        // ListingImage 
         modelBuilder.Entity<ListingImage>().ToTable("listing_images");
         modelBuilder.Entity<ListingImage>()
             .HasOne(li => li.Listing)
             .WithMany()
             .HasForeignKey(li => li.ListingId);
 
-        // GeneratedImage (formerly generated_images)
+        // GeneratedImage
         modelBuilder.Entity<GeneratedImage>().ToTable("generated_images");
         modelBuilder.Entity<GeneratedImage>()
             .HasOne(gi => gi.Listing)
@@ -149,7 +150,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<WishList>()
             .HasOne(wl => wl.Profile)
             .WithMany()
-            .HasForeignKey(wl => wl.ProfileID);
+            .HasForeignKey(wl => wl.ProfileId);
         
         modelBuilder.Entity<WishList>()
             .HasOne(wl => wl.Listing)

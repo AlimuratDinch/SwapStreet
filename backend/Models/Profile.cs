@@ -3,15 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 public class Profile
 {
-    // Primary Key
     [Key]
     public Guid Id { get; set; }
 
-    // Enums and Required Fields
     [Required]
     public ProfileStatusEnum Status { get; set; }
 
-    public bool VerrifiedSeller { get; set; }
+    public bool VerifiedSeller { get; set; }
 
     [Required]
     [StringLength(100)] 
@@ -21,7 +19,8 @@ public class Profile
     [StringLength(100)] 
     public string Lastname { get; set; } = string.Empty;
 
-    public float Rating { get; set; }
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Rating { get; set; }
 
     [StringLength(500)] 
     public string? Bio { get; set; }

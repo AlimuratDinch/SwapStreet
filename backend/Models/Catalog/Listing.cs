@@ -11,16 +11,17 @@ public class Listing
     [StringLength(255)]
     public string Name { get; set; } = string.Empty;
 
-    public float Price { get; set; }
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal Price { get; set; }
 
     [StringLength(1000)]
     public string? Description { get; set; }
 
     // Foreign Key to Profile (the seller)
     [Required]
-    public Guid ProfileID { get; set; }
+    public Guid ProfileId { get; set; }
 
-    [ForeignKey("ProfileID")]
+    [ForeignKey("ProfileId")]
     public Profile? Profile { get; set; }
 
     // Foreign Key to Tag

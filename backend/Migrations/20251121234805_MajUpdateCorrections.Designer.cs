@@ -12,8 +12,8 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251121183735_ERDRefactor")]
-    partial class ERDRefactor
+    [Migration("20251121234805_MajUpdateCorrections")]
+    partial class MajUpdateCorrections
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -125,10 +125,10 @@ namespace backend.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<float>("Price")
-                        .HasColumnType("real");
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(10,2)");
 
-                    b.Property<Guid>("ProfileID")
+                    b.Property<Guid>("ProfileId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TagId")
@@ -136,7 +136,7 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProfileID");
+                    b.HasIndex("ProfileId");
 
                     b.HasIndex("TagId");
 
@@ -206,13 +206,13 @@ namespace backend.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<float>("Rating")
-                        .HasColumnType("real");
+                    b.Property<decimal>("Rating")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<bool>("VerrifiedSeller")
+                    b.Property<bool>("VerifiedSeller")
                         .HasColumnType("boolean");
 
                     b.HasKey("Id");
@@ -295,10 +295,10 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ArticleType")
+                    b.Property<Guid>("ArticleTypeId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("Brand")
+                    b.Property<Guid>("BrandId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Color")
@@ -313,21 +313,21 @@ namespace backend.Migrations
                     b.Property<int>("Sex")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("Size")
+                    b.Property<Guid>("SizeId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("Style")
+                    b.Property<Guid>("StyleId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ArticleType");
+                    b.HasIndex("ArticleTypeId");
 
-                    b.HasIndex("Brand");
+                    b.HasIndex("BrandId");
 
-                    b.HasIndex("Size");
+                    b.HasIndex("SizeId");
 
-                    b.HasIndex("Style");
+                    b.HasIndex("StyleId");
 
                     b.ToTable("tags", (string)null);
                 });
@@ -338,17 +338,17 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("LsitingId")
+                    b.Property<Guid>("ListingId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProfileID")
+                    b.Property<Guid>("ProfileId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LsitingId");
+                    b.HasIndex("ListingId");
 
-                    b.HasIndex("ProfileID");
+                    b.HasIndex("ProfileId");
 
                     b.ToTable("wishlists", (string)null);
                 });
@@ -387,7 +387,7 @@ namespace backend.Migrations
                 {
                     b.HasOne("Profile", "Profile")
                         .WithMany()
-                        .HasForeignKey("ProfileID")
+                        .HasForeignKey("ProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -439,25 +439,25 @@ namespace backend.Migrations
                 {
                     b.HasOne("ArticleType", "ArticleTypeRef")
                         .WithMany()
-                        .HasForeignKey("ArticleType")
+                        .HasForeignKey("ArticleTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Brand", "BrandRef")
                         .WithMany()
-                        .HasForeignKey("Brand")
+                        .HasForeignKey("BrandId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Size", "SizeRef")
                         .WithMany()
-                        .HasForeignKey("Size")
+                        .HasForeignKey("SizeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Style", "StyleRef")
                         .WithMany()
-                        .HasForeignKey("Style")
+                        .HasForeignKey("StyleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -474,13 +474,13 @@ namespace backend.Migrations
                 {
                     b.HasOne("Listing", "Listing")
                         .WithMany()
-                        .HasForeignKey("LsitingId")
+                        .HasForeignKey("ListingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Profile", "Profile")
                         .WithMany()
-                        .HasForeignKey("ProfileID")
+                        .HasForeignKey("ProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

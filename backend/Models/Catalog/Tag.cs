@@ -9,21 +9,21 @@ public class Tag
 
     // Foreign Key for ArticleType
     [Required]
-    public Guid ArticleType { get; set; }
+    public Guid ArticleTypeId { get; set; }
 
-    [ForeignKey("ArticleType")]
+    [ForeignKey("ArticleTypeId")]
     public ArticleType? ArticleTypeRef { get; set; }
 
     // Foreign Key for Style
-    public Guid Style { get; set; }
+    public Guid StyleId { get; set; }
 
-    [ForeignKey("Style")]
-    public Style? StyleRef { get; set; } // Assuming you'll define a Style model
+    [ForeignKey("StyleId")]
+    public Style? StyleRef { get; set; }
 
     // Foreign Key for Size
-    public Guid Size { get; set; }
+    public Guid SizeId { get; set; }
 
-    [ForeignKey("Size")]
+    [ForeignKey("SizeId")]
     public Size? SizeRef { get; set; }
 
     // Enum
@@ -31,9 +31,9 @@ public class Tag
     public ColorEnum Color { get; set; }
 
     // Foreign Key for Brand
-    public Guid Brand { get; set; }
+    public Guid BrandId { get; set; }
 
-    [ForeignKey("Brand")]
+    [ForeignKey("BrandId")]
     public Brand? BrandRef { get; set; } 
 
     // Enum

@@ -4,7 +4,7 @@ public class Province
 {
     // Primary Key
     [Key]
-    public int Id { get; set; } // Use int for simplicity and performance for lookup tables
+    public int Id { get; set; }
 
     [Required]
     [StringLength(50)]
