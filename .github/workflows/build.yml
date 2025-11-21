@@ -120,7 +120,7 @@ jobs:
       run: |
         # Run tests and collect coverage in XML format using settings from root
         # We use ../coverage.settings.xml because the working-directory is 'backend'
-        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "../coverage.settings.xml"
+        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
 
         # Confirm file exists
         if (!(Test-Path "coverage.xml")) {
