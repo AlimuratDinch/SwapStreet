@@ -1,24 +1,21 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace backend.Models
+public class WishList
 {
-    [Table("wishlists")]
-    public class Wishlist
-    {
-        [Key]
-        [Column("id")]
-        public Guid Id { get; set; } = Guid.NewGuid();
+    [Key]
+    public Guid Id { get; set; }
 
-        [Required]
-        [Column("user_id")]
-        [ForeignKey(nameof(Profile))]
-        public Guid UserId { get; set; }
+    // Use ProfileID for consistency with the model name
+    [Required]
+    public Guid ProfileID { get; set; } // Renamed from UserID
 
-        [Required]
-        [Column("item_id")]
-        [ForeignKey(nameof(Item))]
-        public int ItemId { get; set; }
-    }
+    [ForeignKey("ProfileID")]
+    public Profile? Profile { get; set; } // Renamed from User
+
+    [Required]
+    public Guid ListingId { get; set; }
+
+    [ForeignKey("LsitingId")]
+    public Listing? Listing { get; set; }
 }
