@@ -107,7 +107,7 @@ jobs:
           /o:"swapstreet" `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
           /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml `
-          /d:sonar.coverage.exclusions="**/Migrations/**,**/Models/**"
+          /d:sonar.coverage.exclusions="**/Migrations/**"
 
     - name: Build backend
       shell: powershell
@@ -118,9 +118,8 @@ jobs:
       shell: pwsh
       working-directory: backend
       run: |
-        # Run tests and collect coverage in XML format using settings from root
-        # We use ../coverage.settings.xml because the working-directory is 'backend'
-        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
+        # Run tests and collect coverage in XML format
+        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml"
 
         # Confirm file exists
         if (!(Test-Path "coverage.xml")) {
