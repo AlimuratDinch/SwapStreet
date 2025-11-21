@@ -107,7 +107,7 @@ jobs:
           /o:"swapstreet" `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
           /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml `
-          /d:sonar.coverage.exclusions="**/Migrations/**"
+          /d:sonar.coverage.exclusions="**/Migrations/**,**/Models/**"
 
     - name: Build backend
       shell: powershell
