@@ -116,7 +116,9 @@ namespace backend.Migrations
                     BrandId = table.Column<Guid>(type: "uuid", nullable: false),
                     Sex = table.Column<int>(type: "integer", nullable: false),
                     Condition = table.Column<int>(type: "integer", nullable: false),
-                    Material = table.Column<int>(type: "integer", nullable: false)
+                    Material = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
                 constraints: table =>
                 {
@@ -161,7 +163,9 @@ namespace backend.Migrations
                     CityId = table.Column<int>(type: "integer", nullable: false),
                     FSA = table.Column<string>(type: "varchar(3)", maxLength: 3, nullable: false),
                     ProfileImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    BannerImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
+                    BannerImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
                 constraints: table =>
                 {
@@ -183,7 +187,9 @@ namespace backend.Migrations
                     Price = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     ProfileId = table.Column<Guid>(type: "uuid", nullable: false),
-                    TagId = table.Column<Guid>(type: "uuid", nullable: false)
+                    TagId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
                 constraints: table =>
                 {
@@ -209,7 +215,8 @@ namespace backend.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     ListingId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false)
+                    ImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -236,7 +243,8 @@ namespace backend.Migrations
                     ListingId = table.Column<Guid>(type: "uuid", nullable: false),
                     ImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     DisplayOrder = table.Column<int>(type: "integer", nullable: false),
-                    ForTryon = table.Column<bool>(type: "boolean", nullable: false)
+                    ForTryon = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -255,7 +263,8 @@ namespace backend.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ProfileId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ListingId = table.Column<Guid>(type: "uuid", nullable: false)
+                    ListingId = table.Column<Guid>(type: "uuid", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {

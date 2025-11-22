@@ -13,4 +13,5 @@ public class Brand
     // Optional path to the brand's logo
     [StringLength(255)]
     public string? LogoImagePath { get; set; }
+
 }

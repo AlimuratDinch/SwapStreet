@@ -87,6 +87,9 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ImagePath")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -113,6 +116,9 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -131,6 +137,11 @@ namespace backend.Migrations
                     b.Property<Guid>("TagId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProfileId");
@@ -145,6 +156,9 @@ namespace backend.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
@@ -184,6 +198,9 @@ namespace backend.Migrations
                     b.Property<int>("CityId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FSA")
                         .IsRequired()
                         .HasMaxLength(3)
@@ -208,6 +225,11 @@ namespace backend.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.Property<bool>("VerifiedSeller")
                         .HasColumnType("boolean");
@@ -304,6 +326,9 @@ namespace backend.Migrations
                     b.Property<int>("Condition")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("Material")
                         .HasColumnType("integer");
 
@@ -315,6 +340,11 @@ namespace backend.Migrations
 
                     b.Property<Guid>("StyleId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
 
                     b.HasKey("Id");
 
@@ -334,6 +364,9 @@ namespace backend.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("ListingId")
                         .HasColumnType("uuid");

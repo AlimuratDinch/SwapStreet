@@ -67,6 +67,11 @@ public class AppDbContext : DbContext
             .Property(p => p.Status)
             .HasConversion<int>();
 
+        modelBuilder.Entity<Profile>()
+        .Property(l => l.UpdatedAt)
+        .HasDefaultValueSql("NOW()")
+        .ValueGeneratedOnAddOrUpdate(); // database sets UpdatedAt on insert/update
+
         // =======================================================
         // LOOKUP/REFERENCE TABLES
         // =======================================================
@@ -105,6 +110,11 @@ public class AppDbContext : DbContext
             .Property(t => t.Material)
             .HasConversion<int>(); 
 
+        modelBuilder.Entity<Tag>()
+            .Property(l => l.UpdatedAt)
+            .HasDefaultValueSql("NOW()")
+            .ValueGeneratedOnAddOrUpdate(); // database sets UpdatedAt on insert/update
+
         // =======================================================
         // LISTING MODELS
         // =======================================================
@@ -138,13 +148,19 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(li => li.ListingId);
 
+
+        modelBuilder.Entity<Listing>()
+        .Property(l => l.UpdatedAt)
+        .HasDefaultValueSql("NOW()")
+        .ValueGeneratedOnAddOrUpdate(); // database sets UpdatedAt on insert/update
+
         // GeneratedImage
         modelBuilder.Entity<GeneratedImage>().ToTable("generated_images");
         modelBuilder.Entity<GeneratedImage>()
             .HasOne(gi => gi.Listing)
             .WithMany()
             .HasForeignKey(gi => gi.ListingId);
-        
+            
         // WishList
         modelBuilder.Entity<WishList>().ToTable("wishlists");
         modelBuilder.Entity<WishList>()

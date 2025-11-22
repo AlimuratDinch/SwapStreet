@@ -23,4 +23,6 @@ public class ListingImage
 
     // Flag indicating if this image is formatted or suitable for a 'try-on' feature
     public bool ForTryon { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

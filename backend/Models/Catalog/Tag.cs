@@ -48,6 +48,9 @@ public class Tag
     // You would use bitwise operations on this integer to check/set material flags.
     [Required]
     public int Material { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
 
