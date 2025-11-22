@@ -14,7 +14,7 @@ namespace backend.Controllers
     {
         private readonly IFileStorageService _fileStorage;
 
-        public ImageController(IFileStorageService fileStorage)
+                                              public ImageController(IFileStorageService fileStorage)
         {
             _fileStorage = fileStorage;
         }
@@ -25,7 +25,7 @@ namespace backend.Controllers
         /// </summary>
         /// <param name="request">FileUploadRequest containing the image file and type</param>
         [HttpPost("upload")]
-        public async Task<IActionResult> Upload([FromForm] FileUploadRequest request)
+                               public async Task<IActionResult> Upload([FromForm] FileUploadRequest request)
         {
             try
             {

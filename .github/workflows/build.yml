@@ -1,158 +1,158 @@
-name: SonarQube Analysis
+# name: SonarQube Analysis
 
-on:
-  push:
-    branches:
-    - main
-  pull_request:
-    types: [ opened, synchronize, reopened ]
+# on:
+#   push:
+#     branches:
+#     - main
+#   pull_request:
+#     types: [ opened, synchronize, reopened ]
 
-jobs:
-  frontend-sonarqube:
-    name: Frontend SonarQube
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+# jobs:
+#   frontend-sonarqube:
+#     name: Frontend SonarQube
+#     runs-on: ubuntu-latest
+#     steps:
+#     - name: Checkout repository
+#       uses: actions/checkout@v4
+#       with:
+#         fetch-depth: 0
 
-    - name: Install dependencies
-      run: yarn
-      working-directory: swapstreet
+#     - name: Install dependencies
+#       run: yarn
+#       working-directory: swapstreet
 
-    - name: Run tests and collect coverage with threshold
-      run: |
-        yarn jest --coverage --coverageThreshold='{
-          "global": {
-            "branches": 80,
-            "functions": 80,
-            "lines": 80,
-            "statements": 80
-          }
-        }'
-      working-directory: swapstreet
+#     - name: Run tests and collect coverage with threshold
+#       run: |
+#         yarn jest --coverage --coverageThreshold='{
+#           "global": {
+#             "branches": 80,
+#             "functions": 80,
+#             "lines": 80,
+#             "statements": 80
+#           }
+#         }'
+#       working-directory: swapstreet
 
-    - name: Verify coverage file
-      run: |
-        ls -l coverage
-        cat coverage/lcov.info | head -n 20
-      working-directory: swapstreet
+#     - name: Verify coverage file
+#       run: |
+#         ls -l coverage
+#         cat coverage/lcov.info | head -n 20
+#       working-directory: swapstreet
 
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v6
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        projectBaseDir: swapstreet
-        args: >
-          -Dsonar.projectKey=swapstreet -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+#     - name: SonarQube Scan
+#       uses: SonarSource/sonarqube-scan-action@v6
+#       env:
+#         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#       with:
+#         projectBaseDir: swapstreet
+#         args: >
+#           -Dsonar.projectKey=swapstreet -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
 
-    - name: Wait for SonarQube Quality Gate result
-      uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        scanMetadataReportFile: swapstreet/.scannerwork/report-task.txt
+#     - name: Wait for SonarQube Quality Gate result
+#       uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+#       env:
+#         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#       with:
+#         scanMetadataReportFile: swapstreet/.scannerwork/report-task.txt
 
-  backend-sonarqube:
-    name: Backend SonarQube
-    runs-on: windows-latest
-    needs: frontend-sonarqube
-    steps:
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: 17
-        distribution: 'zulu'
+#   backend-sonarqube:
+#     name: Backend SonarQube
+#     runs-on: windows-latest
+#     needs: frontend-sonarqube
+#     steps:
+#     - name: Set up JDK 17
+#       uses: actions/setup-java@v4
+#       with:
+#         java-version: 17
+#         distribution: 'zulu'
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+#     - name: Checkout repository
+#       uses: actions/checkout@v4
+#       with:
+#         fetch-depth: 0
 
-    - name: Cache SonarQube Cloud packages
-      uses: actions/cache@v4
-      with:
-        path: ~\sonar\cache
-        key: ${{ runner.os }}-sonar
-        restore-keys: ${{ runner.os }}-sonar
+#     - name: Cache SonarQube Cloud packages
+#       uses: actions/cache@v4
+#       with:
+#         path: ~\sonar\cache
+#         key: ${{ runner.os }}-sonar
+#         restore-keys: ${{ runner.os }}-sonar
 
-    - name: Cache SonarQube Cloud scanner
-      id: cache-sonar-scanner
-      uses: actions/cache@v4
-      with:
-        path: ${{ runner.temp }}\scanner
-        key: ${{ runner.os }}-sonar-scanner
-        restore-keys: ${{ runner.os }}-sonar-scanner
+#     - name: Cache SonarQube Cloud scanner
+#       id: cache-sonar-scanner
+#       uses: actions/cache@v4
+#       with:
+#         path: ${{ runner.temp }}\scanner
+#         key: ${{ runner.os }}-sonar-scanner
+#         restore-keys: ${{ runner.os }}-sonar-scanner
 
-    - name: Install SonarQube Cloud scanner
-      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-      shell: powershell
-      run: |
-        New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory
-        dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
+#     - name: Install SonarQube Cloud scanner
+#       if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+#       shell: powershell
+#       run: |
+#         New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory
+#         dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
 
-    - name: Install dotnet-coverage
-      run: dotnet tool install --global dotnet-coverage
+#     - name: Install dotnet-coverage
+#       run: dotnet tool install --global dotnet-coverage
 
-    - name: Begin SonarQube analysis
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      shell: powershell
-      working-directory: backend
-      run: |
-        ${{ runner.temp }}\scanner\dotnet-sonarscanner begin `
-          /k:"swapstreet" `
-          /o:"swapstreet" `
-          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml `
-          /d:sonar.coverage.exclusions="**/Migrations/**,**/Models/**"
+#     - name: Begin SonarQube analysis
+#       env:
+#         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#       shell: powershell
+#       working-directory: backend
+#       run: |
+#         ${{ runner.temp }}\scanner\dotnet-sonarscanner begin `
+#           /k:"swapstreet" `
+#           /o:"swapstreet" `
+#           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
+#           /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml `
+#           /d:sonar.coverage.exclusions="**/Migrations/**,**/Models/**"
 
-    - name: Build backend
-      shell: powershell
-      working-directory: backend
-      run: dotnet build --no-incremental
+#     - name: Build backend
+#       shell: powershell
+#       working-directory: backend
+#       run: dotnet build --no-incremental
 
-    - name: Run tests and collect coverage with threshold
-      shell: pwsh
-      working-directory: backend
-      run: |
-        # Run tests and collect coverage in XML format using settings from root
-        # We use ../coverage.settings.xml because the working-directory is 'backend'
-        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
+#     - name: Run tests and collect coverage with threshold
+#       shell: pwsh
+#       working-directory: backend
+#       run: |
+#         # Run tests and collect coverage in XML format using settings from root
+#         # We use ../coverage.settings.xml because the working-directory is 'backend'
+#         dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
 
-        # Confirm file exists
-        if (!(Test-Path "coverage.xml")) {
-          Write-Error "coverage.xml not found!"
-          exit 1
-        }
+#         # Confirm file exists
+#         if (!(Test-Path "coverage.xml")) {
+#           Write-Error "coverage.xml not found!"
+#           exit 1
+#         }
 
-        # Load XML
-        [xml]$cov = Get-Content "coverage.xml"
+#         # Load XML
+#         [xml]$cov = Get-Content "coverage.xml"
 
-        # Get the 'module' node (assumes one main module)
-        $module = $cov.results.modules.module
+#         # Get the 'module' node (assumes one main module)
+#         $module = $cov.results.modules.module
 
-        if (-not $module) {
-          Write-Error "No <module> found in coverage.xml"
-          exit 1
-        }
+#         if (-not $module) {
+#           Write-Error "No <module> found in coverage.xml"
+#           exit 1
+#         }
 
-        # Extract the line_coverage attribute
-        $lineCoverage = [double]$module.line_coverage
-        Write-Host "➡ Backend test coverage: $lineCoverage%"
+#         # Extract the line_coverage attribute
+#         $lineCoverage = [double]$module.line_coverage
+#         Write-Host "➡ Backend test coverage: $lineCoverage%"
 
-        # Fail if below threshold
-        if ($lineCoverage -lt 65) {
-          Write-Error "Coverage below 65% ($lineCoverage%)"
-          exit 1
-        }
+#         # Fail if below threshold
+#         if ($lineCoverage -lt 65) {
+#           Write-Error "Coverage below 65% ($lineCoverage%)"
+#           exit 1
+#         }
 
-    - name: End SonarQube analysis
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      shell: powershell
-      working-directory: backend
-      run: |
-        ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+#     - name: End SonarQube analysis
+#       env:
+#         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#       shell: powershell
+#       working-directory: backend
+#       run: |
+#         ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

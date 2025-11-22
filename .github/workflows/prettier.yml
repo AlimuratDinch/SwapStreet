@@ -1,4 +1,4 @@
-name: Frontend Formatting Prettier AutoFix
+name: Prettier AutoFix
 
 on:
   push:

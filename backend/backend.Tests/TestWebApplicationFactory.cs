@@ -9,7 +9,7 @@ namespace backend.Tests
 {
     public class BackendTestFactory<TProgram> : WebApplicationFactory<TProgram> where TProgram : class
     {
-        protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+                             protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
         {
             builder.ConfigureServices(services =>
             {
@@ -29,7 +29,7 @@ namespace backend.Tests
                 if (authDbDescriptor != null) services.Remove(authDbDescriptor);
 
                 services.AddDbContext<AuthDbContext>(options =>
-                {
+                                 {
                     options.UseInMemoryDatabase("TestAuthDb");
                 });
             });
