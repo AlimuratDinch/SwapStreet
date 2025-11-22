@@ -9,7 +9,7 @@ public class CatalogService : ICatalogService
 {
     private readonly AppDbContext _db;
 
-                                                  public CatalogService(AppDbContext db) => _db = db;
+    public CatalogService(AppDbContext db) => _db = db;
 
     // ---- CATEGORY ----
     public Category AddCategory(Category category)
@@ -19,14 +19,14 @@ public class CatalogService : ICatalogService
         return category;
     }
 
-                  public IEnumerable<Category> GetAllCategories()
+    public IEnumerable<Category> GetAllCategories()
     {
-        return                        _db.Categories.Include(c => c.Items).ToList();
+        return _db.Categories.Include(c => c.Items).ToList();
     }
 
     public Category? GetCategoryById(int id)
     {
-        return                _db.Categories.Include(c => c.Items).FirstOrDefault(c => c.Id == id);
+        return _db.Categories.Include(c => c.Items).FirstOrDefault(c => c.Id == id);
     }
 
     public Category UpdateCategory(int id, Category updated)
