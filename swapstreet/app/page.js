@@ -128,7 +128,7 @@ export default function LandingPage() {
 
         {/* Hero Content */}
           <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4">
-          <h1 className="text-5xl md:text-7xl max-[375px]:text-4xl font-bold mb-6 leading-tight max-[375px]:leading-snug">
+          <h1 className="text-5xl md:text-7xl max-[375px]:text-4xl max-[320px]:text-3xl font-bold mb-6 leading-tight max-[375px]:leading-snug max-[320px]:leading-tight">
             The Marketplace for
             <span className="text-teal-400 block">Endless Outfits</span>
           </h1>
