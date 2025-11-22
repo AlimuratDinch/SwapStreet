@@ -23,8 +23,8 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Run dotnet format
-        run: dotnet format
+      - name: Run dotnet format on backend solution
+        run: dotnet format ./backend/backend.sln
 
       - name: Commit formatted code (if changed)
         run: |
