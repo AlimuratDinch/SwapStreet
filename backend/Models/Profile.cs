@@ -12,17 +12,17 @@ public class Profile
     public bool VerifiedSeller { get; set; }
 
     [Required]
-    [StringLength(100)] 
+    [StringLength(100)]
     public string FirstName { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(100)] 
+    [StringLength(100)]
     public string Lastname { get; set; } = string.Empty;
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal Rating { get; set; }
 
-    [StringLength(500)] 
+    [StringLength(500)]
     public string? Bio { get; set; }
 
     [Required]
