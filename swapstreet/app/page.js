@@ -8,7 +8,7 @@ import {
   Leaf,
   Zap,
   Users,
-  TrendingUp,
+  Droplet,
   Eye,
   Heart,
   ShoppingBag,
@@ -233,7 +233,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
             <Card className="text-center p-8 bg-gradient-to-br from-green-50 to-teal-50 border-green-200">
               <Leaf className="h-12 w-12 text-green-500 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-green-700 mb-2">
@@ -246,7 +246,7 @@ export default function LandingPage() {
             </Card>
 
             <Card className="text-center p-8 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
-              <TrendingUp className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+              <Droplet className="h-12 w-12 text-blue-500 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-blue-700 mb-2">
                 Water Conservation
               </h3>
@@ -398,19 +398,19 @@ export default function LandingPage() {
                 href="/privacy"
                 className="hover:text-foreground transition-colors"
               >
-                Privacy (WIP)
+                Privacy
               </Link>
               <Link
                 href="/terms"
                 className="hover:text-foreground transition-colors"
               >
-                Terms (WIP)
+                Terms
               </Link>
               <Link
                 href="/contact"
                 className="hover:text-foreground transition-colors"
               >
-                Contact (WIP)
+                Contact
               </Link>
             </div>
           </div>
