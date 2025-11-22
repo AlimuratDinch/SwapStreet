@@ -20,7 +20,7 @@ export default function LoginPage() {
 
     try {
       console.log("Attempting Sign In...");
-      const response = await fetch("http://localhost:8080/api/auth/signin", {
+                                      const response = await fetch("http://localhost:8080/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -32,7 +32,7 @@ export default function LoginPage() {
         throw new Error(err || "Login failed");
       }
 
-      const data = await response.json();
+                               const data = await response.json();
 
       // Store only the access token in sessionStorage
       if (data.accessToken) {
@@ -45,7 +45,7 @@ export default function LoginPage() {
       router.push("/browse");
     } catch (err: any) {
       console.error("Error:", err);
-      setError(err.message);
+                            setError(err.message);
     } finally {
       setLoading(false);
     }

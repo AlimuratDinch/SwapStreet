@@ -10,13 +10,14 @@ jobs:
   prettier:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # required to push formatting commits
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # required for pushing commits
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -36,7 +37,14 @@ jobs:
           if [[ -n "$(git status --porcelain)" ]]; then
             git config user.name "github-actions"
             git config user.email "github-actions@github.com"
+
             git add .
             git commit -m "chore: auto-format frontend (prettier)"
-            git push
+
+            # Determine branch
+            BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+
+            echo "Pushing to branch: $BRANCH"
+
+            git push origin HEAD:$BRANCH
           fi
