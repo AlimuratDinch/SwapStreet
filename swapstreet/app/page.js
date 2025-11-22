@@ -64,7 +64,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Shirt className="h-8 w-8 text-teal-500" />
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-2xl font-bold text-foreground max-[425px]:hidden">
               SWAPSTREET
             </span>
           </div>
@@ -271,16 +271,16 @@ export default function LandingPage() {
           </div>
 
           {/* Impact Visualization */}
-          <div className="bg-card rounded-xl p-8 shadow-lg">
+          <div className="bg-card rounded-xl p-6 md:p-8 shadow-lg">
             <h3 className="text-2xl font-bold mb-8 text-center">
               Monthly Impact Growth
             </h3>
-            <div className="grid grid-cols-12 gap-2 h-64 items-end">
+            <div className="grid grid-cols-12 gap-1 sm:gap-2 h-48 sm:h-56 md:h-64 items-end">
               {[40, 55, 60, 75, 85, 90, 95, 88, 92, 100, 105, 110].map(
                 (height, index) => (
                   <div
                     key={index}
-                    className="bg-gradient-to-t from-teal-500 to-teal-400 rounded-t-md relative group"
+                    className="bg-gradient-to-t from-teal-500 to-teal-400 rounded-t-sm md:rounded-t-md relative group"
                     style={{ height: `${height}%` }}
                   >
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
