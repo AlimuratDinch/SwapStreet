@@ -19,10 +19,10 @@ export function AuthInput({
   const inputId = id || label.toLowerCase().replace(/\s+/g, "-");
 
   return (
-                                          <div className="w-4/5">
+    <div className="w-4/5">
       <label
         htmlFor={inputId}
-                              className="block text-sm font-medium text-gray-700"
+        className="block text-sm font-medium text-gray-700"
       >
         {label}
       </label>
@@ -41,7 +41,7 @@ export function ImageElement() {
   return (
     <div className="w-full md:w-1/2 relative hidden md:block">
       <Image
-                               src={clothImage}
+        src={clothImage}
         alt="Clothing"
         className="object-cover h-full w-full rounded-r-2xl"
         priority
