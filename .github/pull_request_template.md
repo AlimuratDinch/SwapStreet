@@ -14,6 +14,8 @@ git pull
 # Might be required if you update check the PR
 
 ```
+# How To Test
+> Provide information on how to test that the PR is functional and does what you intended it to do.
 
 # Checklist
 > Please, read carefully each item before checking it. Your PR's review might be delayed otherwise.

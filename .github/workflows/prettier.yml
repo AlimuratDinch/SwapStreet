@@ -1,4 +1,4 @@
-name: Frontend Formatting Prettier Check
+name: Frontend Formatting Prettier AutoFix
 
 on:
   push:
@@ -9,19 +9,34 @@ on:
 jobs:
   prettier:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required to push formatting commits
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # required for pushing commits
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Install dependencies
-      run: npm ci
-      working-directory: swapstreet
+      - name: Install dependencies
+        run: npm ci
+        working-directory: swapstreet
 
-    - name: Run Prettier
-      run: npx prettier --check .
-      working-directory: swapstreet
+      - name: Run Prettier (auto-fix)
+        run: npx prettier --write .
+        working-directory: swapstreet
+
+      - name: Commit formatted changes (if any)
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add .
+            git commit -m "chore: auto-format frontend (prettier)"
+            git push
+          fi

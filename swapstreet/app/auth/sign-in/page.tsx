@@ -53,20 +53,20 @@ export default function LoginPage() {
 
   return (
     <div
-      className="relative flex min-h-screen justify-center 
+                                                      className="relative flex min-h-screen justify-center 
               items-start bg-[var(--bg-color)] p-6 overflow-hidden"
     >
       {/* Background design: simple circles with hover grow */}
       {/* Top-left circle: primary-dark with slight orange tint */}
       <div
-        className="absolute -top-32 -left-32 w-96 h-96 rounded-full 
+                              className="absolute -top-32 -left-32 w-96 h-96 rounded-full 
                       bg-[rgba(1,108,93,0.15)]  
                       transition-transform duration-500 ease-in-out hover:scale-110"
       ></div>
 
       {/* Bottom-right circle: primary-dark */}
       <div
-        className="absolute bottom-[-100px] right-[-100px] w-72 h-72 rounded-full 
+         className="absolute bottom-[-100px] right-[-100px] w-72 h-72 rounded-full 
                       bg-[rgba(1,108,93,0.15)]  
                       transition-transform duration-500 ease-in-out hover:scale-110"
       ></div>
@@ -79,7 +79,7 @@ export default function LoginPage() {
       >
         {/* Left: Login Form */}
         <div
-          className="relative w-full md:w-1/2 bg-[var(--bg-color)] p-8 flex flex-col 
+                  className="relative w-full md:w-1/2 bg-[var(--bg-color)] p-8 flex flex-col 
                       justify-start md:justify-center rounded-2xl md:rounded-l-2xl md:rounded-r-none"
         >
           {/* Form */}
