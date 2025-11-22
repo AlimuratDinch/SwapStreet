@@ -75,9 +75,8 @@ PgAdmin         -> http://localhost:5050/
 
 9. Migrations
 --------------------
-dotnet ef migrations add <name>
-dotnet ef database update
-
+dotnet ef migrations add <name> --context <context>
+dotnet ef database update --context AppDbContext
 
 10. Testing
 --------------------

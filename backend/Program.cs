@@ -69,10 +69,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
 // Register services
-builder.Services.AddScoped<ICatalogService, CatalogService>();
+//builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+//builder.Services.AddScoped<IWishlistService, WishlistService>();
 
 var jwtSecret = builder.Configuration["JWT_SECRET"]
               ?? "402375d38deb9c479fb043f369d1b2d2";
@@ -108,14 +111,6 @@ builder.Services.AddAuthentication(options =>
 
 
 builder.Services.AddAuthorization();
-
-// Register services
-builder.Services.AddScoped<ICatalogService, CatalogService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
-builder.Services.AddScoped<IUserAccountService, UserAccountService>();
-builder.Services.AddScoped<IWishlistService, WishlistService>();
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 
