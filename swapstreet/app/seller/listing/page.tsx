@@ -5,54 +5,62 @@ import { useRouter } from "next/navigation";
 export default function SellerListingPage() {
   const router = useRouter();
 
-  const [title, setTitle] = useState("");
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | null>(null);
-  const [condition, setCondition] = useState<string>("Good");
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [category, setCategory] = useState<string>("");
+  const [tagId, setTagId] = useState<string | null>(null);
+  const [images, setImages] = useState<Array<{
+    file: File;
+    preview: string;
+    displayOrder: number;
+    forTryon: boolean;
+  }>>([]);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [tags, setTags] = useState<Array<{ id: string; name: string }>>([]);
+  const [isLoadingTags, setIsLoadingTags] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
 
-  // Check authentication and fetch categories
+  // Check authentication and fetch tags
   useEffect(() => {
-    // Check if user is authenticated
+    // ============================================
+    // TEMPORARY: Authentication check disabled for testing
+    // TODO: Re-enable before production deployment
+    // ============================================
+    // const token = localStorage.getItem('accessToken');
+    // if (!token) {
+    //   setError("You must be logged in to create a listing.");
+    //   setTimeout(() => router.push('/login'), 2000);
+    //   return;
+    // }
+    // setAccessToken(token);
+    // ============================================
+
     const token = localStorage.getItem('accessToken');
-    if (!token) {
-      setError("You must be logged in to create a listing.");
-      // Optionally redirect to login after a delay
-      setTimeout(() => router.push('/login'), 2000);
-      return;
-    }
     setAccessToken(token);
 
-    // Fetch categories from backend
-    const fetchCategories = async () => {
+    // Fetch tags from backend
+    const fetchTags = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/catalog/categories");
-        if (!response.ok) throw new Error("Failed to fetch categories");
+        const response = await fetch("http://localhost:8080/api/tags");
+        if (!response.ok) throw new Error("Failed to fetch tags");
         const data = await response.json();
-        setCategories(data);
+        setTags(data);
       } catch (err) {
-        console.error("Error fetching categories:", err);
-        setError("Failed to load categories. Please refresh the page.");
+        console.error("Error fetching tags:", err);
+        setError("Failed to load tags. Please refresh the page.");
       } finally {
-        setIsLoadingCategories(false);
+        setIsLoadingTags(false);
       }
     };
 
-    fetchCategories();
+    fetchTags();
   }, [router]);
 
   // Handle form input changes
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
   };
 
   const handleDescriptionChange = (
@@ -66,36 +74,60 @@ export default function SellerListingPage() {
     setPrice(value ? Number(value) : null);
   };
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedId = Number(e.target.value);
-    const selectedCategory = categories.find(cat => cat.id === selectedId);
-    
-    setCategoryId(selectedId);
-    setCategory(selectedCategory?.name || "");
+  const handleTagChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTagId(e.target.value || null);
   };
 
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newImages = [...images, ...files];
-
-    if (newImages.length > 5) {
+    
+    if (images.length + files.length > 5) {
       setError("You can upload a maximum of 5 images.");
       return;
     }
 
-    setImages(newImages);
+    const newImages = files.map((file, index) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      displayOrder: images.length + index,
+      forTryon: false,
+    }));
 
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setImagePreviews([...imagePreviews, ...newPreviews]);
+    setImages([...images, ...newImages]);
   };
 
   const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    const newImages = images
+      .filter((_, i) => i !== index)
+      .map((img, i) => ({ ...img, displayOrder: i }));
+    setImages(newImages);
+  };
+
+  const toggleForTryon = (index: number) => {
+    const newImages = [...images];
+    newImages[index].forTryon = !newImages[index].forTryon;
+    setImages(newImages);
+  };
+
+  const moveImage = (index: number, direction: 'up' | 'down') => {
+    if (
+      (direction === 'up' && index === 0) ||
+      (direction === 'down' && index === images.length - 1)
+    ) {
+      return;
+    }
+
+    const newImages = [...images];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
+    
+    // Update display orders
+    newImages.forEach((img, i) => {
+      img.displayOrder = i;
+    });
 
     setImages(newImages);
-    setImagePreviews(newPreviews);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,8 +135,8 @@ export default function SellerListingPage() {
     setError("");
     setIsSubmitting(true);
 
-    if (!title.trim()) {
-      setError("Please enter a title.");
+    if (!name.trim()) {
+      setError("Please enter a name for your listing.");
       setIsSubmitting(false);
       return;
     }
@@ -121,44 +153,34 @@ export default function SellerListingPage() {
       return;
     }
 
-    if (!condition) {
-      setError("Please select a condition.");
-      setIsSubmitting(false);
-      return;
-    }
-
     if (!images.length) {
       setError("Please upload at least one image.");
       setIsSubmitting(false);
       return;
     }
 
-    if (!categoryId) {
-      setError("Please select a category.");
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
-      // TODO: Upload images to MinIO first
-      // For now, using a placeholder image URL
-      const imageUrl = imagePreviews[0] || "https://via.placeholder.com/400";
+      // TODO: Upload images to MinIO first and get image paths
+      // For now, creating listing with placeholder image paths
+      const listingImages = images.map((img, index) => ({
+        imagePath: `placeholder_${index}.jpg`, // Will be replaced with actual MinIO path
+        displayOrder: img.displayOrder,
+        forTryon: img.forTryon,
+      }));
 
       // Create listing via backend API
-      const response = await fetch("http://localhost:8080/api/catalog/items", {
+      const response = await fetch("http://localhost:8080/api/listings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Note: Backend doesn't have auth middleware yet, but including for future
           ...(accessToken && { "Authorization": `Bearer ${accessToken}` }),
         },
         body: JSON.stringify({
-          title: title.trim(),
+          name: name.trim(),
           description: description.trim(),
-          condition: condition,
           price: price,
-          imageUrl: imageUrl,
-          categoryId: categoryId,
+          tagId: tagId,
+          images: listingImages,
         }),
       });
 
@@ -203,20 +225,20 @@ export default function SellerListingPage() {
           </div>
         )}
 
-        {/* Title */}
+        {/* Name */}
         <div>
           <label
-            htmlFor="title"
+            htmlFor="name"
             className="block text-sm font-medium text-gray-700"
           >
-            Title *
+            Listing Name *
           </label>
           <input
-            id="title"
+            id="name"
             type="text"
-            value={title}
-            onChange={handleTitleChange}
-            placeholder="Enter a descriptive title for your item"
+            value={name}
+            onChange={handleNameChange}
+            placeholder="Enter a descriptive name for your listing"
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
@@ -267,51 +289,27 @@ export default function SellerListingPage() {
           </div>
         </div>
 
-        {/* Condition */}
+        {/* Tag */}
         <div>
           <label
-            htmlFor="condition"
+            htmlFor="tag"
             className="block text-sm font-medium text-gray-700"
           >
-            Condition *
+            Tag (Optional)
           </label>
           <select
-            id="condition"
-            value={condition}
-            onChange={(e) => setCondition(e.target.value)}
+            id="tag"
+            value={tagId || ""}
+            onChange={handleTagChange}
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
+            disabled={isLoadingTags}
           >
-            <option value="New">New - Never used, with tags</option>
-            <option value="Like New">Like New - Excellent condition, barely used</option>
-            <option value="Good">Good - Normal wear, no major flaws</option>
-            <option value="Fair">Fair - Visible wear, some flaws</option>
-            <option value="Poor">Poor - Significant wear or damage</option>
-          </select>
-        </div>
-
-        {/* Category */}
-        <div>
-          <label
-            htmlFor="category"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Category *
-          </label>
-          <select
-            id="category"
-            value={categoryId || ""}
-            onChange={handleCategoryChange}
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-            disabled={isLoadingCategories}
-          >
-            <option value="" disabled>
-              {isLoadingCategories ? "Loading categories..." : "Select a category"}
+            <option value="">
+              {isLoadingTags ? "Loading tags..." : "Select a tag (optional)"}
             </option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
+            {tags.map((tag) => (
+              <option key={tag.id} value={tag.id}>
+                {tag.name}
               </option>
             ))}
           </select>
@@ -335,19 +333,54 @@ export default function SellerListingPage() {
           />
 
           {/* Image Previews */}
-          {imagePreviews.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
-              {imagePreviews.map((preview, index) => (
-                <div key={index} className="relative">
+          {images.length > 0 && (
+            <div className="mt-4 space-y-3">
+              {images.map((image, index) => (
+                <div key={index} className="flex items-center gap-3 rounded-lg border border-gray-200 p-3">
                   <img
-                    src={preview}
+                    src={image.preview}
                     alt={`Preview ${index + 1}`}
-                    className="h-32 w-full rounded-lg object-cover ring-1 ring-gray-200"
+                    className="h-20 w-20 rounded object-cover"
                   />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-700">
+                      Image {index + 1}
+                      {index === 0 && <span className="ml-2 text-xs text-blue-600">(Primary)</span>}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <label className="flex items-center gap-1 text-xs text-gray-600">
+                        <input
+                          type="checkbox"
+                          checked={image.forTryon}
+                          onChange={() => toggleForTryon(index)}
+                          className="rounded border-gray-300"
+                        />
+                        Virtual Try-On
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveImage(index, 'up')}
+                      disabled={index === 0}
+                      className="rounded bg-gray-100 p-1 text-xs hover:bg-gray-200 disabled:opacity-30"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveImage(index, 'down')}
+                      disabled={index === images.length - 1}
+                      className="rounded bg-gray-100 p-1 text-xs hover:bg-gray-200 disabled:opacity-30"
+                    >
+                      ↓
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs hover:bg-red-600"
+                    className="rounded-full bg-red-500 p-1 text-white text-xs hover:bg-red-600 h-6 w-6"
                   >
                     ×
                   </button>
