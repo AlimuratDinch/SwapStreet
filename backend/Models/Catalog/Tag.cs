@@ -34,7 +34,7 @@ public class Tag
     public Guid BrandId { get; set; }
 
     [ForeignKey("BrandId")]
-    public Brand? BrandRef { get; set; } 
+    public Brand? BrandRef { get; set; }
 
     // Enum
     [Required]
