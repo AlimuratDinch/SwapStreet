@@ -59,13 +59,29 @@ export default function LandingPage() {
 
   // Monthly Impact Growth data (REPLACE WITH REAL DATA FROM BACKEND)
   const monthlyValues = [40, 55, 60, 75, 85, 90, 95, 88, 92, 100, 105, 110];
-  const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug","Sep", "Oct", "Nov", "Dec"];
-  
+  const monthLabels = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
   // Calculate previous 6 months ending w/ current month (inclusive)
   // This is to only show the previous 6 months on smaller devices where the entire graph may not fit
   const now = new Date();
   const currentMonthIndex = now.getMonth(); // 0-11
-  const prevSix = Array.from({ length: 6 }, (_, i) => (currentMonthIndex - 5 + i + 12) % 12,);
+  const prevSix = Array.from(
+    { length: 6 },
+    (_, i) => (currentMonthIndex - 5 + i + 12) % 12,
+  );
   const prevSixSet = new Set(prevSix);
 
   return (
@@ -127,7 +143,7 @@ export default function LandingPage() {
         </div>
 
         {/* Hero Content */}
-          <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4 pt-20 md:pt-0">
+        <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4 pt-20 md:pt-0">
           <h1 className="text-5xl md:text-7xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight">
             <span className="block">The Marketplace for</span>
             <span className="text-teal-400 block">Endless Outfits</span>
@@ -282,7 +298,7 @@ export default function LandingPage() {
           </div>
 
           {/* Impact Visualization */}
-            <div className="bg-card rounded-xl p-6 md:p-8 shadow-lg">
+          <div className="bg-card rounded-xl p-6 md:p-8 shadow-lg">
             <h3 className="text-2xl font-bold mb-8 text-center">
               Monthly Impact Growth
             </h3>
@@ -303,7 +319,10 @@ export default function LandingPage() {
             </div>
             <div className="flex justify-between mt-4 text-sm text-muted-foreground">
               {monthLabels.map((label, i) => (
-                <span key={label} className={`${!prevSixSet.has(i) ? "hidden sm:block" : ""}`}>
+                <span
+                  key={label}
+                  className={`${!prevSixSet.has(i) ? "hidden sm:block" : ""}`}
+                >
                   {label}
                 </span>
               ))}
