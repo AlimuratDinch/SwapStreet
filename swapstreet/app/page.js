@@ -8,7 +8,7 @@ import {
   Leaf,
   Zap,
   Users,
-  TrendingUp,
+  Droplet,
   Eye,
   Heart,
   ShoppingBag,
@@ -57,6 +57,33 @@ export default function LandingPage() {
     },
   ];
 
+  // Monthly Impact Growth data (REPLACE WITH REAL DATA FROM BACKEND)
+  const monthlyValues = [40, 55, 60, 75, 85, 90, 95, 88, 92, 100, 105, 110];
+  const monthLabels = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  // Calculate previous 6 months ending w/ current month (inclusive)
+  // This is to only show the previous 6 months on smaller devices where the entire graph may not fit
+  const now = new Date();
+  const currentMonthIndex = now.getMonth(); // 0-11
+  const prevSix = Array.from(
+    { length: 6 },
+    (_, i) => (currentMonthIndex - 5 + i + 12) % 12,
+  );
+  const prevSixSet = new Set(prevSix);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -64,7 +91,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Shirt className="h-8 w-8 text-teal-500" />
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-2xl font-bold text-foreground max-[425px]:hidden">
               SWAPSTREET
             </span>
           </div>
@@ -116,9 +143,9 @@ export default function LandingPage() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            The Marketplace for
+        <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4 pt-20 md:pt-0">
+          <h1 className="text-5xl md:text-7xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight">
+            <span className="block">The Marketplace for</span>
             <span className="text-teal-400 block">Endless Outfits</span>
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
@@ -233,7 +260,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
             <Card className="text-center p-8 bg-gradient-to-br from-green-50 to-teal-50 border-green-200">
               <Leaf className="h-12 w-12 text-green-500 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-green-700 mb-2">
@@ -246,7 +273,7 @@ export default function LandingPage() {
             </Card>
 
             <Card className="text-center p-8 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
-              <TrendingUp className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+              <Droplet className="h-12 w-12 text-blue-500 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-blue-700 mb-2">
                 Water Conservation
               </h3>
@@ -271,38 +298,34 @@ export default function LandingPage() {
           </div>
 
           {/* Impact Visualization */}
-          <div className="bg-card rounded-xl p-8 shadow-lg">
+          <div className="bg-card rounded-xl p-6 md:p-8 shadow-lg">
             <h3 className="text-2xl font-bold mb-8 text-center">
               Monthly Impact Growth
             </h3>
-            <div className="grid grid-cols-12 gap-2 h-64 items-end">
-              {[40, 55, 60, 75, 85, 90, 95, 88, 92, 100, 105, 110].map(
-                (height, index) => (
-                  <div
-                    key={index}
-                    className="bg-gradient-to-t from-teal-500 to-teal-400 rounded-t-md relative group"
-                    style={{ height: `${height}%` }}
-                  >
-                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                      {height}%
-                    </div>
+            <div className="grid grid-cols-6 gap-1 sm:grid-cols-12 sm:gap-2 h-40 sm:h-56 md:h-64 items-end">
+              {monthlyValues.map((height, index) => (
+                <div
+                  key={index}
+                  className={`bg-gradient-to-t from-teal-500 to-teal-400 rounded-t-sm md:rounded-t-md relative group ${
+                    !prevSixSet.has(index) ? "hidden sm:block" : ""
+                  }`}
+                  style={{ height: `${height}%` }}
+                >
+                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    {height}%
                   </div>
-                ),
-              )}
+                </div>
+              ))}
             </div>
             <div className="flex justify-between mt-4 text-sm text-muted-foreground">
-              <span>Jan</span>
-              <span>Feb</span>
-              <span>Mar</span>
-              <span>Apr</span>
-              <span>May</span>
-              <span>Jun</span>
-              <span>Jul</span>
-              <span>Aug</span>
-              <span>Sep</span>
-              <span>Oct</span>
-              <span>Nov</span>
-              <span>Dec</span>
+              {monthLabels.map((label, i) => (
+                <span
+                  key={label}
+                  className={`${!prevSixSet.has(i) ? "hidden sm:block" : ""}`}
+                >
+                  {label}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -398,19 +421,19 @@ export default function LandingPage() {
                 href="/privacy"
                 className="hover:text-foreground transition-colors"
               >
-                Privacy (WIP)
+                Privacy
               </Link>
               <Link
                 href="/terms"
                 className="hover:text-foreground transition-colors"
               >
-                Terms (WIP)
+                Terms
               </Link>
               <Link
                 href="/contact"
                 className="hover:text-foreground transition-colors"
               >
-                Contact (WIP)
+                Contact
               </Link>
             </div>
           </div>
