@@ -80,7 +80,7 @@ test.describe('Landing page tests', () => {
     expect(isContained(ctaBox)).toBeTruthy();
 
     const navBottom = navBox.y + navBox.height;
-    // allow small overlap tolerance to account for DPR/font/engine differences in CI
+    // allow small overlap tolerance to account for font/engine differences in CI
       const allowedOverlap = Math.min(navBox.height, Math.max(12, Math.round(navBox.height * 0.6)));
     expect(h1Box.y).toBeGreaterThanOrEqual(navBottom - allowedOverlap);
     expect(intersects(h1Box, ctaBox)).toBeFalsy();
