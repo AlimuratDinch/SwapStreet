@@ -145,9 +145,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ListingImage>().ToTable("listing_images");
         modelBuilder.Entity<ListingImage>()
             .HasOne(li => li.Listing)
-            .WithMany()
-            .HasForeignKey(li => li.ListingId);
-
+            .WithMany(l => l.Images)
+            .HasForeignKey(li => li.ListingId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Listing>()
         .Property(l => l.UpdatedAt)

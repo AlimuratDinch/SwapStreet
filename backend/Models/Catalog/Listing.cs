@@ -25,11 +25,13 @@ public class Listing
     public Profile? Profile { get; set; }
 
     // Foreign Key to Tag
-    [Required]
-    public Guid TagId { get; set; }
+    public Guid? TagId { get; set; }
 
     [ForeignKey("TagId")]
     public Tag? Tag { get; set; }
+
+    // Navigation property for images
+    public ICollection<ListingImage> Images { get; set; } = new List<ListingImage>();
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
