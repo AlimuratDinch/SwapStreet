@@ -24,7 +24,7 @@ namespace backend.Services
             if (profile == null)
                 return null;
 
-            return MapToResponseDto(profile);
+            return profile.ToResponseDto();
         }
 
         public async Task<ProfileResponseDto?> GetProfileByUserIdAsync(Guid userId)
@@ -134,27 +134,5 @@ namespace backend.Services
             return await _context.Profiles.AnyAsync(p => p.Id == userId);
         }
 
-        private ProfileResponseDto MapToResponseDto(Profile profile)
-        {
-            return new ProfileResponseDto
-            {
-                Id = profile.Id,
-                Status = profile.Status.ToString(),
-                VerifiedSeller = profile.VerifiedSeller,
-                FirstName = profile.FirstName,
-                LastName = profile.LastName,
-                Rating = profile.Rating,
-                Bio = profile.Bio,
-                LocationId = profile.LocationId,
-                CityName = profile.City?.Name,
-                ProvinceName = profile.City?.Province?.Name,
-                ProvinceCode = profile.City?.Province?.Code,
-                FSA = profile.FSA,
-                ProfileImagePath = profile.ProfileImagePath,
-                BannerImagePath = profile.BannerImagePath,
-                CreatedAt = profile.CreatedAt,
-                UpdatedAt = profile.UpdatedAt
-            };
-        }
     }
 }
