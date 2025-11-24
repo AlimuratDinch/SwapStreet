@@ -81,7 +81,7 @@ describe("SellerOnboardingPage", () => {
       if (key === "accessToken") return "mock-token";
       return null;
     });
-    
+
     // Reset fetch mock to default behavior
     (global.fetch as jest.Mock).mockImplementation((url) => {
       if (url.includes("/api/location/provinces")) {
