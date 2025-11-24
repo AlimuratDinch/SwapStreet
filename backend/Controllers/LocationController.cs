@@ -25,15 +25,17 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// Get all cities, optionally filtered by province
+        /// Get cities filtered by province (required for performance and security)
         /// </summary>
         [HttpGet("cities")]
         public async Task<IActionResult> GetCities([FromQuery] int? provinceId)
         {
-            var cities = provinceId.HasValue
-                ? await _locationService.GetCitiesByProvinceAsync(provinceId.Value)
-                : await _locationService.GetAllCitiesAsync();
+            if (!provinceId.HasValue)
+            {
+                return BadRequest(new { Error = "provinceId query parameter is required" });
+            }
 
+            var cities = await _locationService.GetCitiesByProvinceAsync(provinceId.Value);
             return Ok(cities);
         }
     }

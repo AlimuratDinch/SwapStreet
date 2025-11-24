@@ -27,19 +27,6 @@ namespace backend.Services
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<CityDto>> GetAllCitiesAsync()
-        {
-            return await _context.Cities
-                .OrderBy(c => c.Name)
-                .Select(c => new CityDto
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    ProvinceId = c.ProvinceId
-                })
-                .ToListAsync();
-        }
-
         public async Task<IEnumerable<CityDto>> GetCitiesByProvinceAsync(int provinceId)
         {
             return await _context.Cities

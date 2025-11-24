@@ -96,9 +96,15 @@ describe("SellerOnboardingPage", () => {
         });
       }
       if (url.includes("/api/location/cities")) {
+        // Filter cities based on provinceId query parameter
+        const urlObj = new URL(url, "http://localhost");
+        const provinceId = urlObj.searchParams.get("provinceId");
+        const filteredCities = provinceId
+          ? mockCities.filter((c) => c.provinceId === parseInt(provinceId))
+          : mockCities;
         return Promise.resolve({
           ok: true,
-          json: async () => mockCities,
+          json: async () => filteredCities,
         });
       }
       return Promise.resolve({
@@ -133,19 +139,33 @@ describe("SellerOnboardingPage", () => {
     expect(err).toBeInTheDocument();
   });
 
-  it("loads provinces and cities on mount", async () => {
+  it("loads provinces on mount and cities when province is selected", async () => {
     render(<SellerOnboardingPage />);
 
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
 
+    // Provinces should be fetched on mount
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/location/provinces"),
     );
-    expect(global.fetch).toHaveBeenCalledWith(
+
+    // Cities should NOT be fetched on mount
+    expect(global.fetch).not.toHaveBeenCalledWith(
       expect.stringContaining("/api/location/cities"),
     );
+
+    // Select a province
+    const provinceSelect = screen.getByLabelText(/province/i);
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    // Now cities should be fetched
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/location/cities?provinceId=1"),
+      );
+    });
   });
 
   it("shows error when postal code is invalid format", async () => {
@@ -167,6 +187,8 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1); // Has cities loaded
     });
 
     fireEvent.change(citySelect, { target: { value: "1" } });
@@ -260,6 +282,8 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1); // Has cities loaded
     });
 
     fireEvent.change(citySelect, { target: { value: "1" } });
@@ -305,6 +329,8 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1); // Has cities loaded
     });
 
     fireEvent.change(citySelect, { target: { value: "1" } });
@@ -427,6 +453,8 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1); // Has cities loaded
     });
 
     fireEvent.change(citySelect, { target: { value: "1" } });
@@ -579,6 +607,8 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1); // Has cities loaded
     });
 
     fireEvent.change(citySelect, { target: { value: "1" } });
@@ -622,6 +652,8 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1); // Has cities loaded
     });
 
     fireEvent.change(citySelect, { target: { value: "1" } });
@@ -666,6 +698,8 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1); // Has cities loaded
     });
 
     fireEvent.change(citySelect, { target: { value: "1" } });
@@ -699,6 +733,8 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1); // Has cities loaded
     });
 
     fireEvent.change(citySelect, { target: { value: "1" } });
@@ -731,13 +767,18 @@ describe("SellerOnboardingPage", () => {
 
     // Select Toronto
     fireEvent.change(citySelect, { target: { value: "1" } });
-    expect(citySelect).toHaveValue("1");
 
-    // Change to Quebec (Toronto is not in Quebec)
+    // Change to Quebec (Toronto is not in Quebec) - this will fetch new cities
     fireEvent.change(provinceSelect, { target: { value: "2" } });
 
+    // City selection should be reset and new cities loaded
     await waitFor(() => {
-      expect(citySelect).toHaveValue("");
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/location/cities?provinceId=2"),
+      );
     });
+    
+    // City select should be reset to empty
+    expect(citySelect).toHaveValue("");
   });
 });

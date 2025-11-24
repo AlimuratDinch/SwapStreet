@@ -35,48 +35,55 @@ export default function SellerOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
-  // Fetch provinces and cities on mount
+  // Fetch provinces on mount
   useEffect(() => {
-    const fetchLocationData = async () => {
+    const fetchProvinces = async () => {
       try {
-        const [provincesRes, citiesRes] = await Promise.all([
-          fetch(`${API_URL}/api/location/provinces`),
-          fetch(`${API_URL}/api/location/cities`),
-        ]);
+        const provincesRes = await fetch(`${API_URL}/api/location/provinces`);
 
-        if (provincesRes.ok && citiesRes.ok) {
+        if (provincesRes.ok) {
           const provincesData = await provincesRes.json();
-          const citiesData = await citiesRes.json();
           setProvinces(provincesData);
-          setCities(citiesData);
         }
       } catch (err) {
-        console.error("Failed to fetch location data:", err);
+        console.error("Failed to fetch provinces:", err);
         setError("Failed to load location data. Please refresh the page.");
       } finally {
         setLoadingData(false);
       }
     };
 
-    fetchLocationData();
+    fetchProvinces();
   }, []);
 
-  // Filter cities when province changes
+  // Fetch cities when province changes
   useEffect(() => {
     if (selectedProvinceId) {
-      const filtered = cities.filter(
-        (city) => city.provinceId === selectedProvinceId,
-      );
-      setFilteredCities(filtered);
-      // Reset city selection if current city is not in the filtered list
-      if (selectedCityId && !filtered.find((c) => c.id === selectedCityId)) {
-        setSelectedCityId(null);
-      }
+      const fetchCities = async () => {
+        try {
+          const citiesRes = await fetch(
+            `${API_URL}/api/location/cities?provinceId=${selectedProvinceId}`,
+          );
+
+          if (citiesRes.ok) {
+            const citiesData = await citiesRes.json();
+            setCities(citiesData);
+            setFilteredCities(citiesData);
+          }
+        } catch (err) {
+          console.error("Failed to fetch cities:", err);
+          setError("Failed to load cities. Please try again.");
+        }
+      };
+
+      fetchCities();
+      setSelectedCityId(null); // Reset city selection when province changes
     } else {
+      setCities([]);
       setFilteredCities([]);
       setSelectedCityId(null);
     }
-  }, [selectedProvinceId, cities, selectedCityId]);
+  }, [selectedProvinceId]);
 
   // File input change handlers (validate image and create preview URL)
   const handleAvatarChange = useCallback(
