@@ -781,4 +781,39 @@ describe("SellerOnboardingPage", () => {
     // City select should be reset to empty
     expect(citySelect).toHaveValue("");
   });
+
+  it("shows error when cities fail to load after province selection", async () => {
+    // Mock fetch to fail for cities endpoint
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      if (url.includes("/api/location/provinces")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockProvinces,
+        });
+      }
+      if (url.includes("/api/location/cities")) {
+        return Promise.reject(new Error("Network error"));
+      }
+      return Promise.resolve({
+        ok: false,
+        json: async () => ({ error: "Not found" }),
+      });
+    });
+
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const provinceSelect = screen.getByLabelText(/province/i);
+
+    // Select a province - this should trigger cities fetch which will fail
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    // Wait for error message
+    await waitFor(() => {
+      expect(screen.getByText(/failed to load cities/i)).toBeInTheDocument();
+    });
+  });
 });
