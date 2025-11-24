@@ -13,7 +13,7 @@ namespace backend.DTOs.Profile
                 LastName = profile.LastName,
                 Rating = profile.Rating,
                 Bio = profile.Bio,
-                LocationId = profile.LocationId,
+                CityId = profile.CityId,
                 CityName = profile.City?.Name,
                 ProvinceName = profile.City?.Province?.Name,
                 ProvinceCode = profile.City?.Province?.Code,

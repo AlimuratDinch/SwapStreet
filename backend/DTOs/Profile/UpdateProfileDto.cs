@@ -13,7 +13,7 @@ namespace backend.DTOs.Profile
         [StringLength(500, ErrorMessage = "Bio cannot exceed 500 characters")]
         public string? Bio { get; set; }
 
-        public int? LocationId { get; set; }
+        public int? CityId { get; set; }
 
         [StringLength(3, MinimumLength = 3, ErrorMessage = "FSA must be exactly 3 characters")]
         [RegularExpression(@"^[A-Z]\d[A-Z]$", ErrorMessage = "FSA must be in format: Letter-Digit-Letter (e.g., M5V)")]

@@ -42,10 +42,10 @@ namespace backend.Services
             }
 
             // Validate that the city exists
-            var cityExists = await _context.Cities.AnyAsync(c => c.Id == dto.LocationId);
+            var cityExists = await _context.Cities.AnyAsync(c => c.Id == dto.CityId);
             if (!cityExists)
             {
-                throw new ArgumentException("Invalid LocationId: City does not exist");
+                throw new ArgumentException("Invalid CityId: City does not exist");
             }
 
             var profile = new Profile
@@ -54,7 +54,7 @@ namespace backend.Services
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,
                 Bio = dto.Bio,
-                LocationId = dto.LocationId,
+                CityId = dto.CityId,
                 FSA = dto.FSA.ToUpper(),
                 ProfileImagePath = dto.ProfileImagePath,
                 BannerImagePath = dto.BannerImagePath,
@@ -89,14 +89,14 @@ namespace backend.Services
             if (dto.Bio != null)
                 profile.Bio = dto.Bio;
 
-            if (dto.LocationId.HasValue)
+            if (dto.CityId.HasValue)
             {
-                var cityExists = await _context.Cities.AnyAsync(c => c.Id == dto.LocationId.Value);
+                var cityExists = await _context.Cities.AnyAsync(c => c.Id == dto.CityId.Value);
                 if (!cityExists)
                 {
-                    throw new ArgumentException("Invalid LocationId: City does not exist");
+                    throw new ArgumentException("Invalid CityId: City does not exist");
                 }
-                profile.LocationId = dto.LocationId.Value;
+                profile.CityId = dto.CityId.Value;
             }
 
             if (!string.IsNullOrWhiteSpace(dto.FSA))

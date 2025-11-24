@@ -26,9 +26,9 @@ public class Profile
     public string? Bio { get; set; }
 
     [Required]
-    public int LocationId { get; set; }
+    public int CityId { get; set; }
 
-    [ForeignKey("LocationId")]
+    [ForeignKey("CityId")]
     public City? City { get; set; }
 
     [Required]

@@ -15,8 +15,8 @@ namespace backend.DTOs.Profile
         [StringLength(500, ErrorMessage = "Bio cannot exceed 500 characters")]
         public string? Bio { get; set; }
 
-        [Required(ErrorMessage = "Location (City ID) is required")]
-        public int LocationId { get; set; }
+        [Required(ErrorMessage = "City ID is required")]
+        public int CityId { get; set; }
 
         [Required(ErrorMessage = "FSA (Forward Sortation Area) is required")]
         [StringLength(3, MinimumLength = 3, ErrorMessage = "FSA must be exactly 3 characters")]

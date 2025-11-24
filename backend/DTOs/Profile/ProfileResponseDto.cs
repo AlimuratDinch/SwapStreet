@@ -9,7 +9,7 @@ namespace backend.DTOs.Profile
         public string LastName { get; set; } = string.Empty;
         public float Rating { get; set; }
         public string? Bio { get; set; }
-        public int LocationId { get; set; }
+        public int CityId { get; set; }
         public string? CityName { get; set; }
         public string? ProvinceName { get; set; }
         public string? ProvinceCode { get; set; }
