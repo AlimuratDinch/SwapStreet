@@ -81,6 +81,26 @@ describe("SellerOnboardingPage", () => {
       if (key === "accessToken") return "mock-token";
       return null;
     });
+    
+    // Reset fetch mock to default behavior
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      if (url.includes("/api/location/provinces")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockProvinces,
+        });
+      }
+      if (url.includes("/api/location/cities")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockCities,
+        });
+      }
+      return Promise.resolve({
+        ok: false,
+        json: async () => ({ error: "Not found" }),
+      });
+    });
   });
 
   it("shows error if city is missing", async () => {
@@ -356,6 +376,236 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
+    });
+  });
+
+  it("shows error when location data fails to load", async () => {
+    // Mock fetch to fail
+    (global.fetch as jest.Mock).mockImplementationOnce(() =>
+      Promise.reject(new Error("Network error")),
+    );
+
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText(/failed to load location data/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows error when location API returns non-ok response", async () => {
+    // Mock fetch to return non-ok response
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      if (url.includes("/api/location/provinces")) {
+        return Promise.resolve({
+          ok: false,
+          json: async () => ({ error: "Server error" }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => mockCities,
+      });
+    });
+
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    // Provinces should be empty
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const options = provinceSelect.querySelectorAll("option");
+    expect(options.length).toBe(1); // Only the disabled placeholder
+  });
+
+  it("clears avatar preview when file input is cleared", async () => {
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
+    const imageFile = new File(["test"], "avatar.png", { type: "image/png" });
+
+    // Add file
+    fireEvent.change(avatarInput!, { target: { files: [imageFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByAltText(/avatar preview/i)).toBeInTheDocument();
+    });
+
+    // Clear file
+    fireEvent.change(avatarInput!, { target: { files: [] } });
+
+    await waitFor(() => {
+      expect(screen.queryByAltText(/avatar preview/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it("clears banner preview when file input is cleared", async () => {
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
+    const imageFile = new File(["test"], "banner.png", { type: "image/png" });
+
+    // Add file
+    fireEvent.change(bannerInput!, { target: { files: [imageFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByAltText(/banner preview/i)).toBeInTheDocument();
+    });
+
+    // Clear file
+    fireEvent.change(bannerInput!, { target: { files: [] } });
+
+    await waitFor(() => {
+      expect(screen.queryByAltText(/banner preview/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it("handles image upload failure", async () => {
+    const { uploadImage } = require("@/lib/api/profile");
+    uploadImage.mockRejectedValueOnce(new Error("Upload failed"));
+
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
+
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+    });
+
+    fireEvent.change(citySelect, { target: { value: "1" } });
+    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
+
+    // Add avatar file
+    const imageFile = new File(["test"], "avatar.png", { type: "image/png" });
+    fireEvent.change(avatarInput!, { target: { files: [imageFile] } });
+
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/upload failed/i)).toBeInTheDocument();
+    });
+  });
+
+  it("handles profile creation failure", async () => {
+    const { createProfile } = require("@/lib/api/profile");
+    createProfile.mockRejectedValueOnce(new Error("Profile already exists"));
+
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+    });
+
+    fireEvent.change(citySelect, { target: { value: "1" } });
+    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/profile already exists/i)).toBeInTheDocument();
+    });
+  });
+
+  it("redirects to sign-in if not authenticated", async () => {
+    mockSessionStorage.getItem.mockReturnValue(null);
+
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+    });
+
+    fireEvent.change(citySelect, { target: { value: "1" } });
+    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/you must be logged in/i)).toBeInTheDocument();
+      expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
+    });
+  });
+
+  it("resets city selection when changing province to one without the selected city", async () => {
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+
+    // Select Ontario
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+    });
+
+    // Select Toronto
+    fireEvent.change(citySelect, { target: { value: "1" } });
+    expect(citySelect).toHaveValue("1");
+
+    // Change to Quebec (Toronto is not in Quebec)
+    fireEvent.change(provinceSelect, { target: { value: "2" } });
+
+    await waitFor(() => {
+      expect(citySelect).toHaveValue("");
     });
   });
 });
