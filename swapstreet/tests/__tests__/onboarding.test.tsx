@@ -82,6 +82,11 @@ describe("SellerOnboardingPage", () => {
       return null;
     });
 
+    // Reset API mocks
+    const { createProfile, uploadImage } = require("@/lib/api/profile");
+    createProfile.mockResolvedValue({ id: "test-id" });
+    uploadImage.mockResolvedValue("https://example.com/image.jpg");
+
     // Reset fetch mock to default behavior
     (global.fetch as jest.Mock).mockImplementation((url) => {
       if (url.includes("/api/location/provinces")) {
@@ -213,6 +218,26 @@ describe("SellerOnboardingPage", () => {
     expect(err).toBeInTheDocument();
   });
 
+  it("shows error if last name is missing", async () => {
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+
+    const submitBtn = screen.getByRole("button", {
+      name: /save and continue/i,
+    });
+    const form = submitBtn.closest("form");
+    fireEvent.submit(form!);
+
+    const err = await screen.findByText(/please enter your last name/i);
+    expect(err).toBeInTheDocument();
+  });
+
   it("submits the form with valid data", async () => {
     const { createProfile } = require("@/lib/api/profile");
     render(<SellerOnboardingPage />);
@@ -251,6 +276,64 @@ describe("SellerOnboardingPage", () => {
         fsa: "M5V",
         profileImagePath: undefined,
         bannerImagePath: undefined,
+      });
+      expect(mockPush).toHaveBeenCalledWith("/seller/me");
+    });
+  });
+
+  it("submits the form with both avatar and banner images", async () => {
+    const { createProfile, uploadImage } = require("@/lib/api/profile");
+    uploadImage.mockResolvedValue("https://example.com/uploaded-image.jpg");
+
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
+    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
+
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+    });
+
+    fireEvent.change(citySelect, { target: { value: "1" } });
+    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
+
+    // Upload both images
+    const avatarFile = new File(["avatar"], "avatar.png", {
+      type: "image/png",
+    });
+    const bannerFile = new File(["banner"], "banner.png", {
+      type: "image/png",
+    });
+    fireEvent.change(avatarInput!, { target: { files: [avatarFile] } });
+    fireEvent.change(bannerInput!, { target: { files: [bannerFile] } });
+
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+
+    await waitFor(() => {
+      expect(uploadImage).toHaveBeenCalledTimes(2);
+      expect(uploadImage).toHaveBeenCalledWith(avatarFile, "Profile");
+      expect(uploadImage).toHaveBeenCalledWith(bannerFile, "Banner");
+      expect(createProfile).toHaveBeenCalledWith("mock-token", {
+        firstName: "John",
+        lastName: "Doe",
+        bio: undefined,
+        locationId: 1,
+        fsa: "M5V",
+        profileImagePath: "https://example.com/uploaded-image.jpg",
+        bannerImagePath: "https://example.com/uploaded-image.jpg",
       });
       expect(mockPush).toHaveBeenCalledWith("/seller/me");
     });
@@ -509,6 +592,55 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/upload failed/i)).toBeInTheDocument();
+    });
+  });
+
+  it("handles banner upload failure", async () => {
+    const { uploadImage } = require("@/lib/api/profile");
+    // First call (avatar) succeeds, second call (banner) fails
+    uploadImage
+      .mockResolvedValueOnce("https://example.com/avatar.jpg")
+      .mockRejectedValueOnce(new Error("Banner upload failed"));
+
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
+    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
+
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+    });
+
+    fireEvent.change(citySelect, { target: { value: "1" } });
+    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
+
+    // Add both images
+    const avatarFile = new File(["avatar"], "avatar.png", {
+      type: "image/png",
+    });
+    const bannerFile = new File(["banner"], "banner.png", {
+      type: "image/png",
+    });
+    fireEvent.change(avatarInput!, { target: { files: [avatarFile] } });
+    fireEvent.change(bannerInput!, { target: { files: [bannerFile] } });
+
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/banner upload failed/i)).toBeInTheDocument();
     });
   });
 
