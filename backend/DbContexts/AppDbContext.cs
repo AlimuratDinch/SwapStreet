@@ -36,7 +36,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Province>().ToTable("provinces");
         modelBuilder.Entity<City>().ToTable("cities");
-        
+
         // Relationship: City must belong to one Province
         modelBuilder.Entity<City>()
             .HasOne(c => c.Province)
@@ -56,7 +56,7 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(p => p.LocationId)
             .IsRequired();
-        
+
         // Define specific type for FSA
         modelBuilder.Entity<Profile>()
             .Property(p => p.FSA)
@@ -91,7 +91,7 @@ public class AppDbContext : DbContext
         // =======================================================
 
         modelBuilder.Entity<Tag>().ToTable("tags");
-        
+
         // Enum Conversions: Store all Tag enums as integers
         modelBuilder.Entity<Tag>()
             .Property(t => t.Color)
@@ -108,7 +108,7 @@ public class AppDbContext : DbContext
         // Bit Vector Conversion: MaterialEnum is stored as int
         modelBuilder.Entity<Tag>()
             .Property(t => t.Material)
-            .HasConversion<int>(); 
+            .HasConversion<int>();
 
         modelBuilder.Entity<Tag>()
             .Property(l => l.UpdatedAt)
@@ -160,14 +160,14 @@ public class AppDbContext : DbContext
             .HasOne(gi => gi.Listing)
             .WithMany()
             .HasForeignKey(gi => gi.ListingId);
-            
+
         // WishList
         modelBuilder.Entity<WishList>().ToTable("wishlists");
         modelBuilder.Entity<WishList>()
             .HasOne(wl => wl.Profile)
             .WithMany()
             .HasForeignKey(wl => wl.ProfileId);
-        
+
         modelBuilder.Entity<WishList>()
             .HasOne(wl => wl.Listing)
             .WithMany()
