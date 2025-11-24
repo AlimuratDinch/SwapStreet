@@ -50,11 +50,11 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Profile>().ToTable("profiles");
 
-        // Relationship: Profile must belong to one City
+        // Relationship: Profile must belong to one City (LocationId)
         modelBuilder.Entity<Profile>()
             .HasOne(p => p.City)
             .WithMany()
-            .HasForeignKey(p => p.CityId)
+            .HasForeignKey(p => p.LocationId)
             .IsRequired();
         
         // Define specific type for FSA

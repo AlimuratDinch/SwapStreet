@@ -75,6 +75,7 @@ builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 //builder.Services.AddScoped<IWishlistService, WishlistService>();
 
 var jwtSecret = builder.Configuration["JWT_SECRET"]

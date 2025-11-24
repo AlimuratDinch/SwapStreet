@@ -7,9 +7,9 @@ public class Profile
     public Guid Id { get; set; }
 
     [Required]
-    public ProfileStatusEnum Status { get; set; }
+    public ProfileStatusEnum Status { get; set; } = ProfileStatusEnum.Offline;
 
-    public bool VerifiedSeller { get; set; }
+    public bool VerifiedSeller { get; set; } = false;
 
     [Required]
     [StringLength(100)] 
@@ -17,18 +17,18 @@ public class Profile
 
     [Required]
     [StringLength(100)] 
-    public string Lastname { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
 
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal Rating { get; set; }
+    [Column(TypeName = "real")]
+    public float Rating { get; set; } = 0.0f;
 
     [StringLength(500)] 
     public string? Bio { get; set; }
 
     [Required]
-    public int CityId { get; set; }
+    public int LocationId { get; set; }
 
-    [ForeignKey("CityId")]
+    [ForeignKey("LocationId")]
     public City? City { get; set; }
 
     [Required]
@@ -47,9 +47,6 @@ public class Profile
 
 public enum ProfileStatusEnum
 {
-    Active = 1,
-    Suspended = 2,
-    Deactivated = 3,
-    PendingVerification = 4,
-    Banned = 5
+    Online = 1,
+    Offline = 2
 }
