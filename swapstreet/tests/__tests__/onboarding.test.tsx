@@ -85,7 +85,7 @@ describe("SellerOnboardingPage", () => {
 
   it("shows error if city is missing", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
@@ -93,24 +93,24 @@ describe("SellerOnboardingPage", () => {
     const firstNameInput = screen.getByPlaceholderText(/your first name/i);
     const lastNameInput = screen.getByPlaceholderText(/your last name/i);
     const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-    
+
     fireEvent.change(firstNameInput, { target: { value: "John" } });
     fireEvent.change(lastNameInput, { target: { value: "Doe" } });
     fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
-    
+
     const submitBtn = screen.getByRole("button", {
       name: /save and continue/i,
     });
     const form = submitBtn.closest("form");
     fireEvent.submit(form!);
-    
+
     const err = await screen.findByText(/please select a city/i);
     expect(err).toBeInTheDocument();
   });
 
   it("loads provinces and cities on mount", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
@@ -125,7 +125,7 @@ describe("SellerOnboardingPage", () => {
 
   it("shows error when postal code is invalid format", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
@@ -139,11 +139,11 @@ describe("SellerOnboardingPage", () => {
     fireEvent.change(firstNameInput, { target: { value: "John" } });
     fireEvent.change(lastNameInput, { target: { value: "Doe" } });
     fireEvent.change(provinceSelect, { target: { value: "1" } });
-    
+
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
     });
-    
+
     fireEvent.change(citySelect, { target: { value: "1" } });
     fireEvent.change(postalInput, { target: { value: "INVALID" } });
 
@@ -159,11 +159,11 @@ describe("SellerOnboardingPage", () => {
 
   it("renders the onboarding heading and form fields", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
-    
+
     expect(screen.getByText(/set up your seller profile/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/your first name/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/your last name/i)).toBeInTheDocument();
@@ -178,17 +178,17 @@ describe("SellerOnboardingPage", () => {
 
   it("shows error if first name is missing", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
-    
+
     const submitBtn = screen.getByRole("button", {
       name: /save and continue/i,
     });
     const form = submitBtn.closest("form");
     fireEvent.submit(form!);
-    
+
     const err = await screen.findByText(/please enter your first name/i);
     expect(err).toBeInTheDocument();
   });
@@ -212,11 +212,11 @@ describe("SellerOnboardingPage", () => {
     fireEvent.change(lastNameInput, { target: { value: "Doe" } });
     fireEvent.change(bioInput, { target: { value: "This is my bio." } });
     fireEvent.change(provinceSelect, { target: { value: "1" } });
-    
+
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
     });
-    
+
     fireEvent.change(citySelect, { target: { value: "1" } });
     fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
 
@@ -238,15 +238,15 @@ describe("SellerOnboardingPage", () => {
 
   it("shows error if avatar file is not an image", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
-    
+
     const avatarInput = document.querySelectorAll('input[type="file"]')[0];
     const file = new File(["test"], "test.txt", { type: "text/plain" });
     fireEvent.change(avatarInput!, { target: { files: [file] } });
-    
+
     expect(
       screen.getByText(/avatar must be an image file/i),
     ).toBeInTheDocument();
@@ -254,11 +254,11 @@ describe("SellerOnboardingPage", () => {
 
   it("shows avatar preview when a valid image is selected", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
-    
+
     const avatarInput = document.querySelectorAll('input[type="file"]')[0];
     const imageFile = new File(["(⌐□_□)"], "avatar.png", { type: "image/png" });
 
@@ -273,15 +273,15 @@ describe("SellerOnboardingPage", () => {
 
   it("shows error if banner file is not an image", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
-    
+
     const bannerInput = document.querySelectorAll('input[type="file"]')[1];
     const file = new File(["bad"], "banner.txt", { type: "text/plain" });
     fireEvent.change(bannerInput!, { target: { files: [file] } });
-    
+
     expect(
       screen.getByText(/banner must be an image file/i),
     ).toBeInTheDocument();
@@ -289,11 +289,11 @@ describe("SellerOnboardingPage", () => {
 
   it("shows banner preview when a valid image is selected", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
-    
+
     const bannerInput = document.querySelectorAll('input[type="file"]')[1];
     const imageFile = new File(["123"], "banner.png", { type: "image/png" });
 
@@ -308,7 +308,7 @@ describe("SellerOnboardingPage", () => {
 
   it("shows error if postal code is missing", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
@@ -317,43 +317,43 @@ describe("SellerOnboardingPage", () => {
     const lastNameInput = screen.getByPlaceholderText(/your last name/i);
     const provinceSelect = screen.getByLabelText(/province/i);
     const citySelect = screen.getByLabelText(/city/i);
-    
+
     fireEvent.change(firstNameInput, { target: { value: "John" } });
     fireEvent.change(lastNameInput, { target: { value: "Doe" } });
     fireEvent.change(provinceSelect, { target: { value: "1" } });
-    
+
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
     });
-    
+
     fireEvent.change(citySelect, { target: { value: "1" } });
-    
+
     const submitBtn = screen.getByRole("button", {
       name: /save and continue/i,
     });
     const form = submitBtn.closest("form");
     fireEvent.submit(form!);
-    
+
     const err = await screen.findByText(/postal code is required/i);
     expect(err).toBeInTheDocument();
   });
 
   it("filters cities based on selected province", async () => {
     render(<SellerOnboardingPage />);
-    
+
     await waitFor(() => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
 
     const provinceSelect = screen.getByLabelText(/province/i);
     const citySelect = screen.getByLabelText(/city/i);
-    
+
     // Initially city should be disabled
     expect(citySelect).toBeDisabled();
-    
+
     // Select Ontario
     fireEvent.change(provinceSelect, { target: { value: "1" } });
-    
+
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
     });
