@@ -9,7 +9,7 @@ public class Brand
     [Required]
     [StringLength(100)]
     public string Name { get; set; } = string.Empty; // e.g., "Adidas", "Gucci", "H&M"
-    
+
     // Optional path to the brand's logo
     [StringLength(255)]
     public string? LogoImagePath { get; set; }
