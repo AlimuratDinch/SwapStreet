@@ -777,7 +777,7 @@ describe("SellerOnboardingPage", () => {
         expect.stringContaining("/api/location/cities?provinceId=2"),
       );
     });
-    
+
     // City select should be reset to empty
     expect(citySelect).toHaveValue("");
   });
