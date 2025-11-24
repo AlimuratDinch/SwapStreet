@@ -9,18 +9,19 @@ export default function SellerListingPage() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | null>(null);
   const [tagId, setTagId] = useState<string | null>(null);
-  const [images, setImages] = useState<Array<{
-    file: File;
-    preview: string;
-    displayOrder: number;
-    forTryon: boolean;
-  }>>([]);
+  const [images, setImages] = useState<
+    Array<{
+      file: File;
+      preview: string;
+      displayOrder: number;
+      forTryon: boolean;
+    }>
+  >([]);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tags, setTags] = useState<Array<{ id: string; name: string }>>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-
 
   // Check authentication and fetch tags
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function SellerListingPage() {
     // setAccessToken(token);
     // ============================================
 
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     setAccessToken(token);
 
     // Fetch tags from backend
@@ -78,10 +79,9 @@ export default function SellerListingPage() {
     setTagId(e.target.value || null);
   };
 
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    
+
     if (images.length + files.length > 5) {
       setError("You can upload a maximum of 5 images.");
       return;
@@ -110,18 +110,21 @@ export default function SellerListingPage() {
     setImages(newImages);
   };
 
-  const moveImage = (index: number, direction: 'up' | 'down') => {
+  const moveImage = (index: number, direction: "up" | "down") => {
     if (
-      (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === images.length - 1)
+      (direction === "up" && index === 0) ||
+      (direction === "down" && index === images.length - 1)
     ) {
       return;
     }
 
     const newImages = [...images];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
-    
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    [newImages[index], newImages[targetIndex]] = [
+      newImages[targetIndex],
+      newImages[index],
+    ];
+
     // Update display orders
     newImages.forEach((img, i) => {
       img.displayOrder = i;
@@ -173,7 +176,7 @@ export default function SellerListingPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken && { "Authorization": `Bearer ${accessToken}` }),
+          ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         },
         body: JSON.stringify({
           name: name.trim(),
@@ -186,7 +189,9 @@ export default function SellerListingPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed to create listing: ${response.statusText}`);
+        throw new Error(
+          errorData.error || `Failed to create listing: ${response.statusText}`,
+        );
       }
 
       const createdItem = await response.json();
@@ -197,9 +202,9 @@ export default function SellerListingPage() {
     } catch (err) {
       console.error("Failed to save listing:", err);
       setError(
-        err instanceof Error 
-          ? err.message 
-          : "Failed to save listing. Please try again."
+        err instanceof Error
+          ? err.message
+          : "Failed to save listing. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -336,7 +341,10 @@ export default function SellerListingPage() {
           {images.length > 0 && (
             <div className="mt-4 space-y-3">
               {images.map((image, index) => (
-                <div key={index} className="flex items-center gap-3 rounded-lg border border-gray-200 p-3">
+                <div
+                  key={index}
+                  className="flex items-center gap-3 rounded-lg border border-gray-200 p-3"
+                >
                   <img
                     src={image.preview}
                     alt={`Preview ${index + 1}`}
@@ -345,7 +353,11 @@ export default function SellerListingPage() {
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-700">
                       Image {index + 1}
-                      {index === 0 && <span className="ml-2 text-xs text-blue-600">(Primary)</span>}
+                      {index === 0 && (
+                        <span className="ml-2 text-xs text-blue-600">
+                          (Primary)
+                        </span>
+                      )}
                     </p>
                     <div className="mt-1 flex items-center gap-2">
                       <label className="flex items-center gap-1 text-xs text-gray-600">
@@ -362,7 +374,7 @@ export default function SellerListingPage() {
                   <div className="flex flex-col gap-1">
                     <button
                       type="button"
-                      onClick={() => moveImage(index, 'up')}
+                      onClick={() => moveImage(index, "up")}
                       disabled={index === 0}
                       className="rounded bg-gray-100 p-1 text-xs hover:bg-gray-200 disabled:opacity-30"
                     >
@@ -370,7 +382,7 @@ export default function SellerListingPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => moveImage(index, 'down')}
+                      onClick={() => moveImage(index, "down")}
                       disabled={index === images.length - 1}
                       className="rounded bg-gray-100 p-1 text-xs hover:bg-gray-200 disabled:opacity-30"
                     >
