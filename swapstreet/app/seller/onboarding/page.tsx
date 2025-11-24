@@ -36,6 +36,14 @@ export default function SellerOnboardingPage() {
   const [bannerPreview, setBannerPreview] = useState<string>("");
   const [error, setError] = useState("");
 
+  // Check authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      router.push("/auth/signin");
+    }
+  }, [router]);
+
   // File input change handlers (validate image and create preview URL)
   const handleAvatarChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

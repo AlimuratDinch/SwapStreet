@@ -25,20 +25,14 @@ export default function SellerListingPage() {
 
   // Check authentication and fetch tags
   useEffect(() => {
-    // ============================================
-    // TEMPORARY: Authentication check disabled for testing
-    // TODO: Re-enable before production deployment
-    // ============================================
-    // const token = localStorage.getItem('accessToken');
-    // if (!token) {
-    //   setError("You must be logged in to create a listing.");
-    //   setTimeout(() => router.push('/login'), 2000);
-    //   return;
-    // }
-    // setAccessToken(token);
-    // ============================================
-
     const token = localStorage.getItem("accessToken");
+    
+    if (!token) {
+      setError("You must be logged in to create a listing.");
+      setTimeout(() => router.push("/auth/signin"), 2000);
+      return;
+    }
+    
     setAccessToken(token);
 
     // Fetch tags from backend

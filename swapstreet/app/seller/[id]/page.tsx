@@ -1,5 +1,6 @@
 "use client";
 import { use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import DefaultAvatar from "../../images/default-avatar-icon.jpg";
@@ -58,6 +59,7 @@ export default function SellerProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   // Simulate auth-owned profile check. Set true to show owner perspective
   const isOwner = id === "me";
 
@@ -74,6 +76,16 @@ export default function SellerProfilePage({
     memberSince: "",
     listings: [],
   });
+
+  // Check authentication if viewing own profile
+  useEffect(() => {
+    if (isOwner) {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        router.push("/auth/signin");
+      }
+    }
+  }, [isOwner, router]);
 
   // On first load, if owner, provides onboarding data from localStorage
   useEffect(() => {
