@@ -1,6 +1,6 @@
 // Profile API client functions
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export interface CreateProfileRequest {
   firstName: string;
@@ -20,7 +20,7 @@ export interface UpdateProfileRequest {
   fsa?: string;
   profileImagePath?: string;
   bannerImagePath?: string;
-  status?: 'Online' | 'Offline';
+  status?: "Online" | "Offline";
 }
 
 export interface ProfileResponse {
@@ -58,19 +58,23 @@ export interface Province {
 /**
  * Get the authenticated user's profile
  */
-export async function getMyProfile(accessToken: string): Promise<ProfileResponse> {
+export async function getMyProfile(
+  accessToken: string,
+): Promise<ProfileResponse> {
   const response = await fetch(`${API_URL}/api/profile/me`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
     },
-    credentials: 'include',
+    credentials: "include",
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ Error: 'Failed to fetch profile' }));
-    throw new Error(error.Error || 'Failed to fetch profile');
+    const error = await response
+      .json()
+      .catch(() => ({ Error: "Failed to fetch profile" }));
+    throw new Error(error.Error || "Failed to fetch profile");
   }
 
   return response.json();
@@ -81,15 +85,17 @@ export async function getMyProfile(accessToken: string): Promise<ProfileResponse
  */
 export async function getProfileById(userId: string): Promise<ProfileResponse> {
   const response = await fetch(`${API_URL}/api/profile/${userId}`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ Error: 'Profile not found' }));
-    throw new Error(error.Error || 'Profile not found');
+    const error = await response
+      .json()
+      .catch(() => ({ Error: "Profile not found" }));
+    throw new Error(error.Error || "Profile not found");
   }
 
   return response.json();
@@ -100,21 +106,23 @@ export async function getProfileById(userId: string): Promise<ProfileResponse> {
  */
 export async function createProfile(
   accessToken: string,
-  data: CreateProfileRequest
+  data: CreateProfileRequest,
 ): Promise<ProfileResponse> {
   const response = await fetch(`${API_URL}/api/profile`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
     },
-    credentials: 'include',
+    credentials: "include",
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ Error: 'Failed to create profile' }));
-    throw new Error(error.Error || 'Failed to create profile');
+    const error = await response
+      .json()
+      .catch(() => ({ Error: "Failed to create profile" }));
+    throw new Error(error.Error || "Failed to create profile");
   }
 
   return response.json();
@@ -125,21 +133,23 @@ export async function createProfile(
  */
 export async function updateProfile(
   accessToken: string,
-  data: UpdateProfileRequest
+  data: UpdateProfileRequest,
 ): Promise<ProfileResponse> {
   const response = await fetch(`${API_URL}/api/profile`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
     },
-    credentials: 'include',
+    credentials: "include",
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ Error: 'Failed to update profile' }));
-    throw new Error(error.Error || 'Failed to update profile');
+    const error = await response
+      .json()
+      .catch(() => ({ Error: "Failed to update profile" }));
+    throw new Error(error.Error || "Failed to update profile");
   }
 
   return response.json();
@@ -148,14 +158,16 @@ export async function updateProfile(
 /**
  * Check if the authenticated user has a profile
  */
-export async function checkProfileExists(accessToken: string): Promise<boolean> {
+export async function checkProfileExists(
+  accessToken: string,
+): Promise<boolean> {
   const response = await fetch(`${API_URL}/api/profile/exists`, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
     },
-    credentials: 'include',
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -171,20 +183,22 @@ export async function checkProfileExists(accessToken: string): Promise<boolean> 
  */
 export async function uploadImage(
   file: File,
-  type: 'Profile' | 'Banner' | 'Listing' | 'TryOn'
+  type: "Profile" | "Banner" | "Listing" | "TryOn",
 ): Promise<string> {
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('type', type);
+  formData.append("file", file);
+  formData.append("type", type);
 
   const response = await fetch(`${API_URL}/api/images/upload`, {
-    method: 'POST',
+    method: "POST",
     body: formData,
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to upload image' }));
-    throw new Error(error.error || 'Failed to upload image');
+    const error = await response
+      .json()
+      .catch(() => ({ error: "Failed to upload image" }));
+    throw new Error(error.error || "Failed to upload image");
   }
 
   const data = await response.json();

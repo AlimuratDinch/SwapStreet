@@ -4,30 +4,32 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
 const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
-  
+
   // Form fields
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [bio, setBio] = useState("");
-  const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(null);
+  const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(
+    null,
+  );
   const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
   const [postalCode, setPostalCode] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string>("");
-  
+
   // Data from backend
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
-  
+
   // UI state
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,9 +41,9 @@ export default function SellerOnboardingPage() {
       try {
         const [provincesRes, citiesRes] = await Promise.all([
           fetch(`${API_URL}/api/location/provinces`),
-          fetch(`${API_URL}/api/location/cities`)
+          fetch(`${API_URL}/api/location/cities`),
         ]);
-        
+
         if (provincesRes.ok && citiesRes.ok) {
           const provincesData = await provincesRes.json();
           const citiesData = await citiesRes.json();
@@ -49,23 +51,25 @@ export default function SellerOnboardingPage() {
           setCities(citiesData);
         }
       } catch (err) {
-        console.error('Failed to fetch location data:', err);
-        setError('Failed to load location data. Please refresh the page.');
+        console.error("Failed to fetch location data:", err);
+        setError("Failed to load location data. Please refresh the page.");
       } finally {
         setLoadingData(false);
       }
     };
-    
+
     fetchLocationData();
   }, []);
-  
+
   // Filter cities when province changes
   useEffect(() => {
     if (selectedProvinceId) {
-      const filtered = cities.filter(city => city.provinceId === selectedProvinceId);
+      const filtered = cities.filter(
+        (city) => city.provinceId === selectedProvinceId,
+      );
       setFilteredCities(filtered);
       // Reset city selection if current city is not in the filtered list
-      if (selectedCityId && !filtered.find(c => c.id === selectedCityId)) {
+      if (selectedCityId && !filtered.find((c) => c.id === selectedCityId)) {
         setSelectedCityId(null);
       }
     } else {
@@ -73,7 +77,7 @@ export default function SellerOnboardingPage() {
       setSelectedCityId(null);
     }
   }, [selectedProvinceId, cities, selectedCityId]);
-  
+
   // File input change handlers (validate image and create preview URL)
   const handleAvatarChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,25 +150,33 @@ export default function SellerOnboardingPage() {
         let fsa = "";
         if (postalCode) {
           if (!POSTAL_REGEX.test(postalCode.trim())) {
-            setError("Please enter a valid Canadian postal code (e.g., A1A 1A1).");
+            setError(
+              "Please enter a valid Canadian postal code (e.g., A1A 1A1).",
+            );
             return;
           }
           // Extract first 3 characters and remove spaces
-          fsa = postalCode.trim().replace(/\s|-/g, '').substring(0, 3).toUpperCase();
+          fsa = postalCode
+            .trim()
+            .replace(/\s|-/g, "")
+            .substring(0, 3)
+            .toUpperCase();
           if (!FSA_REGEX.test(fsa)) {
             setError("Invalid postal code format.");
             return;
           }
         } else {
-          setError("Postal code is required to determine your Forward Sortation Area (FSA).");
+          setError(
+            "Postal code is required to determine your Forward Sortation Area (FSA).",
+          );
           return;
         }
 
         // Get access token
-        const accessToken = sessionStorage.getItem('accessToken');
+        const accessToken = sessionStorage.getItem("accessToken");
         if (!accessToken) {
           setError("You must be logged in to create a profile.");
-          router.push('/auth/sign-in');
+          router.push("/auth/sign-in");
           return;
         }
 
@@ -173,11 +185,11 @@ export default function SellerOnboardingPage() {
         let bannerImagePath: string | undefined;
 
         if (avatarFile) {
-          profileImagePath = await uploadImage(avatarFile, 'Profile');
+          profileImagePath = await uploadImage(avatarFile, "Profile");
         }
 
         if (bannerFile) {
-          bannerImagePath = await uploadImage(bannerFile, 'Banner');
+          bannerImagePath = await uploadImage(bannerFile, "Banner");
         }
 
         // Create profile
@@ -300,7 +312,11 @@ export default function SellerOnboardingPage() {
             <select
               id="province"
               value={selectedProvinceId || ""}
-              onChange={(e) => setSelectedProvinceId(e.target.value ? parseInt(e.target.value) : null)}
+              onChange={(e) =>
+                setSelectedProvinceId(
+                  e.target.value ? parseInt(e.target.value) : null,
+                )
+              }
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
               required
               disabled={loading}
@@ -325,7 +341,11 @@ export default function SellerOnboardingPage() {
             <select
               id="city"
               value={selectedCityId || ""}
-              onChange={(e) => setSelectedCityId(e.target.value ? parseInt(e.target.value) : null)}
+              onChange={(e) =>
+                setSelectedCityId(
+                  e.target.value ? parseInt(e.target.value) : null,
+                )
+              }
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
               required
               disabled={loading || !selectedProvinceId}
@@ -435,7 +455,7 @@ export default function SellerOnboardingPage() {
             disabled={loading}
             className="rounded-lg bg-[var(--primary-color)] px-4 py-2 text-sm font-medium text-white shadow hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Creating profile...' : 'Save and continue'}
+            {loading ? "Creating profile..." : "Save and continue"}
           </button>
         </div>
       </form>
