@@ -8,7 +8,7 @@ public class City
     public int Id { get; set; }
 
     [Required]
-    [StringLength(100)]
+    [StringLength(50)]
     public string Name { get; set; } = string.Empty; // e.g., "Toronto"
 
     // Foreign Key to Province

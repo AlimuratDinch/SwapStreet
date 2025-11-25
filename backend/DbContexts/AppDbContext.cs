@@ -50,7 +50,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Profile>().ToTable("profiles");
 
-        // Relationship: Profile must belong to one City
+        // Relationship: Profile must belong to one City (CityId)
         modelBuilder.Entity<Profile>()
             .HasOne(p => p.City)
             .WithMany()
