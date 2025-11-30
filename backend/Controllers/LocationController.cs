@@ -1,42 +1,38 @@
 using Microsoft.AspNetCore.Mvc;
 using backend.Contracts;
+using backend.DTOs;
 
 namespace backend.Controllers
 {
-    [ApiController]
-    [Route("api/location")]
-    public class LocationController : ControllerBase
+[ApiController]
+[Route("api/location")]
+public class LocationsController : ControllerBase
+{
+    private readonly ILocationService _locationService;
+
+    public LocationsController(ILocationService locationService)
     {
-        private readonly ILocationService _locationService;
-
-        public LocationController(ILocationService locationService)
-        {
-            _locationService = locationService;
-        }
-
-        /// <summary>
-        /// Get all provinces
-        /// </summary>
-        [HttpGet("provinces")]
-        public async Task<IActionResult> GetProvinces()
-        {
-            var provinces = await _locationService.GetAllProvincesAsync();
-            return Ok(provinces);
-        }
-
-        /// <summary>
-        /// Get cities filtered by province (required for performance and security)
-        /// </summary>
-        [HttpGet("cities")]
-        public async Task<IActionResult> GetCities([FromQuery] int? provinceId)
-        {
-            if (!provinceId.HasValue)
-            {
-                return BadRequest(new { Error = "provinceId query parameter is required" });
-            }
-
-            var cities = await _locationService.GetCitiesByProvinceAsync(provinceId.Value);
-            return Ok(cities);
-        }
+        _locationService = locationService;
     }
+
+    [HttpGet("lookup/{fsa}")]
+    public async Task<IActionResult> GetLocationByPostal(string fsa)
+    {
+        var city = await _locationService.GetCityByFsaAsync(fsa);
+
+        if (city == null)
+        {
+            return NotFound("Postal code not supported or invalid.");
+        }
+
+        return Ok(new LocationResponseDto
+    {
+        City = city.Name,
+        Province = city.Province?.Name ?? string.Empty,
+        ProvinceCode = city.Province?.Code ?? string.Empty,
+        Lat = city.Latitude,
+        Lng = city.Longitude
+    });
+    }
+}
 }

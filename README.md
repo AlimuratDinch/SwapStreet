@@ -120,3 +120,7 @@ docker compose up --build
 
 ## Additional Documentation
 https://bookstack.nekzampehomelab.org/
+
+
+
+Location data retrieved from: https://simplemaps.com/data/canada-cities
