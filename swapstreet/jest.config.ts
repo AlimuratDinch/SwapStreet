@@ -18,6 +18,7 @@ const customJestConfig = {
     "!**/.next/**",
   ],
   coverageDirectory: "coverage",
+  testPathIgnorePatterns: ["<rootDir>/e2e/"],
 };
 
 module.exports = createJestConfig(customJestConfig);
