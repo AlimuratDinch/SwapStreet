@@ -53,32 +53,42 @@ describe("LoginPage", () => {
     } as Response);
 
     render(<LoginPage />);
+
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "test@example.com" },
     });
+
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "password123" },
     });
+
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/browse"));
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/browse");
+    });
+
     expect(window.sessionStorage.getItem("accessToken")).toBe(mockToken);
   });
 
   it("shows error when login fails", async () => {
     const errorMsg = "Login failed";
+
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
       text: async () => errorMsg,
     } as Response);
 
     render(<LoginPage />);
+
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "fail@example.com" },
     });
+
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "wrongpass" },
     });
+
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     const errorEl = await screen.findByText(errorMsg);
@@ -88,21 +98,25 @@ describe("LoginPage", () => {
   it("shows error when token is missing in response", async () => {
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({}), // no accessToken
+      json: async () => ({}),
     } as Response);
 
     render(<LoginPage />);
+
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "test@example.com" },
     });
+
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "password123" },
     });
+
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     const errorEl = await screen.findByText(
       /access token not returned from backend/i,
     );
+
     expect(errorEl).toBeInTheDocument();
   });
 });
