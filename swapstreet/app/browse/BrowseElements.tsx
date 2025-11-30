@@ -4,8 +4,11 @@ import { Search } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
+  const { isAuthenticated, username } = useAuth();
+  
   return (
     <header className="fixed top-0 left-0 right-0 bg-white shadow-sm px-6 py-6 flex items-center justify-between z-[100]">
       <a href="/" className="font-semibold text-2xl">
@@ -18,7 +21,7 @@ export function Header() {
             <button className="hover:opacity-50">Featured</button>
           </li>
           <li className="relative group px-3 py-2">
-            <button className="hover:opacity-50 cursor-default">
+            <button className="hover:opacity-50 cursor-pointer">
               Collections
             </button>
             <div
@@ -70,60 +73,70 @@ export function Header() {
       </nav>
       <nav>
         <ul className="flex items-center justify-center font-semibold space-x-2">
-          <li>
-            <a
-              href="..\auth\sign-in"
-              className="rounded-full px-3 py-2 font-semibold bg-white bg-opacity-10 flex items-center group"
-            >
-              <span className="mr-2">Log in</span>
-              <svg
-                className="stroke-current"
-                width="10"
-                height="10"
-                strokeWidth="2"
-                viewBox="0 0 10 10"
-                aria-hidden="true"
-              >
-                <g fillRule="evenodd">
-                  <path
-                    className="opacity-0 group-hover:opacity-100 transition ease-in-out duration-200"
-                    d="M0 5h7"
-                  ></path>
-                  <path
-                    className="opacity-100 group-hover:translate-x-1 transition ease-in-out duration-200"
-                    d="M1 1l4 4-4 4"
-                  ></path>
-                </g>
-              </svg>
-            </a>
-          </li>
-          <li>
-            <a
-              href="..\auth\sign-up"
-              className="rounded-full px-3 py-2 font-semibold bg-white bg-opacity-10 flex items-center group"
-            >
-              <span className="mr-2">Sign up</span>
-              <svg
-                className="stroke-current"
-                width="10"
-                height="10"
-                strokeWidth="2"
-                viewBox="0 0 10 10"
-                aria-hidden="true"
-              >
-                <g fillRule="evenodd">
-                  <path
-                    className="opacity-0 group-hover:opacity-100 transition ease-in-out duration-200"
-                    d="M0 5h7"
-                  ></path>
-                  <path
-                    className="opacity-100 group-hover:translate-x-1 transition ease-in-out duration-200"
-                    d="M1 1l4 4-4 4"
-                  ></path>
-                </g>
-              </svg>
-            </a>
-          </li>
+          {!isAuthenticated ? (
+            <>
+              <li>
+                <a
+                  href="..\auth\sign-in"
+                  className="rounded-full px-3 py-2 font-semibold bg-white bg-opacity-10 flex items-center group"
+                >
+                  <span className="mr-2">Log in</span>
+                  <svg
+                    className="stroke-current"
+                    width="10"
+                    height="10"
+                    strokeWidth="2"
+                    viewBox="0 0 10 10"
+                    aria-hidden="true"
+                  >
+                    <g fillRule="evenodd">
+                      <path
+                        className="opacity-0 group-hover:opacity-100 transition ease-in-out duration-200"
+                        d="M0 5h7"
+                      ></path>
+                      <path
+                        className="opacity-100 group-hover:translate-x-1 transition ease-in-out duration-200"
+                        d="M1 1l4 4-4 4"
+                      ></path>
+                    </g>
+                  </svg>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="..\auth\sign-up"
+                  className="rounded-full px-3 py-2 font-semibold bg-white bg-opacity-10 flex items-center group"
+                >
+                  <span className="mr-2">Sign up</span>
+                  <svg
+                    className="stroke-current"
+                    width="10"
+                    height="10"
+                    strokeWidth="2"
+                    viewBox="0 0 10 10"
+                    aria-hidden="true"
+                  >
+                    <g fillRule="evenodd">
+                      <path
+                        className="opacity-0 group-hover:opacity-100 transition ease-in-out duration-200"
+                        d="M0 5h7"
+                      ></path>
+                      <path
+                        className="opacity-100 group-hover:translate-x-1 transition ease-in-out duration-200"
+                        d="M1 1l4 4-4 4"
+                      ></path>
+                    </g>
+                  </svg>
+                </a>
+              </li>
+            </>
+          ) : (
+            <li>
+              <div className="rounded-full px-4 py-2 font-semibold bg-white bg-opacity-10 flex items-center">
+                <span>Hello, {username?.split(" ")[0] ?? "fine visitor"}!</span>
+              </div>
+            </li>
+          )}
         </ul>
       </nav>
     </header>

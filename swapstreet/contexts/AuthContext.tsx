@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 // Define the context type
 interface AuthContextProps {
   userId: string | null;
+  username: string | null;
+  email: string | null;
   accessToken: string | null;
   login: (token: string) => void;
   logout: () => void;
@@ -26,6 +28,8 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -33,20 +37,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const token = sessionStorage.getItem("accessToken");
     if (token) {
       setAccessToken(token);
-      setUserId(parseUserIdFromToken(token));
+      const userData = parseUserDataFromToken(token);
+      setUserId(userData.userId);
+      setUsername(userData.username);
+      setEmail(userData.email);
     }
   }, []);
 
   const login = (token: string) => {
     sessionStorage.setItem("accessToken", token);
     setAccessToken(token);
-    setUserId(parseUserIdFromToken(token));
+    const userData = parseUserDataFromToken(token);
+    setUserId(userData.userId);
+    setUsername(userData.username);
+    setEmail(userData.email);
   };
 
   const logout = () => {
     sessionStorage.removeItem("accessToken");
     setAccessToken(null);
     setUserId(null);
+    setUsername(null);
+    setEmail(null);
     router.push("/login");
   };
 
@@ -54,7 +66,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   return (
     <AuthContext.Provider
-      value={{ userId, accessToken, login, logout, isAuthenticated }}
+      value={{ userId, username, email, accessToken, login, logout, isAuthenticated }}
     >
       {children}
     </AuthContext.Provider>
@@ -68,11 +80,15 @@ export const useAuth = (): AuthContextProps => {
 };
 
 // Simple JWT parser (just for frontend state)
-function parseUserIdFromToken(token: string): string | null {
+function parseUserDataFromToken(token: string): { userId: string | null; username: string | null; email: string | null } {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.sub ?? null;
+    return {
+      userId: payload.sub ?? null,
+      username: payload.username ?? null,
+      email: payload.email ?? null,
+    };
   } catch {
-    return null;
+    return { userId: null, username: null, email: null };
   }
 }
