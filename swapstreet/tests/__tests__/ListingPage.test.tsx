@@ -58,30 +58,45 @@ describe("SellerListingPage", () => {
   describe("Rendering", () => {
     it("renders all form fields", () => {
       render(<SellerListingPage />);
-      ["Title", "Description", "Price", "Category", "Subcategory", "Images"].forEach(
-        (field) => {
-          expect(screen.getByLabelText(new RegExp(`^${field}`, "i"))).toBeInTheDocument();
-        }
-      );
+      [
+        "Title",
+        "Description",
+        "Price",
+        "Category",
+        "Subcategory",
+        "Images",
+      ].forEach((field) => {
+        expect(
+          screen.getByLabelText(new RegExp(`^${field}`, "i")),
+        ).toBeInTheDocument();
+      });
     });
 
     it("renders page heading and description", () => {
       render(<SellerListingPage />);
       expect(screen.getByText(/Create a new listing/i)).toBeInTheDocument();
-      expect(screen.getByText(/Add a new item to your product catalog/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Add a new item to your product catalog/i),
+      ).toBeInTheDocument();
     });
 
     it("renders all category options", () => {
       render(<SellerListingPage />);
-      ["Shirts", "Pants", "Dresses", "Accessories", "Portables"].forEach((cat) => {
-        expect(screen.getByRole("option", { name: cat })).toBeInTheDocument();
-      });
+      ["Shirts", "Pants", "Dresses", "Accessories", "Portables"].forEach(
+        (cat) => {
+          expect(screen.getByRole("option", { name: cat })).toBeInTheDocument();
+        },
+      );
     });
 
     it("renders submit and cancel buttons", () => {
       render(<SellerListingPage />);
-      expect(screen.getByRole("button", { name: /Create Listing/i })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Create Listing/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Cancel/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -156,14 +171,16 @@ describe("SellerListingPage", () => {
       const file = createFile();
       uploadImage([file]);
       await waitFor(() =>
-        expect(screen.getByAltText("Preview 1")).toBeInTheDocument()
+        expect(screen.getByAltText("Preview 1")).toBeInTheDocument(),
       );
       expect(global.URL.createObjectURL).toHaveBeenCalledWith(file);
     });
 
     it("allows multiple images up to 5", async () => {
       render(<SellerListingPage />);
-      const files = Array.from({ length: 3 }, (_, i) => createFile(`test${i}.png`));
+      const files = Array.from({ length: 3 }, (_, i) =>
+        createFile(`test${i}.png`),
+      );
       uploadImage(files);
       await waitFor(() => {
         ["Preview 1", "Preview 2", "Preview 3"].forEach((alt) => {
@@ -176,11 +193,11 @@ describe("SellerListingPage", () => {
       render(<SellerListingPage />);
       uploadImage([createFile()]);
       await waitFor(() =>
-        expect(screen.getByAltText("Preview 1")).toBeInTheDocument()
+        expect(screen.getByAltText("Preview 1")).toBeInTheDocument(),
       );
       fireEvent.click(screen.getByRole("button", { name: "×" }));
       await waitFor(() =>
-        expect(screen.queryByAltText("Preview 1")).not.toBeInTheDocument()
+        expect(screen.queryByAltText("Preview 1")).not.toBeInTheDocument(),
       );
     });
   });

@@ -25,7 +25,7 @@ global.URL.createObjectURL = jest.fn(() => "blob:mock-url");
 // ----------------------------
 const mockSessionStorage = (() => {
   let store: Record<string, string> = {};
-  
+
   return {
     getItem: jest.fn((key: string) => {
       return store[key] || null;
@@ -94,11 +94,11 @@ global.fetch = jest.fn((url) => {
 describe("SellerOnboardingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset sessionStorage to default state
     mockSessionStorage.clear();
     mockSessionStorage.setItem("accessToken", "mock-token");
-    
+
     // Reset API mocks
     const { createProfile, uploadImage } = require("@/lib/api/profile");
     createProfile.mockClear();
@@ -389,25 +389,25 @@ describe("SellerOnboardingPage", () => {
     });
   });
 
-it("shows error if avatar file is not an image", async () => {
-  render(<SellerOnboardingPage />);
+  it("shows error if avatar file is not an image", async () => {
+    render(<SellerOnboardingPage />);
 
-  await waitFor(() => {
-    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
+
+    // Non-image file
+    const file = new File(["not an image"], "document.pdf", {
+      type: "application/pdf",
+    });
+
+    fireEvent.change(avatarInput!, { target: { files: [file] } });
+
+    const err = await screen.findByText(/avatar must be an image/i);
+    expect(err).toBeInTheDocument();
   });
-
-  const avatarInput = document.querySelectorAll('input[type="file"]')[0];
-
-  // Non-image file
-  const file = new File(["not an image"], "document.pdf", {
-    type: "application/pdf",
-  });
-
-  fireEvent.change(avatarInput!, { target: { files: [file] } });
-
-  const err = await screen.findByText(/avatar must be an image/i);
-  expect(err).toBeInTheDocument();
-});
   it("shows avatar preview when a valid image is selected", async () => {
     render(<SellerOnboardingPage />);
 
@@ -742,7 +742,7 @@ it("shows error if avatar file is not an image", async () => {
   it("redirects to sign-in if not authenticated", async () => {
     // Clear the token for this specific test
     mockSessionStorage.clear();
-    
+
     render(<SellerOnboardingPage />);
 
     await waitFor(() => {
