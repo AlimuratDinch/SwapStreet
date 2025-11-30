@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
   const { isAuthenticated, username } = useAuth();
-  
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-white shadow-sm px-6 py-6 flex items-center justify-between z-[100]">
       <a href="/" className="font-semibold text-2xl">
@@ -301,7 +301,7 @@ export function Sidebar() {
   );
 }
 
-export function CardItem({ title, description, imgSrc }: CardItemProps) {
+export function CardItem({ title, description, imgSrc, price }: CardItemProps) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden transition ease-in-out hover:scale-[1.03]">
       <div className="bg-gray-200 h-40 flex items-center justify-center">
@@ -320,6 +320,7 @@ export function CardItem({ title, description, imgSrc }: CardItemProps) {
       <div className="p-3">
         <h4 className="font-semibold text-sm">{title}</h4>
         <p className="text-xs text-gray-500">{description}</p>
+        <p className="mt-2 font-bold">${price}</p>
       </div>
     </div>
   );

@@ -66,7 +66,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   return (
     <AuthContext.Provider
-      value={{ userId, username, email, accessToken, login, logout, isAuthenticated }}
+      value={{
+        userId,
+        username,
+        email,
+        accessToken,
+        login,
+        logout,
+        isAuthenticated,
+      }}
     >
       {children}
     </AuthContext.Provider>
@@ -80,7 +88,11 @@ export const useAuth = (): AuthContextProps => {
 };
 
 // Simple JWT parser (just for frontend state)
-function parseUserDataFromToken(token: string): { userId: string | null; username: string | null; email: string | null } {
+function parseUserDataFromToken(token: string): {
+  userId: string | null;
+  username: string | null;
+  email: string | null;
+} {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
     return {
