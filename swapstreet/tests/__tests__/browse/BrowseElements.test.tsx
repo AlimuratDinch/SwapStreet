@@ -43,7 +43,7 @@ describe("Header", () => {
     render(
       <AuthProvider>
         <Header />
-      </AuthProvider>
+      </AuthProvider>,
     );
     expect(screen.getByText(/SWAP/)).toBeInTheDocument();
     expect(screen.getByText(/STREET/)).toBeInTheDocument();
@@ -171,7 +171,12 @@ describe("Sidebar", () => {
 describe("CardItem", () => {
   it("renders with image", () => {
     render(
-      <CardItem title="T-Shirt" description="Blue cotton" imgSrc="/test.jpg" price={20} />,
+      <CardItem
+        title="T-Shirt"
+        description="Blue cotton"
+        imgSrc="/test.jpg"
+        price={20}
+      />,
     );
     expect(screen.getByText("T-Shirt")).toBeInTheDocument();
     expect(screen.getByText("Blue cotton")).toBeInTheDocument();
