@@ -1,10 +1,3 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import SellerOnboardingPage from "@/app/seller/onboarding/page";
-import "@testing-library/jest-dom";
-
-// ----------------------------
-// Mock router for client component
-// ----------------------------
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -26,6 +19,44 @@ jest.mock("@/lib/api/profile", () => ({
 // Mock URL.createObjectURL for jsdom
 // ----------------------------
 global.URL.createObjectURL = jest.fn(() => "blob:mock-url");
+
+// ----------------------------
+// Mock sessionStorage PROPERLY
+// ----------------------------
+const mockSessionStorage = (() => {
+  let store: Record<string, string> = {};
+
+  return {
+    getItem: jest.fn((key: string) => {
+      return store[key] || null;
+    }),
+    setItem: jest.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: jest.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: jest.fn(() => {
+      store = {};
+    }),
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: jest.fn((index: number) => {
+      const keys = Object.keys(store);
+      return keys[index] || null;
+    }),
+  };
+})();
+
+Object.defineProperty(window, "sessionStorage", {
+  value: mockSessionStorage,
+  writable: true,
+});
+
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import SellerOnboardingPage from "@/app/seller/onboarding/page";
+import "@testing-library/jest-dom";
 
 // ----------------------------
 // Mock fetch for location data
@@ -60,31 +91,19 @@ global.fetch = jest.fn((url) => {
   });
 }) as jest.Mock;
 
-// Mock sessionStorage
-const mockSessionStorage = {
-  getItem: jest.fn((key) => {
-    if (key === "accessToken") return "mock-token";
-    return null;
-  }),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-};
-Object.defineProperty(window, "sessionStorage", {
-  value: mockSessionStorage,
-});
-
 describe("SellerOnboardingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSessionStorage.getItem.mockImplementation((key) => {
-      if (key === "accessToken") return "mock-token";
-      return null;
-    });
+
+    // Reset sessionStorage to default state
+    mockSessionStorage.clear();
+    mockSessionStorage.setItem("accessToken", "mock-token");
 
     // Reset API mocks
     const { createProfile, uploadImage } = require("@/lib/api/profile");
+    createProfile.mockClear();
     createProfile.mockResolvedValue({ id: "test-id" });
+    uploadImage.mockClear();
     uploadImage.mockResolvedValue("https://example.com/image.jpg");
 
     // Reset fetch mock to default behavior
@@ -112,6 +131,11 @@ describe("SellerOnboardingPage", () => {
         json: async () => ({ error: "Not found" }),
       });
     });
+  });
+
+  afterEach(() => {
+    // Clean up after each test
+    mockSessionStorage.clear();
   });
 
   it("shows error if city is missing", async () => {
@@ -373,14 +397,17 @@ describe("SellerOnboardingPage", () => {
     });
 
     const avatarInput = document.querySelectorAll('input[type="file"]')[0];
-    const file = new File(["test"], "test.txt", { type: "text/plain" });
+
+    // Non-image file
+    const file = new File(["not an image"], "document.pdf", {
+      type: "application/pdf",
+    });
+
     fireEvent.change(avatarInput!, { target: { files: [file] } });
 
-    expect(
-      screen.getByText(/avatar must be an image file/i),
-    ).toBeInTheDocument();
+    const err = await screen.findByText(/avatar must be an image/i);
+    expect(err).toBeInTheDocument();
   });
-
   it("shows avatar preview when a valid image is selected", async () => {
     render(<SellerOnboardingPage />);
 
@@ -713,7 +740,8 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("redirects to sign-in if not authenticated", async () => {
-    mockSessionStorage.getItem.mockReturnValue(null);
+    // Clear the token for this specific test
+    mockSessionStorage.clear();
 
     render(<SellerOnboardingPage />);
 
@@ -734,7 +762,7 @@ describe("SellerOnboardingPage", () => {
     await waitFor(() => {
       expect(citySelect).not.toBeDisabled();
       const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1); // Has cities loaded
+      expect(options.length).toBeGreaterThan(1);
     });
 
     fireEvent.change(citySelect, { target: { value: "1" } });
