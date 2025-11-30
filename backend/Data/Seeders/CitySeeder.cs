@@ -12,9 +12,9 @@ namespace backend.Data.Seed
         public static async Task SeedAsync(AppDbContext context)
         {
             string basePath = Directory.GetCurrentDirectory();
-    
+
             // 2. Combine with the specific location
-            string csvFilePath = Path.Combine(basePath,"Data", "CSVs", "cities.csv");
+            string csvFilePath = Path.Combine(basePath, "Data", "CSVs", "cities.csv");
 
             Console.WriteLine($"[DEBUG] Looking for file at: {csvFilePath}");
 
@@ -67,14 +67,14 @@ namespace backend.Data.Seed
                         ProvinceId = validProvinceId,
                         Latitude = r.Latitude,
                         Longitude = r.Longitude,
-                        Fsas = new List<Fsa>() 
+                        Fsas = new List<Fsa>()
                     };
 
                     // Split the clean "FsaCodes" property
                     if (!string.IsNullOrWhiteSpace(r.FsaCodes))
                     {
                         var fsaCodes = r.FsaCodes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                        
+
                         foreach (var code in fsaCodes)
                         {
                             city.Fsas.Add(new Fsa { Code = code });

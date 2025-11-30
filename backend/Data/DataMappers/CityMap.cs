@@ -9,7 +9,7 @@ public sealed class CityMap : ClassMap<CityImportDto>
         Map(m => m.ProvinceCode).Name("province_id");
         Map(m => m.Latitude).Name("lat");
         Map(m => m.Longitude).Name("lng");
-        
+
         // 2. Map the raw postal string (we will split this later in the loop)
         Map(m => m.FsaCodes).Name("postal");
     }

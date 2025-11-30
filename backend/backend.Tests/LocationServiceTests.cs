@@ -43,24 +43,24 @@ namespace backend.Tests.Services
             var ontario = new Province { Id = 1, Name = "Ontario", Code = "ON" };
             var quebec = new Province { Id = 2, Name = "Quebec", Code = "QC" };
 
-            var toronto = new City 
-            { 
-                Id = 1, 
-                Name = "Toronto", 
-                ProvinceId = 1, 
+            var toronto = new City
+            {
+                Id = 1,
+                Name = "Toronto",
+                ProvinceId = 1,
                 Province = ontario,
-                Latitude = 43.7, 
-                Longitude = -79.3 
+                Latitude = 43.7,
+                Longitude = -79.3
             };
 
-            var montreal = new City 
-            { 
-                Id = 2, 
-                Name = "Montreal", 
-                ProvinceId = 2, 
+            var montreal = new City
+            {
+                Id = 2,
+                Name = "Montreal",
+                ProvinceId = 2,
                 Province = quebec,
-                Latitude = 45.5, 
-                Longitude = -73.5 
+                Latitude = 45.5,
+                Longitude = -73.5
             };
 
             // FSAs

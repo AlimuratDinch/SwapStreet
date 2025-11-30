@@ -11,11 +11,11 @@ namespace backend.Data.Seed
             // 1. Seed Provinces FIRST
             // Cities cannot be seeded without Provinces because they need the ProvinceId (FK)
             await ProvinceSeeder.SeedAsync(context);
-            
+
             // 2. Seed Cities and FSAs NEXT
             // This relies on the Provinces table being populated
             await CitySeeder.SeedAsync(context);
-            
+
         }
     }
 }

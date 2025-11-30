@@ -4,35 +4,35 @@ using backend.DTOs;
 
 namespace backend.Controllers
 {
-[ApiController]
-[Route("api/location")]
-public class LocationsController : ControllerBase
-{
-    private readonly ILocationService _locationService;
-
-    public LocationsController(ILocationService locationService)
+    [ApiController]
+    [Route("api/location")]
+    public class LocationsController : ControllerBase
     {
-        _locationService = locationService;
-    }
+        private readonly ILocationService _locationService;
 
-    [HttpGet("lookup/{fsa}")]
-    public async Task<IActionResult> GetLocationByPostal(string fsa)
-    {
-        var city = await _locationService.GetCityByFsaAsync(fsa);
-
-        if (city == null)
+        public LocationsController(ILocationService locationService)
         {
-            return NotFound("Postal code not supported or invalid.");
+            _locationService = locationService;
         }
 
-        return Ok(new LocationResponseDto
-    {
-        City = city.Name,
-        Province = city.Province?.Name ?? string.Empty,
-        ProvinceCode = city.Province?.Code ?? string.Empty,
-        Lat = city.Latitude,
-        Lng = city.Longitude
-    });
+        [HttpGet("lookup/{fsa}")]
+        public async Task<IActionResult> GetLocationByPostal(string fsa)
+        {
+            var city = await _locationService.GetCityByFsaAsync(fsa);
+
+            if (city == null)
+            {
+                return NotFound("Postal code not supported or invalid.");
+            }
+
+            return Ok(new LocationResponseDto
+            {
+                City = city.Name,
+                Province = city.Province?.Name ?? string.Empty,
+                ProvinceCode = city.Province?.Code ?? string.Empty,
+                Lat = city.Latitude,
+                Lng = city.Longitude
+            });
+        }
     }
-}
 }

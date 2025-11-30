@@ -16,13 +16,13 @@ namespace backend.Data.Seed
             string basePath = Directory.GetCurrentDirectory();
 
             // Build the full absolute path
-            string csvFilePath = Path.Combine(basePath,"Data", "CSVs", "provinces.csv");
+            string csvFilePath = Path.Combine(basePath, "Data", "CSVs", "provinces.csv");
 
             // Optional: Log it so you can see exactly where it's looking in the console output
             Console.WriteLine($"[DEBUG] Looking for Province CSV at: {csvFilePath}");
 
-                        // --- Province Seeding Logic ---
-            
+            // --- Province Seeding Logic ---
+
             // 1. Check if the table already has data
             if (await context.Provinces.AnyAsync())
             {
@@ -37,7 +37,7 @@ namespace backend.Data.Seed
             }
 
             Console.WriteLine("Starting province data seed...");
-            
+
             try
             {
                 using (var reader = new StreamReader(csvFilePath))
@@ -51,9 +51,9 @@ namespace backend.Data.Seed
 
                     // 3. Insert records efficiently
                     await context.Provinces.AddRangeAsync(provinces);
-                    
+
                     // 4. Commit changes
-                    await context.SaveChangesAsync(); 
+                    await context.SaveChangesAsync();
 
                     Console.WriteLine($"Successfully seeded {provinces.Count} province records.");
                 }

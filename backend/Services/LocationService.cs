@@ -58,7 +58,7 @@ namespace backend.Services
 
         public async Task<bool> IsValidFsaAsync(string fsaCode)
         {
-            if (string.IsNullOrWhiteSpace(fsaCode) || fsaCode.Length < 3) 
+            if (string.IsNullOrWhiteSpace(fsaCode) || fsaCode.Length < 3)
                 return false;
 
             string cleanFsa = fsaCode.Substring(0, 3).ToUpper();
