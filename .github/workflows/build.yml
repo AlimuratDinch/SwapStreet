@@ -107,7 +107,7 @@ jobs:
           /o:"swapstreet" `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
           /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml `
-          /d:sonar.coverage.exclusions="**/Migrations/**"
+          /d:sonar.coverage.exclusions="**/Migrations/**,**/Models/**"
 
     - name: Build backend
       shell: powershell
@@ -118,8 +118,9 @@ jobs:
       shell: pwsh
       working-directory: backend
       run: |
-        # Run tests and collect coverage in XML format
-        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml"
+        # Run tests and collect coverage in XML format using settings from root
+        # We use ../coverage.settings.xml because the working-directory is 'backend'
+        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
 
         # Confirm file exists
         if (!(Test-Path "coverage.xml")) {
@@ -143,8 +144,8 @@ jobs:
         Write-Host "➡ Backend test coverage: $lineCoverage%"
 
         # Fail if below threshold
-        if ($lineCoverage -lt 16) {
-          Write-Error "Coverage below 16% ($lineCoverage%)"
+        if ($lineCoverage -lt 65) {
+          Write-Error "Coverage below 65% ($lineCoverage%)"
           exit 1
         }
 

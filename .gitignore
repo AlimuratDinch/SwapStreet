@@ -10,3 +10,4 @@ node_modules/
 
 # Batch Scripts
 *.bat
+coverage.xml

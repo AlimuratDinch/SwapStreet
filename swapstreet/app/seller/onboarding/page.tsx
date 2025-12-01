@@ -2,39 +2,88 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";
 
-// Provinces list and postal code validation used by the form
-const PROVINCES: { label: string; value: string }[] = [
-  { label: "Alberta (AB)", value: "AB" },
-  { label: "British Columbia (BC)", value: "BC" },
-  { label: "Manitoba (MB)", value: "MB" },
-  { label: "New Brunswick (NB)", value: "NB" },
-  { label: "Newfoundland and Labrador (NL)", value: "NL" },
-  { label: "Nova Scotia (NS)", value: "NS" },
-  { label: "Northwest Territories (NT)", value: "NT" },
-  { label: "Nunavut (NU)", value: "NU" },
-  { label: "Ontario (ON)", value: "ON" },
-  { label: "Prince Edward Island (PE)", value: "PE" },
-  { label: "Quebec (QC)", value: "QC" },
-  { label: "Saskatchewan (SK)", value: "SK" },
-  { label: "Yukon (YT)", value: "YT" },
-];
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
 const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
-  // Component state for all form fields and UI feedback
-  const [name, setName] = useState("");
-  const [city, setCity] = useState("");
-  const [province, setProvince] = useState("");
-  const [postalCode, setPostalCode] = useState("");
+
+  // Form fields
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [bio, setBio] = useState("");
+  const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(
+    null,
+  );
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
+  const [postalCode, setPostalCode] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string>("");
+
+  // Data from backend
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [filteredCities, setFilteredCities] = useState<City[]>([]);
+
+  // UI state
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+
+  // Fetch provinces on mount
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const provincesRes = await fetch(`${API_URL}/api/location/provinces`);
+
+        if (provincesRes.ok) {
+          const provincesData = await provincesRes.json();
+          setProvinces(provincesData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch provinces:", err);
+        setError("Failed to load location data. Please refresh the page.");
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchProvinces();
+  }, []);
+
+  // Fetch cities when province changes
+  useEffect(() => {
+    if (selectedProvinceId) {
+      const fetchCities = async () => {
+        try {
+          const citiesRes = await fetch(
+            `${API_URL}/api/location/cities?provinceId=${selectedProvinceId}`,
+          );
+
+          if (citiesRes.ok) {
+            const citiesData = await citiesRes.json();
+            setCities(citiesData);
+            setFilteredCities(citiesData);
+          }
+        } catch (err) {
+          console.error("Failed to fetch cities:", err);
+          setError("Failed to load cities. Please try again.");
+        }
+      };
+
+      fetchCities();
+      setSelectedCityId(null); // Reset city selection when province changes
+    } else {
+      setCities([]);
+      setFilteredCities([]);
+      setSelectedCityId(null);
+    }
+  }, [selectedProvinceId]);
 
   // File input change handlers (validate image and create preview URL)
   const handleAvatarChange = useCallback(
@@ -82,62 +131,102 @@ export default function SellerOnboardingPage() {
     [bannerPreview],
   );
 
-  // Submit handler: validate inputs, cache data in localStorage, then redirect
+  // Submit handler: validate inputs, upload images, create profile via API
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
       setError("");
+      setLoading(true);
 
-      // Minimal validation
-      if (!name.trim()) {
-        setError("Please enter a display name.");
-        return;
-      }
-      if (!city.trim()) {
-        setError("Please enter your city.");
-        return;
-      }
-      if (!province) {
-        setError("Please select a province.");
-        return;
-      }
-
-      // Postal code optional, but if provided validate Canadian format (A1A 1A1 or A1A1A1)
-      if (postalCode && !POSTAL_REGEX.test(postalCode.trim())) {
-        setError("Please enter a valid Canadian postal code (e.g., A1A 1A1).");
-        return;
-      }
-
-      // TODO: Replace with proper implementation to upload files and save seller profile
       try {
-        const location = `${city.trim()}, ${province}${postalCode ? ", " + postalCode.trim().toUpperCase() : ""}`;
-        const data = {
-          name,
-          location,
-          city: city.trim(),
-          province,
-          postalCode: postalCode.trim().toUpperCase() || null,
-          bio,
-          avatarUrl: avatarPreview || null,
-          bannerUrl: bannerPreview || null,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem("seller:me", JSON.stringify(data));
-      } catch (err) {
-        console.error("Failed to cache onboarding data", err);
-      }
+        // Validation
+        if (!firstName.trim()) {
+          setError("Please enter your first name.");
+          return;
+        }
+        if (!lastName.trim()) {
+          setError("Please enter your last name.");
+          return;
+        }
+        if (!selectedCityId) {
+          setError("Please select a city.");
+          return;
+        }
 
-      // Redirect user to their profile page
-      router.push("/seller/me?init=1");
+        // Extract FSA from postal code (first 3 characters)
+        let fsa = "";
+        if (postalCode) {
+          if (!POSTAL_REGEX.test(postalCode.trim())) {
+            setError(
+              "Please enter a valid Canadian postal code (e.g., A1A 1A1).",
+            );
+            return;
+          }
+          // Extract first 3 characters and remove spaces
+          fsa = postalCode
+            .trim()
+            .replace(/\s|-/g, "")
+            .substring(0, 3)
+            .toUpperCase();
+          if (!FSA_REGEX.test(fsa)) {
+            setError("Invalid postal code format.");
+            return;
+          }
+        } else {
+          setError(
+            "Postal code is required to determine your Forward Sortation Area (FSA).",
+          );
+          return;
+        }
+
+        // Get access token
+        const accessToken = sessionStorage.getItem("accessToken");
+        if (!accessToken) {
+          setError("You must be logged in to create a profile.");
+          router.push("/auth/sign-in");
+          return;
+        }
+
+        // Upload images if provided
+        let profileImagePath: string | undefined;
+        let bannerImagePath: string | undefined;
+
+        if (avatarFile) {
+          profileImagePath = await uploadImage(avatarFile, "Profile");
+        }
+
+        if (bannerFile) {
+          bannerImagePath = await uploadImage(bannerFile, "Banner");
+        }
+
+        // Create profile
+        await createProfile(accessToken, {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          bio: bio.trim() || undefined,
+          locationId: selectedCityId,
+          fsa: fsa,
+          profileImagePath,
+          bannerImagePath,
+        });
+
+        // Redirect to profile page
+        router.push("/seller/me");
+      } catch (err: any) {
+        console.error("Failed to create profile:", err);
+        setError(err.message || "Failed to create profile. Please try again.");
+      } finally {
+        setLoading(false);
+      }
     },
     [
-      name,
-      city,
-      province,
-      postalCode,
+      firstName,
+      lastName,
       bio,
-      avatarPreview,
-      bannerPreview,
+      selectedCityId,
+      postalCode,
+      avatarFile,
+      bannerFile,
       router,
     ],
   );
@@ -151,6 +240,16 @@ export default function SellerOnboardingPage() {
   }, [avatarPreview, bannerPreview]);
 
   // Render form with inputs for profile details and image uploads
+  if (loadingData) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-semibold text-gray-900">
@@ -170,42 +269,46 @@ export default function SellerOnboardingPage() {
           </div>
         )}
 
-        <div>
-          <label
-            htmlFor="display-name"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Display name
-          </label>
-          <input
-            type="text"
-            id="display-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="What should we call you in the wild world of SwapStreet?"
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label
-              htmlFor="city"
+              htmlFor="first-name"
               className="block text-sm font-medium text-gray-700"
             >
-              City
+              First name
             </label>
             <input
               type="text"
-              id="city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="City"
+              id="first-name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Your first name"
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
               required
+              disabled={loading}
             />
           </div>
+          <div>
+            <label
+              htmlFor="last-name"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Last name
+            </label>
+            <input
+              type="text"
+              id="last-name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Your last name"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+              required
+              disabled={loading}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <label
               htmlFor="province"
@@ -215,17 +318,51 @@ export default function SellerOnboardingPage() {
             </label>
             <select
               id="province"
-              value={province}
-              onChange={(e) => setProvince(e.target.value)}
+              value={selectedProvinceId || ""}
+              onChange={(e) =>
+                setSelectedProvinceId(
+                  e.target.value ? parseInt(e.target.value) : null,
+                )
+              }
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
               required
+              disabled={loading}
             >
               <option value="" disabled>
-                Select a province/territory
+                Select province
               </option>
-              {PROVINCES.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
+              {provinces.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.code})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="city"
+              className="block text-sm font-medium text-gray-700"
+            >
+              City
+            </label>
+            <select
+              id="city"
+              value={selectedCityId || ""}
+              onChange={(e) =>
+                setSelectedCityId(
+                  e.target.value ? parseInt(e.target.value) : null,
+                )
+              }
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+              required
+              disabled={loading || !selectedProvinceId}
+            >
+              <option value="" disabled>
+                {selectedProvinceId ? "Select city" : "Select province first"}
+              </option>
+              {filteredCities.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
@@ -235,7 +372,7 @@ export default function SellerOnboardingPage() {
               htmlFor="postal-code"
               className="block text-sm font-medium text-gray-700"
             >
-              Postal code (optional)
+              Postal code
             </label>
             <input
               type="text"
@@ -245,6 +382,8 @@ export default function SellerOnboardingPage() {
               placeholder="A1A 1A1"
               maxLength={7}
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+              required
+              disabled={loading}
             />
           </div>
         </div>
@@ -320,9 +459,10 @@ export default function SellerOnboardingPage() {
         <div className="flex items-center justify-end gap-3">
           <button
             type="submit"
-            className="rounded-lg bg-[var(--primary-color)] px-4 py-2 text-sm font-medium text-white shadow hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+            disabled={loading}
+            className="rounded-lg bg-[var(--primary-color)] px-4 py-2 text-sm font-medium text-white shadow hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save and continue
+            {loading ? "Creating profile..." : "Save and continue"}
           </button>
         </div>
       </form>

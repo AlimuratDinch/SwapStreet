@@ -11,8 +11,6 @@ using backend.Models;
 using Minio;
 using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using backend.Data.Seed;
 using System.Security.Cryptography;
 
@@ -76,10 +74,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
 // Register services
-builder.Services.AddScoped<ICatalogService, CatalogService>();
+//builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
+//builder.Services.AddScoped<IWishlistService, WishlistService>();
 
 var jwtSecret = builder.Configuration["JWT_SECRET"]
               ?? "402375d38deb9c479fb043f369d1b2d2";
@@ -117,12 +120,12 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Register services
-builder.Services.AddScoped<ICatalogService, CatalogService>();
+//builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 builder.Services.AddScoped<IUserAccountService, UserAccountService>();
-builder.Services.AddScoped<IWishlistService, WishlistService>();
+//builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IGenerativeService, GenerativeService>();
 builder.Services.AddScoped<ITryOnService, backend.Services.VirtualTryOn.TryOnService>();
 builder.Services.AddHttpClient(); // Required for IHttpClientFactory used by GenerativeService

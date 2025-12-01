@@ -56,12 +56,12 @@ namespace backend.Services.VirtualTryOn
                 clothingImageBytes);
 
             // 5. Store generated image
-            var generatedImagePath = await StoreImageAsync(generatedImageBytes, actualId.ToString());
+            var generatedImagePath = await StoreImageAsync(generatedImageBytes, userId.ToString());
 
             // 6. Save to database
             var tryOnImage = new TryOnImage
             {
-                UserId = actualId,
+                UserId = userId,
                 PersonalImagePath = personalImagePath,
                 CreatedAt = DateTime.UtcNow
             };
