@@ -372,7 +372,8 @@ namespace backend.Migrations
 
                     b.Property<string>("ImagePath")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<Guid>("ProfileId")
                         .HasColumnType("uuid");

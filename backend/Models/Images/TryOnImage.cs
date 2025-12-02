@@ -7,11 +7,15 @@ public class TryOnImage
     public int Id { get; set; } // Convert to GUID
 
     [Required]
-    public Guid ProfileId { get; set; } // Convert ProfileId
+    public Guid ProfileId { get; set; }
+
+    [Required]
+    [StringLength(255)] // Path/URL to the image file
     public string ImagePath { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation property
     [ForeignKey("ProfileId")]
-    public Profile? Profile { get; set; } // Change to Profile
+
+        // Navigation property
+    public Profile? Profile { get; set; }
 }

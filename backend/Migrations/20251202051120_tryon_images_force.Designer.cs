@@ -12,8 +12,8 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251122002226_MajUpdateCorrections")]
-    partial class MajUpdateCorrections
+    [Migration("20251202051120_tryon_images_force")]
+    partial class tryon_images_force
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -71,8 +71,8 @@ namespace backend.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("ProvinceId")
                         .HasColumnType("integer");
@@ -214,7 +214,7 @@ namespace backend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Lastname")
+                    b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -223,8 +223,8 @@ namespace backend.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<decimal>("Rating")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<float>("Rating")
+                        .HasColumnType("real");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -360,6 +360,32 @@ namespace backend.Migrations
                     b.HasIndex("StyleId");
 
                     b.ToTable("tags", (string)null);
+                });
+
+            modelBuilder.Entity("TryOnImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImagePath")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileId");
+
+                    b.ToTable("tryon_images", (string)null);
                 });
 
             modelBuilder.Entity("WishList", b =>
@@ -501,6 +527,17 @@ namespace backend.Migrations
                     b.Navigation("SizeRef");
 
                     b.Navigation("StyleRef");
+                });
+
+            modelBuilder.Entity("TryOnImage", b =>
+                {
+                    b.HasOne("Profile", "Profile")
+                        .WithMany()
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
                 });
 
             modelBuilder.Entity("WishList", b =>
