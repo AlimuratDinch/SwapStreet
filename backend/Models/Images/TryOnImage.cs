@@ -1,14 +1,19 @@
-using backend.Models.Authentication;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 namespace backend.Models;
 
 
 public class TryOnImage
 {
-    public int Id { get; set; }
-    public Guid UserId { get; set; }
-    public string PersonalImagePath { get; set; }
+    [Key]
+    public int Id { get; set; } // Convert to GUID
+
+     [Required]
+    public Guid ProfileId { get; set; } // Convert ProfileId
+    public string ImagePath { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
 
     // Navigation property
-    public User User { get; set; }
+    [ForeignKey("ProfileId")]
+    public Profile? Profile { get; set; } // Change to Profile
 }

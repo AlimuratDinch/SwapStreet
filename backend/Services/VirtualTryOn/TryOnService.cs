@@ -36,11 +36,11 @@ namespace backend.Services.VirtualTryOn
             _minioSettings = minioSettings.Value;
         }
 
-        public async Task<string> ProcessTryOnRequestAsync(Guid userId, string clothingImageUrl)
+        public async Task<string> ProcessTryOnRequestAsync(Guid profileId, string clothingImageUrl)
         {
             
             // 2. Find user's personal image
-            var personalImagePath = await FindTryOnImageByUserIdAsync(userId);
+            var personalImagePath = await FindTryOnImageByProfileIdAsync(profileId);
             if (string.IsNullOrEmpty(personalImagePath))
             {
                 throw new FileNotFoundException("Personal image not found for user");
@@ -56,13 +56,13 @@ namespace backend.Services.VirtualTryOn
                 clothingImageBytes);
 
             // 5. Store generated image
-            var generatedImagePath = await StoreImageAsync(generatedImageBytes, userId.ToString());
+            var generatedImagePath = await StoreImageAsync(generatedImageBytes, profileId.ToString());
 
             // 6. Save to database
             var tryOnImage = new TryOnImage
             {
-                UserId = userId,
-                PersonalImagePath = personalImagePath,
+                ProfileId = profileId,
+                ImagePath = personalImagePath,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -74,13 +74,13 @@ namespace backend.Services.VirtualTryOn
             return generatedImagePath;
         }
 
-        private async Task<string> FindTryOnImageByUserIdAsync(Guid userId)
+        private async Task<string> FindTryOnImageByProfileIdAsync(Guid profileId)
         {
             // Query MiniO/S3 or database for user's personal image
             var userImageRecord = await _context.TryOnImages
-                .Where(t => t.UserId == userId)
+                .Where(t => t.ProfileId == profileId)
                 .OrderByDescending(t => t.CreatedAt)
-                .Select(t => t.PersonalImagePath)
+                .Select(t => t.ImagePath)
                 .FirstOrDefaultAsync();
 
             return userImageRecord ?? throw new FileNotFoundException("No personal image found for user");
@@ -110,9 +110,9 @@ namespace backend.Services.VirtualTryOn
             }
         }
 
-        private async Task<string> StoreImageAsync(byte[] imageBytes, string userId)
+        private async Task<string> StoreImageAsync(byte[] imageBytes, string profileId)
         {
-            var fileName = $"generated/{userId}/{Guid.NewGuid()}.png";
+            var fileName = $"generated/{profileId}/{Guid.NewGuid()}.png";
             var bucket = _minioSettings.PrivateBucketName; 
 
             // Upload to MinIO

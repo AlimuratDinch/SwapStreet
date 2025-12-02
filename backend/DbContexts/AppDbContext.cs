@@ -176,6 +176,10 @@ public class AppDbContext : DbContext
 
         // TryOnImage
         modelBuilder.Entity<TryOnImage>().ToTable("tryon_images");
-        // Note: User navigation property references User from AuthDbContext, so we don't configure the relationship here
+        modelBuilder.Entity<TryOnImage>()
+            .HasOne(ti => ti.Profile)
+            .WithMany()
+            .HasForeignKey(ti => ti.ProfileId);
+
     }
 }
