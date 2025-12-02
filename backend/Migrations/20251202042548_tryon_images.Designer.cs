@@ -12,7 +12,7 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251202033704_tryon_images")]
+    [Migration("20251202042548_tryon_images")]
     partial class tryon_images
     {
         /// <inheritdoc />
@@ -362,31 +362,7 @@ namespace backend.Migrations
                     b.ToTable("tags", (string)null);
                 });
 
-            modelBuilder.Entity("WishList", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ListingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProfileId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ListingId");
-
-                    b.HasIndex("ProfileId");
-
-                    b.ToTable("wishlists", (string)null);
-                });
-
-            modelBuilder.Entity("backend.Models.TryOnImage", b =>
+            modelBuilder.Entity("TryOnImage", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -409,6 +385,30 @@ namespace backend.Migrations
                     b.HasIndex("ProfileId");
 
                     b.ToTable("tryon_images", (string)null);
+                });
+
+            modelBuilder.Entity("WishList", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ListingId");
+
+                    b.HasIndex("ProfileId");
+
+                    b.ToTable("wishlists", (string)null);
                 });
 
             modelBuilder.Entity("City", b =>
@@ -528,6 +528,17 @@ namespace backend.Migrations
                     b.Navigation("StyleRef");
                 });
 
+            modelBuilder.Entity("TryOnImage", b =>
+                {
+                    b.HasOne("Profile", "Profile")
+                        .WithMany()
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+                });
+
             modelBuilder.Entity("WishList", b =>
                 {
                     b.HasOne("Listing", "Listing")
@@ -543,17 +554,6 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Listing");
-
-                    b.Navigation("Profile");
-                });
-
-            modelBuilder.Entity("backend.Models.TryOnImage", b =>
-                {
-                    b.HasOne("Profile", "Profile")
-                        .WithMany()
-                        .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("Profile");
                 });
