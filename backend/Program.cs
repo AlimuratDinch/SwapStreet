@@ -215,6 +215,9 @@ using (var scope = app.Services.CreateScope())
         else
         {
             Console.WriteLine("Skipping migrations (in-memory mode)");
+            Console.WriteLine("Starting Database Seeding...");
+            await DatabaseSeeder.SeedAsync(appDb);
+            Console.WriteLine("Database Seeding Completed.");
         }
     }
     catch (Exception ex)
