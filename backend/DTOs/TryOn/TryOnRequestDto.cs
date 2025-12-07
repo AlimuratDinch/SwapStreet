@@ -9,4 +9,6 @@ public class TryOnRequestDto
     
     [Required(ErrorMessage = "Clothing image URL is required")]
     public string ClothingImageUrl { get; set; } = default!;
+
+    public Guid ListingId { get; set; }
 }

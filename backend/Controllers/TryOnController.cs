@@ -83,6 +83,8 @@ public class TryOnController : ControllerBase
                     fileName = $"{fileName}.png";
                 }
             }
+            
+            await _tryOnService.AddGeneratedImage(userId,request.ListingId,fileName);
 
             // Return response in the same format as ImageController
             return Ok(new

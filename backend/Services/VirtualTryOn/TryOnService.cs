@@ -20,6 +20,8 @@ namespace backend.Services.VirtualTryOn
         private readonly IMinioClient _minio;
         private readonly MinioSettings _minioSettings;
 
+        private readonly IFileStorageService _fileStorageService;
+
         public TryOnService(
             AppDbContext context,
             ITokenService tokenService,
@@ -157,6 +159,21 @@ namespace backend.Services.VirtualTryOn
 
             return (decodedPath, _minioSettings.PrivateBucketName);
         }
+
+        public async Task AddGeneratedImage(Guid userId,Guid listingId,string fileName)
+        {
+             var generatedImage = new GeneratedImage
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = userId,
+                            ListingId = listingId,
+                            ImagePath = fileName,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.GeneratedImages.Add(generatedImage);
+                        await _context.SaveChangesAsync();
+        }
+
 
         // public async Task<string> ProcessTryOnFromUrlsAsync(string userImageUrl, string clothingImageUrl)
         // {
