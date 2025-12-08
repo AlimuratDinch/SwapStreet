@@ -17,7 +17,7 @@ public class TryOnController : ControllerBase
     private readonly ILogger<TryOnController> _logger;
 
     public TryOnController(
-        ITryOnService tryOnService, 
+        ITryOnService tryOnService,
         IFileStorageService fileStorageService,
         ILogger<TryOnController> logger)
     {
@@ -30,10 +30,10 @@ public class TryOnController : ControllerBase
     [HttpPost("virtual-tryon")]
     [Consumes("application/json")]
     public async Task<IActionResult> TryOnFromUrl([FromBody] TryOnRequestDto request)
-    {   
+    {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-                return Unauthorized(new { Error = "Invalid token" });
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { Error = "Invalid token" });
 
         try
         {
@@ -46,7 +46,7 @@ public class TryOnController : ControllerBase
             }
 
             // Get access token from Authorization header or cookie
-            
+
             // if(string.IsNullOrEmpty(request.UserImageUrl))
             // {
             //     return BadRequest(new { error = "User image URL is required" });
@@ -63,7 +63,7 @@ public class TryOnController : ControllerBase
             var generatedImagePath = await _tryOnService.ProcessTryOnRequestAsync(
                 userId,
                 request.ClothingImageUrl);
-            
+
             // var generatedImagePath = await _tryOnService.ProcessTryOnFromUrlsAsync(
             //     request.UserImageUrl);
 
@@ -83,8 +83,8 @@ public class TryOnController : ControllerBase
                     fileName = $"{fileName}.png";
                 }
             }
-            
-            await _tryOnService.AddGeneratedImage(userId,request.ListingId,fileName);
+
+            await _tryOnService.AddGeneratedImage(userId, request.ListingId, fileName);
 
             // Return response in the same format as ImageController
             return Ok(new

@@ -35,9 +35,9 @@ builder.Services.AddCors(options =>
 var useInMemory = Environment.GetEnvironmentVariable("USE_INMEMORY_DB") == "true";
 
 // Configure Gemini API (required for both in-memory and production)
-var geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") 
+var geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
                    ?? "1223df130i3rjni1i0n130if13fn0i31f0ni31f0in31f";
-var geminiApiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL") 
+var geminiApiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL")
                    ?? "https://generativelanguage.googleapis.com/v1beta/models/";
 builder.Configuration["Gemini:ApiKey"] = geminiApiKey;
 builder.Configuration["Gemini:ApiUrl"] = geminiApiUrl;

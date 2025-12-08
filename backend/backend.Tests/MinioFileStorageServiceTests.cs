@@ -43,7 +43,7 @@ namespace backend.Tests.Services
             var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique DB per test
                 .Options;
-            
+
             _context = new AppDbContext(dbOptions);
 
             // --- 2. Inject Context into Service ---
@@ -92,7 +92,7 @@ namespace backend.Tests.Services
 
             // Assert
             url.Should().StartWith("http://localhost:9000/public/");
-            
+
             // Verify DB record was created
             var dbRecord = await _context.ListingImages.FirstOrDefaultAsync();
             dbRecord.Should().NotBeNull();
@@ -176,7 +176,7 @@ namespace backend.Tests.Services
 
             // Assert
             url.Should().StartWith("http://localhost:9000/private/generated/");
-            
+
             // Verify DB record
             var dbRecord = await _context.GeneratedImages.FirstOrDefaultAsync();
             dbRecord.Should().NotBeNull();

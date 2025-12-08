@@ -35,9 +35,9 @@ public class GenerativeService : IGenerativeService
         if (string.IsNullOrEmpty(apiUrl))
             throw new InvalidOperationException("Gemini API URL not configured");
 
-        _logger.LogInformation("Generating image with Gemini API. User image size: {UserSize} bytes, Clothing image size: {ClothingSize} bytes", 
+        _logger.LogInformation("Generating image with Gemini API. User image size: {UserSize} bytes, Clothing image size: {ClothingSize} bytes",
             userImage.Length, clothingImage.Length);
-        
+
         // Construct URL: baseUrl/models/{model}:{method}
         // Example: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent
         var baseUrl = apiUrl.TrimEnd('/');
@@ -80,7 +80,7 @@ public class GenerativeService : IGenerativeService
                     }
                 }
             },
-        
+
             // Configuration sections (ensure these keys are camelCase in the final JSON)
             generationConfig = new
             {
@@ -88,7 +88,7 @@ public class GenerativeService : IGenerativeService
                 topK = 32,
                 topP = 0.8
             },
-        
+
             safetySettings = new[]
             {
                 new { category = "HARM_CATEGORY_HARASSMENT", threshold = "BLOCK_MEDIUM_AND_ABOVE" },
@@ -105,7 +105,7 @@ public class GenerativeService : IGenerativeService
         };
 
         var jsonBody = JsonSerializer.Serialize(requestBody, jsonOptions);
-        _logger.LogInformation("Request body (first 500 chars): {RequestBody}", 
+        _logger.LogInformation("Request body (first 500 chars): {RequestBody}",
             jsonBody.Length > 500 ? jsonBody.Substring(0, 500) + "..." : jsonBody);
 
         var content = new StringContent(
@@ -133,24 +133,24 @@ public class GenerativeService : IGenerativeService
         {
             _logger.LogInformation("Sending request to Gemini API: {ApiUrl}", apiUrl);
             var response = await client.SendAsync(request);
-            
+
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError("Gemini API request failed with status {StatusCode}. Response: {Response}", 
+                _logger.LogError("Gemini API request failed with status {StatusCode}. Response: {Response}",
                     response.StatusCode, responseContent);
                 throw new HttpRequestException($"Gemini API request failed with status {response.StatusCode}: {responseContent}");
             }
 
             _logger.LogInformation("Received response from Gemini API. Response length: {Length} characters", responseContent.Length);
-            _logger.LogInformation("Response content (first 1000 chars): {Response}", 
+            _logger.LogInformation("Response content (first 1000 chars): {Response}",
                 responseContent.Length > 1000 ? responseContent.Substring(0, 1000) + "..." : responseContent);
 
             // Try to parse the response - Gemini API returns images in candidates[0].content.parts[0].inlineData.data
             using var jsonDoc = JsonDocument.Parse(responseContent);
             var root = jsonDoc.RootElement;
-            
+
             var generatedImageBase64 = root.GetProperty("candidates")[0]
             .GetProperty("content")
             .GetProperty("parts")[0]
@@ -164,7 +164,7 @@ public class GenerativeService : IGenerativeService
 
             var imageBytes = Convert.FromBase64String(generatedImageBase64);
             _logger.LogInformation("Successfully generated image. Size: {Size} bytes", imageBytes.Length);
-            
+
             return imageBytes;
         }
         catch (Exception ex)

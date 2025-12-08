@@ -40,7 +40,7 @@ namespace backend.Services.VirtualTryOn
 
         public async Task<string> ProcessTryOnRequestAsync(Guid profileId, string clothingImageUrl)
         {
-            
+
             // 2. Find user's personal image
             var personalImagePath = await FindTryOnImageByProfileIdAsync(profileId);
             if (string.IsNullOrEmpty(personalImagePath))
@@ -115,7 +115,7 @@ namespace backend.Services.VirtualTryOn
         private async Task<string> StoreImageAsync(byte[] imageBytes, string profileId)
         {
             var fileName = $"generated/{profileId}/{Guid.NewGuid()}.png";
-            var bucket = _minioSettings.PrivateBucketName; 
+            var bucket = _minioSettings.PrivateBucketName;
 
             // Upload to MinIO
             using var stream = new MemoryStream(imageBytes);
@@ -142,7 +142,7 @@ namespace backend.Services.VirtualTryOn
                     var bucketName = pathParts[0];
                     // URL decode the object name to handle encoded characters (e.g., %20 for spaces)
                     var objectName = Uri.UnescapeDataString(pathParts[1]);
-                    _logger.LogInformation("Extracted bucket: {Bucket}, object: {Object} from URL: {Url}", 
+                    _logger.LogInformation("Extracted bucket: {Bucket}, object: {Object} from URL: {Url}",
                         bucketName, objectName, imagePath);
                     return (objectName, bucketName);
                 }
@@ -160,18 +160,18 @@ namespace backend.Services.VirtualTryOn
             return (decodedPath, _minioSettings.PrivateBucketName);
         }
 
-        public async Task AddGeneratedImage(Guid userId,Guid listingId,string fileName)
+        public async Task AddGeneratedImage(Guid userId, Guid listingId, string fileName)
         {
-             var generatedImage = new GeneratedImage
-                        {
-                            Id = Guid.NewGuid(),
-                            UserId = userId,
-                            ListingId = listingId,
-                            ImagePath = fileName,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        _context.GeneratedImages.Add(generatedImage);
-                        await _context.SaveChangesAsync();
+            var generatedImage = new GeneratedImage
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ListingId = listingId,
+                ImagePath = fileName,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.GeneratedImages.Add(generatedImage);
+            await _context.SaveChangesAsync();
         }
 
 

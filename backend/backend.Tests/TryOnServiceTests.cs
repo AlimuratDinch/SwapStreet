@@ -327,14 +327,14 @@ namespace backend.Tests
                     // Get the callback from the args object using reflection
                     var callbackProperty = typeof(GetObjectArgs)
                         .GetProperty("CallBack", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    
+
                     var callback = callbackProperty?.GetValue(args) as Func<Stream, System.Threading.CancellationToken, Task>;
-                    
+
                     if (callback != null && callCount < imageBytesList.Length)
                     {
                         var imageBytes = imageBytesList[callCount];
                         callCount++;
-                        
+
                         var memoryStream = new MemoryStream(imageBytes);
                         try
                         {
@@ -345,7 +345,7 @@ namespace backend.Tests
                             memoryStream.Dispose();
                         }
                     }
-                    
+
                     // Return ObjectStat using factory method
                     var headers = new Dictionary<string, string>
                     {

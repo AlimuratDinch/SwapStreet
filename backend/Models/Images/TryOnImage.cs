@@ -16,6 +16,6 @@ public class TryOnImage
 
     [ForeignKey("ProfileId")]
 
-        // Navigation property
+    // Navigation property
     public Profile? Profile { get; set; }
 }

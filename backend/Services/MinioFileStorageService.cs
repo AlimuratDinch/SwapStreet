@@ -59,56 +59,56 @@ namespace backend.Services
             var bucket = type == UploadType.TryOn || type == UploadType.Generated ? _settings.PrivateBucketName : _settings.PublicBucketName;
 
             // ===== Process DB Entities based on type =====
-                switch (type)
-                {
-                    case UploadType.Listing:
-                        if (listingId == null) throw new ArgumentException("ListingId is required for Listing uploads.");
-                        
-                        var listingImage = new ListingImage
-                        {
-                            Id = Guid.NewGuid(),
-                            ListingId = listingId.Value,
-                            ImagePath = fileName,
-                            DisplayOrder = 0, // FIX LATER
-                            ForTryon = false,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        _context.ListingImages.Add(listingImage);
-                        break;
+            switch (type)
+            {
+                case UploadType.Listing:
+                    if (listingId == null) throw new ArgumentException("ListingId is required for Listing uploads.");
 
-                    case UploadType.TryOn:
-                            
-                            var tryOnImage = new TryOnImage
-                            {
-                                ProfileId = userId,   // Use the userId passed to the method
-                                ImagePath = fileName,
-                                CreatedAt = DateTime.UtcNow
-                            };
-                            
-                            _context.TryOnImages.Add(tryOnImage);
+                    var listingImage = new ListingImage
+                    {
+                        Id = Guid.NewGuid(),
+                        ListingId = listingId.Value,
+                        ImagePath = fileName,
+                        DisplayOrder = 0, // FIX LATER
+                        ForTryon = false,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.ListingImages.Add(listingImage);
+                    break;
 
-                            break;
+                case UploadType.TryOn:
 
-                    case UploadType.Generated:
-                        if (listingId == null) throw new ArgumentException("ListingId is required for Generated images.");
+                    var tryOnImage = new TryOnImage
+                    {
+                        ProfileId = userId,   // Use the userId passed to the method
+                        ImagePath = fileName,
+                        CreatedAt = DateTime.UtcNow
+                    };
 
-                        var generatedImage = new GeneratedImage
-                        {
-                            Id = Guid.NewGuid(),
-                            UserId = userId,
-                            ListingId = listingId.Value,
-                            ImagePath = fileName,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        _context.GeneratedImages.Add(generatedImage);
-                        break;
+                    _context.TryOnImages.Add(tryOnImage);
 
-                    default:
-                        // Profile or Banner might need separate logic or their own tables
-                        break;
-                }
+                    break;
 
-                await _context.SaveChangesAsync();
+                case UploadType.Generated:
+                    if (listingId == null) throw new ArgumentException("ListingId is required for Generated images.");
+
+                    var generatedImage = new GeneratedImage
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        ListingId = listingId.Value,
+                        ImagePath = fileName,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.GeneratedImages.Add(generatedImage);
+                    break;
+
+                default:
+                    // Profile or Banner might need separate logic or their own tables
+                    break;
+            }
+
+            await _context.SaveChangesAsync();
 
 
             using var stream = file.OpenReadStream();
