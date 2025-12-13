@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,11 +15,22 @@ import {
   Heart,
   ShoppingBag,
   ArrowRight,
-  Play,
+  Shield,
+  Sparkles,
+  TrendingUp,
+  Search,
+  MessageCircle,
+  Star,
 } from "lucide-react";
 import Link from "next/link";
 
 export default function LandingPage() {
+  const scrollRef = useRef(null);
+  const scrollPosRef = useRef(0);
+  const animIdRef = useRef(null);
+  const isHoveredRef = useRef(false);
+  const firstSpanRef = useRef(0);
+
   // Simulated data for environmental impact (REPLACE WITH REAL DATA FROM BACKEND)
   const environmentalStats = {
     clothesSaved: 245680,
@@ -33,13 +45,13 @@ export default function LandingPage() {
       title: "AI Virtual Try-On",
       description:
         "See how clothes look on you before buying with our advanced 3D technology",
-      badge: "Coming Soon",
+      badge: "Preview",
     },
     {
       icon: <Zap className="h-8 w-8 text-teal-500" />,
       title: "Smart Recommendations",
       description:
-        "Get AI-powered outfit ideas customized for your style and any occasion—summer, winter, formal, streetwear, and more",
+        "Get AI-powered outfit ideas customized for your style and any occasion: summer, winter, formal, streetwear and more",
       badge: "AI Powered",
     },
     {
@@ -56,7 +68,51 @@ export default function LandingPage() {
         "Connect with other fashion lovers, share collections, message sellers for additional details, plan meetups and get style inspiration",
       badge: "Social",
     },
+    {
+      icon: <Shield className="h-8 w-8 text-teal-500" />,
+      title: "Secure Payments",
+      description:
+        "Shop with confidence using our encrypted payment system and buyer protection guarantee",
+      badge: "Secure",
+    },
+    {
+      icon: <Sparkles className="h-8 w-8 text-teal-500" />,
+      title: "Quality Assurance",
+      description:
+        "Every item is verified for authenticity and condition before listing to ensure premium quality",
+      badge: "Verified",
+    },
+    {
+      icon: <TrendingUp className="h-8 w-8 text-teal-500" />,
+      title: "Price Intelligence",
+      description:
+        "Get real-time market insights and pricing suggestions to buy or sell at the perfect price",
+      badge: "Smart",
+    },
+    {
+      icon: <Search className="h-8 w-8 text-teal-500" />,
+      title: "Advanced Search",
+      description:
+        "Find exactly what you're looking for with powerful filters, image search and style matching",
+      badge: "Enhanced",
+    },
+    {
+      icon: <MessageCircle className="h-8 w-8 text-teal-500" />,
+      title: "Real-Time Chat",
+      description:
+        "Message sellers instantly, negotiate prices and get detailed item information on the spot",
+      badge: "Instant",
+    },
+    {
+      icon: <Star className="h-8 w-8 text-teal-500" />,
+      title: "Reviews & Ratings",
+      description:
+        "Make informed decisions with verified buyer reviews and seller reputation scores",
+      badge: "Trusted",
+    },
   ];
+
+
 
   // Monthly Impact Growth data (REPLACE WITH REAL DATA FROM BACKEND)
   const monthlyValues = [40, 55, 60, 75, 85, 90, 95, 88, 92, 100, 105, 110];
@@ -84,6 +140,47 @@ export default function LandingPage() {
     (_, i) => (currentMonthIndex - 5 + i + 12) % 12,
   );
   const prevSixSet = new Set(prevSix);
+
+  // Smooth infinite scroll (features carousel)
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    const measureFirstSpan = () => {
+      const children = scrollContainer.children;
+      if (!children || children.length < 2) return 0;
+      const first = children[0];
+      const second = children[1];
+      const firstRect = first.getBoundingClientRect();
+      const secondRect = second.getBoundingClientRect();
+      const gapPx = secondRect.left - (firstRect.left + firstRect.width);
+      return firstRect.width + gapPx;
+    };
+    firstSpanRef.current = measureFirstSpan();
+
+    const animate = () => {
+      if (!isHoveredRef.current) {
+        const pxPerFrame = 0.5; // speed
+        scrollPosRef.current += pxPerFrame;
+        const firstSpan = firstSpanRef.current;
+        if (firstSpan > 0 && scrollPosRef.current >= firstSpan) {
+          const firstChild = scrollContainer.firstElementChild;
+          if (firstChild) {
+            scrollContainer.appendChild(firstChild);
+            scrollPosRef.current -= firstSpan;
+            firstSpanRef.current = measureFirstSpan();
+          }
+        }
+        scrollContainer.style.transform = `translate3d(-${scrollPosRef.current}px, 0, 0)`;
+      }
+      animIdRef.current = requestAnimationFrame(animate);
+    };
+
+    animIdRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animIdRef.current) cancelAnimationFrame(animIdRef.current);
+    };
+  }, [features.length]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -195,10 +292,13 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+      <section id="features" className="py-28 bg-gradient-to-br from-slate-50 via-slate-50 to-teal-50/30 relative overflow-visible">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-r from-teal-400/5 via-emerald-400/5 to-teal-400/5 animate-gradientShift opacity-40 pointer-events-none" />
+        
+        <div className="relative z-10">
+          <div className="text-center mb-16 container mx-auto px-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 pb-2 leading-tight bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
               Revolutionary Features
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -208,35 +308,51 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-2 hover:border-teal-500/50"
-              >
-                <CardContent className="p-8 text-center">
-                  <div className="absolute top-4 right-4">
-                    <Badge
-                      variant="secondary"
-                      className="bg-teal-100 text-teal-700"
-                    >
-                      {feature.badge}
-                    </Badge>
-                  </div>
+          {/* Infinite Carousel */}
+          <div className="relative overflow-visible w-full py-4">
+            <div 
+              ref={scrollRef}
+              className="flex gap-6"
+              onMouseEnter={() => {
+                isHoveredRef.current = true;
+              }}
+              onMouseLeave={() => {
+                isHoveredRef.current = false;
+              }}
+            >
+              {[...features, ...features].map((feature, index) => (
+                <div
+                  key={`feature-${index}`}
+                  className="w-[280px] flex-shrink-0"
+                >
+                  <Card className="relative overflow-hidden group h-full bg-white/40 backdrop-blur-lg border border-white/60 hover:border-teal-400/60 transition-all duration-500 hover:shadow-[0_0_30px_rgba(20,184,166,0.25)] hover:scale-[1.05] hover:z-10">
+                    <div className="absolute inset-0 bg-gradient-to-br from-teal-400/0 to-emerald-400/0 group-hover:from-teal-400/10 group-hover:to-emerald-400/10 transition-all duration-500 pointer-events-none" />
 
-                  <div className="mb-6 flex justify-center">
-                    <div className="p-4 bg-teal-50 rounded-full">
-                      {feature.icon}
-                    </div>
-                  </div>
+                    <CardContent className="p-8 text-center relative z-10">
+                      <div className="absolute top-4 right-4">
+                        <Badge
+                          variant="secondary"
+                          className="bg-teal-100 text-teal-700"
+                        >
+                          {feature.badge}
+                        </Badge>
+                      </div>
 
-                  <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+                      <div className="mb-6 flex justify-center">
+                        <div className="p-4 bg-gradient-to-br from-teal-50 to-emerald-50 rounded-full group-hover:animate-iconBounce transition-all duration-300">
+                          {feature.icon}
+                        </div>
+                      </div>
+
+                      <h3 className="text-xl font-bold mb-4 group-hover:text-teal-600 transition-colors duration-300">{feature.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">
+                        {feature.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
