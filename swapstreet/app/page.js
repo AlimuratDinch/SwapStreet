@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +30,9 @@ export default function LandingPage() {
   const animIdRef = useRef(null);
   const isHoveredRef = useRef(false);
   const firstSpanRef = useRef(0);
+  const chartRef = useRef(null);
+  const [barHeights, setBarHeights] = useState(Array(12).fill(0));
+  const [chartAnimated, setChartAnimated] = useState(false);
 
   // Simulated data for environmental impact (REPLACE WITH REAL DATA FROM BACKEND)
   const environmentalStats = {
@@ -181,6 +184,54 @@ export default function LandingPage() {
       if (animIdRef.current) cancelAnimationFrame(animIdRef.current);
     };
   }, [features.length]);
+
+  // Animate Bar Chart
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !chartAnimated) {
+            setChartAnimated(true);
+            // Animate each bar sequentially
+            monthlyValues.forEach((targetHeight, index) => {
+              setTimeout(() => {
+                let currentHeight = 0;
+                const duration = 800;
+                const increment = targetHeight / (duration / 16);
+                
+                const animateBar = () => {
+                  currentHeight += increment;
+                  if (currentHeight >= targetHeight) {
+                    setBarHeights(prev => {
+                      const newHeights = [...prev];
+                      newHeights[index] = targetHeight;
+                      return newHeights;
+                    });
+                  } else {
+                    setBarHeights(prev => {
+                      const newHeights = [...prev];
+                      newHeights[index] = currentHeight;
+                      return newHeights;
+                    });
+                    requestAnimationFrame(animateBar);
+                  }
+                };
+                animateBar();
+              }, index * 100);
+            });
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    if (chartRef.current) {
+      observer.observe(chartRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [chartAnimated]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -377,7 +428,7 @@ export default function LandingPage() {
                 Carbon Footprint
               </h3>
               <div className="text-4xl font-bold text-green-600 mb-2">
-                {environmentalStats.co2Reduced}T
+                <AnimatedCounter target={environmentalStats.co2Reduced} decimals={1} triggerOnView={true} />T
               </div>
               <p className="text-green-600">CO2 emissions prevented</p>
             </Card>
@@ -388,7 +439,7 @@ export default function LandingPage() {
                 Water Conservation
               </h3>
               <div className="text-4xl font-bold text-blue-600 mb-2">
-                {environmentalStats.waterSaved}M
+                <AnimatedCounter target={environmentalStats.waterSaved} decimals={1} triggerOnView={true} />M
               </div>
               <p className="text-blue-600">
                 Liters of water saved from production
@@ -401,14 +452,14 @@ export default function LandingPage() {
                 Clothes Rescued
               </h3>
               <div className="text-4xl font-bold text-purple-600 mb-2">
-                {environmentalStats.clothesSaved.toLocaleString()}
+                <AnimatedCounter target={environmentalStats.clothesSaved} triggerOnView={true} />
               </div>
               <p className="text-purple-600">Items given a second life</p>
             </Card>
           </div>
 
           {/* Impact Visualization */}
-          <div className="bg-card rounded-xl p-6 md:p-8 shadow-lg">
+          <div ref={chartRef} className="bg-card rounded-xl p-6 md:p-8 shadow-lg">
             <h3 className="text-2xl font-bold mb-8 text-center">
               Monthly Impact Growth
             </h3>
@@ -416,10 +467,10 @@ export default function LandingPage() {
               {monthlyValues.map((height, index) => (
                 <div
                   key={index}
-                  className={`bg-gradient-to-t from-teal-500 to-teal-400 rounded-t-sm md:rounded-t-md relative group ${
+                  className={`bg-gradient-to-t from-teal-500 to-teal-400 rounded-t-sm md:rounded-t-md relative group transition-all duration-300 ${
                     !prevSixSet.has(index) ? "hidden sm:block" : ""
                   }`}
-                  style={{ height: `${height}%` }}
+                  style={{ height: `${barHeights[index]}%` }}
                 >
                   <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                     {height}%
