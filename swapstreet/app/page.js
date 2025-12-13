@@ -35,6 +35,9 @@ export default function LandingPage() {
   const [chartAnimated, setChartAnimated] = useState(false);
   const guideRef = useRef(null);
   const [guideVisible, setGuideVisible] = useState([false, false, false]);
+  const ctaRef = useRef(null);
+  const [typewriterText, setTypewriterText] = useState('');
+  const [showTypewriter, setShowTypewriter] = useState(false);
 
   // Simulated data for environmental impact (REPLACE WITH REAL DATA FROM BACKEND)
   const environmentalStats = {
@@ -264,6 +267,45 @@ export default function LandingPage() {
 
     return () => observer.disconnect();
   }, []);
+
+  // Typewriter effect
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !showTypewriter) {
+            setShowTypewriter(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    if (ctaRef.current) {
+      observer.observe(ctaRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [showTypewriter]);
+
+  useEffect(() => {
+    if (!showTypewriter) return;
+
+    const fullText = 'Ready to Transform Your Wardrobe?';
+    let currentIndex = 0;
+
+    const typeInterval = setInterval(() => {
+      if (currentIndex <= fullText.length) {
+        setTypewriterText(fullText.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(typeInterval);
+      }
+    }, 50);
+
+    return () => clearInterval(typeInterval);
+  }, [showTypewriter]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -581,10 +623,10 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-teal-600 to-emerald-600 text-white">
+      <section ref={ctaRef} className="py-20 bg-gradient-to-br from-teal-600 to-emerald-600 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to Transform Your Wardrobe?
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 min-h-[3.5rem] md:min-h-[4rem]">
+            {typewriterText}<span className="animate-pulse">|</span>
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
             Join the sustainable fashion revolution. Start buying and selling
@@ -594,12 +636,12 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              className="bg-white text-teal-600 hover:bg-gray-100 px-8 py-4 text-lg"
+              className="bg-white text-teal-600 hover:bg-gray-100 px-8 py-4 text-lg group"
               asChild
             >
-              <Link href="/auth/sign-up">
+              <Link href="/auth/sign-up" className="inline-flex items-center justify-center gap-2">
                 Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="h-5 w-5 -mr-7 opacity-0 group-hover:mr-0 group-hover:opacity-100 transition-all duration-300" />
               </Link>
             </Button>
           </div>
