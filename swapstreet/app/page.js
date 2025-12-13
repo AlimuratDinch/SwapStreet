@@ -161,14 +161,7 @@ export default function LandingPage() {
               className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-4 text-lg"
               asChild
             >
-              <Link href="/signup">Start Shopping</Link>
-            </Button>
-            <Button
-              size="lg"
-              className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-4 text-lg"
-              asChild
-            >
-              <Link href="/browse">(TEMPORARY BROWSE)</Link>
+              <Link href="/browse">Start Shopping</Link>
             </Button>
           </div>
 
