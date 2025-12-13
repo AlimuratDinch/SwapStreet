@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import AnimatedCounter from "@/components/AnimatedCounter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -174,25 +175,25 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16">
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                {environmentalStats.clothesSaved.toLocaleString()}+
+                <AnimatedCounter target={environmentalStats.clothesSaved} />+
               </div>
               <div className="text-sm text-white/80">Clothes Saved</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                {environmentalStats.co2Reduced}T
+                <AnimatedCounter target={environmentalStats.co2Reduced} decimals={1} />T
               </div>
               <div className="text-sm text-white/80">CO2 Reduced</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                {environmentalStats.waterSaved}M
+                <AnimatedCounter target={environmentalStats.waterSaved} decimals={1} />M
               </div>
               <div className="text-sm text-white/80">Liters Saved</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                {environmentalStats.usersActive.toLocaleString()}+
+                <AnimatedCounter target={environmentalStats.usersActive} />+
               </div>
               <div className="text-sm text-white/80">Active Users</div>
             </div>
