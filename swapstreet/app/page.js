@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getHeroTypewriterAction } from "@/app/lib/heroTypewriter";
 import { Button } from "@/components/ui/button";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -317,26 +318,24 @@ export default function LandingPage() {
 
   // Rotating typewriter effect (Hero Section)
   useEffect(() => {
-    const currentWord = heroWords[wordIndex];
+    const action = getHeroTypewriterAction({
+      heroText,
+      isDeleting,
+      wordIndex,
+      heroWords,
+    });
+
     let timeout;
 
-    if (!isDeleting && heroText === currentWord) {
-      // Pause before delete
-      timeout = setTimeout(() => setIsDeleting(true), 2000);
-    } else if (isDeleting && heroText === "") {
-      // Move to next word
-      setIsDeleting(false);
-      setWordIndex((prev) => (prev + 1) % heroWords.length);
-    } else {
-      // Type or delete character
-      const speed = isDeleting ? 50 : 100;
+    if (action.type === "pause-then-delete") {
+      timeout = setTimeout(() => setIsDeleting(true), action.delayMs);
+    } else if (action.type === "advance-word") {
+      setIsDeleting(action.nextIsDeleting);
+      setWordIndex(action.nextWordIndex);
+    } else if (action.type === "step") {
       timeout = setTimeout(() => {
-        setHeroText((prev) =>
-          isDeleting
-            ? currentWord.substring(0, prev.length - 1)
-            : currentWord.substring(0, prev.length + 1),
-        );
-      }, speed);
+        setHeroText(action.nextText);
+      }, action.delayMs);
     }
 
     return () => clearTimeout(timeout);
