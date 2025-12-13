@@ -38,6 +38,10 @@ export default function LandingPage() {
   const ctaRef = useRef(null);
   const [typewriterText, setTypewriterText] = useState('');
   const [showTypewriter, setShowTypewriter] = useState(false);
+  const [heroText, setHeroText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [wordIndex, setWordIndex] = useState(0);
+  const heroWords = ['Endless Outfits', 'Sustainable Fashion', 'Unique Styles', 'Eco-Friendly Choices', 'Personalized Looks'];
 
   // Simulated data for environmental impact (REPLACE WITH REAL DATA FROM BACKEND)
   const environmentalStats = {
@@ -302,10 +306,37 @@ export default function LandingPage() {
       } else {
         clearInterval(typeInterval);
       }
-    }, 50);
+    }, 80);
 
     return () => clearInterval(typeInterval);
   }, [showTypewriter]);
+
+  // Rotating typewriter effect (Hero Section)
+  useEffect(() => {
+    const currentWord = heroWords[wordIndex];
+    let timeout;
+
+    if (!isDeleting && heroText === currentWord) {
+      // Pause before delete
+      timeout = setTimeout(() => setIsDeleting(true), 2000);
+    } else if (isDeleting && heroText === '') {
+      // Move to next word
+      setIsDeleting(false);
+      setWordIndex((prev) => (prev + 1) % heroWords.length);
+    } else {
+      // Type or delete character
+      const speed = isDeleting ? 50 : 100;
+      timeout = setTimeout(() => {
+        setHeroText(prev => 
+          isDeleting 
+            ? currentWord.substring(0, prev.length - 1)
+            : currentWord.substring(0, prev.length + 1)
+        );
+      }, speed);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [heroText, isDeleting, wordIndex]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -367,11 +398,13 @@ export default function LandingPage() {
 
         {/* Hero Content */}
         <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4 pt-20 md:pt-0">
-          <h1 className="text-5xl md:text-7xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight">
-            <span className="block">The Marketplace for</span>
-            <span className="text-teal-400 block">Endless Outfits</span>
+          <h1 className="text-5xl md:text-7xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight flex flex-col items-center gap-1">
+            <span className="block whitespace-nowrap max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center w-full">The Marketplace for</span>
+            <span className="text-teal-400 block min-h-[1.2em] whitespace-nowrap max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center inline-block sm:min-w-[25ch]">
+              {heroText}<span className="animate-pulse">|</span>
+            </span>
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl mb-8 text-white/90 max-w-2xl mx-auto max-[400px]:text-base">
             Discover, buy and sell secondhand clothing with AI-powered virtual
             try-ons, personalized recommendations, and real environmental impact
             tracking.
@@ -387,7 +420,7 @@ export default function LandingPage() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-16">
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
                 <AnimatedCounter target={environmentalStats.clothesSaved} />+
