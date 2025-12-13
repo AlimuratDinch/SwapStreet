@@ -425,13 +425,13 @@ export default function LandingPage() {
         {/* Hero Content */}
         <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4 pt-20 md:pt-0">
           <h1
-            className="text-5xl md:text-7xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight flex flex-col items-center gap-1"
+            className="text-5xl md:text-7xl max-[820px]:text-4xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight flex flex-col items-center gap-1"
             suppressHydrationWarning
           >
-            <span className="block whitespace-nowrap max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center w-full">
+            <span className="block whitespace-nowrap max-[820px]:text-3xl max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center w-full">
               The Marketplace for
             </span>
-            <span className="text-teal-400 block min-h-[1.2em] whitespace-nowrap max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center inline-block sm:min-w-[25ch]">
+            <span className="text-teal-400 block min-h-[1.2em] whitespace-nowrap max-[820px]:text-3xl max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center inline-block sm:min-w-[25ch]">
               {heroText}
               <span className="animate-pulse">|</span>
             </span>

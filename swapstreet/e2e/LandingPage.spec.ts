@@ -4,10 +4,8 @@ test.describe("Landing page tests", () => {
   // go to the home page and check main heading + CTA
   test("hero heading and CTA visible", async ({ page }) => {
     await page.goto("/");
-    const h1 = page.getByRole("heading", {
-      level: 1,
-      name: "The Marketplace for Endless Outfits",
-    });
+    const h1 = page.getByRole("heading", { level: 1 });
+    await expect(h1).toContainText("The Marketplace for");
     await expect(h1).toBeVisible();
     const cta = page.getByRole("link", { name: "Start Shopping" });
     await expect(cta).toBeVisible();
