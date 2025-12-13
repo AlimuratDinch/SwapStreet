@@ -343,7 +343,7 @@ export default function LandingPage() {
       // Pause before delete
       /* istanbul ignore next -- pure timing branch, hard to assert reliably */
       timeout = setTimeout(() => setIsDeleting(true), 2000);
-    /* istanbul ignore next -- deletion boundary timing */
+      /* istanbul ignore next -- deletion boundary timing */
     } else if (isDeleting && heroText === "") {
       // Move to next word
       setIsDeleting(false);
