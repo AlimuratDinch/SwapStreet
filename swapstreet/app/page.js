@@ -398,7 +398,7 @@ export default function LandingPage() {
 
         {/* Hero Content */}
         <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4 pt-20 md:pt-0">
-          <h1 className="text-5xl md:text-7xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight flex flex-col items-center gap-1">
+          <h1 className="text-5xl md:text-7xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight flex flex-col items-center gap-1" suppressHydrationWarning>
             <span className="block whitespace-nowrap max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center w-full">The Marketplace for</span>
             <span className="text-teal-400 block min-h-[1.2em] whitespace-nowrap max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center inline-block sm:min-w-[25ch]">
               {heroText}<span className="animate-pulse">|</span>
@@ -566,7 +566,7 @@ export default function LandingPage() {
           </div>
 
           {/* Impact Visualization */}
-          <div ref={chartRef} className="bg-card rounded-xl p-6 md:p-8 shadow-lg">
+          <div ref={chartRef} className="bg-card rounded-xl p-6 md:p-8 shadow-lg" suppressHydrationWarning>
             <h3 className="text-2xl font-bold mb-8 text-center">
               Monthly Impact Growth
             </h3>
@@ -612,7 +612,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div ref={guideRef} className="grid md:grid-cols-3 gap-12">
+          <div ref={guideRef} className="grid md:grid-cols-3 gap-12" suppressHydrationWarning>
             <div className={`text-center transition-all duration-700 ease-out ${
               guideVisible[0] ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
             }`}>
@@ -658,7 +658,7 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section ref={ctaRef} className="py-20 bg-gradient-to-br from-teal-600 to-emerald-600 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 min-h-[3.5rem] md:min-h-[4rem]">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 min-h-[3.5rem] md:min-h-[4rem]" suppressHydrationWarning>
             {typewriterText}<span className="animate-pulse">|</span>
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
