@@ -33,6 +33,8 @@ export default function LandingPage() {
   const chartRef = useRef(null);
   const [barHeights, setBarHeights] = useState(Array(12).fill(0));
   const [chartAnimated, setChartAnimated] = useState(false);
+  const guideRef = useRef(null);
+  const [guideVisible, setGuideVisible] = useState([false, false, false]);
 
   // Simulated data for environmental impact (REPLACE WITH REAL DATA FROM BACKEND)
   const environmentalStats = {
@@ -232,6 +234,36 @@ export default function LandingPage() {
 
     return () => observer.disconnect();
   }, [chartAnimated]);
+
+  // Animate Guide Section
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Animate each box sequentially
+            [0, 1, 2].forEach((index) => {
+              setTimeout(() => {
+                setGuideVisible(prev => {
+                  const newVisible = [...prev];
+                  newVisible[index] = true;
+                  return newVisible;
+                });
+              }, index * 1000);
+            });
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    if (guideRef.current) {
+      observer.observe(guideRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -505,8 +537,10 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-12">
-            <div className="text-center">
+          <div ref={guideRef} className="grid md:grid-cols-3 gap-12">
+            <div className={`text-center transition-all duration-700 ease-out ${
+              guideVisible[0] ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
+            }`}>
               <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <ShoppingBag className="h-10 w-10 text-white" />
               </div>
@@ -517,7 +551,9 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="text-center">
+            <div className={`text-center transition-all duration-700 ease-out ${
+              guideVisible[1] ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
+            }`}>
               <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Eye className="h-10 w-10 text-white" />
               </div>
@@ -528,7 +564,9 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="text-center">
+            <div className={`text-center transition-all duration-700 ease-out ${
+              guideVisible[2] ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
+            }`}>
               <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Leaf className="h-10 w-10 text-white" />
               </div>
