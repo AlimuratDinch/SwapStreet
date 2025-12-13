@@ -116,7 +116,8 @@ code {
 /* Feature Card Animations */
 @layer utilities {
   @keyframes iconBounce {
-    0%, 100% {
+    0%,
+    100% {
       transform: scale(1) rotate(0deg);
     }
     50% {
@@ -125,7 +126,8 @@ code {
   }
 
   @keyframes gradientShift {
-    0%, 100% {
+    0%,
+    100% {
       background-position: 0% 50%;
     }
     50% {
@@ -142,4 +144,3 @@ code {
     background-size: 200% 200%;
   }
 }
-

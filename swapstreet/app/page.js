@@ -36,12 +36,18 @@ export default function LandingPage() {
   const guideRef = useRef(null);
   const [guideVisible, setGuideVisible] = useState([false, false, false]);
   const ctaRef = useRef(null);
-  const [typewriterText, setTypewriterText] = useState('');
+  const [typewriterText, setTypewriterText] = useState("");
   const [showTypewriter, setShowTypewriter] = useState(false);
-  const [heroText, setHeroText] = useState('');
+  const [heroText, setHeroText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [wordIndex, setWordIndex] = useState(0);
-  const heroWords = ['Endless Outfits', 'Sustainable Fashion', 'Unique Styles', 'Eco-Friendly Choices', 'Personalized Looks'];
+  const heroWords = [
+    "Endless Outfits",
+    "Sustainable Fashion",
+    "Unique Styles",
+    "Eco-Friendly Choices",
+    "Personalized Looks",
+  ];
 
   // Simulated data for environmental impact (REPLACE WITH REAL DATA FROM BACKEND)
   const environmentalStats = {
@@ -124,8 +130,6 @@ export default function LandingPage() {
     },
   ];
 
-
-
   // Monthly Impact Growth data (REPLACE WITH REAL DATA FROM BACKEND)
   const monthlyValues = [40, 55, 60, 75, 85, 90, 95, 88, 92, 100, 105, 110];
   const monthLabels = [
@@ -207,17 +211,17 @@ export default function LandingPage() {
                 let currentHeight = 0;
                 const duration = 800;
                 const increment = targetHeight / (duration / 16);
-                
+
                 const animateBar = () => {
                   currentHeight += increment;
                   if (currentHeight >= targetHeight) {
-                    setBarHeights(prev => {
+                    setBarHeights((prev) => {
                       const newHeights = [...prev];
                       newHeights[index] = targetHeight;
                       return newHeights;
                     });
                   } else {
-                    setBarHeights(prev => {
+                    setBarHeights((prev) => {
                       const newHeights = [...prev];
                       newHeights[index] = currentHeight;
                       return newHeights;
@@ -232,7 +236,7 @@ export default function LandingPage() {
           }
         });
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
 
     if (chartRef.current) {
@@ -251,7 +255,7 @@ export default function LandingPage() {
             // Animate each box sequentially
             [0, 1, 2].forEach((index) => {
               setTimeout(() => {
-                setGuideVisible(prev => {
+                setGuideVisible((prev) => {
                   const newVisible = [...prev];
                   newVisible[index] = true;
                   return newVisible;
@@ -262,7 +266,7 @@ export default function LandingPage() {
           }
         });
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
 
     if (guideRef.current) {
@@ -283,7 +287,7 @@ export default function LandingPage() {
           }
         });
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
 
     if (ctaRef.current) {
@@ -296,7 +300,7 @@ export default function LandingPage() {
   useEffect(() => {
     if (!showTypewriter) return;
 
-    const fullText = 'Ready to Transform Your Wardrobe?';
+    const fullText = "Ready to Transform Your Wardrobe?";
     let currentIndex = 0;
 
     const typeInterval = setInterval(() => {
@@ -319,7 +323,7 @@ export default function LandingPage() {
     if (!isDeleting && heroText === currentWord) {
       // Pause before delete
       timeout = setTimeout(() => setIsDeleting(true), 2000);
-    } else if (isDeleting && heroText === '') {
+    } else if (isDeleting && heroText === "") {
       // Move to next word
       setIsDeleting(false);
       setWordIndex((prev) => (prev + 1) % heroWords.length);
@@ -327,10 +331,10 @@ export default function LandingPage() {
       // Type or delete character
       const speed = isDeleting ? 50 : 100;
       timeout = setTimeout(() => {
-        setHeroText(prev => 
-          isDeleting 
+        setHeroText((prev) =>
+          isDeleting
             ? currentWord.substring(0, prev.length - 1)
-            : currentWord.substring(0, prev.length + 1)
+            : currentWord.substring(0, prev.length + 1),
         );
       }, speed);
     }
@@ -398,10 +402,16 @@ export default function LandingPage() {
 
         {/* Hero Content */}
         <div className="relative z-20 text-center text-white max-w-4xl mx-auto px-4 pt-20 md:pt-0">
-          <h1 className="text-5xl md:text-7xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight flex flex-col items-center gap-1" suppressHydrationWarning>
-            <span className="block whitespace-nowrap max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center w-full">The Marketplace for</span>
+          <h1
+            className="text-5xl md:text-7xl max-[390px]:text-4xl max-[375px]:text-4xl max-[360px]:text-3xl max-[320px]:text-2xl font-bold mb-6 leading-tight max-[390px]:leading-snug max-[375px]:leading-snug max-[320px]:leading-tight flex flex-col items-center gap-1"
+            suppressHydrationWarning
+          >
+            <span className="block whitespace-nowrap max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center w-full">
+              The Marketplace for
+            </span>
             <span className="text-teal-400 block min-h-[1.2em] whitespace-nowrap max-[500px]:text-3xl max-[400px]:text-2xl max-[340px]:text-xl text-center inline-block sm:min-w-[25ch]">
-              {heroText}<span className="animate-pulse">|</span>
+              {heroText}
+              <span className="animate-pulse">|</span>
             </span>
           </h1>
           <p className="text-lg md:text-xl mb-8 text-white/90 max-w-2xl mx-auto max-[400px]:text-base">
@@ -429,13 +439,21 @@ export default function LandingPage() {
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                <AnimatedCounter target={environmentalStats.co2Reduced} decimals={1} />T
+                <AnimatedCounter
+                  target={environmentalStats.co2Reduced}
+                  decimals={1}
+                />
+                T
               </div>
               <div className="text-sm text-white/80">CO2 Reduced</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                <AnimatedCounter target={environmentalStats.waterSaved} decimals={1} />M
+                <AnimatedCounter
+                  target={environmentalStats.waterSaved}
+                  decimals={1}
+                />
+                M
               </div>
               <div className="text-sm text-white/80">Liters Saved</div>
             </div>
@@ -450,10 +468,13 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-28 bg-gradient-to-br from-slate-50 via-slate-50 to-teal-50/30 relative overflow-visible">
+      <section
+        id="features"
+        className="py-28 bg-gradient-to-br from-slate-50 via-slate-50 to-teal-50/30 relative overflow-visible"
+      >
         {/* Animated gradient background */}
         <div className="absolute inset-0 bg-gradient-to-r from-teal-400/5 via-emerald-400/5 to-teal-400/5 animate-gradientShift opacity-40 pointer-events-none" />
-        
+
         <div className="relative z-10">
           <div className="text-center mb-16 container mx-auto px-4">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 pb-2 leading-tight bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
@@ -468,7 +489,7 @@ export default function LandingPage() {
 
           {/* Infinite Carousel */}
           <div className="relative overflow-visible w-full py-4">
-            <div 
+            <div
               ref={scrollRef}
               className="flex gap-6"
               onMouseEnter={() => {
@@ -502,7 +523,9 @@ export default function LandingPage() {
                         </div>
                       </div>
 
-                      <h3 className="text-xl font-bold mb-4 group-hover:text-teal-600 transition-colors duration-300">{feature.title}</h3>
+                      <h3 className="text-xl font-bold mb-4 group-hover:text-teal-600 transition-colors duration-300">
+                        {feature.title}
+                      </h3>
                       <p className="text-muted-foreground leading-relaxed">
                         {feature.description}
                       </p>
@@ -535,7 +558,12 @@ export default function LandingPage() {
                 Carbon Footprint
               </h3>
               <div className="text-4xl font-bold text-green-600 mb-2">
-                <AnimatedCounter target={environmentalStats.co2Reduced} decimals={1} triggerOnView={true} />T
+                <AnimatedCounter
+                  target={environmentalStats.co2Reduced}
+                  decimals={1}
+                  triggerOnView={true}
+                />
+                T
               </div>
               <p className="text-green-600">CO2 emissions prevented</p>
             </Card>
@@ -546,7 +574,12 @@ export default function LandingPage() {
                 Water Conservation
               </h3>
               <div className="text-4xl font-bold text-blue-600 mb-2">
-                <AnimatedCounter target={environmentalStats.waterSaved} decimals={1} triggerOnView={true} />M
+                <AnimatedCounter
+                  target={environmentalStats.waterSaved}
+                  decimals={1}
+                  triggerOnView={true}
+                />
+                M
               </div>
               <p className="text-blue-600">
                 Liters of water saved from production
@@ -559,14 +592,21 @@ export default function LandingPage() {
                 Clothes Rescued
               </h3>
               <div className="text-4xl font-bold text-purple-600 mb-2">
-                <AnimatedCounter target={environmentalStats.clothesSaved} triggerOnView={true} />
+                <AnimatedCounter
+                  target={environmentalStats.clothesSaved}
+                  triggerOnView={true}
+                />
               </div>
               <p className="text-purple-600">Items given a second life</p>
             </Card>
           </div>
 
           {/* Impact Visualization */}
-          <div ref={chartRef} className="bg-card rounded-xl p-6 md:p-8 shadow-lg" suppressHydrationWarning>
+          <div
+            ref={chartRef}
+            className="bg-card rounded-xl p-6 md:p-8 shadow-lg"
+            suppressHydrationWarning
+          >
             <h3 className="text-2xl font-bold mb-8 text-center">
               Monthly Impact Growth
             </h3>
@@ -612,10 +652,18 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div ref={guideRef} className="grid md:grid-cols-3 gap-12" suppressHydrationWarning>
-            <div className={`text-center transition-all duration-700 ease-out ${
-              guideVisible[0] ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
-            }`}>
+          <div
+            ref={guideRef}
+            className="grid md:grid-cols-3 gap-12"
+            suppressHydrationWarning
+          >
+            <div
+              className={`text-center transition-all duration-700 ease-out ${
+                guideVisible[0]
+                  ? "opacity-100 translate-x-0"
+                  : "opacity-0 translate-x-20"
+              }`}
+            >
               <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <ShoppingBag className="h-10 w-10 text-white" />
               </div>
@@ -626,9 +674,13 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className={`text-center transition-all duration-700 ease-out ${
-              guideVisible[1] ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
-            }`}>
+            <div
+              className={`text-center transition-all duration-700 ease-out ${
+                guideVisible[1]
+                  ? "opacity-100 translate-x-0"
+                  : "opacity-0 translate-x-20"
+              }`}
+            >
               <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Eye className="h-10 w-10 text-white" />
               </div>
@@ -639,9 +691,13 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className={`text-center transition-all duration-700 ease-out ${
-              guideVisible[2] ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
-            }`}>
+            <div
+              className={`text-center transition-all duration-700 ease-out ${
+                guideVisible[2]
+                  ? "opacity-100 translate-x-0"
+                  : "opacity-0 translate-x-20"
+              }`}
+            >
               <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Leaf className="h-10 w-10 text-white" />
               </div>
@@ -656,10 +712,17 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section ref={ctaRef} className="py-20 bg-gradient-to-br from-teal-600 to-emerald-600 text-white">
+      <section
+        ref={ctaRef}
+        className="py-20 bg-gradient-to-br from-teal-600 to-emerald-600 text-white"
+      >
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 min-h-[3.5rem] md:min-h-[4rem]" suppressHydrationWarning>
-            {typewriterText}<span className="animate-pulse">|</span>
+          <h2
+            className="text-4xl md:text-5xl font-bold mb-6 min-h-[3.5rem] md:min-h-[4rem]"
+            suppressHydrationWarning
+          >
+            {typewriterText}
+            <span className="animate-pulse">|</span>
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
             Join the sustainable fashion revolution. Start buying and selling
@@ -672,7 +735,10 @@ export default function LandingPage() {
               className="bg-white text-teal-600 hover:bg-gray-100 px-8 py-4 text-lg group"
               asChild
             >
-              <Link href="/auth/sign-up" className="inline-flex items-center justify-center gap-2">
+              <Link
+                href="/auth/sign-up"
+                className="inline-flex items-center justify-center gap-2"
+              >
                 Get Started Free
                 <ArrowRight className="h-5 w-5 -mr-7 opacity-0 group-hover:mr-0 group-hover:opacity-100 transition-all duration-300" />
               </Link>
