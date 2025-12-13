@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     // --- DbSets for Related/Junction Tables ---
     public DbSet<ListingImage> ListingImages { get; set; } = null!;
     public DbSet<GeneratedImage> GeneratedImages { get; set; } = null!;
+    public DbSet<TryOnImage> TryOnImages { get; set; } = null!;
 
     // --- DbSets for Lookup/Reference Tables ---
     public DbSet<City> Cities { get; set; } = null!;
@@ -186,5 +187,13 @@ public class AppDbContext : DbContext
             .HasOne(wl => wl.Listing)
             .WithMany()
             .HasForeignKey(wl => wl.ListingId);
+
+        // TryOnImage
+        modelBuilder.Entity<TryOnImage>().ToTable("tryon_images");
+        modelBuilder.Entity<TryOnImage>()
+            .HasOne(ti => ti.Profile)
+            .WithMany()
+            .HasForeignKey(ti => ti.ProfileId);
+
     }
 }

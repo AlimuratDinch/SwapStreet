@@ -11,8 +11,6 @@ using backend.Models;
 using Minio;
 using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using backend.Data.Seed;
 using System.Security.Cryptography;
 
@@ -36,6 +34,14 @@ builder.Services.AddCors(options =>
 // Check for dev flag
 var useInMemory = Environment.GetEnvironmentVariable("USE_INMEMORY_DB") == "true";
 
+// Configure Gemini API (required for both in-memory and production)
+var geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                   ?? "1223df130i3rjni1i0n130if13fn0i31f0ni31f0in31f";
+var geminiApiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL")
+                   ?? "https://generativelanguage.googleapis.com/v1beta/models/";
+builder.Configuration["Gemini:ApiKey"] = geminiApiKey;
+builder.Configuration["Gemini:ApiUrl"] = geminiApiUrl;
+
 // Configure EF Core depending on flag
 if (useInMemory)
 {
@@ -56,7 +62,6 @@ else
     // Build Postgres connection string from environment variables
     var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
                        ?? throw new InvalidOperationException("Connection string not set.");
-
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
     builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -113,6 +118,17 @@ builder.Services.AddAuthentication(options =>
 
 
 builder.Services.AddAuthorization();
+
+// Register services
+//builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+//builder.Services.AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddScoped<IGenerativeService, GenerativeService>();
+builder.Services.AddScoped<ITryOnService, backend.Services.VirtualTryOn.TryOnService>();
+builder.Services.AddHttpClient(); // Required for IHttpClientFactory used by GenerativeService
 
 builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 

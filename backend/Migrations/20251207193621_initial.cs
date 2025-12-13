@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace backend.Migrations
 {
     /// <inheritdoc />
-    public partial class MajUpdateCorrections : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -90,8 +90,10 @@ namespace backend.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    ProvinceId = table.Column<int>(type: "integer", nullable: false)
+                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ProvinceId = table.Column<int>(type: "integer", nullable: false),
+                    Latitude = table.Column<double>(type: "double precision", nullable: false),
+                    Longitude = table.Column<double>(type: "double precision", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -150,6 +152,26 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "fsas",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Code = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+                    CityId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_fsas", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_fsas_cities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "cities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "profiles",
                 columns: table => new
                 {
@@ -157,8 +179,8 @@ namespace backend.Migrations
                     Status = table.Column<int>(type: "integer", nullable: false),
                     VerifiedSeller = table.Column<bool>(type: "boolean", nullable: false),
                     FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Lastname = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Rating = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Rating = table.Column<float>(type: "real", nullable: false),
                     Bio = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     CityId = table.Column<int>(type: "integer", nullable: false),
                     FSA = table.Column<string>(type: "varchar(3)", maxLength: 3, nullable: false),
@@ -187,7 +209,7 @@ namespace backend.Migrations
                     Price = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     ProfileId = table.Column<Guid>(type: "uuid", nullable: false),
-                    TagId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TagId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
@@ -204,6 +226,26 @@ namespace backend.Migrations
                         name: "FK_listings_tags_TagId",
                         column: x => x.TagId,
                         principalTable: "tags",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "tryon_images",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProfileId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tryon_images", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_tryon_images_profiles_ProfileId",
+                        column: x => x.ProfileId,
+                        principalTable: "profiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -289,6 +331,16 @@ namespace backend.Migrations
                 column: "ProvinceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_fsas_CityId",
+                table: "fsas",
+                column: "CityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_fsas_Code",
+                table: "fsas",
+                column: "Code");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_generated_images_ListingId",
                 table: "generated_images",
                 column: "ListingId");
@@ -344,6 +396,11 @@ namespace backend.Migrations
                 column: "StyleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_tryon_images_ProfileId",
+                table: "tryon_images",
+                column: "ProfileId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_wishlists_ListingId",
                 table: "wishlists",
                 column: "ListingId");
@@ -358,10 +415,16 @@ namespace backend.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "fsas");
+
+            migrationBuilder.DropTable(
                 name: "generated_images");
 
             migrationBuilder.DropTable(
                 name: "listing_images");
+
+            migrationBuilder.DropTable(
+                name: "tryon_images");
 
             migrationBuilder.DropTable(
                 name: "wishlists");
