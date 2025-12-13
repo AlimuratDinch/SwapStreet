@@ -12,8 +12,8 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251122002226_MajUpdateCorrections")]
-    partial class MajUpdateCorrections
+    [Migration("20251207193621_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -69,10 +69,16 @@ namespace backend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision");
+
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("ProvinceId")
                         .HasColumnType("integer");
@@ -82,6 +88,31 @@ namespace backend.Migrations
                     b.HasIndex("ProvinceId");
 
                     b.ToTable("cities", (string)null);
+                });
+
+            modelBuilder.Entity("Fsa", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CityId");
+
+                    b.HasIndex("Code");
+
+                    b.ToTable("fsas", (string)null);
                 });
 
             modelBuilder.Entity("GeneratedImage", b =>
@@ -137,7 +168,7 @@ namespace backend.Migrations
                     b.Property<Guid>("ProfileId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("TagId")
+                    b.Property<Guid?>("TagId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -214,7 +245,7 @@ namespace backend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Lastname")
+                    b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -223,8 +254,8 @@ namespace backend.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<decimal>("Rating")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<float>("Rating")
+                        .HasColumnType("real");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -362,6 +393,32 @@ namespace backend.Migrations
                     b.ToTable("tags", (string)null);
                 });
 
+            modelBuilder.Entity("TryOnImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImagePath")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileId");
+
+                    b.ToTable("tryon_images", (string)null);
+                });
+
             modelBuilder.Entity("WishList", b =>
                 {
                     b.Property<Guid>("Id")
@@ -397,6 +454,17 @@ namespace backend.Migrations
                     b.Navigation("Province");
                 });
 
+            modelBuilder.Entity("Fsa", b =>
+                {
+                    b.HasOne("City", "City")
+                        .WithMany("Fsas")
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("City");
+                });
+
             modelBuilder.Entity("GeneratedImage", b =>
                 {
                     b.HasOne("Listing", "Listing")
@@ -426,9 +494,7 @@ namespace backend.Migrations
 
                     b.HasOne("Tag", "Tag")
                         .WithMany()
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TagId");
 
                     b.Navigation("Profile");
 
@@ -503,6 +569,17 @@ namespace backend.Migrations
                     b.Navigation("StyleRef");
                 });
 
+            modelBuilder.Entity("TryOnImage", b =>
+                {
+                    b.HasOne("Profile", "Profile")
+                        .WithMany()
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
+                });
+
             modelBuilder.Entity("WishList", b =>
                 {
                     b.HasOne("Listing", "Listing")
@@ -520,6 +597,11 @@ namespace backend.Migrations
                     b.Navigation("Listing");
 
                     b.Navigation("Profile");
+                });
+
+            modelBuilder.Entity("City", b =>
+                {
+                    b.Navigation("Fsas");
                 });
 #pragma warning restore 612, 618
         }

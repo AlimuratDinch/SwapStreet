@@ -165,7 +165,7 @@ namespace backend.Migrations
                     b.Property<Guid>("ProfileId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("TagId")
+                    b.Property<Guid?>("TagId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -390,6 +390,32 @@ namespace backend.Migrations
                     b.ToTable("tags", (string)null);
                 });
 
+            modelBuilder.Entity("TryOnImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImagePath")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileId");
+
+                    b.ToTable("tryon_images", (string)null);
+                });
+
             modelBuilder.Entity("WishList", b =>
                 {
                     b.Property<Guid>("Id")
@@ -465,9 +491,7 @@ namespace backend.Migrations
 
                     b.HasOne("Tag", "Tag")
                         .WithMany()
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TagId");
 
                     b.Navigation("Profile");
 
@@ -540,6 +564,17 @@ namespace backend.Migrations
                     b.Navigation("SizeRef");
 
                     b.Navigation("StyleRef");
+                });
+
+            modelBuilder.Entity("TryOnImage", b =>
+                {
+                    b.HasOne("Profile", "Profile")
+                        .WithMany()
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profile");
                 });
 
             modelBuilder.Entity("WishList", b =>

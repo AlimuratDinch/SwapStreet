@@ -10,11 +10,13 @@ using Minio.DataModel.Args;
 using Minio.DataModel.Response;
 using Moq;
 using Xunit;
-using AwesomeAssertions;
+using AwesomeAssertions; // Replaced AwesomeAssertions with standard FluentAssertions
 using backend.Models;
 using System.Collections.Generic;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using backend.DbContexts;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Tests.Services
 {
@@ -23,6 +25,7 @@ namespace backend.Tests.Services
         private readonly MinioFileStorageService _service;
         private readonly Mock<IMinioClient> _minioMock;
         private readonly MinioSettings _settings;
+        private readonly AppDbContext _context; // Add Context for DB operations
 
         public MinioFileStorageServiceTests()
         {
@@ -34,11 +37,19 @@ namespace backend.Tests.Services
                 PrivateBucketName = "private"
             };
 
-            var options = Options.Create(_settings);
+            var optionsWrapper = Options.Create(_settings);
 
-            _service = new MinioFileStorageService(_minioMock.Object, options);
+            // --- 1. Setup In-Memory Database for testing ---
+            var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique DB per test
+                .Options;
 
-            // Mock PutObjectAsync to return Task<PutObjectResponse>
+            _context = new AppDbContext(dbOptions);
+
+            // --- 2. Inject Context into Service ---
+            _service = new MinioFileStorageService(_minioMock.Object, optionsWrapper, _context);
+
+            // Mock PutObjectAsync to return successful response
             _minioMock
                 .Setup(m => m.PutObjectAsync(It.IsAny<PutObjectArgs>(), default))
                 .ReturnsAsync(new PutObjectResponse(
@@ -70,35 +81,61 @@ namespace backend.Tests.Services
         [Fact]
         public async Task UploadFileAsync_PublicFile_ShouldReturnPublicUrl()
         {
+            // Arrange
             var file = CreateFakeFile();
+            var userId = Guid.NewGuid();
+            var listingId = Guid.NewGuid();
 
-            var url = await _service.UploadFileAsync(file, UploadType.Listing);
+            // Act
+            // Pass required userId and listingId
+            var url = await _service.UploadFileAsync(file, UploadType.Listing, userId, listingId);
 
+            // Assert
             url.Should().StartWith("http://localhost:9000/public/");
+
+            // Verify DB record was created
+            var dbRecord = await _context.ListingImages.FirstOrDefaultAsync();
+            dbRecord.Should().NotBeNull();
+            dbRecord.ListingId.Should().Be(listingId);
         }
 
         [Fact]
         public async Task UploadFileAsync_PrivateTryOn_ShouldReturnPresignedUrl()
         {
+            // Arrange
             var file = CreateFakeFile();
+            var userId = Guid.NewGuid();
 
             _minioMock
                 .Setup(m => m.PresignedGetObjectAsync(It.IsAny<PresignedGetObjectArgs>()))
                 .ReturnsAsync("http://minio:9000/private/tryon/test.jpg");
 
-            var url = await _service.UploadFileAsync(file, UploadType.TryOn);
+            // Act
+            // TryOn generally doesn't require a ListingId, but needs a UserId
+            var url = await _service.UploadFileAsync(file, UploadType.TryOn, userId);
 
+            // Assert
             url.Should().StartWith("http://localhost:9000/private/tryon/");
             url.Should().Contain("test.jpg");
+
+            // Verify DB record was created
+            var dbRecord = await _context.TryOnImages.FirstOrDefaultAsync();
+            dbRecord.Should().NotBeNull();
+            dbRecord.ProfileId.Should().Be(userId);
         }
 
         [Fact]
         public async Task UploadFileAsync_InvalidFileType_ShouldThrowArgumentException()
         {
+            // Arrange
             var file = CreateFakeFile(contentType: "text/plain");
+            var userId = Guid.NewGuid();
+            var listingId = Guid.NewGuid();
 
-            Func<Task> act = async () => await _service.UploadFileAsync(file, UploadType.Listing);
+            // Act
+            Func<Task> act = async () => await _service.UploadFileAsync(file, UploadType.Listing, userId, listingId);
 
+            // Assert
             await act.Should().ThrowAsync<ArgumentException>()
                      .WithMessage("Invalid file type*");
         }
@@ -106,14 +143,17 @@ namespace backend.Tests.Services
         [Fact]
         public async Task GetPrivateFileUrlAsync_ShouldReplaceMinioHostWithLocalhost()
         {
+            // Arrange
             string objectName = "tryon/test.jpg";
 
             _minioMock
                 .Setup(m => m.PresignedGetObjectAsync(It.IsAny<PresignedGetObjectArgs>()))
                 .ReturnsAsync("http://minio:9000/private/tryon/test.jpg");
 
+            // Act
             var url = await _service.GetPrivateFileUrlAsync(objectName);
 
+            // Assert
             url.Should().StartWith("http://localhost:9000/private/tryon/");
             url.Should().Contain(objectName);
         }
@@ -121,15 +161,26 @@ namespace backend.Tests.Services
         [Fact]
         public async Task UploadFileAsync_GeneratedFile_ShouldUsePrivateBucket()
         {
+            // Arrange
             var file = CreateFakeFile();
+            var userId = Guid.NewGuid();
+            var listingId = Guid.NewGuid();
 
             _minioMock
                 .Setup(m => m.PresignedGetObjectAsync(It.IsAny<PresignedGetObjectArgs>()))
                 .ReturnsAsync("http://minio:9000/private/generated/test.jpg");
 
-            var url = await _service.UploadFileAsync(file, UploadType.Generated);
+            // Act
+            // Generated type requires ListingId
+            var url = await _service.UploadFileAsync(file, UploadType.Generated, userId, listingId);
 
+            // Assert
             url.Should().StartWith("http://localhost:9000/private/generated/");
+
+            // Verify DB record
+            var dbRecord = await _context.GeneratedImages.FirstOrDefaultAsync();
+            dbRecord.Should().NotBeNull();
+            dbRecord.ListingId.Should().Be(listingId);
         }
     }
 }
