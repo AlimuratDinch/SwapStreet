@@ -110,10 +110,10 @@ export default function LandingPage() {
               Impact
             </Link>
             <Link
-              href="#about"
+              href="#guide"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              About
+              Guide
             </Link>
           </div>
 
@@ -332,7 +332,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-muted/30">
+      <section id="guide" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
