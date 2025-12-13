@@ -53,7 +53,9 @@ describe("Home Page", () => {
   it("renders hero section with tagline", () => {
     render(<Home />);
     expect(screen.getByText("The Marketplace for")).toBeInTheDocument();
-    expect(screen.getByText(/Discover, buy and sell secondhand clothing/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Discover, buy and sell secondhand clothing/i),
+    ).toBeInTheDocument();
   });
 
   it("renders start shopping button", () => {
