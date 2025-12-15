@@ -16,6 +16,7 @@ import {
   CardItem,
 } from "@/app/browse/BrowseElements";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AuthProvider } from "@/contexts/AuthContext";
 import React from "react";
 
 // ---------------- Mocks ----------------
@@ -39,7 +40,11 @@ beforeEach(() => {
 // ---------------- Header ----------------
 describe("Header", () => {
   it("renders brand and nav links", () => {
-    render(<Header />);
+    render(
+      <AuthProvider>
+        <Header />
+      </AuthProvider>,
+    );
     expect(screen.getByText(/SWAP/)).toBeInTheDocument();
     expect(screen.getByText(/STREET/)).toBeInTheDocument();
     expect(screen.getByText(/Featured/)).toBeInTheDocument();
@@ -166,7 +171,12 @@ describe("Sidebar", () => {
 describe("CardItem", () => {
   it("renders with image", () => {
     render(
-      <CardItem title="T-Shirt" description="Blue cotton" imgSrc="/test.jpg" />,
+      <CardItem
+        title="T-Shirt"
+        description="Blue cotton"
+        imgSrc="/test.jpg"
+        price={20}
+      />,
     );
     expect(screen.getByText("T-Shirt")).toBeInTheDocument();
     expect(screen.getByText("Blue cotton")).toBeInTheDocument();
@@ -174,7 +184,7 @@ describe("CardItem", () => {
   });
 
   it("renders fallback text without image", () => {
-    render(<CardItem title="No Image" description="Desc" />);
+    render(<CardItem title="No Image" description="Desc" price={0} />);
     expect(screen.getByText("Image")).toBeInTheDocument();
   });
 });
