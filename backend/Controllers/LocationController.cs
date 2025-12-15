@@ -1,42 +1,38 @@
 using Microsoft.AspNetCore.Mvc;
 using backend.Contracts;
+using backend.DTOs;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/location")]
-    public class LocationController : ControllerBase
+    public class LocationsController : ControllerBase
     {
         private readonly ILocationService _locationService;
 
-        public LocationController(ILocationService locationService)
+        public LocationsController(ILocationService locationService)
         {
             _locationService = locationService;
         }
 
-        /// <summary>
-        /// Get all provinces
-        /// </summary>
-        [HttpGet("provinces")]
-        public async Task<IActionResult> GetProvinces()
+        [HttpGet("lookup/{fsa}")]
+        public async Task<IActionResult> GetLocationByPostal(string fsa)
         {
-            var provinces = await _locationService.GetAllProvincesAsync();
-            return Ok(provinces);
-        }
+            var city = await _locationService.GetCityByFsaAsync(fsa);
 
-        /// <summary>
-        /// Get cities filtered by province (required for performance and security)
-        /// </summary>
-        [HttpGet("cities")]
-        public async Task<IActionResult> GetCities([FromQuery] int? provinceId)
-        {
-            if (!provinceId.HasValue)
+            if (city == null)
             {
-                return BadRequest(new { Error = "provinceId query parameter is required" });
+                return NotFound("Postal code not supported or invalid.");
             }
 
-            var cities = await _locationService.GetCitiesByProvinceAsync(provinceId.Value);
-            return Ok(cities);
+            return Ok(new LocationResponseDto
+            {
+                City = city.Name,
+                Province = city.Province?.Name ?? string.Empty,
+                ProvinceCode = city.Province?.Code ?? string.Empty,
+                Lat = city.Latitude,
+                Lng = city.Longitude
+            });
         }
     }
 }

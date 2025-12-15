@@ -14,5 +14,7 @@ namespace backend.DTOs.Image
 
         [Required]
         public UploadType Type { get; set; }
+
+        public Guid? ListingId { get; set; }
     }
 }

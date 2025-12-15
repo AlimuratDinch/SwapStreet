@@ -14,10 +14,12 @@ public class AppDbContext : DbContext
     // --- DbSets for Related/Junction Tables ---
     public DbSet<ListingImage> ListingImages { get; set; } = null!;
     public DbSet<GeneratedImage> GeneratedImages { get; set; } = null!;
+    public DbSet<TryOnImage> TryOnImages { get; set; } = null!;
 
     // --- DbSets for Lookup/Reference Tables ---
     public DbSet<City> Cities { get; set; } = null!;
     public DbSet<Province> Provinces { get; set; } = null!;
+    public DbSet<Fsa> Fsas { get; set; } = null!;
     public DbSet<ArticleType> ArticleTypes { get; set; } = null!;
     public DbSet<Size> Sizes { get; set; } = null!;
     public DbSet<Style> Styles { get; set; } = null!;
@@ -36,6 +38,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Province>().ToTable("provinces");
         modelBuilder.Entity<City>().ToTable("cities");
+        modelBuilder.Entity<Fsa>().ToTable("fsas");
 
         // Relationship: City must belong to one Province
         modelBuilder.Entity<City>()
@@ -43,6 +46,18 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(c => c.ProvinceId)
             .IsRequired();
+
+        // Relationship: City has many FSAs
+        modelBuilder.Entity<City>()
+            .HasMany(c => c.Fsas)
+            .WithOne(f => f.City)
+            .HasForeignKey(f => f.CityId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade); // If a City is deleted, delete its FSAs
+
+        // Indexing: Optimize FSA lookups (e.g., searching for "M5V")
+        modelBuilder.Entity<Fsa>()
+            .HasIndex(f => f.Code);
 
         // =======================================================
         // PROFILE MODEL
@@ -172,5 +187,13 @@ public class AppDbContext : DbContext
             .HasOne(wl => wl.Listing)
             .WithMany()
             .HasForeignKey(wl => wl.ListingId);
+
+        // TryOnImage
+        modelBuilder.Entity<TryOnImage>().ToTable("tryon_images");
+        modelBuilder.Entity<TryOnImage>()
+            .HasOne(ti => ti.Profile)
+            .WithMany()
+            .HasForeignKey(ti => ti.ProfileId);
+
     }
 }
