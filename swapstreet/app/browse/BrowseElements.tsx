@@ -17,7 +17,10 @@ import {
 
 export function Header() {
   return (
-    <header className="fixed top-0 left-0 right-0 shadow-sm px-6 py-4 flex items-center justify-between z-[100]" style={{ backgroundColor: "#eae9ea" }}>
+    <header
+      className="fixed top-0 left-0 right-0 shadow-sm px-6 py-4 flex items-center justify-between z-[100]"
+      style={{ backgroundColor: "#eae9ea" }}
+    >
       <Link href="/browse" className="font-bold text-2xl tracking-tight">
         <span>SWAP</span>
         <span>STREET</span>
@@ -27,7 +30,10 @@ export function Header() {
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+              <NavigationMenuLink
+                asChild
+                className={navigationMenuTriggerStyle()}
+              >
                 <Link href="/browse">Featured</Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
@@ -39,10 +45,19 @@ export function Header() {
                   <div className="flex gap-6">
                     {[
                       { title: "Tops", img: "/images/clothes_login_page.png" },
-                      { title: "Bottoms", img: "/images/clothes_login_page.png" },
-                      { title: "Accessories", img: "/images/clothes_login_page.png" },
+                      {
+                        title: "Bottoms",
+                        img: "/images/clothes_login_page.png",
+                      },
+                      {
+                        title: "Accessories",
+                        img: "/images/clothes_login_page.png",
+                      },
                     ].map((item) => (
-                      <div key={item.title} className="flex flex-col items-center">
+                      <div
+                        key={item.title}
+                        className="flex flex-col items-center"
+                      >
                         <div className="w-32 h-32 mb-3 overflow-hidden rounded-md">
                           <Image
                             src={item.img}
