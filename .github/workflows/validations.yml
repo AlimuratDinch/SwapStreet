@@ -33,3 +33,4 @@ jobs:
       run: |
         echo "Linting files: $FILES"
         npx eslint $FILES
+      working-directory: swapstreet
