@@ -48,7 +48,10 @@ export default function LoginPage() {
       router.push("/browse");
     } catch (err: unknown) {
       logger.error("Login error", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to create account. Please try again.";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to create account. Please try again.";
       setError(errorMessage);
     } finally {
       setLoading(false);
