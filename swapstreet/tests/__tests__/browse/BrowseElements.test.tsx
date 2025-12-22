@@ -341,7 +341,7 @@ describe("Sidebar", () => {
     });
 
     const topsButton = screen.getByText("Tops");
-    
+
     // First click to select
     fireEvent.click(topsButton);
     await waitFor(() => {
@@ -397,10 +397,10 @@ describe("Sidebar", () => {
     });
 
     const mockSearchParamsWithConditions = new URLSearchParams(
-      "conditions=New,Like%20New"
+      "conditions=New,Like%20New",
     );
     (useSearchParams as jest.Mock).mockReturnValue(
-      mockSearchParamsWithConditions
+      mockSearchParamsWithConditions,
     );
 
     await act(async () => {
@@ -412,11 +412,13 @@ describe("Sidebar", () => {
 
     await waitFor(() => {
       const checkboxes = screen.getAllByRole("checkbox");
-      const newCheckbox = checkboxes.find(
-        (cb) => (cb as HTMLInputElement).parentElement?.textContent.includes("New")
+      const newCheckbox = checkboxes.find((cb) =>
+        (cb as HTMLInputElement).parentElement?.textContent.includes("New"),
       ) as HTMLInputElement;
-      const likeNewCheckbox = checkboxes.find(
-        (cb) => (cb as HTMLInputElement).parentElement?.textContent.includes("Like New")
+      const likeNewCheckbox = checkboxes.find((cb) =>
+        (cb as HTMLInputElement).parentElement?.textContent.includes(
+          "Like New",
+        ),
       ) as HTMLInputElement;
       expect(newCheckbox?.checked).toBe(true);
       expect(likeNewCheckbox?.checked).toBe(true);
