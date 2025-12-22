@@ -32,5 +32,6 @@ jobs:
       if: env.FILES != ''
       run: |
         cd swapstreet
-        echo "Linting files: $FILES"
-        npx eslint $FILES
+        FILES_IN_SUBDIR=$(echo "$FILES" | sed 's|^swapstreet/||g')
+        echo "Linting files: $FILES_IN_SUBDIR"
+        npx eslint $FILES_IN_SUBDIR
