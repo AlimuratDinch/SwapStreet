@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AuthInput } from "../AuthFormElements";
 import { ImageElement } from "../AuthFormElements";
 import { PromptElement } from "../AuthFormElements";
+import { logger } from "@/components/common/logger";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,32 +20,37 @@ export default function LoginPage() {
     setError("");
 
     try {
-      console.log("Attempting Sign In...");
-      const response = await fetch("http://localhost:8080/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
+      logger.info("Attempting sign in", { email });
+
+      const response = await fetch(
+        "http://localhost:8080/api/auth/signin",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       if (!response.ok) {
         const err = await response.text();
+        logger.warn("Login failed", { status: response.status, err });
         throw new Error(err || "Login failed");
       }
 
       const data = await response.json();
 
-      // Store only the access token in sessionStorage
-      if (data.accessToken) {
-        sessionStorage.setItem("accessToken", data.accessToken);
-        console.log("Access token stored:", data.accessToken);
-      } else {
+      if (!data.accessToken) {
+        logger.error("Access token missing from response");
         throw new Error("Access token not returned from backend");
       }
 
+      sessionStorage.setItem("accessToken", data.accessToken);
+      logger.debug("Access token stored");
+
       router.push("/browse");
     } catch (err: any) {
-      console.error("Error:", err);
+      logger.error("Login error", err);
       setError(err.message);
     } finally {
       setLoading(false);
