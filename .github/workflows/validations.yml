@@ -2,7 +2,7 @@ name: Validations
 
 on:
   pull_request:
-    branches: [ 'main' ]
+    branches: [ main ]
 
 jobs:
   no_console_check:
@@ -23,15 +23,15 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Get changed JS/TS files
+    - name: Get changed files
       id: changed-files
       run: |
-        FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
-          | grep -E '\.(ts|tsx|js|jsx)$' || true)
-        echo "FILES=$FILES" >> $GITHUB_ENV
+        echo "FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx)$' | tr '\n' ' ')" >> $GITHUB_ENV
 
     - name: Run ESLint on changed files only
       if: env.FILES != ''
       run: |
-        echo "Linting files: $FILES"
-        npx eslint -c swapstreet/eslint.config.mjs $FILES
+        cd swapstreet
+        FILES_IN_SUBDIR=$(echo "$FILES" | sed 's|^swapstreet/||g')
+        echo "Linting files: $FILES_IN_SUBDIR"
+        npx eslint $FILES_IN_SUBDIR
