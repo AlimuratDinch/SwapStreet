@@ -1,0 +1,76 @@
+.card-item {
+  border-radius: 0.5em;
+  width: 15em;
+  height: 20em;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-item-image-container {
+  flex: 3;
+  width: 100%;
+  overflow: hidden;
+  background-color: #f0f0f0;
+}
+
+.card-item-image {
+  border-radius: 0.5em;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-item-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
+.card-item-content {
+  flex: 1;
+  padding: 0.5em;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-item-title {
+  font-weight: bold;
+  margin: 0;
+  font-size: 1em;
+}
+
+.card-item-condition {
+  margin: 0.25em 0 0 0;
+  font-size: 0.85em;
+  color: #666;
+}
+
+.card-item-price-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.25em;
+}
+
+.card-item-price {
+  font-weight: bold;
+  margin: 0;
+  font-size: 1.1em;
+}
+
+.card-item-wishlist-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+}
