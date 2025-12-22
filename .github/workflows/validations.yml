@@ -19,19 +19,23 @@ jobs:
       with:
         node-version: 20
         cache: npm
+        cache-dependency-path: swapstreet/package-lock.json
 
     - name: Install dependencies
-      run: npm ci
+      run: |
+        cd swapstreet
+        npm ci
 
     - name: Get changed files
       id: changed-files
       run: |
-        echo "FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx)$' | tr '\n' ' ')" >> $GITHUB_ENV
+        CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx)$' || true)
+        SWAPSTREET_FILES=$(echo "$CHANGED_FILES" | grep "^swapstreet/" | sed 's|^swapstreet/||' | tr '\n' ' ')
+        echo "FILES=$SWAPSTREET_FILES" >> $GITHUB_ENV
 
     - name: Run ESLint on changed files only
       if: env.FILES != ''
       run: |
         cd swapstreet
-        FILES_IN_SUBDIR=$(echo "$FILES" | sed 's|^swapstreet/||g')
-        echo "Linting files: $FILES_IN_SUBDIR"
-        npx eslint $FILES_IN_SUBDIR
+        echo "Linting files: $FILES"
+        npx eslint $FILES
