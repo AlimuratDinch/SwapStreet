@@ -31,6 +31,6 @@ jobs:
     - name: Run ESLint on changed files only
       if: env.FILES != ''
       run: |
+        cd swapstreet
         echo "Linting files: $FILES"
         npx eslint $FILES
-      working-directory: swapstreet
