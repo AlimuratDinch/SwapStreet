@@ -6,7 +6,7 @@ export interface CreateProfileRequest {
   firstName: string;
   lastName: string;
   bio?: string;
-  locationId: number;
+  cityId: number;  // Changed from locationId to match backend
   fsa: string;
   profileImagePath?: string;
   bannerImagePath?: string;
@@ -108,24 +108,32 @@ export async function createProfile(
   accessToken: string,
   data: CreateProfileRequest,
 ): Promise<ProfileResponse> {
-  const response = await fetch(`${API_URL}/api/profile`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(data),
-  });
+  console.log("Creating profile with data:", data);
+  
+  try {
+    const response = await fetch(`${API_URL}/api/profile`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
 
-  if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ Error: "Failed to create profile" }));
-    throw new Error(error.Error || "Failed to create profile");
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ 
+        Error: `HTTP error! status: ${response.status}` 
+      }));
+      console.error("Error response from server:", error);
+      throw new Error(error.Error || "Failed to create profile");
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error("Error in createProfile:", error);
+    throw error;
   }
-
-  return response.json();
 }
 
 /**

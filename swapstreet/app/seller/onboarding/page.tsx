@@ -204,7 +204,7 @@ export default function SellerOnboardingPage() {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           bio: bio.trim() || undefined,
-          locationId: selectedCityId,
+          cityId: selectedCityId,  // Changed from locationId to cityId
           fsa: fsa,
           profileImagePath,
           bannerImagePath,
