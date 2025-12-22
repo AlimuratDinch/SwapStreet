@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import LoginPage from "@/app/auth/sign-in/page";
 
-
 //  Mock logger (IMPORTANT after introducing tslog)
 jest.mock("@/components/common/logger", () => ({
   logger: {
@@ -20,7 +19,6 @@ jest.mock("next/navigation", () => ({
     push: pushMock,
   }),
 }));
-
 
 //  Mock sessionStorage
 
@@ -51,25 +49,19 @@ describe("LoginPage", () => {
     window.sessionStorage.clear();
   });
 
-
   it("renders login form correctly", () => {
     render(<LoginPage />);
 
-    expect(
-      screen.getByRole("heading", { name: /login/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /login/i })).toBeInTheDocument();
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: /sign in/i })
+      screen.getByRole("button", { name: /sign in/i }),
     ).toBeInTheDocument();
   });
 
-  /* --------------------------------------------------
-     Successful login
-  -------------------------------------------------- */
   it("stores access token and navigates on successful login", async () => {
     const mockToken = "abc123";
 
@@ -88,9 +80,7 @@ describe("LoginPage", () => {
       target: { value: "password123" },
     });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /sign in/i })
-    );
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
       expect(pushMock).toHaveBeenCalledWith("/browse");
@@ -98,7 +88,6 @@ describe("LoginPage", () => {
 
     expect(window.sessionStorage.getItem("accessToken")).toBe(mockToken);
   });
-
 
   it("shows error message when login fails", async () => {
     const errorMsg = "Login failed";
@@ -118,9 +107,7 @@ describe("LoginPage", () => {
       target: { value: "wrongpass" },
     });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /sign in/i })
-    );
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(await screen.findByText(errorMsg)).toBeInTheDocument();
   });
@@ -141,12 +128,10 @@ describe("LoginPage", () => {
       target: { value: "password123" },
     });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /sign in/i })
-    );
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(
-      await screen.findByText(/access token not returned from backend/i)
+      await screen.findByText(/access token not returned from backend/i),
     ).toBeInTheDocument();
   });
 });

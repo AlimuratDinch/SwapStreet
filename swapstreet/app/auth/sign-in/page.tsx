@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AuthInput } from "../AuthFormElements";
 import { ImageElement } from "../AuthFormElements";
 import { PromptElement } from "../AuthFormElements";
-import { logger } from "@/components/common/logger";
+import { logger } from "../../../components/common/logger";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,15 +22,12 @@ export default function LoginPage() {
     try {
       logger.info("Attempting sign in", { email });
 
-      const response = await fetch(
-        "http://localhost:8080/api/auth/signin",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      const response = await fetch("http://localhost:8080/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
 
       if (!response.ok) {
         const err = await response.text();

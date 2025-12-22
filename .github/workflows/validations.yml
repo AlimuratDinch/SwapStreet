@@ -1,0 +1,32 @@
+name: Validations
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  no_console_check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Get changed files
+      id: changed-files
+      run: |
+        echo "FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx)$' | tr '\n' ' ')" >> $GITHUB_ENV
+
+    - name: Run ESLint on changed files only
+      if: env.FILES != ''
+      run: |
+        echo "Linting files: $FILES"
+        npx eslint $FILES
