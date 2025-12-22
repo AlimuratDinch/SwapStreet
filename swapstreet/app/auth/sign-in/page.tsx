@@ -46,9 +46,10 @@ export default function LoginPage() {
       logger.debug("Access token stored");
 
       router.push("/browse");
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error("Login error", err);
-      setError(err.message);
+      const errorMessage = err instanceof Error ? err.message : "Failed to create account. Please try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
