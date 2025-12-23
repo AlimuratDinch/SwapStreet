@@ -80,6 +80,7 @@ Object.defineProperty(window, "sessionStorage", {
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import SellerOnboardingPage from "@/app/seller/onboarding/page";
 import "@testing-library/jest-dom";
+import * as profileApi from "@/lib/api/profile";
 
 // ----------------------------
 // Mock fetch for location data
@@ -127,7 +128,8 @@ describe("SellerOnboardingPage", () => {
     mockSessionStorage.setItem("accessToken", "mock-token");
 
     // Reset API mocks
-    const { createProfile, uploadImage } = require("@/lib/api/profile");
+    const createProfile = profileApi.createProfile as jest.Mock;
+    const uploadImage = profileApi.uploadImage as jest.Mock;
     createProfile.mockClear();
     createProfile.mockResolvedValue({ id: "test-id" });
     uploadImage.mockClear();
@@ -416,7 +418,7 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("submits the form with valid data", async () => {
-    const { createProfile } = require("@/lib/api/profile");
+    const createProfile = profileApi.createProfile as jest.Mock;
     render(<SellerOnboardingPage />);
 
     await waitFor(() => {
@@ -465,7 +467,8 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("submits the form with both avatar and banner images", async () => {
-    const { createProfile, uploadImage } = require("@/lib/api/profile");
+    const createProfile = profileApi.createProfile as jest.Mock;
+    const uploadImage = profileApi.uploadImage as jest.Mock;
     uploadImage.mockResolvedValue("https://example.com/uploaded-image.jpg");
 
     render(<SellerOnboardingPage />);
@@ -761,7 +764,7 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("handles image upload failure", async () => {
-    const { uploadImage } = require("@/lib/api/profile");
+    const uploadImage = profileApi.uploadImage as jest.Mock;
     uploadImage.mockRejectedValueOnce(new Error("Upload failed"));
 
     render(<SellerOnboardingPage />);
@@ -802,7 +805,7 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("handles banner upload failure", async () => {
-    const { uploadImage } = require("@/lib/api/profile");
+    const uploadImage = profileApi.uploadImage as jest.Mock;
     // First call (avatar) succeeds, second call (banner) fails
     uploadImage
       .mockResolvedValueOnce("https://example.com/avatar.jpg")
@@ -853,7 +856,7 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("handles profile creation failure", async () => {
-    const { createProfile } = require("@/lib/api/profile");
+    const createProfile = profileApi.createProfile as jest.Mock;
     createProfile.mockRejectedValueOnce(new Error("Profile already exists"));
 
     render(<SellerOnboardingPage />);

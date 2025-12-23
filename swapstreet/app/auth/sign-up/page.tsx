@@ -51,18 +51,20 @@ export default function RegistrationPage() {
       if (data.accessToken) {
         // Update AuthContext (which also stores in sessionStorage)
         login(data.accessToken);
-        console.log("Access token stored:", data.accessToken);
       } else {
         throw new Error("Access token not returned from backend");
       }
 
-      console.log("Register Successful");
       // Small delay to ensure AuthContext is updated before navigation
       setTimeout(() => {
         router.push("/seller/onboarding");
       }, 100);
-    } catch (err: any) {
-      setError(err.message || "Failed to create account. Please try again.");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to create account. Please try again.";
+      setError(errorMessage);
     }
   };
 

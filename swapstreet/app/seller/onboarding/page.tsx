@@ -29,7 +29,6 @@ export default function SellerOnboardingPage() {
 
   // Data from backend
   const [provinces, setProvinces] = useState<Province[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
 
   // UI state
@@ -85,7 +84,6 @@ export default function SellerOnboardingPage() {
 
           if (citiesRes.ok) {
             const citiesData = await citiesRes.json();
-            setCities(citiesData);
             setFilteredCities(citiesData);
           }
         } catch (err) {
@@ -97,7 +95,6 @@ export default function SellerOnboardingPage() {
       fetchCities();
       setSelectedCityId(null); // Reset city selection when province changes
     } else {
-      setCities([]);
       setFilteredCities([]);
       setSelectedCityId(null);
     }
@@ -237,15 +234,17 @@ export default function SellerOnboardingPage() {
           bannerImagePath,
         };
 
-        console.log("Profile data being sent:", profileData);
-
         await createProfile(accessToken, profileData, refreshToken);
 
         // Redirect to profile page
         router.push("/seller/me");
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to create profile:", err);
-        setError(err.message || "Failed to create profile. Please try again.");
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to create profile. Please try again.";
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -456,6 +455,7 @@ export default function SellerOnboardingPage() {
             />
             {avatarPreview && (
               <div className="mt-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={avatarPreview}
                   alt="Avatar preview"
@@ -480,6 +480,7 @@ export default function SellerOnboardingPage() {
             />
             {bannerPreview && (
               <div className="mt-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={bannerPreview}
                   alt="Banner preview"

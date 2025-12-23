@@ -116,7 +116,6 @@ async function authenticatedFetch(
 
   // If we get a 401 and have a refresh function, try to refresh the token
   if (response.status === 401 && refreshTokenFn) {
-    console.log("Token expired, attempting to refresh...");
     const newToken = await refreshTokenFn();
 
     if (newToken) {
@@ -141,15 +140,6 @@ export async function createProfile(
   refreshTokenFn?: () => Promise<string | null>,
 ): Promise<ProfileResponse> {
   const requestBody = JSON.stringify(data);
-  console.log("=== CREATE PROFILE REQUEST ===");
-  console.log("URL:", `${API_URL}/api/profile`);
-  console.log("Method: POST");
-  console.log("Headers:", {
-    Authorization: `Bearer ${accessToken?.substring(0, 20)}...`,
-    "Content-Type": "application/json",
-  });
-  console.log("Body:", requestBody);
-  console.log("Data object:", data);
 
   try {
     const response = await authenticatedFetch(
@@ -165,10 +155,6 @@ export async function createProfile(
       },
       refreshTokenFn,
     );
-
-    console.log("=== CREATE PROFILE RESPONSE ===");
-    console.log("Status:", response.status, response.statusText);
-    console.log("OK:", response.ok);
 
     if (!response.ok) {
       let errorMessage = `Failed to create profile (HTTP ${response.status})`;
@@ -287,14 +273,18 @@ export async function createProfile(
       // This shouldn't happen since we handle !response.ok above
       throw new Error(`Unexpected response status: ${response.status}`);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in createProfile:", error);
     // If it's already an Error object, re-throw it
     if (error instanceof Error) {
       throw error;
     }
-    // Otherwise, wrap it
-    throw new Error(error?.message || "Failed to create profile");
+    // Otherwise, wrap it in an Error
+    const errorMessage =
+      error && typeof error === "object" && "message" in error
+        ? String(error.message)
+        : "Failed to create profile";
+    throw new Error(errorMessage);
   }
 }
 
