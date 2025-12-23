@@ -255,6 +255,110 @@ describe("SellerOnboardingPage", () => {
     expect(err).toBeInTheDocument();
   });
 
+  it("validates FSA format after postal code processing", async () => {
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1);
+    });
+
+    fireEvent.change(citySelect, { target: { value: "1" } });
+    // Test with a postal code that has spaces/hyphens to ensure FSA extraction works
+    // This tests the FSA validation code path (lines 184-191)
+    fireEvent.change(postalInput, { target: { value: "M5V-1A1" } });
+
+    const submitBtn = screen.getByRole("button", {
+      name: /save and continue/i,
+    });
+    const form = submitBtn.closest("form");
+    fireEvent.submit(form!);
+
+    // The postal code should be processed correctly and FSA validation should pass
+    // This ensures the FSA extraction and validation code path is executed
+    await waitFor(() => {
+      // If validation passes, we should navigate to /seller/me
+      // If FSA validation fails, we'd see "Invalid postal code format."
+      // Since "M5V-1A1" is valid, FSA should be "M5V" which passes FSA_REGEX
+      expect(mockPush).toHaveBeenCalledWith("/seller/me");
+    });
+  });
+
+  it("shows error when FSA format is invalid after processing", async () => {
+    // This test covers the defensive FSA validation (lines 189-191)
+    // While it's unlikely to trigger in practice (POSTAL_REGEX should catch it),
+    // this tests the code path exists for safety
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1);
+    });
+
+    fireEvent.change(citySelect, { target: { value: "1" } });
+
+    // Mock String.prototype.substring to return an invalid FSA format
+    // This allows us to test the FSA validation error path
+    const originalSubstring = String.prototype.substring;
+    String.prototype.substring = jest.fn(function (
+      this: string,
+      start?: number,
+      end?: number,
+    ) {
+      if (this.includes("A1A") && start === 0 && end === 3) {
+        return "123"; // Invalid FSA format (should be letter-digit-letter)
+      }
+      return originalSubstring.call(this, start, end);
+    });
+
+    fireEvent.change(postalInput, { target: { value: "A1A 1A1" } });
+
+    const submitBtn = screen.getByRole("button", {
+      name: /save and continue/i,
+    });
+    const form = submitBtn.closest("form");
+    fireEvent.submit(form!);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Invalid postal code format/i),
+      ).toBeInTheDocument();
+    });
+
+    // Restore original substring
+    String.prototype.substring = originalSubstring;
+  });
+
   it("renders the onboarding heading and form fields", async () => {
     render(<SellerOnboardingPage />);
 
@@ -782,6 +886,50 @@ describe("SellerOnboardingPage", () => {
     await waitFor(() => {
       expect(screen.getByText(/profile already exists/i)).toBeInTheDocument();
     });
+  });
+
+  it("redirects to sign-in on mount if not authenticated and no token in storage", async () => {
+    // Clear sessionStorage for this test
+    mockSessionStorage.removeItem("accessToken");
+
+    // Mock AuthContext to return unauthenticated state for this test
+    const originalMock = mockUseAuth.getMockImplementation();
+    mockUseAuth.mockReturnValue({
+      accessToken: null,
+      isAuthenticated: false,
+      refreshToken: mockRefreshToken,
+      login: mockLogin,
+      logout: mockLogout,
+      userId: null,
+      username: null,
+      email: null,
+    });
+
+    render(<SellerOnboardingPage />);
+
+    // Wait for the redirect to happen (the useEffect has a 100ms timeout)
+    await waitFor(
+      () => {
+        expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
+      },
+      { timeout: 500 },
+    );
+
+    // Restore original mock
+    if (originalMock) {
+      mockUseAuth.mockImplementation(originalMock);
+    } else {
+      mockUseAuth.mockReturnValue({
+        accessToken: "mock-token",
+        isAuthenticated: true,
+        refreshToken: mockRefreshToken,
+        login: mockLogin,
+        logout: mockLogout,
+        userId: "test-user-id",
+        username: "test-user",
+        email: "test@example.com",
+      });
+    }
   });
 
   it("redirects to sign-in if not authenticated", async () => {
