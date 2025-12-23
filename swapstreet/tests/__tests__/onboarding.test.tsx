@@ -16,6 +16,27 @@ jest.mock("@/lib/api/profile", () => ({
 }));
 
 // ----------------------------
+// Mock AuthContext
+// ----------------------------
+const mockLogin = jest.fn();
+const mockLogout = jest.fn();
+const mockRefreshToken = jest.fn().mockResolvedValue("new-token");
+
+jest.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    accessToken: "mock-token",
+    isAuthenticated: true,
+    refreshToken: mockRefreshToken,
+    login: mockLogin,
+    logout: mockLogout,
+    userId: "test-user-id",
+    username: "test-user",
+    email: "test@example.com",
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// ----------------------------
 // Mock URL.createObjectURL for jsdom
 // ----------------------------
 global.URL.createObjectURL = jest.fn(() => "blob:mock-url");
@@ -94,6 +115,10 @@ global.fetch = jest.fn((url) => {
 describe("SellerOnboardingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLogin.mockClear();
+    mockLogout.mockClear();
+    mockRefreshToken.mockClear();
+    mockRefreshToken.mockResolvedValue("new-token");
 
     // Reset sessionStorage to default state
     mockSessionStorage.clear();
@@ -316,15 +341,19 @@ describe("SellerOnboardingPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
 
     await waitFor(() => {
-      expect(createProfile).toHaveBeenCalledWith("mock-token", {
-        firstName: "John",
-        lastName: "Doe",
-        bio: "This is my bio.",
-        locationId: 1,
-        fsa: "M5V",
-        profileImagePath: undefined,
-        bannerImagePath: undefined,
-      });
+      expect(createProfile).toHaveBeenCalledWith(
+        "mock-token",
+        {
+          firstName: "John",
+          lastName: "Doe",
+          bio: "This is my bio.",
+          cityId: 1,
+          fsa: "M5V",
+          profileImagePath: undefined,
+          bannerImagePath: undefined,
+        },
+        mockRefreshToken,
+      );
       expect(mockPush).toHaveBeenCalledWith("/seller/me");
     });
   });
@@ -374,17 +403,21 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(uploadImage).toHaveBeenCalledTimes(2);
-      expect(uploadImage).toHaveBeenCalledWith(avatarFile, "Profile");
-      expect(uploadImage).toHaveBeenCalledWith(bannerFile, "Banner");
-      expect(createProfile).toHaveBeenCalledWith("mock-token", {
-        firstName: "John",
-        lastName: "Doe",
-        bio: undefined,
-        locationId: 1,
-        fsa: "M5V",
-        profileImagePath: "https://example.com/uploaded-image.jpg",
-        bannerImagePath: "https://example.com/uploaded-image.jpg",
-      });
+      expect(uploadImage).toHaveBeenCalledWith("mock-token", avatarFile, "Profile", mockRefreshToken);
+      expect(uploadImage).toHaveBeenCalledWith("mock-token", bannerFile, "Banner", mockRefreshToken);
+      expect(createProfile).toHaveBeenCalledWith(
+        "mock-token",
+        {
+          firstName: "John",
+          lastName: "Doe",
+          bio: undefined,
+          cityId: 1,
+          fsa: "M5V",
+          profileImagePath: "https://example.com/uploaded-image.jpg",
+          bannerImagePath: "https://example.com/uploaded-image.jpg",
+        },
+        mockRefreshToken,
+      );
       expect(mockPush).toHaveBeenCalledWith("/seller/me");
     });
   });
@@ -740,8 +773,17 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("redirects to sign-in if not authenticated", async () => {
-    // Clear the token for this specific test
-    mockSessionStorage.clear();
+    // Mock AuthContext to return unauthenticated state for this test
+    jest.spyOn(require("@/contexts/AuthContext"), "useAuth").mockReturnValueOnce({
+      accessToken: null,
+      isAuthenticated: false,
+      refreshToken: mockRefreshToken,
+      login: mockLogin,
+      logout: mockLogout,
+      userId: null,
+      username: null,
+      email: null,
+    });
 
     render(<SellerOnboardingPage />);
 
