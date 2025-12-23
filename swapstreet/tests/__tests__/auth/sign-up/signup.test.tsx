@@ -4,6 +4,16 @@ import RegistrationPage from "@/app/auth/sign-up/page";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "@testing-library/jest-dom";
 
+// Mock logger
+jest.mock("@/components/common/logger", () => ({
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
 // Mock router for client component
 const pushMock = jest.fn();
 jest.mock("next/navigation", () => ({

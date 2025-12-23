@@ -1,5 +1,7 @@
 // Profile API client functions
 
+import { logger } from "@/components/common/logger";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export interface CreateProfileRequest {
@@ -116,6 +118,7 @@ async function authenticatedFetch(
 
   // If we get a 401 and have a refresh function, try to refresh the token
   if (response.status === 401 && refreshTokenFn) {
+    logger.warn("Token expired, attempting to refresh...");
     const newToken = await refreshTokenFn();
 
     if (newToken) {
@@ -140,6 +143,13 @@ export async function createProfile(
   refreshTokenFn?: () => Promise<string | null>,
 ): Promise<ProfileResponse> {
   const requestBody = JSON.stringify(data);
+
+  logger.debug("Creating profile", {
+    url: `${API_URL}/api/profile`,
+    method: "POST",
+    hasAccessToken: !!accessToken,
+    data,
+  });
 
   try {
     const response = await authenticatedFetch(
@@ -168,37 +178,26 @@ export async function createProfile(
         try {
           const responseText = await response.text();
 
-          // Log to console with explicit markers
-          console.error(
-            "-------------------------------- ERROR RESPONSE START --------------------------------",
-          );
-          console.error("Status:", response.status);
-          console.error("Status Text:", response.statusText);
-          console.error("Raw response text:", responseText);
-          console.error("Response text length:", responseText.length);
-          console.error("Response text type:", typeof responseText);
-
-          // Also show in alert for debugging (remove after fixing)
-          if (responseText) {
-            console.error("Response preview:", responseText.substring(0, 200));
-          }
+          logger.error("Error response received", {
+            status: response.status,
+            statusText: response.statusText,
+            responseText: responseText.substring(0, 200),
+            responseTextLength: responseText.length,
+          });
 
           let errorData;
           try {
             errorData = JSON.parse(responseText);
-            console.error("✅ Successfully parsed JSON");
-            console.error("Parsed error data:", errorData);
-            console.error("Error data keys:", Object.keys(errorData));
-            console.error("Error data type:", typeof errorData);
-
-            // Log all possible error fields
-            console.error("errorData.Error:", errorData.Error);
-            console.error("errorData.error:", errorData.error);
-            console.error("errorData.message:", errorData.message);
-            console.error("errorData.errors:", errorData.errors);
+            logger.debug("Parsed error data", {
+              errorData,
+              keys: Object.keys(errorData),
+              hasError: !!errorData.Error,
+              hasErrorField: !!errorData.error,
+              hasMessage: !!errorData.message,
+              hasErrors: !!errorData.errors,
+            });
           } catch (parseErr) {
-            console.error("Failed to parse JSON:", parseErr);
-            console.error("Response was not valid JSON");
+            logger.error("Failed to parse error response as JSON", parseErr);
             // If it's not JSON, use the text as the error message
             errorMessage =
               responseText || `HTTP ${response.status}: ${response.statusText}`;
@@ -208,16 +207,18 @@ export async function createProfile(
           // Handle different error response formats
           if (errorData.Error) {
             errorMessage = errorData.Error;
-            console.error("Using errorData.Error:", errorMessage);
+            logger.debug("Using errorData.Error", { errorMessage });
           } else if (errorData.error) {
             errorMessage = errorData.error;
-            console.error("Using errorData.error:", errorMessage);
+            logger.debug("Using errorData.error", { errorMessage });
           } else if (errorData.message) {
             errorMessage = errorData.message;
-            console.error("Using errorData.message:", errorMessage);
+            logger.debug("Using errorData.message", { errorMessage });
           } else if (errorData.errors) {
             // Handle ModelState validation errors (ASP.NET Core format)
-            console.error("Found errorData.errors:", errorData.errors);
+            logger.debug("Found errorData.errors", {
+              errors: errorData.errors,
+            });
             if (typeof errorData.errors === "object") {
               const validationErrors = Object.entries(errorData.errors)
                 .map(([key, value]) => {
@@ -228,28 +229,26 @@ export async function createProfile(
                 })
                 .join("; ");
               errorMessage = validationErrors || errorMessage;
-              console.error("Using validation errors:", errorMessage);
+              logger.debug("Using validation errors", { errorMessage });
             }
           } else if (typeof errorData === "string") {
             errorMessage = errorData;
-            console.error("Using errorData as string:", errorMessage);
+            logger.debug("Using errorData as string", { errorMessage });
           } else {
             // If we can't parse it, show the whole object
             errorMessage = JSON.stringify(errorData);
-            console.error("Using stringified errorData:", errorMessage);
+            logger.debug("Using stringified errorData", { errorMessage });
           }
-
-          console.error(
-            "-------------------------------- ERROR RESPONSE END --------------------------------",
-          );
         } catch (parseError) {
-          console.error("Exception in error handling:", parseError);
+          logger.error("Exception in error handling", parseError);
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
       }
 
-      // Make error message more visible
-      console.error("FINAL ERROR MESSAGE:", errorMessage);
+      logger.error("Profile creation failed", {
+        errorMessage,
+        status: response.status,
+      });
 
       // Temporary: Show alert for debugging (remove after fixing)
       if (process.env.NODE_ENV === "development") {
@@ -264,9 +263,15 @@ export async function createProfile(
     // Only call json() if response is ok and body hasn't been consumed
     if (response.ok) {
       try {
-        return await response.json();
+        const result = await response.json();
+        logger.debug("Profile creation response", {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+        });
+        return result;
       } catch (jsonError) {
-        console.error("Failed to parse success response as JSON:", jsonError);
+        logger.error("Failed to parse success response as JSON", jsonError);
         throw new Error("Invalid response from server");
       }
     } else {
@@ -274,7 +279,7 @@ export async function createProfile(
       throw new Error(`Unexpected response status: ${response.status}`);
     }
   } catch (error: unknown) {
-    console.error("Error in createProfile:", error);
+    logger.error("Error in createProfile", error);
     // If it's already an Error object, re-throw it
     if (error instanceof Error) {
       throw error;

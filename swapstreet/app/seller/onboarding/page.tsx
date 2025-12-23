@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";
 import { useAuth } from "@/contexts/AuthContext";
+import { logger } from "@/components/common/logger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
@@ -63,7 +64,7 @@ export default function SellerOnboardingPage() {
           setProvinces(provincesData);
         }
       } catch (err) {
-        console.error("Failed to fetch provinces:", err);
+        logger.error("Failed to fetch provinces", err);
         setError("Failed to load location data. Please refresh the page.");
       } finally {
         setLoadingData(false);
@@ -87,7 +88,7 @@ export default function SellerOnboardingPage() {
             setFilteredCities(citiesData);
           }
         } catch (err) {
-          console.error("Failed to fetch cities:", err);
+          logger.error("Failed to fetch cities", err);
           setError("Failed to load cities. Please try again.");
         }
       };
@@ -234,12 +235,13 @@ export default function SellerOnboardingPage() {
           bannerImagePath,
         };
 
+        logger.debug("Profile data being sent", { profileData });
         await createProfile(accessToken, profileData, refreshToken);
 
         // Redirect to profile page
         router.push("/seller/me");
       } catch (err: unknown) {
-        console.error("Failed to create profile:", err);
+        logger.error("Failed to create profile", err);
         const errorMessage =
           err instanceof Error
             ? err.message

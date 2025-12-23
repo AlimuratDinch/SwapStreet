@@ -8,6 +8,18 @@ jest.mock("next/navigation", () => ({
 }));
 
 // ----------------------------
+// Mock logger
+// ----------------------------
+jest.mock("@/components/common/logger", () => ({
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+// ----------------------------
 // Mock API functions
 // ----------------------------
 jest.mock("@/lib/api/profile", () => ({
@@ -31,7 +43,16 @@ const mockUseAuth = jest.fn(() => ({
   userId: "test-user-id",
   username: "test-user",
   email: "test@example.com",
-}));
+})) as jest.Mock<{
+  accessToken: string | null;
+  isAuthenticated: boolean;
+  refreshToken: () => Promise<string | null>;
+  login: (token: string) => void;
+  logout: () => void;
+  userId: string | null;
+  username: string | null;
+  email: string | null;
+}>;
 
 jest.mock("@/contexts/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
@@ -340,7 +361,7 @@ describe("SellerOnboardingPage", () => {
       if (this.includes("A1A") && start === 0 && end === 3) {
         return "123"; // Invalid FSA format (should be letter-digit-letter)
       }
-      return originalSubstring.call(this, start, end);
+      return originalSubstring.call(this, start ?? 0, end);
     });
 
     fireEvent.change(postalInput, { target: { value: "A1A 1A1" } });

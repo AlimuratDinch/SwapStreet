@@ -6,6 +6,7 @@ import { AuthInput } from "../AuthFormElements";
 import { ImageElement } from "../AuthFormElements";
 import { PromptElement } from "../AuthFormElements";
 import { useAuth } from "@/contexts/AuthContext";
+import { logger } from "@/components/common/logger";
 
 export default function RegistrationPage() {
   const router = useRouter();
@@ -51,15 +52,20 @@ export default function RegistrationPage() {
       if (data.accessToken) {
         // Update AuthContext (which also stores in sessionStorage)
         login(data.accessToken);
+        logger.debug("Access token stored", {
+          tokenLength: data.accessToken.length,
+        });
       } else {
         throw new Error("Access token not returned from backend");
       }
 
+      logger.info("Register successful");
       // Small delay to ensure AuthContext is updated before navigation
       setTimeout(() => {
         router.push("/seller/onboarding");
       }, 100);
     } catch (err: unknown) {
+      logger.error("Registration error", err);
       const errorMessage =
         err instanceof Error
           ? err.message
