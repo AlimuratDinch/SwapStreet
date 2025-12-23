@@ -22,17 +22,19 @@ const mockLogin = jest.fn();
 const mockLogout = jest.fn();
 const mockRefreshToken = jest.fn().mockResolvedValue("new-token");
 
+const mockUseAuth = jest.fn(() => ({
+  accessToken: "mock-token",
+  isAuthenticated: true,
+  refreshToken: mockRefreshToken,
+  login: mockLogin,
+  logout: mockLogout,
+  userId: "test-user-id",
+  username: "test-user",
+  email: "test@example.com",
+}));
+
 jest.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({
-    accessToken: "mock-token",
-    isAuthenticated: true,
-    refreshToken: mockRefreshToken,
-    login: mockLogin,
-    logout: mockLogout,
-    userId: "test-user-id",
-    username: "test-user",
-    email: "test@example.com",
-  }),
+  useAuth: () => mockUseAuth(),
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -403,8 +405,18 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(uploadImage).toHaveBeenCalledTimes(2);
-      expect(uploadImage).toHaveBeenCalledWith("mock-token", avatarFile, "Profile", mockRefreshToken);
-      expect(uploadImage).toHaveBeenCalledWith("mock-token", bannerFile, "Banner", mockRefreshToken);
+      expect(uploadImage).toHaveBeenCalledWith(
+        "mock-token",
+        avatarFile,
+        "Profile",
+        mockRefreshToken,
+      );
+      expect(uploadImage).toHaveBeenCalledWith(
+        "mock-token",
+        bannerFile,
+        "Banner",
+        mockRefreshToken,
+      );
       expect(createProfile).toHaveBeenCalledWith(
         "mock-token",
         {
@@ -773,8 +785,12 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("redirects to sign-in if not authenticated", async () => {
+    // Clear sessionStorage for this test
+    mockSessionStorage.removeItem("accessToken");
+
     // Mock AuthContext to return unauthenticated state for this test
-    jest.spyOn(require("@/contexts/AuthContext"), "useAuth").mockReturnValueOnce({
+    const originalMock = mockUseAuth.getMockImplementation();
+    mockUseAuth.mockReturnValue({
       accessToken: null,
       isAuthenticated: false,
       refreshToken: mockRefreshToken,
@@ -816,6 +832,22 @@ describe("SellerOnboardingPage", () => {
       expect(screen.getByText(/you must be logged in/i)).toBeInTheDocument();
       expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
     });
+
+    // Restore original mock
+    if (originalMock) {
+      mockUseAuth.mockImplementation(originalMock);
+    } else {
+      mockUseAuth.mockReturnValue({
+        accessToken: "mock-token",
+        isAuthenticated: true,
+        refreshToken: mockRefreshToken,
+        login: mockLogin,
+        logout: mockLogout,
+        userId: "test-user-id",
+        username: "test-user",
+        email: "test@example.com",
+      });
+    }
   });
 
   it("resets city selection when changing province to one without the selected city", async () => {
