@@ -65,10 +65,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const refreshToken = async (): Promise<string | null> => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const response = await fetch(`${API_URL}/api/auth/refresh`, {
         method: "POST",
-        credentials: "include", 
+        credentials: "include",
       });
 
       if (!response.ok) {

@@ -64,19 +64,19 @@ namespace backend.Controllers
         {
             // Log received data for debugging
             Console.WriteLine($"Received CreateProfileDto: FirstName={dto?.FirstName}, LastName={dto?.LastName}, CityId={dto?.CityId}, FSA={dto?.FSA}");
-            
+
             if (dto == null)
             {
                 return BadRequest(new { Error = "Request body is required" });
             }
-            
+
             if (!ModelState.IsValid)
             {
                 var errors = ModelState
                     .Where(x => x.Value?.Errors.Count > 0)
                     .SelectMany(x => x.Value!.Errors.Select(e => $"{x.Key}: {e.ErrorMessage}"))
                     .ToList();
-                
+
                 Console.WriteLine($"ModelState validation errors: {string.Join("; ", errors)}");
                 return BadRequest(new { Error = string.Join("; ", errors) });
             }

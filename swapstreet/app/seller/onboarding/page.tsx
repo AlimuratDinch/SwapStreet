@@ -49,7 +49,7 @@ export default function SellerOnboardingPage() {
 
     // Give AuthContext a moment to load from sessionStorage
     const timeoutId = setTimeout(checkAuth, 100);
-    
+
     return () => clearTimeout(timeoutId);
   }, [isAuthenticated, router]);
 
@@ -209,11 +209,21 @@ export default function SellerOnboardingPage() {
         let bannerImagePath: string | undefined;
 
         if (avatarFile) {
-          profileImagePath = await uploadImage(accessToken, avatarFile, "Profile", refreshToken);
+          profileImagePath = await uploadImage(
+            accessToken,
+            avatarFile,
+            "Profile",
+            refreshToken,
+          );
         }
 
         if (bannerFile) {
-          bannerImagePath = await uploadImage(accessToken, bannerFile, "Banner", refreshToken);
+          bannerImagePath = await uploadImage(
+            accessToken,
+            bannerFile,
+            "Banner",
+            refreshToken,
+          );
         }
 
         // Create profile
@@ -221,14 +231,14 @@ export default function SellerOnboardingPage() {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           bio: bio.trim() || undefined,
-          cityId: selectedCityId!,  // Non-null assertion since we validated above
+          cityId: selectedCityId!, // Non-null assertion since we validated above
           fsa: fsa,
           profileImagePath,
           bannerImagePath,
         };
-        
+
         console.log("Profile data being sent:", profileData);
-        
+
         await createProfile(accessToken, profileData, refreshToken);
 
         // Redirect to profile page

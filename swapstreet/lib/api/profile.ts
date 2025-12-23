@@ -6,7 +6,7 @@ export interface CreateProfileRequest {
   firstName: string;
   lastName: string;
   bio?: string;
-  cityId: number;  // Changed from locationId to match backend
+  cityId: number; // Changed from locationId to match backend
   fsa: string;
   profileImagePath?: string;
   bannerImagePath?: string;
@@ -118,12 +118,12 @@ async function authenticatedFetch(
   if (response.status === 401 && refreshTokenFn) {
     console.log("Token expired, attempting to refresh...");
     const newToken = await refreshTokenFn();
-    
+
     if (newToken) {
       // Update the Authorization header with the new token
       const headers = new Headers(options.headers);
       headers.set("Authorization", `Bearer ${newToken}`);
-      
+
       // Retry the request with the new token
       response = await fetch(url, {
         ...options,
@@ -150,7 +150,7 @@ export async function createProfile(
   });
   console.log("Body:", requestBody);
   console.log("Data object:", data);
-  
+
   try {
     const response = await authenticatedFetch(
       `${API_URL}/api/profile`,
@@ -172,28 +172,31 @@ export async function createProfile(
 
     if (!response.ok) {
       let errorMessage = `Failed to create profile (HTTP ${response.status})`;
-      
+
       // Handle 401 Unauthorized specifically
       if (response.status === 401) {
         // If we already tried to refresh and still got 401, the refresh failed
-        errorMessage = "Authentication failed. Your session may have expired. Please log in again.";
+        errorMessage =
+          "Authentication failed. Your session may have expired. Please log in again.";
       } else {
         try {
           const responseText = await response.text();
-          
+
           // Log to console with explicit markers
-          console.error("-------------------------------- ERROR RESPONSE START --------------------------------");
+          console.error(
+            "-------------------------------- ERROR RESPONSE START --------------------------------",
+          );
           console.error("Status:", response.status);
           console.error("Status Text:", response.statusText);
           console.error("Raw response text:", responseText);
           console.error("Response text length:", responseText.length);
           console.error("Response text type:", typeof responseText);
-          
+
           // Also show in alert for debugging (remove after fixing)
           if (responseText) {
             console.error("Response preview:", responseText.substring(0, 200));
           }
-          
+
           let errorData;
           try {
             errorData = JSON.parse(responseText);
@@ -201,7 +204,7 @@ export async function createProfile(
             console.error("Parsed error data:", errorData);
             console.error("Error data keys:", Object.keys(errorData));
             console.error("Error data type:", typeof errorData);
-            
+
             // Log all possible error fields
             console.error("errorData.Error:", errorData.Error);
             console.error("errorData.error:", errorData.error);
@@ -211,10 +214,11 @@ export async function createProfile(
             console.error("Failed to parse JSON:", parseErr);
             console.error("Response was not valid JSON");
             // If it's not JSON, use the text as the error message
-            errorMessage = responseText || `HTTP ${response.status}: ${response.statusText}`;
+            errorMessage =
+              responseText || `HTTP ${response.status}: ${response.statusText}`;
             throw new Error(errorMessage);
           }
-          
+
           // Handle different error response formats
           if (errorData.Error) {
             errorMessage = errorData.Error;
@@ -248,22 +252,26 @@ export async function createProfile(
             errorMessage = JSON.stringify(errorData);
             console.error("Using stringified errorData:", errorMessage);
           }
-          
-          console.error("-------------------------------- ERROR RESPONSE END --------------------------------");
+
+          console.error(
+            "-------------------------------- ERROR RESPONSE END --------------------------------",
+          );
         } catch (parseError) {
           console.error("Exception in error handling:", parseError);
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
       }
-      
+
       // Make error message more visible
       console.error("FINAL ERROR MESSAGE:", errorMessage);
-      
+
       // Temporary: Show alert for debugging (remove after fixing)
       if (process.env.NODE_ENV === "development") {
-        alert(`Profile Creation Failed (${response.status}):\n\n${errorMessage}\n\nCheck console for details.`);
+        alert(
+          `Profile Creation Failed (${response.status}):\n\n${errorMessage}\n\nCheck console for details.`,
+        );
       }
-      
+
       throw new Error(errorMessage);
     }
 
@@ -368,7 +376,7 @@ export async function uploadImage(
 
   if (!response.ok) {
     let errorMessage = "Failed to upload image";
-    
+
     try {
       const errorData = await response.json();
       if (errorData.error) {
@@ -381,7 +389,7 @@ export async function uploadImage(
         errorMessage = "Authentication failed. Please log in again.";
       }
     }
-    
+
     throw new Error(errorMessage);
   }
 
