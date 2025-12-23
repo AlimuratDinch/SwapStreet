@@ -16,6 +16,7 @@ interface AuthContextProps {
   accessToken: string | null;
   login: (token: string) => void;
   logout: () => void;
+  refreshToken: () => Promise<string | null>;
   isAuthenticated: boolean;
 }
 
@@ -62,6 +63,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     router.push("/login");
   };
 
+  const refreshToken = async (): Promise<string | null> => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const response = await fetch(`${API_URL}/api/auth/refresh`, {
+        method: "POST",
+        credentials: "include", 
+      });
+
+      if (!response.ok) {
+        console.error("Token refresh failed:", response.status);
+        logout();
+        return null;
+      }
+
+      const data = await response.json();
+      if (data.accessToken) {
+        login(data.accessToken);
+        return data.accessToken;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      logout();
+      return null;
+    }
+  };
+
   const isAuthenticated = !!accessToken;
 
   return (
@@ -73,6 +101,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         accessToken,
         login,
         logout,
+        refreshToken,
         isAuthenticated,
       }}
     >

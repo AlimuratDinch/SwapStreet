@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";
+import { useAuth } from "@/contexts/AuthContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
@@ -10,6 +11,7 @@ const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
+  const { accessToken, isAuthenticated, refreshToken } = useAuth();
 
   // Form fields
   const [firstName, setFirstName] = useState("");
@@ -34,6 +36,22 @@ export default function SellerOnboardingPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+
+  // Redirect if not authenticated (with a small delay to allow AuthContext to load)
+  useEffect(() => {
+    // Check both AuthContext and sessionStorage as fallback
+    const checkAuth = () => {
+      const tokenInStorage = sessionStorage.getItem("accessToken");
+      if (!isAuthenticated && !tokenInStorage) {
+        router.push("/auth/sign-in");
+      }
+    };
+
+    // Give AuthContext a moment to load from sessionStorage
+    const timeoutId = setTimeout(checkAuth, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [isAuthenticated, router]);
 
   // Fetch provinces on mount
   useEffect(() => {
@@ -179,9 +197,8 @@ export default function SellerOnboardingPage() {
           return;
         }
 
-        // Get access token
-        const accessToken = sessionStorage.getItem("accessToken");
-        if (!accessToken) {
+        // Check authentication
+        if (!isAuthenticated || !accessToken) {
           setError("You must be logged in to create a profile.");
           router.push("/auth/sign-in");
           return;
@@ -192,23 +209,27 @@ export default function SellerOnboardingPage() {
         let bannerImagePath: string | undefined;
 
         if (avatarFile) {
-          profileImagePath = await uploadImage(avatarFile, "Profile");
+          profileImagePath = await uploadImage(accessToken, avatarFile, "Profile", refreshToken);
         }
 
         if (bannerFile) {
-          bannerImagePath = await uploadImage(bannerFile, "Banner");
+          bannerImagePath = await uploadImage(accessToken, bannerFile, "Banner", refreshToken);
         }
 
         // Create profile
-        await createProfile(accessToken, {
+        const profileData = {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           bio: bio.trim() || undefined,
-          cityId: selectedCityId,  // Changed from locationId to cityId
+          cityId: selectedCityId!,  // Non-null assertion since we validated above
           fsa: fsa,
           profileImagePath,
           bannerImagePath,
-        });
+        };
+        
+        console.log("Profile data being sent:", profileData);
+        
+        await createProfile(accessToken, profileData, refreshToken);
 
         // Redirect to profile page
         router.push("/seller/me");
@@ -228,6 +249,9 @@ export default function SellerOnboardingPage() {
       avatarFile,
       bannerFile,
       router,
+      accessToken,
+      isAuthenticated,
+      refreshToken,
     ],
   );
 
