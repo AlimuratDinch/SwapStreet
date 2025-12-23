@@ -17,18 +17,20 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
     - name: Install dependencies
-      run: npm install
+      run: npm ci
       working-directory: swapstreet
 
     - name: Run tests and collect coverage with threshold
       run: |
-        npm test -- --coverage --coverageThreshold='{"global":{"branches":80,"functions":80,"lines":80,"statements":80}}'
+        npm test -- --coverage --coverageThreshold='{
+          "global": {
+            "branches": 80,
+            "functions": 80,
+            "lines": 80,
+            "statements": 80
+          }
+        }'
       working-directory: swapstreet
 
     - name: Verify coverage file
@@ -44,11 +46,7 @@ jobs:
       with:
         projectBaseDir: swapstreet
         args: >
-          -Dsonar.projectKey=swapstreet
-          -Dsonar.organization=swapstreet
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-          -Dsonar.sources=app
-          -Dsonar.exclusions=**/__tests__/**,**/*.test.tsx,**/*.test.ts
+          -Dsonar.projectKey=swapstreet -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
 
     - name: Wait for SonarQube Quality Gate result
       uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
