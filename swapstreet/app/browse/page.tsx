@@ -47,14 +47,25 @@ export default async function BrowsePage({
 }) {
   const items = await fetchClothingItems(searchParams);
 
+  const dummyItem = {
+    id: 999,
+    title: "Vintage Blue Jeans",
+    description: "Classic fit, great condition",
+    imageUrl: "/images/clothes_login_page.png",
+    condition: "Like New",
+    price: 24.99,
+  };
+
+  const allItems = items.length > 0 ? items : [dummyItem];
+
   return (
     <div className="flex flex-col h-screen">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
-          {items.length > 0 ? (
-            items.map(
+          {allItems.length > 0 ? (
+            allItems.map(
               (item: {
                 id: number;
                 title: string;
@@ -66,7 +77,8 @@ export default async function BrowsePage({
                 <CardItem
                   key={item.id}
                   title={item.title}
-                  description={item.description}
+                  // description={item.description}
+                  condition={item.condition}
                   imgSrc={item.imageUrl}
                   price={item.price ?? 0}
                 />
@@ -79,12 +91,6 @@ export default async function BrowsePage({
           )}
         </main>
       </div>
-      <a
-        href="/add"
-        className="fixed bottom-5 right-5 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center text-xl"
-      >
-        +
-      </a>
     </div>
   );
 }
