@@ -1,14 +1,27 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import LoginPage from "@/app/auth/sign-in/page";
 import "@testing-library/jest-dom";
+import LoginPage from "@/app/auth/sign-in/page";
 
-// Mock router
-const pushMock = jest.fn();
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: pushMock }),
+//  Mock logger (IMPORTANT after introducing tslog)
+jest.mock("@/components/common/logger", () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
 }));
 
-// Mock sessionStorage
+const pushMock = jest.fn();
+
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: pushMock,
+  }),
+}));
+
+//  Mock sessionStorage
+
 beforeAll(() => {
   Object.defineProperty(window, "sessionStorage", {
     value: {
@@ -33,20 +46,25 @@ beforeAll(() => {
 describe("LoginPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.sessionStorage.clear();
   });
 
   it("renders login form correctly", () => {
     render(<LoginPage />);
+
     expect(screen.getByRole("heading", { name: /login/i })).toBeInTheDocument();
+
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+
     expect(
       screen.getByRole("button", { name: /sign in/i }),
     ).toBeInTheDocument();
   });
 
-  it("successful login stores access token and navigates", async () => {
+  it("stores access token and navigates on successful login", async () => {
     const mockToken = "abc123";
+
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ accessToken: mockToken }),
@@ -71,7 +89,7 @@ describe("LoginPage", () => {
     expect(window.sessionStorage.getItem("accessToken")).toBe(mockToken);
   });
 
-  it("shows error when login fails", async () => {
+  it("shows error message when login fails", async () => {
     const errorMsg = "Login failed";
 
     global.fetch = jest.fn().mockResolvedValueOnce({
@@ -91,11 +109,10 @@ describe("LoginPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
-    const errorEl = await screen.findByText(errorMsg);
-    expect(errorEl).toBeInTheDocument();
+    expect(await screen.findByText(errorMsg)).toBeInTheDocument();
   });
 
-  it("shows error when token is missing in response", async () => {
+  it("shows error when access token is missing", async () => {
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({}),
@@ -113,10 +130,8 @@ describe("LoginPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
-    const errorEl = await screen.findByText(
-      /access token not returned from backend/i,
-    );
-
-    expect(errorEl).toBeInTheDocument();
+    expect(
+      await screen.findByText(/access token not returned from backend/i),
+    ).toBeInTheDocument();
   });
 });
