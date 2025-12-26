@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using backend.Contracts;
 using backend.DTOs;
+using backend.Models;
 
 namespace backend.Controllers
 {
@@ -33,6 +34,25 @@ namespace backend.Controllers
                 Lat = city.Latitude,
                 Lng = city.Longitude
             });
+        }
+
+        [HttpGet("provinces")]
+        public async Task<IActionResult> GetProvinces()
+        {
+            var provinces = await _locationService.GetAllProvincesAsync();
+            return Ok(provinces);
+        }
+
+        [HttpGet("cities")]
+        public async Task<IActionResult> GetCities([FromQuery] int provinceId)
+        {
+            if (provinceId <= 0)
+            {
+                return BadRequest(new { Error = "provinceId query parameter is required and must be greater than 0" });
+            }
+
+            var cities = await _locationService.GetCitiesByProvinceIdAsync(provinceId);
+            return Ok(cities);
         }
     }
 }

@@ -8,11 +8,55 @@ jest.mock("next/navigation", () => ({
 }));
 
 // ----------------------------
+// Mock logger
+// ----------------------------
+jest.mock("@/components/common/logger", () => ({
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+// ----------------------------
 // Mock API functions
 // ----------------------------
 jest.mock("@/lib/api/profile", () => ({
   createProfile: jest.fn().mockResolvedValue({ id: "test-id" }),
   uploadImage: jest.fn().mockResolvedValue("https://example.com/image.jpg"),
+}));
+
+// ----------------------------
+// Mock AuthContext
+// ----------------------------
+const mockLogin = jest.fn();
+const mockLogout = jest.fn();
+const mockRefreshToken = jest.fn().mockResolvedValue("new-token");
+
+const mockUseAuth = jest.fn(() => ({
+  accessToken: "mock-token",
+  isAuthenticated: true,
+  refreshToken: mockRefreshToken,
+  login: mockLogin,
+  logout: mockLogout,
+  userId: "test-user-id",
+  username: "test-user",
+  email: "test@example.com",
+})) as jest.Mock<{
+  accessToken: string | null;
+  isAuthenticated: boolean;
+  refreshToken: () => Promise<string | null>;
+  login: (token: string) => void;
+  logout: () => void;
+  userId: string | null;
+  username: string | null;
+  email: string | null;
+}>;
+
+jest.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => mockUseAuth(),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // ----------------------------
@@ -57,6 +101,7 @@ Object.defineProperty(window, "sessionStorage", {
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import SellerOnboardingPage from "@/app/seller/onboarding/page";
 import "@testing-library/jest-dom";
+import * as profileApi from "@/lib/api/profile";
 
 // ----------------------------
 // Mock fetch for location data
@@ -94,13 +139,18 @@ global.fetch = jest.fn((url) => {
 describe("SellerOnboardingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLogin.mockClear();
+    mockLogout.mockClear();
+    mockRefreshToken.mockClear();
+    mockRefreshToken.mockResolvedValue("new-token");
 
     // Reset sessionStorage to default state
     mockSessionStorage.clear();
     mockSessionStorage.setItem("accessToken", "mock-token");
 
     // Reset API mocks
-    const { createProfile, uploadImage } = require("@/lib/api/profile");
+    const createProfile = profileApi.createProfile as jest.Mock;
+    const uploadImage = profileApi.uploadImage as jest.Mock;
     createProfile.mockClear();
     createProfile.mockResolvedValue({ id: "test-id" });
     uploadImage.mockClear();
@@ -228,6 +278,110 @@ describe("SellerOnboardingPage", () => {
     expect(err).toBeInTheDocument();
   });
 
+  it("validates FSA format after postal code processing", async () => {
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1);
+    });
+
+    fireEvent.change(citySelect, { target: { value: "1" } });
+    // Test with a postal code that has spaces/hyphens to ensure FSA extraction works
+    // This tests the FSA validation code path (lines 184-191)
+    fireEvent.change(postalInput, { target: { value: "M5V-1A1" } });
+
+    const submitBtn = screen.getByRole("button", {
+      name: /save and continue/i,
+    });
+    const form = submitBtn.closest("form");
+    fireEvent.submit(form!);
+
+    // The postal code should be processed correctly and FSA validation should pass
+    // This ensures the FSA extraction and validation code path is executed
+    await waitFor(() => {
+      // If validation passes, we should navigate to /seller/me
+      // If FSA validation fails, we'd see "Invalid postal code format."
+      // Since "M5V-1A1" is valid, FSA should be "M5V" which passes FSA_REGEX
+      expect(mockPush).toHaveBeenCalledWith("/seller/me");
+    });
+  });
+
+  it("shows error when FSA format is invalid after processing", async () => {
+    // This test covers the defensive FSA validation (lines 189-191)
+    // While it's unlikely to trigger in practice (POSTAL_REGEX should catch it),
+    // this tests the code path exists for safety
+    render(<SellerOnboardingPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    });
+
+    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
+    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
+    const provinceSelect = screen.getByLabelText(/province/i);
+    const citySelect = screen.getByLabelText(/city/i);
+    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
+
+    fireEvent.change(firstNameInput, { target: { value: "John" } });
+    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
+    fireEvent.change(provinceSelect, { target: { value: "1" } });
+
+    await waitFor(() => {
+      expect(citySelect).not.toBeDisabled();
+      const options = citySelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThan(1);
+    });
+
+    fireEvent.change(citySelect, { target: { value: "1" } });
+
+    // Mock String.prototype.substring to return an invalid FSA format
+    // This allows us to test the FSA validation error path
+    const originalSubstring = String.prototype.substring;
+    String.prototype.substring = jest.fn(function (
+      this: string,
+      start?: number,
+      end?: number,
+    ) {
+      if (this.includes("A1A") && start === 0 && end === 3) {
+        return "123"; // Invalid FSA format (should be letter-digit-letter)
+      }
+      return originalSubstring.call(this, start ?? 0, end);
+    });
+
+    fireEvent.change(postalInput, { target: { value: "A1A 1A1" } });
+
+    const submitBtn = screen.getByRole("button", {
+      name: /save and continue/i,
+    });
+    const form = submitBtn.closest("form");
+    fireEvent.submit(form!);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Invalid postal code format/i),
+      ).toBeInTheDocument();
+    });
+
+    // Restore original substring
+    String.prototype.substring = originalSubstring;
+  });
+
   it("renders the onboarding heading and form fields", async () => {
     render(<SellerOnboardingPage />);
 
@@ -285,7 +439,7 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("submits the form with valid data", async () => {
-    const { createProfile } = require("@/lib/api/profile");
+    const createProfile = profileApi.createProfile as jest.Mock;
     render(<SellerOnboardingPage />);
 
     await waitFor(() => {
@@ -316,21 +470,26 @@ describe("SellerOnboardingPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
 
     await waitFor(() => {
-      expect(createProfile).toHaveBeenCalledWith("mock-token", {
-        firstName: "John",
-        lastName: "Doe",
-        bio: "This is my bio.",
-        locationId: 1,
-        fsa: "M5V",
-        profileImagePath: undefined,
-        bannerImagePath: undefined,
-      });
+      expect(createProfile).toHaveBeenCalledWith(
+        "mock-token",
+        {
+          firstName: "John",
+          lastName: "Doe",
+          bio: "This is my bio.",
+          cityId: 1,
+          fsa: "M5V",
+          profileImagePath: undefined,
+          bannerImagePath: undefined,
+        },
+        mockRefreshToken,
+      );
       expect(mockPush).toHaveBeenCalledWith("/seller/me");
     });
   });
 
   it("submits the form with both avatar and banner images", async () => {
-    const { createProfile, uploadImage } = require("@/lib/api/profile");
+    const createProfile = profileApi.createProfile as jest.Mock;
+    const uploadImage = profileApi.uploadImage as jest.Mock;
     uploadImage.mockResolvedValue("https://example.com/uploaded-image.jpg");
 
     render(<SellerOnboardingPage />);
@@ -374,17 +533,31 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(uploadImage).toHaveBeenCalledTimes(2);
-      expect(uploadImage).toHaveBeenCalledWith(avatarFile, "Profile");
-      expect(uploadImage).toHaveBeenCalledWith(bannerFile, "Banner");
-      expect(createProfile).toHaveBeenCalledWith("mock-token", {
-        firstName: "John",
-        lastName: "Doe",
-        bio: undefined,
-        locationId: 1,
-        fsa: "M5V",
-        profileImagePath: "https://example.com/uploaded-image.jpg",
-        bannerImagePath: "https://example.com/uploaded-image.jpg",
-      });
+      expect(uploadImage).toHaveBeenCalledWith(
+        "mock-token",
+        avatarFile,
+        "Profile",
+        mockRefreshToken,
+      );
+      expect(uploadImage).toHaveBeenCalledWith(
+        "mock-token",
+        bannerFile,
+        "Banner",
+        mockRefreshToken,
+      );
+      expect(createProfile).toHaveBeenCalledWith(
+        "mock-token",
+        {
+          firstName: "John",
+          lastName: "Doe",
+          bio: undefined,
+          cityId: 1,
+          fsa: "M5V",
+          profileImagePath: "https://example.com/uploaded-image.jpg",
+          bannerImagePath: "https://example.com/uploaded-image.jpg",
+        },
+        mockRefreshToken,
+      );
       expect(mockPush).toHaveBeenCalledWith("/seller/me");
     });
   });
@@ -612,7 +785,7 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("handles image upload failure", async () => {
-    const { uploadImage } = require("@/lib/api/profile");
+    const uploadImage = profileApi.uploadImage as jest.Mock;
     uploadImage.mockRejectedValueOnce(new Error("Upload failed"));
 
     render(<SellerOnboardingPage />);
@@ -653,7 +826,7 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("handles banner upload failure", async () => {
-    const { uploadImage } = require("@/lib/api/profile");
+    const uploadImage = profileApi.uploadImage as jest.Mock;
     // First call (avatar) succeeds, second call (banner) fails
     uploadImage
       .mockResolvedValueOnce("https://example.com/avatar.jpg")
@@ -704,7 +877,7 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("handles profile creation failure", async () => {
-    const { createProfile } = require("@/lib/api/profile");
+    const createProfile = profileApi.createProfile as jest.Mock;
     createProfile.mockRejectedValueOnce(new Error("Profile already exists"));
 
     render(<SellerOnboardingPage />);
@@ -739,9 +912,66 @@ describe("SellerOnboardingPage", () => {
     });
   });
 
+  it("redirects to sign-in on mount if not authenticated and no token in storage", async () => {
+    // Clear sessionStorage for this test
+    mockSessionStorage.removeItem("accessToken");
+
+    // Mock AuthContext to return unauthenticated state for this test
+    const originalMock = mockUseAuth.getMockImplementation();
+    mockUseAuth.mockReturnValue({
+      accessToken: null,
+      isAuthenticated: false,
+      refreshToken: mockRefreshToken,
+      login: mockLogin,
+      logout: mockLogout,
+      userId: null,
+      username: null,
+      email: null,
+    });
+
+    render(<SellerOnboardingPage />);
+
+    // Wait for the redirect to happen (the useEffect has a 100ms timeout)
+    await waitFor(
+      () => {
+        expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
+      },
+      { timeout: 500 },
+    );
+
+    // Restore original mock
+    if (originalMock) {
+      mockUseAuth.mockImplementation(originalMock);
+    } else {
+      mockUseAuth.mockReturnValue({
+        accessToken: "mock-token",
+        isAuthenticated: true,
+        refreshToken: mockRefreshToken,
+        login: mockLogin,
+        logout: mockLogout,
+        userId: "test-user-id",
+        username: "test-user",
+        email: "test@example.com",
+      });
+    }
+  });
+
   it("redirects to sign-in if not authenticated", async () => {
-    // Clear the token for this specific test
-    mockSessionStorage.clear();
+    // Clear sessionStorage for this test
+    mockSessionStorage.removeItem("accessToken");
+
+    // Mock AuthContext to return unauthenticated state for this test
+    const originalMock = mockUseAuth.getMockImplementation();
+    mockUseAuth.mockReturnValue({
+      accessToken: null,
+      isAuthenticated: false,
+      refreshToken: mockRefreshToken,
+      login: mockLogin,
+      logout: mockLogout,
+      userId: null,
+      username: null,
+      email: null,
+    });
 
     render(<SellerOnboardingPage />);
 
@@ -774,6 +1004,22 @@ describe("SellerOnboardingPage", () => {
       expect(screen.getByText(/you must be logged in/i)).toBeInTheDocument();
       expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
     });
+
+    // Restore original mock
+    if (originalMock) {
+      mockUseAuth.mockImplementation(originalMock);
+    } else {
+      mockUseAuth.mockReturnValue({
+        accessToken: "mock-token",
+        isAuthenticated: true,
+        refreshToken: mockRefreshToken,
+        login: mockLogin,
+        logout: mockLogout,
+        userId: "test-user-id",
+        username: "test-user",
+        email: "test@example.com",
+      });
+    }
   });
 
   it("resets city selection when changing province to one without the selected city", async () => {

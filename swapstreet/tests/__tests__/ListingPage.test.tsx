@@ -189,6 +189,25 @@ describe("SellerListingPage", () => {
       });
     });
 
+    it("allows exactly 5 images", async () => {
+      render(<SellerListingPage />);
+      const files = Array.from({ length: 5 }, (_, i) =>
+        createFile(`test${i}.png`),
+      );
+      uploadImage(files);
+      await waitFor(() => {
+        [
+          "Preview 1",
+          "Preview 2",
+          "Preview 3",
+          "Preview 4",
+          "Preview 5",
+        ].forEach((alt) => {
+          expect(screen.getByAltText(alt)).toBeInTheDocument();
+        });
+      });
+    });
+
     it("removes image when delete button clicked", async () => {
       render(<SellerListingPage />);
       uploadImage([createFile()]);
@@ -229,6 +248,141 @@ describe("SellerListingPage", () => {
       await waitFor(() => {
         expect(localStorageMock.setItem).toHaveBeenCalled();
       });
+    });
+
+    it("shows error when title is missing", async () => {
+      render(<SellerListingPage />);
+      changeField(/^Description/i, "Test Description");
+      changeField(/^Price/i, "29.99");
+      changeField(/^Category \*/i, "Shirts");
+      changeField(/^Subcategory \*/i, "T-shirts");
+      uploadImage([createFile()]);
+      submitForm();
+      await waitFor(() => {
+        expect(screen.getByText(/Please enter a title/i)).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when description is missing", async () => {
+      render(<SellerListingPage />);
+      changeField(/^Title/i, "Test Product");
+      changeField(/^Price/i, "29.99");
+      changeField(/^Category \*/i, "Shirts");
+      changeField(/^Subcategory \*/i, "T-shirts");
+      uploadImage([createFile()]);
+      submitForm();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Please enter a description/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when price is missing", async () => {
+      render(<SellerListingPage />);
+      changeField(/^Title/i, "Test Product");
+      changeField(/^Description/i, "Test Description");
+      changeField(/^Category \*/i, "Shirts");
+      changeField(/^Subcategory \*/i, "T-shirts");
+      uploadImage([createFile()]);
+      submitForm();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Please enter a valid price/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when price is zero or negative", async () => {
+      render(<SellerListingPage />);
+      changeField(/^Title/i, "Test Product");
+      changeField(/^Description/i, "Test Description");
+      changeField(/^Price/i, "0");
+      changeField(/^Category \*/i, "Shirts");
+      changeField(/^Subcategory \*/i, "T-shirts");
+      uploadImage([createFile()]);
+      submitForm();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Please enter a valid price/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when no images are uploaded", async () => {
+      render(<SellerListingPage />);
+      changeField(/^Title/i, "Test Product");
+      changeField(/^Description/i, "Test Description");
+      changeField(/^Price/i, "29.99");
+      changeField(/^Category \*/i, "Shirts");
+      changeField(/^Subcategory \*/i, "T-shirts");
+      submitForm();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Please upload at least one image/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when category is not selected", async () => {
+      render(<SellerListingPage />);
+      changeField(/^Title/i, "Test Product");
+      changeField(/^Description/i, "Test Description");
+      changeField(/^Price/i, "29.99");
+      uploadImage([createFile()]);
+      submitForm();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Please select a category/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when subcategory is not selected", async () => {
+      render(<SellerListingPage />);
+      changeField(/^Title/i, "Test Product");
+      changeField(/^Description/i, "Test Description");
+      changeField(/^Price/i, "29.99");
+      changeField(/^Category \*/i, "Shirts");
+      uploadImage([createFile()]);
+      submitForm();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Please select a subcategory/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when more than 5 images are uploaded", async () => {
+      render(<SellerListingPage />);
+      const files = Array.from({ length: 6 }, (_, i) =>
+        createFile(`test${i}.png`),
+      );
+      uploadImage(files);
+      await waitFor(() => {
+        expect(
+          screen.getByText(/You can upload a maximum of 5 images/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("handles error when localStorage save fails", async () => {
+      // Mock localStorage.setItem to throw an error
+      const originalSetItem = localStorageMock.setItem;
+      localStorageMock.setItem = jest.fn(() => {
+        throw new Error("Storage quota exceeded");
+      });
+
+      render(<SellerListingPage />);
+      fillValidForm();
+      submitForm();
+
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to save listing/i)).toBeInTheDocument();
+      });
+
+      // Restore original
+      localStorageMock.setItem = originalSetItem;
     });
   });
 

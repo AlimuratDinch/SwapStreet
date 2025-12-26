@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";
+import { useAuth } from "@/contexts/AuthContext";
+import { logger } from "@/components/common/logger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
@@ -10,6 +12,7 @@ const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
+  const { accessToken, isAuthenticated, refreshToken } = useAuth();
 
   // Form fields
   const [firstName, setFirstName] = useState("");
@@ -27,13 +30,28 @@ export default function SellerOnboardingPage() {
 
   // Data from backend
   const [provinces, setProvinces] = useState<Province[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
 
   // UI state
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+
+  // Redirect if not authenticated (with a small delay to allow AuthContext to load)
+  useEffect(() => {
+    // Check both AuthContext and sessionStorage as fallback
+    const checkAuth = () => {
+      const tokenInStorage = sessionStorage.getItem("accessToken");
+      if (!isAuthenticated && !tokenInStorage) {
+        router.push("/auth/sign-in");
+      }
+    };
+
+    // Give AuthContext a moment to load from sessionStorage
+    const timeoutId = setTimeout(checkAuth, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [isAuthenticated, router]);
 
   // Fetch provinces on mount
   useEffect(() => {
@@ -46,7 +64,7 @@ export default function SellerOnboardingPage() {
           setProvinces(provincesData);
         }
       } catch (err) {
-        console.error("Failed to fetch provinces:", err);
+        logger.error("Failed to fetch provinces", err);
         setError("Failed to load location data. Please refresh the page.");
       } finally {
         setLoadingData(false);
@@ -67,11 +85,10 @@ export default function SellerOnboardingPage() {
 
           if (citiesRes.ok) {
             const citiesData = await citiesRes.json();
-            setCities(citiesData);
             setFilteredCities(citiesData);
           }
         } catch (err) {
-          console.error("Failed to fetch cities:", err);
+          logger.error("Failed to fetch cities", err);
           setError("Failed to load cities. Please try again.");
         }
       };
@@ -79,7 +96,6 @@ export default function SellerOnboardingPage() {
       fetchCities();
       setSelectedCityId(null); // Reset city selection when province changes
     } else {
-      setCities([]);
       setFilteredCities([]);
       setSelectedCityId(null);
     }
@@ -179,9 +195,8 @@ export default function SellerOnboardingPage() {
           return;
         }
 
-        // Get access token
-        const accessToken = sessionStorage.getItem("accessToken");
-        if (!accessToken) {
+        // Check authentication
+        if (!isAuthenticated || !accessToken) {
           setError("You must be logged in to create a profile.");
           router.push("/auth/sign-in");
           return;
@@ -192,29 +207,46 @@ export default function SellerOnboardingPage() {
         let bannerImagePath: string | undefined;
 
         if (avatarFile) {
-          profileImagePath = await uploadImage(avatarFile, "Profile");
+          profileImagePath = await uploadImage(
+            accessToken,
+            avatarFile,
+            "Profile",
+            refreshToken,
+          );
         }
 
         if (bannerFile) {
-          bannerImagePath = await uploadImage(bannerFile, "Banner");
+          bannerImagePath = await uploadImage(
+            accessToken,
+            bannerFile,
+            "Banner",
+            refreshToken,
+          );
         }
 
         // Create profile
-        await createProfile(accessToken, {
+        const profileData = {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           bio: bio.trim() || undefined,
-          locationId: selectedCityId,
+          cityId: selectedCityId!, // Non-null assertion since we validated above
           fsa: fsa,
           profileImagePath,
           bannerImagePath,
-        });
+        };
+
+        logger.debug("Profile data being sent", { profileData });
+        await createProfile(accessToken, profileData, refreshToken);
 
         // Redirect to profile page
         router.push("/seller/me");
-      } catch (err: any) {
-        console.error("Failed to create profile:", err);
-        setError(err.message || "Failed to create profile. Please try again.");
+      } catch (err: unknown) {
+        logger.error("Failed to create profile", err);
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to create profile. Please try again.";
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -228,6 +260,9 @@ export default function SellerOnboardingPage() {
       avatarFile,
       bannerFile,
       router,
+      accessToken,
+      isAuthenticated,
+      refreshToken,
     ],
   );
 
@@ -422,6 +457,7 @@ export default function SellerOnboardingPage() {
             />
             {avatarPreview && (
               <div className="mt-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={avatarPreview}
                   alt="Avatar preview"
@@ -446,6 +482,7 @@ export default function SellerOnboardingPage() {
             />
             {bannerPreview && (
               <div className="mt-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={bannerPreview}
                   alt="Banner preview"
