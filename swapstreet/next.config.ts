@@ -23,6 +23,21 @@ const nextConfig: NextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
+
+  serverComponentsExternalPackages: ["tslog"],
+  webpack: (config, { isServer }) => {
+    // Prevent tslog from being bundled in client-side code
+    if (!isServer) {
+      // Use IgnorePlugin to completely ignore tslog in client bundles
+      const webpack = require("webpack");
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^tslog$/,
+        })
+      );
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
