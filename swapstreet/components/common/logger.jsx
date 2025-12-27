@@ -9,6 +9,7 @@ if (isServer) {
   // Server-side: use tslog
   try {
     // Use require to avoid static analysis by webpack for client bundles
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const tslogModule = require("tslog");
     const { Logger } = tslogModule;
     logger = new Logger({
@@ -16,7 +17,7 @@ if (isServer) {
       minLevel: isDev ? "debug" : "info",
       prettyLogTemplate: "{{hh}}:{{mm}}:{{ss}} {{logLevelName}} {{name}} →",
     });
-  } catch (error) {
+  } catch {
     // Fallback to console if tslog fails to load
     logger = createConsoleLogger();
   }
@@ -35,11 +36,11 @@ function createConsoleLogger() {
   return {
     debug: (...args) => {
       if (isDev) {
-        console.debug(`${timestamp()} DEBUG ${prefix} →`, ...args);
+        console.warn(`${timestamp()} DEBUG ${prefix} →`, ...args);
       }
     },
     info: (...args) => {
-      console.info(`${timestamp()} INFO ${prefix} →`, ...args);
+      console.warn(`${timestamp()} INFO ${prefix} →`, ...args);
     },
     warn: (...args) => {
       console.warn(`${timestamp()} WARN ${prefix} →`, ...args);

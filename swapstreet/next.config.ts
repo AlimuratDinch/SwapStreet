@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import webpack from "webpack";
 
 const nextConfig: NextConfig = {
   images: {
@@ -29,11 +30,10 @@ const nextConfig: NextConfig = {
     // Prevent tslog from being bundled in client-side code
     if (!isServer) {
       // Use IgnorePlugin to completely ignore tslog in client bundles
-      const webpack = require("webpack");
       config.plugins.push(
         new webpack.IgnorePlugin({
           resourceRegExp: /^tslog$/,
-        })
+        }),
       );
     }
     return config;
