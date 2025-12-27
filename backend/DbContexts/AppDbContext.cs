@@ -178,15 +178,18 @@ public class AppDbContext : DbContext
 
         // WishList
         modelBuilder.Entity<WishList>().ToTable("wishlists");
+        // UserID references Profile.Id (since Profile.Id = User.Id)
         modelBuilder.Entity<WishList>()
             .HasOne(wl => wl.Profile)
             .WithMany()
-            .HasForeignKey(wl => wl.ProfileId);
+            .HasForeignKey(wl => wl.UserID)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<WishList>()
             .HasOne(wl => wl.Listing)
             .WithMany()
-            .HasForeignKey(wl => wl.ListingId);
+            .HasForeignKey(wl => wl.ListingID)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // TryOnImage
         modelBuilder.Entity<TryOnImage>().ToTable("tryon_images");
