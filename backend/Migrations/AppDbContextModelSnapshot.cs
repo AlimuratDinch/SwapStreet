@@ -422,20 +422,17 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ListingId")
+                    b.Property<Guid>("ListingID")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProfileId")
+                    b.Property<Guid>("UserID")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ListingId");
+                    b.HasIndex("ListingID");
 
-                    b.HasIndex("ProfileId");
+                    b.HasIndex("UserID");
 
                     b.ToTable("wishlists", (string)null);
                 });
@@ -581,13 +578,13 @@ namespace backend.Migrations
                 {
                     b.HasOne("Listing", "Listing")
                         .WithMany()
-                        .HasForeignKey("ListingId")
+                        .HasForeignKey("ListingID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Profile", "Profile")
                         .WithMany()
-                        .HasForeignKey("ProfileId")
+                        .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

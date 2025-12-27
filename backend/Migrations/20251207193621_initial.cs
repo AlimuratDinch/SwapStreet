@@ -304,22 +304,21 @@ namespace backend.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProfileId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ListingId = table.Column<Guid>(type: "uuid", nullable: false),
-                    DisplayOrder = table.Column<int>(type: "integer", nullable: false)
+                    UserID = table.Column<Guid>(type: "uuid", nullable: false),
+                    ListingID = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_wishlists", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_wishlists_listings_ListingId",
-                        column: x => x.ListingId,
+                        name: "FK_wishlists_listings_ListingID",
+                        column: x => x.ListingID,
                         principalTable: "listings",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_wishlists_profiles_ProfileId",
-                        column: x => x.ProfileId,
+                        name: "FK_wishlists_profiles_UserID",
+                        column: x => x.UserID,
                         principalTable: "profiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -401,14 +400,14 @@ namespace backend.Migrations
                 column: "ProfileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_wishlists_ListingId",
+                name: "IX_wishlists_ListingID",
                 table: "wishlists",
-                column: "ListingId");
+                column: "ListingID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_wishlists_ProfileId",
+                name: "IX_wishlists_UserID",
                 table: "wishlists",
-                column: "ProfileId");
+                column: "UserID");
         }
 
         /// <inheritdoc />
