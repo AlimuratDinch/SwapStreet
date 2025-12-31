@@ -95,7 +95,9 @@ export function Header() {
       <div className="flex gap-5">
         <Globe className="w-5.5 h-5.5 cursor-pointer" />
         <Leaf className="w-5.5 h-5.5 cursor-pointer" />
-        <ShoppingBag className="w-5.5 h-5.5 cursor-pointer" />
+        <Link href="/wardrobe">
+          <ShoppingBag className="w-5.5 h-5.5 cursor-pointer" />
+        </Link>
         <User className="w-5.5 h-5.5 cursor-pointer" />
       </div>
     </header>
