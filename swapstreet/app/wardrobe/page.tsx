@@ -2,19 +2,17 @@
 
 import { Header } from "../browse/BrowseElements";
 import { useState, useRef } from "react";
-import { Star, X, Bell, Download, Grid, List, Info } from "lucide-react";
+import { Star, X, Download, Grid, List, Info } from "lucide-react";
 
 export default function WardrobePage() {
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [uploadLoading, setUploadLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showOriginal, setShowOriginal] = useState(true);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [recentResults, setRecentResults] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
 
   const toggleFavorite = (itemId: number) => {
@@ -51,7 +49,6 @@ export default function WardrobePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadLoading(true);
     setError(null);
 
     try {
@@ -61,7 +58,6 @@ export default function WardrobePage() {
 
       if (!token) {
         setError("Please log in to upload image");
-        setUploadLoading(false);
         return;
       }
 
@@ -77,16 +73,13 @@ export default function WardrobePage() {
         body: formData,
       });
 
-      console.log("Upload response status:", response.status);
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Upload error response:", errorText);
         throw new Error(errorText || "Upload failed");
       }
 
-      const data = await response.json();
-      console.log("Upload successful, URL:", data.url);
+      const data = await response.json() as { url: string };
       setUploadedImage(data.url);
       setShowOriginal(true);
 
@@ -94,11 +87,9 @@ export default function WardrobePage() {
       if (mainImageInputRef.current) {
         mainImageInputRef.current.value = "";
       }
-    } catch (err: any) {
-      console.error("Upload error:", err);
-      setError(err.message || "Upload failed");
-    } finally {
-      setUploadLoading(false);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Upload failed";
+      setError(errorMessage);
     }
   };
 
@@ -145,8 +136,9 @@ export default function WardrobePage() {
 
       // Add to recent results (keep only last 4)
       setRecentResults((prev) => [data.url, ...prev].slice(0, 4));
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

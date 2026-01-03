@@ -128,7 +128,7 @@ export function SearchBar() {
 
 export function Sidebar() {
   // Fixed category options per design request
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([
+  const [categories] = useState<{ id: number; name: string }[]>([
     { id: 1, name: "Tops" },
     { id: 2, name: "Bottoms" },
     { id: 3, name: "Dresses/One-Pieces" },
@@ -154,7 +154,7 @@ export function Sidebar() {
   }, [searchParams]);
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const _fetchCategories = async () => {
       try {
         const apiUrl =
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -165,14 +165,12 @@ export function Sidebar() {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        const data = await res.json();
         // Do not override the fixed category list; keep API fetch for future use if needed
-        // setCategories(data);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
       }
     };
-    // fetchCategories();
+    // _fetchCategories();
   }, []);
 
   useEffect(() => {
