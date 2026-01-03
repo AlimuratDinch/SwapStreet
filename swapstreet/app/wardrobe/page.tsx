@@ -79,7 +79,7 @@ export default function WardrobePage() {
         throw new Error(errorText || "Upload failed");
       }
 
-      const data = await response.json() as { url: string };
+      const data = (await response.json()) as { url: string };
       setUploadedImage(data.url);
       setShowOriginal(true);
 
@@ -137,7 +137,8 @@ export default function WardrobePage() {
       // Add to recent results (keep only last 4)
       setRecentResults((prev) => [data.url, ...prev].slice(0, 4));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Something went wrong";
+      const errorMessage =
+        err instanceof Error ? err.message : "Something went wrong";
       setError(errorMessage);
     } finally {
       setLoading(false);
