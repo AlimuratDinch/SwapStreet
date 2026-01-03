@@ -2,6 +2,7 @@
 
 import { Header } from "../browse/BrowseElements";
 import { useState, useRef } from "react";
+import { Star, X, Bell, Download, Grid, List, Info } from "lucide-react";
 
 export default function WardrobePage() {
   const [loading, setLoading] = useState(false);
@@ -9,7 +10,32 @@ export default function WardrobePage() {
   const [error, setError] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showOriginal, setShowOriginal] = useState(true);
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [recentResults, setRecentResults] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mainImageInputRef = useRef<HTMLInputElement>(null);
+
+  const toggleFavorite = (itemId: number) => {
+    setFavorites((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  // Mock wardrobe items
+  const wardrobeItems = Array(1).fill(null).map((_, i) => ({
+    id: i + 1,
+    imageUrl: "/images/placeholder.jpg",
+    title: `Wardrobe Item ${i + 1}`,
+    isFavorite: i === 0,
+  }));
 
   // Hardcoded test item with valid GUID
   const testItem = {
@@ -48,14 +74,25 @@ export default function WardrobePage() {
         body: formData,
       });
 
+      console.log("Upload response status:", response.status);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Upload failed");
+        const errorText = await response.text();
+        console.error("Upload error response:", errorText);
+        throw new Error(errorText || "Upload failed");
       }
 
       const data = await response.json();
+      console.log("Upload successful, URL:", data.url);
       setUploadedImage(data.url);
+      setShowOriginal(true);
+      
+      // Reset file input so user can upload again
+      if (mainImageInputRef.current) {
+        mainImageInputRef.current.value = "";
+      }
     } catch (err: any) {
+      console.error("Upload error:", err);
       setError(err.message || "Upload failed");
     } finally {
       setUploadLoading(false);
@@ -101,6 +138,9 @@ export default function WardrobePage() {
 
       const data = await response.json();
       setGeneratedImage(data.url);
+      
+      // Add to recent results (keep only last 4)
+      setRecentResults((prev) => [data.url, ...prev].slice(0, 4));
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -110,93 +150,187 @@ export default function WardrobePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="pt-24 px-8 py-8">
-        <h1 className="text-3xl font-bold mb-8">Virtual Try On (TESTING ZONE)</h1>
-
-        {/* Upload Section */}
-        <div className="mb-8 bg-white rounded-lg p-6 shadow">
-          <h2 className="text-xl font-semibold mb-4">1. Upload Your Photo</h2>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              {uploadedImage ? (
-                <div className="w-32 h-40 mb-4">
-                  <img
-                    src={uploadedImage}
-                    alt="Uploaded photo"
-                    className="w-full h-full object-cover rounded"
-                  />
+      <Header showCenterNav={false} />
+      
+      <div className="flex pt-16">
+        {/* Sidebar */}
+        <aside className="w-[420px] bg-white border-r border-gray-200 h-screen fixed top-16 left-0 p-6 overflow-y-auto">
+          {/* Main image - Upload/Result display */}
+          <div className="mb-4">
+            <div className="flex justify-start mb-2">
+              <button
+                className="text-gray-600 hover:text-gray-800 relative group"
+                aria-label="Upload instructions"
+              >
+                <Info className="w-4 h-4" />
+                <div className="absolute left-0 top-6 z-20 w-72 bg-white text-sm text-gray-700 text-left border border-gray-200 rounded shadow-lg p-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition">
+                  <p className="mb-1">1) Click the frame to upload your photo.</p>
+                  <p className="mb-1">2) Pick an item and hit Try On.</p>
+                  <p>3) Toggle Original/Result to compare.</p>
                 </div>
+              </button>
+            </div>
+            <div 
+              onClick={() => !uploadedImage && mainImageInputRef.current?.click()}
+              className={`w-full aspect-[2/3] bg-gray-100 rounded flex items-center justify-center relative ${
+                !uploadedImage
+                    ? 'cursor-pointer hover:bg-gray-200 border-4 border-dashed border-gray-600 hover:border-teal-500 shadow'
+                  : ''
+              }`}
+            >
+              {uploadedImage || generatedImage ? (
+                <img
+                  src={(showOriginal ? uploadedImage : generatedImage || uploadedImage) ?? ""}
+                  alt={showOriginal ? "Uploaded photo" : "AI Result"}
+                  className="w-full h-full object-cover rounded"
+                />
               ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-32 h-40 border-2 border-dashed border-gray-300 rounded flex items-center justify-center cursor-pointer hover:border-teal-500 bg-gray-50"
-                >
-                  <span className="text-gray-500 text-sm text-center px-2">
-                    Click to upload
-                  </span>
+                <div className="text-center">
+                  <span className="text-gray-700 text-3xl font-semibold">+</span>
                 </div>
               )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
             </div>
+            <input
+              ref={mainImageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            
+            {/* Toggle between original and result */}
+            {uploadedImage && generatedImage && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => setShowOriginal(true)}
+                  className={`flex-1 py-2 px-3 rounded text-sm ${
+                    showOriginal ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Original
+                </button>
+                <button
+                  onClick={() => setShowOriginal(false)}
+                  className={`flex-1 py-2 px-3 rounded text-sm ${
+                    !showOriginal ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Result
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Error message display */}
+          {error && (
+            <div className="mt-2 p-3 bg-red-100 border border-red-400 rounded text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Try-On Button */}
+          <div className="mb-4">
             <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadLoading}
-              className="px-4 py-2 bg-teal-500 text-white rounded hover:bg-teal-600 disabled:bg-gray-400"
+              onClick={handleTryOn}
+              disabled={loading || !uploadedImage}
+              className="w-full bg-teal-500 text-white py-2 px-4 rounded hover:bg-teal-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {uploadLoading ? "Uploading..." : "Choose Photo"}
+              {loading ? "Processing..." : "Try On"}
             </button>
           </div>
-        </div>
 
-        {/* Try-On Section */}
-        <div className="flex gap-8">
-          {/* Try-On Button */}
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold mb-4">2. Confirm</h2>
-            <div className="bg-white rounded-lg p-4 shadow">
-              <button
-                onClick={handleTryOn}
-                disabled={loading || !uploadedImage}
-                className="w-full bg-teal-500 text-white py-2 px-4 rounded hover:bg-teal-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          {/* Download button */}
+          <div className="flex justify-center mb-6 pb-6 border-b border-gray-200">
+            <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+              <Download className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
+
+          {/* Rectangular image row */}
+          {/* Recent AI Results (4 most recent) */}
+          <div className="flex gap-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex-1 aspect-[2/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden"
               >
-                {loading ? "Processing..." : "Try On"}
+                {recentResults[i] ? (
+                  <img
+                    src={recentResults[i]}
+                    alt={`Try-on result ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-8 ml-[420px]">
+          {/* View Toggle */}
+          <div className="flex justify-end mb-6">
+            {/* View Mode Toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded ${
+                  viewMode === "list" ? "bg-gray-200" : "hover:bg-gray-100"
+                }`}
+              >
+                <List className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded ${
+                  viewMode === "grid" ? "bg-gray-200" : "hover:bg-gray-100"
+                }`}
+              >
+                <Grid className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          {/* Generated Result */}
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold mb-4">3. Result</h2>
-            <div className="bg-white rounded-lg p-4 shadow">
-              {error && (
-                <div className="text-red-600 mb-4 p-4 bg-red-50 rounded">
-                  {error}
+          {/* Wardrobe Items Grid */}
+          <div className="grid grid-cols-4 gap-6 mb-12">
+            {wardrobeItems.map((item) => (
+              <div key={item.id} className="bg-white rounded-lg shadow overflow-hidden group">
+                {/* Item Card */}
+                <div className="relative aspect-square bg-gray-100 flex items-center justify-center">
+                  
+                  {/* Wishlist Star */}
+                  <button 
+                    onClick={() => toggleFavorite(item.id)}
+                    className={`absolute top-3 left-3 p-1 transition-opacity ${
+                      favorites.has(item.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    }`}
+                  >
+                    <Star 
+                      className={`w-6 h-6 ${
+                        favorites.has(item.id)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-400"
+                      }`}
+                    />
+                  </button>
+
+                  {/* Remove Button */}
+                  <button className="absolute top-3 right-3 p-1 bg-white rounded-full shadow">
+                    <X className="w-5 h-5 text-gray-600" />
+                  </button>
                 </div>
-              )}
-              {generatedImage ? (
-                <div className="relative aspect-square">
-                  <img
-                    src={generatedImage}
-                    alt="Try-on result"
-                    className="w-full h-full object-cover rounded"
-                  />
+
+                {/* Item Info */}
+                <div className="p-4">
+                  <div className="h-4 bg-gray-200 rounded mb-2 w-3/4" />
+                  <div className="h-4 bg-gray-200 rounded w-1/2" />
                 </div>
-              ) : (
-                <div className="aspect-square flex items-center justify-center bg-gray-100 rounded text-gray-500">
-                  {loading ? "Generating..." : "Click 'Try On' to see result"}
-                </div>
-              )}
-            </div>
+              </div>
+            ))}
           </div>
-        </div>
-      </main>
+
+        </main>
+      </div>
     </div>
   );
 }
