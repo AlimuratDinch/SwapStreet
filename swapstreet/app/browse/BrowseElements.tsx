@@ -61,7 +61,10 @@ export function Header({ showCenterNav = true }: HeaderProps) {
                   <div className="bg-[#dadada] rounded-md p-6 max-w-[720px] mx-auto">
                     <div className="flex gap-6">
                       {[
-                        { title: "Tops", img: "/images/clothes_login_page.png" },
+                        {
+                          title: "Tops",
+                          img: "/images/clothes_login_page.png",
+                        },
                         {
                           title: "Bottoms",
                           img: "/images/clothes_login_page.png",

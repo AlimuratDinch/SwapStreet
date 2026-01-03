@@ -30,12 +30,14 @@ export default function WardrobePage() {
   };
 
   // Mock wardrobe items
-  const wardrobeItems = Array(1).fill(null).map((_, i) => ({
-    id: i + 1,
-    imageUrl: "/images/placeholder.jpg",
-    title: `Wardrobe Item ${i + 1}`,
-    isFavorite: i === 0,
-  }));
+  const wardrobeItems = Array(1)
+    .fill(null)
+    .map((_, i) => ({
+      id: i + 1,
+      imageUrl: "/images/placeholder.jpg",
+      title: `Wardrobe Item ${i + 1}`,
+      isFavorite: i === 0,
+    }));
 
   // Hardcoded test item with valid GUID
   const testItem = {
@@ -53,7 +55,8 @@ export default function WardrobePage() {
     setError(null);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const token = sessionStorage.getItem("accessToken");
 
       if (!token) {
@@ -86,7 +89,7 @@ export default function WardrobePage() {
       console.log("Upload successful, URL:", data.url);
       setUploadedImage(data.url);
       setShowOriginal(true);
-      
+
       // Reset file input so user can upload again
       if (mainImageInputRef.current) {
         mainImageInputRef.current.value = "";
@@ -110,7 +113,8 @@ export default function WardrobePage() {
     setGeneratedImage(null);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const token = sessionStorage.getItem("accessToken");
 
       if (!token) {
@@ -138,7 +142,7 @@ export default function WardrobePage() {
 
       const data = await response.json();
       setGeneratedImage(data.url);
-      
+
       // Add to recent results (keep only last 4)
       setRecentResults((prev) => [data.url, ...prev].slice(0, 4));
     } catch (err: any) {
@@ -151,7 +155,7 @@ export default function WardrobePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header showCenterNav={false} />
-      
+
       <div className="flex pt-16">
         {/* Sidebar */}
         <aside className="w-[420px] bg-white border-r border-gray-200 h-screen fixed top-16 left-0 p-6 overflow-y-auto">
@@ -164,29 +168,39 @@ export default function WardrobePage() {
               >
                 <Info className="w-4 h-4" />
                 <div className="absolute left-0 top-6 z-20 w-72 bg-white text-sm text-gray-700 text-left border border-gray-200 rounded shadow-lg p-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition">
-                  <p className="mb-1">1) Click the frame to upload your photo.</p>
+                  <p className="mb-1">
+                    1) Click the frame to upload your photo.
+                  </p>
                   <p className="mb-1">2) Pick an item and hit Try On.</p>
                   <p>3) Toggle Original/Result to compare.</p>
                 </div>
               </button>
             </div>
-            <div 
-              onClick={() => !uploadedImage && mainImageInputRef.current?.click()}
+            <div
+              onClick={() =>
+                !uploadedImage && mainImageInputRef.current?.click()
+              }
               className={`w-full aspect-[2/3] bg-gray-100 rounded flex items-center justify-center relative ${
                 !uploadedImage
-                    ? 'cursor-pointer hover:bg-gray-200 border-4 border-dashed border-gray-600 hover:border-teal-500 shadow'
-                  : ''
+                  ? "cursor-pointer hover:bg-gray-200 border-4 border-dashed border-gray-600 hover:border-teal-500 shadow"
+                  : ""
               }`}
             >
               {uploadedImage || generatedImage ? (
                 <img
-                  src={(showOriginal ? uploadedImage : generatedImage || uploadedImage) ?? ""}
+                  src={
+                    (showOriginal
+                      ? uploadedImage
+                      : generatedImage || uploadedImage) ?? ""
+                  }
                   alt={showOriginal ? "Uploaded photo" : "AI Result"}
                   className="w-full h-full object-cover rounded"
                 />
               ) : (
                 <div className="text-center">
-                  <span className="text-gray-700 text-3xl font-semibold">+</span>
+                  <span className="text-gray-700 text-3xl font-semibold">
+                    +
+                  </span>
                 </div>
               )}
             </div>
@@ -197,14 +211,16 @@ export default function WardrobePage() {
               onChange={handleImageUpload}
               className="hidden"
             />
-            
+
             {/* Toggle between original and result */}
             {uploadedImage && generatedImage && (
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => setShowOriginal(true)}
                   className={`flex-1 py-2 px-3 rounded text-sm ${
-                    showOriginal ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-700'
+                    showOriginal
+                      ? "bg-teal-500 text-white"
+                      : "bg-gray-200 text-gray-700"
                   }`}
                 >
                   Original
@@ -212,7 +228,9 @@ export default function WardrobePage() {
                 <button
                   onClick={() => setShowOriginal(false)}
                   className={`flex-1 py-2 px-3 rounded text-sm ${
-                    !showOriginal ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-700'
+                    !showOriginal
+                      ? "bg-teal-500 text-white"
+                      : "bg-gray-200 text-gray-700"
                   }`}
                 >
                   Result
@@ -294,18 +312,22 @@ export default function WardrobePage() {
           {/* Wardrobe Items Grid */}
           <div className="grid grid-cols-4 gap-6 mb-12">
             {wardrobeItems.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow overflow-hidden group">
+              <div
+                key={item.id}
+                className="bg-white rounded-lg shadow overflow-hidden group"
+              >
                 {/* Item Card */}
                 <div className="relative aspect-square bg-gray-100 flex items-center justify-center">
-                  
                   {/* Wishlist Star */}
-                  <button 
+                  <button
                     onClick={() => toggleFavorite(item.id)}
                     className={`absolute top-3 left-3 p-1 transition-opacity ${
-                      favorites.has(item.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      favorites.has(item.id)
+                        ? "opacity-100"
+                        : "opacity-0 group-hover:opacity-100"
                     }`}
                   >
-                    <Star 
+                    <Star
                       className={`w-6 h-6 ${
                         favorites.has(item.id)
                           ? "fill-yellow-400 text-yellow-400"
@@ -328,7 +350,6 @@ export default function WardrobePage() {
               </div>
             ))}
           </div>
-
         </main>
       </div>
     </div>

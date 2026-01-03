@@ -5,7 +5,9 @@ import userEvent from "@testing-library/user-event";
 // Mock header component
 jest.mock("@/app/browse/BrowseElements", () => ({
   Header: ({ showCenterNav }: { showCenterNav?: boolean }) => (
-    <div data-testid="header">Header {showCenterNav ? "with nav" : "without nav"}</div>
+    <div data-testid="header">
+      Header {showCenterNav ? "with nav" : "without nav"}
+    </div>
   ),
 }));
 
@@ -53,7 +55,7 @@ describe("WardrobePage", () => {
 
   it("should render the wardrobe page with header", () => {
     render(<WardrobePage />);
-    
+
     const header = screen.getByTestId("header");
     expect(header).toBeInTheDocument();
     expect(header).toHaveTextContent("without nav");
@@ -61,21 +63,21 @@ describe("WardrobePage", () => {
 
   it("should render the sidebar with upload frame", () => {
     render(<WardrobePage />);
-    
+
     expect(screen.getByTestId("info-icon")).toBeInTheDocument();
     expect(screen.getByText("+")).toBeInTheDocument();
   });
 
   it("should render view mode toggle buttons", () => {
     render(<WardrobePage />);
-    
+
     expect(screen.getByTestId("grid-icon")).toBeInTheDocument();
     expect(screen.getByTestId("list-icon")).toBeInTheDocument();
   });
 
   it("should render 4 recent results placeholders", () => {
     const { container } = render(<WardrobePage />);
-    
+
     const placeholders = container.querySelectorAll(".aspect-\\[2\\/3\\]");
     // 1 for upload frame + 4 for recent results = 5 total
     expect(placeholders.length).toBeGreaterThanOrEqual(5);
@@ -83,7 +85,7 @@ describe("WardrobePage", () => {
 
   it("should render Try-On button in disabled state without image", () => {
     render(<WardrobePage />);
-    
+
     const tryOnButton = screen.getByText("Try On");
     expect(tryOnButton).toBeInTheDocument();
     expect(tryOnButton).toBeDisabled();
@@ -100,7 +102,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -114,7 +118,7 @@ describe("WardrobePage", () => {
               headers: {
                 Authorization: "Bearer test-token",
               },
-            })
+            }),
           );
         });
       }
@@ -129,7 +133,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -144,17 +150,21 @@ describe("WardrobePage", () => {
 
     it("should show error when no auth token exists", async () => {
       mockSessionStorage.clear();
-      
+
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
         await userEvent.upload(input as HTMLElement, file);
 
         await waitFor(() => {
-          expect(screen.getByText(/Please log in to upload image/i)).toBeInTheDocument();
+          expect(
+            screen.getByText(/Please log in to upload image/i),
+          ).toBeInTheDocument();
         });
       }
     });
@@ -165,7 +175,7 @@ describe("WardrobePage", () => {
       render(<WardrobePage />);
 
       const tryOnButton = screen.getByRole("button", { name: /Try On/i });
-      
+
       // Button should be disabled
       expect(tryOnButton).toBeDisabled();
     });
@@ -187,21 +197,25 @@ describe("WardrobePage", () => {
       render(<WardrobePage />);
 
       // Upload image first
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
-      
+
       if (input) {
         await userEvent.upload(input as HTMLElement, file);
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledWith(
             expect.stringContaining("/api/images/upload"),
-            expect.any(Object)
+            expect.any(Object),
           );
         });
 
         // Now click try-on
-        const tryOnButton = await screen.findByRole("button", { name: "Try On" });
+        const tryOnButton = await screen.findByRole("button", {
+          name: "Try On",
+        });
         expect(tryOnButton).not.toBeDisabled();
         fireEvent.click(tryOnButton);
 
@@ -214,7 +228,7 @@ describe("WardrobePage", () => {
                 "Content-Type": "application/json",
                 Authorization: "Bearer test-token",
               },
-            })
+            }),
           );
         });
       }
@@ -233,20 +247,26 @@ describe("WardrobePage", () => {
           () =>
             new Promise((resolve) =>
               setTimeout(
-                () => resolve({ ok: true, json: async () => ({ url: "http://test.com/result.jpg" }) }),
-                100
-              )
-            )
+                () =>
+                  resolve({
+                    ok: true,
+                    json: async () => ({ url: "http://test.com/result.jpg" }),
+                  }),
+                100,
+              ),
+            ),
         );
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
         await userEvent.upload(input as HTMLElement, file);
-        
+
         await waitFor(() => {
           const tryOnButton = screen.getByRole("button", { name: "Try On" });
           expect(tryOnButton).not.toBeDisabled();
@@ -255,7 +275,9 @@ describe("WardrobePage", () => {
         const tryOnButton = screen.getByRole("button", { name: "Try On" });
         fireEvent.click(tryOnButton);
 
-        expect(await screen.findByRole("button", { name: /Processing.../i })).toBeInTheDocument();
+        expect(
+          await screen.findByRole("button", { name: /Processing.../i }),
+        ).toBeInTheDocument();
       }
     });
 
@@ -274,12 +296,14 @@ describe("WardrobePage", () => {
 
       const { container } = render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
         await userEvent.upload(input as HTMLElement, file);
-        
+
         await waitFor(() => {
           const button = screen.getByRole("button", { name: "Try On" });
           expect(button).not.toBeDisabled();
@@ -289,7 +313,9 @@ describe("WardrobePage", () => {
         fireEvent.click(tryOnButton);
 
         await waitFor(() => {
-          const resultImage = container.querySelector('img[alt*="Try-on result"]');
+          const resultImage = container.querySelector(
+            'img[alt*="Try-on result"]',
+          );
           expect(resultImage).toBeInTheDocument();
         });
       }
@@ -328,7 +354,7 @@ describe("WardrobePage", () => {
       render(<WardrobePage />);
 
       const listButton = screen.getByTestId("list-icon").closest("button");
-      
+
       if (listButton) {
         fireEvent.click(listButton);
       }
@@ -338,7 +364,7 @@ describe("WardrobePage", () => {
       render(<WardrobePage />);
 
       const gridButton = screen.getByTestId("grid-icon").closest("button");
-      
+
       if (gridButton) {
         fireEvent.click(gridButton);
       }
@@ -361,7 +387,9 @@ describe("WardrobePage", () => {
 
       const { container } = render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -376,7 +404,9 @@ describe("WardrobePage", () => {
         fireEvent.click(tryOnButton);
 
         await waitFor(() => {
-          const resultImages = container.querySelectorAll('img[alt*="Try-on result"]');
+          const resultImages = container.querySelectorAll(
+            'img[alt*="Try-on result"]',
+          );
           expect(resultImages.length).toBeGreaterThan(0);
         });
       }
@@ -398,7 +428,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -413,7 +445,9 @@ describe("WardrobePage", () => {
         fireEvent.click(tryOnButton);
 
         await waitFor(() => {
-          expect(screen.getByText("Try-on service unavailable")).toBeInTheDocument();
+          expect(
+            screen.getByText("Try-on service unavailable"),
+          ).toBeInTheDocument();
         });
       }
     });
@@ -429,7 +463,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -461,7 +497,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -479,7 +517,9 @@ describe("WardrobePage", () => {
         fireEvent.click(tryOnButton);
 
         await waitFor(() => {
-          expect(screen.getByText("Please log in to use try-on feature")).toBeInTheDocument();
+          expect(
+            screen.getByText("Please log in to use try-on feature"),
+          ).toBeInTheDocument();
         });
       }
     });
@@ -500,7 +540,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -515,7 +557,9 @@ describe("WardrobePage", () => {
         fireEvent.click(tryOnButton);
 
         await waitFor(() => {
-          const originalButton = screen.queryByRole("button", { name: "Original" });
+          const originalButton = screen.queryByRole("button", {
+            name: "Original",
+          });
           expect(originalButton).toBeInTheDocument();
         });
 
@@ -538,7 +582,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
