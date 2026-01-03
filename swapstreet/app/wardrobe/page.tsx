@@ -172,9 +172,17 @@ export default function WardrobePage() {
               </button>
             </div>
             <div
+              role="button"
+              tabIndex={!uploadedImage ? 0 : -1}
               onClick={() =>
                 !uploadedImage && mainImageInputRef.current?.click()
               }
+              onKeyDown={(e) => {
+                if (!uploadedImage && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  mainImageInputRef.current?.click();
+                }
+              }}
               className={`w-full aspect-[2/3] bg-gray-100 rounded flex items-center justify-center relative ${
                 !uploadedImage
                   ? "cursor-pointer hover:bg-gray-200 border-4 border-dashed border-gray-600 hover:border-teal-500 shadow"
