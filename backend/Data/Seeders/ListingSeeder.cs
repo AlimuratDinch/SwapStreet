@@ -12,7 +12,7 @@ namespace backend.Data.Seed
         public static async Task SeedAsync(AppDbContext context)
         {
             var testListingId = Guid.Parse("550e8400-e29b-41d4-a716-446655440000");
-            
+
             if (await context.Listings.AnyAsync(l => l.Id == testListingId))
                 return;
 
@@ -29,7 +29,7 @@ namespace backend.Data.Seed
 
             await context.Listings.AddAsync(testListing);
             await context.SaveChangesAsync();
-            
+
             Console.WriteLine("Test listing created for virtual try-on");
         }
     }

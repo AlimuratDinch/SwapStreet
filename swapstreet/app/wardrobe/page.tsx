@@ -175,11 +175,10 @@ export default function WardrobePage() {
               onClick={() =>
                 !uploadedImage && mainImageInputRef.current?.click()
               }
-              className={`w-full aspect-[2/3] bg-gray-100 rounded flex items-center justify-center relative ${
-                !uploadedImage
+              className={`w-full aspect-[2/3] bg-gray-100 rounded flex items-center justify-center relative ${!uploadedImage
                   ? "cursor-pointer hover:bg-gray-200 border-4 border-dashed border-gray-600 hover:border-teal-500 shadow"
                   : ""
-              }`}
+                }`}
             >
               {uploadedImage || generatedImage ? (
                 <img
@@ -212,21 +211,19 @@ export default function WardrobePage() {
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => setShowOriginal(true)}
-                  className={`flex-1 py-2 px-3 rounded text-sm ${
-                    showOriginal
+                  className={`flex-1 py-2 px-3 rounded text-sm ${showOriginal
                       ? "bg-teal-500 text-white"
                       : "bg-gray-200 text-gray-700"
-                  }`}
+                    }`}
                 >
                   Original
                 </button>
                 <button
                   onClick={() => setShowOriginal(false)}
-                  className={`flex-1 py-2 px-3 rounded text-sm ${
-                    !showOriginal
+                  className={`flex-1 py-2 px-3 rounded text-sm ${!showOriginal
                       ? "bg-teal-500 text-white"
                       : "bg-gray-200 text-gray-700"
-                  }`}
+                    }`}
                 >
                   Result
                 </button>
@@ -287,17 +284,15 @@ export default function WardrobePage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded ${
-                  viewMode === "list" ? "bg-gray-200" : "hover:bg-gray-100"
-                }`}
+                className={`p-2 rounded ${viewMode === "list" ? "bg-gray-200" : "hover:bg-gray-100"
+                  }`}
               >
                 <List className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 rounded ${
-                  viewMode === "grid" ? "bg-gray-200" : "hover:bg-gray-100"
-                }`}
+                className={`p-2 rounded ${viewMode === "grid" ? "bg-gray-200" : "hover:bg-gray-100"
+                  }`}
               >
                 <Grid className="w-5 h-5" />
               </button>
@@ -316,18 +311,16 @@ export default function WardrobePage() {
                   {/* Wishlist Star */}
                   <button
                     onClick={() => toggleFavorite(item.id)}
-                    className={`absolute top-3 left-3 p-1 transition-opacity ${
-                      favorites.has(item.id)
+                    className={`absolute top-3 left-3 p-1 transition-opacity ${favorites.has(item.id)
                         ? "opacity-100"
                         : "opacity-0 group-hover:opacity-100"
-                    }`}
+                      }`}
                   >
                     <Star
-                      className={`w-6 h-6 ${
-                        favorites.has(item.id)
+                      className={`w-6 h-6 ${favorites.has(item.id)
                           ? "fill-yellow-400 text-yellow-400"
                           : "text-gray-400"
-                      }`}
+                        }`}
                     />
                   </button>
 
