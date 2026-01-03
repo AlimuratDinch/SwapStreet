@@ -138,7 +138,9 @@ export default function WardrobePage() {
       setRecentResults((prev) => [data.url, ...prev].slice(0, 4));
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : "Something went wrong";
+        err instanceof Error && err.message
+          ? err.message
+          : "Something went wrong";
       setError(errorMessage);
     } finally {
       setLoading(false);
