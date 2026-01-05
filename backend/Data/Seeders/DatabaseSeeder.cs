@@ -16,6 +16,12 @@ namespace backend.Data.Seed
             // This relies on the Provinces table being populated
             await CitySeeder.SeedAsync(context);
 
+            // --------------------------------------------------------------------------------
+            // 3. (TEMPORARY) Seed test profile for virtual try-on
+            await ProfileSeeder.SeedAsync(context);
+
+            // 4. (TEMPORARY) Seed test listing for virtual try-on
+            await ListingSeeder.SeedAsync(context);
         }
     }
 }

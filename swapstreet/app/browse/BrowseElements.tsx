@@ -24,7 +24,11 @@ import {
 } from "@/components/ui/navigation-menu";
 import "./CardItemStyle.css";
 
-export function Header() {
+type HeaderProps = {
+  showCenterNav?: boolean;
+};
+
+export function Header({ showCenterNav = true }: HeaderProps) {
   return (
     <header
       className="fixed top-0 left-0 right-0 shadow-sm px-6 py-4 flex items-center justify-between z-[100]"
@@ -38,64 +42,71 @@ export function Header() {
         </Link>
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2">
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuLink
-                asChild
-                className={navigationMenuTriggerStyle()}
-              >
-                <Link href="/browse">Featured</Link>
-              </NavigationMenuLink>
-            </NavigationMenuItem>
+      {showCenterNav && (
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuLink
+                  asChild
+                  className={navigationMenuTriggerStyle()}
+                >
+                  <Link href="/browse">Featured</Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
 
-            <NavigationMenuItem>
-              <NavigationMenuTrigger>Collections</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <div className="bg-[#dadada] rounded-md p-6 max-w-[720px] mx-auto">
-                  <div className="flex gap-6">
-                    {[
-                      { title: "Tops", img: "/images/clothes_login_page.png" },
-                      {
-                        title: "Bottoms",
-                        img: "/images/clothes_login_page.png",
-                      },
-                      {
-                        title: "Accessories",
-                        img: "/images/clothes_login_page.png",
-                      },
-                    ].map((item) => (
-                      <div
-                        key={item.title}
-                        className="flex flex-col items-center"
-                      >
-                        <div className="w-32 h-32 mb-3 overflow-hidden rounded-md">
-                          <Image
-                            src={item.img}
-                            alt={item.title}
-                            width={128}
-                            height={128}
-                            className="w-32 h-32 object-cover"
-                          />
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Collections</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="bg-[#dadada] rounded-md p-6 max-w-[720px] mx-auto">
+                    <div className="flex gap-6">
+                      {[
+                        {
+                          title: "Tops",
+                          img: "/images/clothes_login_page.png",
+                        },
+                        {
+                          title: "Bottoms",
+                          img: "/images/clothes_login_page.png",
+                        },
+                        {
+                          title: "Accessories",
+                          img: "/images/clothes_login_page.png",
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.title}
+                          className="flex flex-col items-center"
+                        >
+                          <div className="w-32 h-32 mb-3 overflow-hidden rounded-md">
+                            <Image
+                              src={item.img}
+                              alt={item.title}
+                              width={128}
+                              height={128}
+                              className="w-32 h-32 object-cover"
+                            />
+                          </div>
+                          <p className="uppercase tracking-wider text-gray-500 font-medium text-[13px] text-center">
+                            {item.title}
+                          </p>
                         </div>
-                        <p className="uppercase tracking-wider text-gray-500 font-medium text-[13px] text-center">
-                          {item.title}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
-      </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+      )}
 
       <div className="flex gap-5">
         <Globe className="w-5.5 h-5.5 cursor-pointer" />
         <Leaf className="w-5.5 h-5.5 cursor-pointer" />
-        <ShoppingBag className="w-5.5 h-5.5 cursor-pointer" />
+        <Link href="/wardrobe">
+          <ShoppingBag className="w-5.5 h-5.5 cursor-pointer" />
+        </Link>
         <User className="w-5.5 h-5.5 cursor-pointer" />
       </div>
     </header>
@@ -117,7 +128,7 @@ export function SearchBar() {
 
 export function Sidebar() {
   // Fixed category options per design request
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([
+  const [categories] = useState<{ id: number; name: string }[]>([
     { id: 1, name: "Tops" },
     { id: 2, name: "Bottoms" },
     { id: 3, name: "Dresses/One-Pieces" },
@@ -143,7 +154,7 @@ export function Sidebar() {
   }, [searchParams]);
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const _fetchCategories = async () => {
       try {
         const apiUrl =
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -154,14 +165,12 @@ export function Sidebar() {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        const data = await res.json();
         // Do not override the fixed category list; keep API fetch for future use if needed
-        // setCategories(data);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
       }
     };
-    // fetchCategories();
+    // _fetchCategories();
   }, []);
 
   useEffect(() => {
