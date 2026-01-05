@@ -150,8 +150,38 @@ public class AppDbContext : DbContext
             .HasOne(l => l.Tag) // Characteristics
             .WithMany()
             .HasForeignKey(l => l.TagId);
-
-
+        
+        // =======================================================
+        // CHATTING
+        // =======================================================
+        
+        modelBuilder.Entity<Message>().ToTable("messages");
+        modelBuilder.Entity<Message>()
+            .HasOne(m => m.Chatroom)
+            .WithMany()
+            .HasForeignKey(m => m.ChatroomId)
+            .IsRequired();
+        modelBuilder.Entity<Message>()
+            .Property(m => m.Content)
+            .HasConversion<string>();
+        
+        modelBuilder.Entity<Chatroom>().ToTable("chatrooms");
+        modelBuilder.Entity<Chatroom>()
+            .HasMany(c => c.Messages)
+            .WithOne(m => m.Chatroom)
+            .HasForeignKey(m => m.ChatroomId)
+            .IsRequired();
+        modelBuilder.Entity<Chatroom>()
+            .HasOne(c => c.Seller)
+            .WithMany()
+            .HasForeignKey(c => c.SellerId)
+            .IsRequired();
+        modelBuilder.Entity<Chatroom>()
+            .HasOne(c => c.Buyer)
+            .WithMany()
+            .HasForeignKey(c => c.BuyerId)
+            .IsRequired();
+        
         // =======================================================
         // JUNCTION/ASSOCIATION TABLES
         // =======================================================
