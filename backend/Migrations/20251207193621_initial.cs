@@ -304,21 +304,21 @@ namespace backend.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserID = table.Column<Guid>(type: "uuid", nullable: false),
-                    ListingID = table.Column<Guid>(type: "uuid", nullable: false)
+                    ProfileId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ListingId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_wishlists", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_wishlists_listings_ListingID",
-                        column: x => x.ListingID,
+                        name: "FK_wishlists_listings_ListingId",
+                        column: x => x.ListingId,
                         principalTable: "listings",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_wishlists_profiles_UserID",
-                        column: x => x.UserID,
+                        name: "FK_wishlists_profiles_ProfileId",
+                        column: x => x.ProfileId,
                         principalTable: "profiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -400,14 +400,14 @@ namespace backend.Migrations
                 column: "ProfileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_wishlists_ListingID",
+                name: "IX_wishlists_ListingId",
                 table: "wishlists",
-                column: "ListingID");
+                column: "ListingId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_wishlists_UserID",
+                name: "IX_wishlists_ProfileId",
                 table: "wishlists",
-                column: "UserID");
+                column: "ProfileId");
         }
 
         /// <inheritdoc />
