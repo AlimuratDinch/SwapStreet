@@ -41,7 +41,23 @@ jobs:
     - name: Frontend dependency security audit (non-blocking, informational)
       run: |
         cd swapstreet
-        npm audit --audit-level=high || echo "Known vulnerabilities detected"
+        npm audit --audit-level=high || true
+        npm audit --json > audit-report.json || true
+
+        echo ""
+        echo "Vulnerability summary:"
+        node -e "
+        const report = require('./audit-report.json');
+        if (!report.vulnerabilities || Object.keys(report.vulnerabilities).length === 0) {
+          console.log('No vulnerabilities found');
+        } else {
+          for (const [name, v] of Object.entries(report.vulnerabilities)) {
+            console.log(
+              `- ${name}: ${v.severity.toUpperCase()} (${v.title || 'multiple issues'})`
+            );
+          }
+        }
+        "
 
     # Detect changed frontend files only
     - name: Get changed frontend files
