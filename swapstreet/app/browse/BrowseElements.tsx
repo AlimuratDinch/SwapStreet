@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/navigation-menu";
 
 import "./CardItemStyle.css";
+import { LocationFilterModal } from "./LocationFilterModal";
 
 type HeaderProps = {
   showCenterNav?: boolean;
@@ -157,6 +158,11 @@ export function Sidebar() {
   const [showCategories, setShowCategories] = useState(false);
   const [showCondition, setShowCondition] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+    radiusKm: number;
+  } | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -200,6 +206,11 @@ export function Sidebar() {
     if (maxPriceVal) params.set("maxPrice", maxPriceVal.toString());
     if (selectedSize) params.set("size", selectedSize);
     if (conditions.length > 0) params.set("conditions", conditions.join(","));
+    if (location) {
+      params.set("lat", location.lat.toString());
+      params.set("lng", location.lng.toString());
+      params.set("radiusKm", location.radiusKm.toString());
+    }
     const query = params.toString();
     router.push(query ? `/browse?${query}` : "/browse");
   }, [categoryId, minPriceVal, maxPriceVal, selectedSize, conditions, router]);
@@ -379,7 +390,13 @@ export function Sidebar() {
             <h4 className="text-sm font-medium">Location</h4>
           </button>
           {showLocationModal && (
-            <LocationFilterModal onClose={() => setShowLocationModal(false)} />
+          <LocationFilterModal
+            onClose={() => setShowLocationModal(false)}
+            onApply={(loc: LocationResult) => {
+              setLocation(loc);
+              setShowLocationModal(false);
+            }}
+          />
           )}
         </div>
       </section>
@@ -419,84 +436,16 @@ export function CardItem({ title, imgSrc, price, condition }: CardItemProps) {
   );
 }
 
-export default function LocationFilterModal({ open = true, onClose }: { open?: boolean; onClose: () => void }) {
-  const [location, setLocation] = useState("Montreal, Quebec");
-  const [radius, setRadius] = useState(20);
-
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-xl rounded-xl bg-neutral-900 text-white shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
-          <h2 className="text-lg font-semibold">Change location</h2>
-          <button onClick={onClose}>
-            <X className="h-5 w-5 text-neutral-400 hover:text-white" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="space-y-4 px-5 py-4">
-          {/* Search */}
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Search by city, neighborhood or ZIP code"
-            className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-
-          {/* Selected location */}
-          <div className="flex items-center gap-3 rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-3">
-            <MapPin className="h-4 w-4 text-neutral-400" />
-            <span className="text-sm">{location}</span>
-          </div>
-
-          {/* Radius */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-neutral-400">
-              <span>Radius</span>
-              <span>{radius} kilometers</span>
-            </div>
-            <input
-              type="range"
-              min={1}
-              max={100}
-              step={1}
-              value={radius}
-              onChange={(e) => setRadius(Number(e.target.value))}
-              className="w-full accent-blue-500"
-            />
-          </div>
-
-          {/* Map placeholder */}
-          <div className="relative h-60 rounded-lg bg-neutral-800 flex items-center justify-center text-neutral-500 text-sm">
-            Map goes here
-            <div className="absolute top-3 right-3 rounded-full bg-white p-2 text-black">
-              <Navigation className="h-4 w-4" />
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-neutral-800 px-5 py-4">
-          <button
-            onClick={onClose}
-            className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold hover:bg-blue-700"
-          >
-            Apply
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ---------- Card ----------
 interface CardItemProps {
   title: string;
   imgSrc?: string;
   price: number;
   condition?: string;
+}
+
+interface LocationResult {
+  lat: number;
+  lng: number;
+  radiusKm: number;
 }
