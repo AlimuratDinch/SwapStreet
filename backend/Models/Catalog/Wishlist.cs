@@ -17,4 +17,6 @@ public class WishList
 
     [ForeignKey("ListingId")]
     public Listing? Listing { get; set; }
+
+    public int DisplayOrder { get; set; }
 }
