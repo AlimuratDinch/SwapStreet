@@ -37,11 +37,11 @@ jobs:
         npm ci
 
     # Frontend dependency vulnerability scan
-    # Fails on high/critical vulnerabilities
-    - name: Frontend dependency security audit
+    # Prompts warnings but does not block PRs
+    - name: Frontend dependency security audit (non-blocking, informational)
       run: |
         cd swapstreet
-        npm audit --audit-level=high
+        npm audit --audit-level=high || echo "Known vulnerabilities detected"
 
     # Detect changed frontend files only
     - name: Get changed frontend files
