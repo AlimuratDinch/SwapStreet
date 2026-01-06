@@ -11,7 +11,7 @@ namespace backend.Data.Seed
 {
     public static class ProvinceSeeder
     {
-        public static async Task SeedAsync(AppDbContext context)
+        public static async Task SeedAsync(AppDbContext context, Microsoft.Extensions.Logging.ILogger logger)
         {
             string basePath = Directory.GetCurrentDirectory();
 
@@ -19,14 +19,14 @@ namespace backend.Data.Seed
             string csvFilePath = Path.Combine(basePath, "Data", "CSVs", "provinces.csv");
 
             // Optional: Log it so you can see exactly where it's looking in the console output
-            Console.WriteLine($"[DEBUG] Looking for Province CSV at: {csvFilePath}");
+            logger.LogDebug("Looking for Province CSV at: {Path}", csvFilePath);
 
             // --- Province Seeding Logic ---
 
             // 1. Check if the table already has data
             if (await context.Provinces.AnyAsync())
             {
-                Console.WriteLine("Province data already exists. Skipping province seed.");
+                logger.LogInformation("Province data already exists. Skipping province seed.");
                 return;
             }
 
@@ -36,7 +36,7 @@ namespace backend.Data.Seed
                 throw new FileNotFoundException($"Province CSV file not found at: {csvFilePath}");
             }
 
-            Console.WriteLine("Starting province data seed...");
+            logger.LogInformation("Starting province data seed...");
 
             try
             {
@@ -55,13 +55,13 @@ namespace backend.Data.Seed
                     // 4. Commit changes
                     await context.SaveChangesAsync();
 
-                    Console.WriteLine($"Successfully seeded {provinces.Count} province records.");
+                    logger.LogInformation("Successfully seeded {Count} province records.", provinces.Count);
                 }
             }
             catch (Exception ex)
             {
                 // Handle exceptions during file reading or database insertion
-                Console.WriteLine($"An error occurred during province seeding: {ex.Message}");
+                logger.LogError(ex, "An error occurred during province seeding");
                 // Depending on the context, you might rethrow or log the error.
             }
         }
