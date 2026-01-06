@@ -7,12 +7,22 @@ import {
   Globe,
   User,
   ChevronDown,
+  Shirt, 
+  Star,
+  X,
+  MapPin, 
+  Navigation,
 } from "lucide-react";
-import Image from "next/image";
-import { useState, useEffect } from "react";
+
+import { 
+  useState, 
+  useEffect 
+} from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
-import { Shirt, Star } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -22,6 +32,7 @@ import {
   NavigationMenuLink,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+
 import "./CardItemStyle.css";
 
 type HeaderProps = {
@@ -145,6 +156,7 @@ export function Sidebar() {
   const [showPrice, setShowPrice] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showCondition, setShowCondition] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -358,6 +370,18 @@ export function Sidebar() {
             </div>
           )}
         </div>
+        <div className="h-px bg-black my-3" />
+        <div>
+          <button
+          onClick={() => setShowLocationModal(true)}
+          className="w-full flex items-center justify-between mb-2 hover:text-teal-500 transition"
+          >
+            <h4 className="text-sm font-medium">Location</h4>
+          </button>
+          {showLocationModal && (
+            <LocationFilterModal onClose={() => setShowLocationModal(false)} />
+          )}
+        </div>
       </section>
     </aside>
   );
@@ -388,6 +412,80 @@ export function CardItem({ title, imgSrc, price, condition }: CardItemProps) {
           <p className="card-item-price">${price}</p>
           <button className="card-item-wishlist-btn" title="Add to wishlist">
             <Star className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LocationFilterModal({ open = true, onClose }: { open?: boolean; onClose: () => void }) {
+  const [location, setLocation] = useState("Montreal, Quebec");
+  const [radius, setRadius] = useState(20);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="w-full max-w-xl rounded-xl bg-neutral-900 text-white shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
+          <h2 className="text-lg font-semibold">Change location</h2>
+          <button onClick={onClose}>
+            <X className="h-5 w-5 text-neutral-400 hover:text-white" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="space-y-4 px-5 py-4">
+          {/* Search */}
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Search by city, neighborhood or ZIP code"
+            className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          {/* Selected location */}
+          <div className="flex items-center gap-3 rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-3">
+            <MapPin className="h-4 w-4 text-neutral-400" />
+            <span className="text-sm">{location}</span>
+          </div>
+
+          {/* Radius */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-neutral-400">
+              <span>Radius</span>
+              <span>{radius} kilometers</span>
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={100}
+              step={1}
+              value={radius}
+              onChange={(e) => setRadius(Number(e.target.value))}
+              className="w-full accent-blue-500"
+            />
+          </div>
+
+          {/* Map placeholder */}
+          <div className="relative h-60 rounded-lg bg-neutral-800 flex items-center justify-center text-neutral-500 text-sm">
+            Map goes here
+            <div className="absolute top-3 right-3 rounded-full bg-white p-2 text-black">
+              <Navigation className="h-4 w-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-neutral-800 px-5 py-4">
+          <button
+            onClick={onClose}
+            className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold hover:bg-blue-700"
+          >
+            Apply
           </button>
         </div>
       </div>
