@@ -1,0 +1,25 @@
+meta {
+  name: TryOn Gemini
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/tryon/virtual-tryon
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMTlhZGQ4MS05Zjc0LTdhY2MtOTUzZi04NzVhNzUxYjc3NGEiLCJlbWFpbCI6InRlc3RAZW1haWwuY29tIiwidXNlcm5hbWUiOiJ0ZXN0VXNlciIsImlzQWRtaW4iOiJGYWxzZSIsIm5iZiI6MTc2NDY1Mjg1MSwiZXhwIjoxNzY0NjU2NDUxLCJpYXQiOjE3NjQ2NTI4NTF9.LBbku5PdB8yyRekWpYrcquoIiLyfpX4xJ_8sCz7nkOc
+}
+
+body:json {
+  {
+    "clothingImageUrl": "http://localhost:9000/public/listing/3e0f09b8-dfb5-40bb-9151-47f761d4c255_istockphoto-1209887384-612x612.jpg"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

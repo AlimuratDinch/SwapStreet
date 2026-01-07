@@ -1,0 +1,28 @@
+meta {
+  name: Create Profile
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/profile
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "firstName": "Evan",
+    "lastName": "T",
+    "bio": "Student at Concordia",
+    "cityId": 1,
+    "fsa": "K8A",
+    "profileImagePath": "string",
+    "bannerImagePath": "string"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Upload
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/images/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMTlhZmE1Ni0xNTdlLTdhYzgtYTRkYy05MmRjOTVjNjQ2NDYiLCJlbWFpbCI6InRlc3RAZW1haWwuY29tIiwidXNlcm5hbWUiOiJ0ZXN0VXNlciIsImlzQWRtaW4iOiJGYWxzZSIsIm5iZiI6MTc2NTEzNjUzNywiZXhwIjoxNzY1MTQwMTM3LCJpYXQiOjE3NjUxMzY1Mzd9.AcQXYNPUf5qto0HHiNlJWH96CyW8m7KV_V3x-Nq8yVI
+}
+
+body:multipart-form {
+  file: @file(C:\Users\Nektarios\Desktop\TestImages\istockphoto-1209887384-612x612.jpg)
+  type: listing
+  ListingId: 119049db-18d9-4914-8ad1-fd7cfbf9e7c3
+}
+
+body:file {
+  file: @file(C:\Users\Nektarios\Desktop\106_FUJI\DSCF6653.JPG) @contentType(image/jpeg)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
