@@ -181,12 +181,14 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<WishList>()
             .HasOne(wl => wl.Profile)
             .WithMany()
-            .HasForeignKey(wl => wl.ProfileId);
+            .HasForeignKey(wl => wl.ProfileId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<WishList>()
             .HasOne(wl => wl.Listing)
             .WithMany()
-            .HasForeignKey(wl => wl.ListingId);
+            .HasForeignKey(wl => wl.ListingId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // TryOnImage
         modelBuilder.Entity<TryOnImage>().ToTable("tryon_images");
