@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using backend.Contracts;
 using backend.Models;
 using System;
@@ -15,10 +16,12 @@ namespace backend.Controllers
     public class ImageController : ControllerBase
     {
         private readonly IFileStorageService _fileStorage;
+        private readonly ILogger<ImageController> _logger;
 
-        public ImageController(IFileStorageService fileStorage)
+        public ImageController(IFileStorageService fileStorage, ILogger<ImageController> logger)
         {
             _fileStorage = fileStorage;
+            _logger = logger;
         }
 
         /// <summary>
@@ -55,12 +58,14 @@ namespace backend.Controllers
             catch (ArgumentException ex)
             {
                 // Validation errors (size, type, dimensions)
+                _logger.LogWarning(ex, "Image upload validation failed for user {UserId}", userId);
                 return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
                 // Unexpected errors
-                return StatusCode(500, new { error = ex.Message });
+                _logger.LogError(ex, "Unexpected error during image upload for user {UserId}", userId);
+                return StatusCode(500, new { error = "An unexpected error occurred while uploading the image." });
             }
         }
     }
