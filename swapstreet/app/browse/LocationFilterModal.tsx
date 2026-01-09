@@ -27,12 +27,16 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   // Normalize + validate FSA
-  const normalizeFsa = (value: string) =>
-    value.replace(/\s+/g, "").toUpperCase().slice(0, 3);
+    const normalizeFSA = (input: string) =>
+    input
+        .toUpperCase()
+        .replace(/\s/g, "")
+        .slice(0, 3);
 
   const isValidFsa = /^[A-Z]\d[A-Z]$/.test(fsa);
 
   const handleFsaLookup = async () => {
+    
     if (!isValidFsa) return;
 
     setLoading(true);
@@ -82,12 +86,15 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
           lng: pos.coords.longitude,
           radiusKm: radius,
         });
+        
         onClose();
       },
-      () => {
-        setError("Location permission denied.");
-      }
+        (error) => {
+        console.error(error);
+        alert("Unable to retrieve your location");
+        }
     );
+    
   };
 
   return (
@@ -119,7 +126,7 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
             </label>
             <input
               value={fsa}
-              onChange={(e) => setFsa(normalizeFsa(e.target.value))}
+              onChange={(e) => setFsa(normalizeFSA(e.target.value))}
               placeholder="H3Z"
               maxLength={3}
               className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-3 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-teal-500"
