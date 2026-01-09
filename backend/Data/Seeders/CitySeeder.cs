@@ -9,14 +9,14 @@ namespace backend.Data.Seed
 {
     public static class CitySeeder
     {
-        public static async Task SeedAsync(AppDbContext context)
+        public static async Task SeedAsync(AppDbContext context, Microsoft.Extensions.Logging.ILogger logger)
         {
             string basePath = Directory.GetCurrentDirectory();
 
             // 2. Combine with the specific location
             string csvFilePath = Path.Combine(basePath, "Data", "CSVs", "cities.csv");
 
-            Console.WriteLine($"[DEBUG] Looking for file at: {csvFilePath}");
+            logger.LogDebug("Looking for file at: {Path}", csvFilePath);
 
             // 1. Pre-Checks
             if (!File.Exists(csvFilePath))
@@ -26,18 +26,18 @@ namespace backend.Data.Seed
 
             if (await context.Cities.AnyAsync())
             {
-                Console.WriteLine("City data already exists. Skipping seed.");
+                logger.LogInformation("City data already exists. Skipping seed.");
                 return;
             }
 
-            Console.WriteLine("Reading provinces for lookup...");
+            logger.LogInformation("Reading provinces for lookup...");
 
             // 2. Create Lookup Dictionary
             var provinceLookup = await context.Provinces
                 .AsNoTracking()
                 .ToDictionaryAsync(p => p.Code, p => p.Id);
 
-            Console.WriteLine("Starting City and FSA seed...");
+            logger.LogInformation("Starting City and FSA seed...");
 
             using (var reader = new StreamReader(csvFilePath))
             using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
@@ -56,7 +56,7 @@ namespace backend.Data.Seed
                     // Use the clean PascalCase property names
                     if (!provinceLookup.TryGetValue(r.ProvinceCode, out int validProvinceId))
                     {
-                        Console.WriteLine($"Warning: Skipping city '{r.Name}'. Province code '{r.ProvinceCode}' not found.");
+                        logger.LogWarning("Skipping city '{Name}'. Province code '{ProvinceCode}' not found.", r.Name, r.ProvinceCode);
                         skippedCount++;
                         continue;
                     }
@@ -87,7 +87,7 @@ namespace backend.Data.Seed
                 await context.Cities.AddRangeAsync(citiesToAdd);
                 await context.SaveChangesAsync();
 
-                Console.WriteLine($"Seeding Complete. Added {citiesToAdd.Count} cities. Skipped {skippedCount}.");
+                logger.LogInformation("Seeding complete. Added {AddedCount} cities. Skipped {SkippedCount}.", citiesToAdd.Count, skippedCount);
             }
         }
     }

@@ -5,15 +5,24 @@ on:
     branches: [ main ]
 
 jobs:
-  no_console_check:
+  validations:
     runs-on: ubuntu-latest
 
     steps:
+
+    # Checkout
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
+    # Secret scanning (hardcoded secrets, JWT keys, API tokens)
+    - name: Run Gitleaks (secret detection)
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # Node setup
     - name: Setup Node
       uses: actions/setup-node@v4
       with:
@@ -21,21 +30,53 @@ jobs:
         cache: npm
         cache-dependency-path: swapstreet/package-lock.json
 
-    - name: Install dependencies
+    # Install frontend dependencies
+    - name: Install frontend dependencies
       run: |
         cd swapstreet
         npm ci
 
-    - name: Get changed files
+    # Frontend dependency vulnerability scan
+    # Prompts warnings but does not block PRs
+    - name: Frontend dependency security audit (non-blocking, informational)
+      run: |
+        cd swapstreet
+        npm audit --audit-level=high || true
+        npm audit --json > audit-report.json || true
+
+        echo ""
+        echo "Vulnerability summary:"
+        node -e "
+        const report = require('./audit-report.json');
+        if (!report.vulnerabilities || Object.keys(report.vulnerabilities).length === 0) {
+          console.log('No vulnerabilities found');
+        } else {
+          for (const [name, v] of Object.entries(report.vulnerabilities)) {
+            console.log(
+              `- ${name}: ${v.severity.toUpperCase()} (${v.title || 'multiple issues'})`
+            );
+          }
+        }
+        "
+
+    # Detect changed frontend files only
+    - name: Get changed frontend files
       id: changed-files
       run: |
         CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx)$' || true)
         SWAPSTREET_FILES=$(echo "$CHANGED_FILES" | grep "^swapstreet/" | sed 's|^swapstreet/||' | tr '\n' ' ')
         echo "FILES=$SWAPSTREET_FILES" >> $GITHUB_ENV
 
+    # ESLint (style + security rules, no console logs)
     - name: Run ESLint on changed files only
       if: env.FILES != ''
       run: |
         cd swapstreet
         echo "Linting files: $FILES"
-        npx eslint $FILES
+        npx eslint $FILES --max-warnings=0
+
+    # Backend dependency vulnerability scan
+    - name: Backend dependency vulnerability check
+      run: |
+        cd backend
+        dotnet list package --vulnerable
