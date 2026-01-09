@@ -5,8 +5,6 @@ import {
 } from "lucide-react";
 
 type LocationResult = {
-//   city: string;
-//   provinceCode: string;
   lat: number;
   lng: number;
   radiusKm: number;
@@ -53,9 +51,14 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
 
       const data = await res.json();
 
+      console.log("Applying FSA location", {
+        fsa,
+        lat: data.lat,
+        lng: data.lng,
+        radiusKm: radius,
+      });
+      
       onApply({
-        // city: data.city,
-        // provinceCode: data.provinceCode,
         lat: data.lat,
         lng: data.lng,
         radiusKm: radius,
