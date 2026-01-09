@@ -18,7 +18,7 @@ type Props = {
 };
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  process.env.NEXT_PUBLIC_API_URL;
 
 export function LocationFilterModal({ onClose, onApply, }: Props) {
   const [fsa, setFsa] = useState("");
@@ -78,14 +78,17 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        onApply({
-        //   city: "Current location",
-        //   provinceCode: "",
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          radiusKm: radius,
-        });
+      (position) => {
+        const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      console.log("Applying location", lat, lng);
+
+      onApply({
+        lat,
+        lng,
+        radiusKm : radius,
+      });
         
         onClose();
       },
