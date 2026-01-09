@@ -175,7 +175,7 @@ export function Sidebar() {
     const _fetchCategories = async () => {
       try {
         const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+          process.env.NEXT_PUBLIC_API_URL;
         const res = await fetch(`${apiUrl}/api/catalog/categories`, {
           cache: "no-store",
           credentials: "include",
