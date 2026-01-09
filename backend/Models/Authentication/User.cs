@@ -61,7 +61,7 @@ namespace backend.Models.Authentication
 
         public override string ToString()
         {
-            return $"Email={Email}, Username={Username}, Status={Status}, PasswordHash={EncryptedPassword}";
+            return $"Id={Id}, Email={Email}, Username={Username}, Status={Status}";
         }
 
 
