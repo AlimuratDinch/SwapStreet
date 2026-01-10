@@ -48,6 +48,10 @@ var geminiApiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL")
 builder.Configuration["Gemini:ApiKey"] = geminiApiKey;
 builder.Configuration["Gemini:ApiUrl"] = geminiApiUrl;
 
+// Frontend URL Fallback
+var frontendUrl = Environment.GetEnvironmentVariable("FrontendUrl") ?? "http://localhost:3000";
+builder.Configuration["FrontendUrl"] = frontendUrl;
+
 // Configure EF Core depending on flag
 if (useInMemory)
 {
@@ -128,6 +132,24 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = key
     };
 });
+
+// EMAIL SERVICE NEW
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddTransient<IEmailService, MockEmailService>();
+}
+else
+{
+    var brevoApiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY");
+    var emailSenderName = Environment.GetEnvironmentVariable("EMAIL_SENDER_NAME") ?? "SwapStreet";
+    var emailSenderAddress = Environment.GetEnvironmentVariable("EMAIL_SENDER_ADDRESS");
+
+    builder.Configuration["BREVO_API_KEY"] = brevoApiKey;
+    builder.Configuration["EMAIL_SENDER_NAME"] = emailSenderName;
+    builder.Configuration["EMAIL_SENDER_ADDRESS"] = emailSenderAddress;
+
+    builder.Services.AddTransient<IEmailService, BrevoEmailService>();
+}
 
 
 builder.Services.AddAuthorization();
