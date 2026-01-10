@@ -1,0 +1,20 @@
+meta {
+  name: Refresh
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/api/auth/refresh
+  body: none
+  auth: inherit
+}
+
+headers {
+  Cookie: refresh_token=
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

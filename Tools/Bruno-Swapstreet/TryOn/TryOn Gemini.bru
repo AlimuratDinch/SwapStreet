@@ -1,0 +1,25 @@
+meta {
+  name: TryOn Gemini
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8080/api/tryon/virtual-tryon
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token:
+}
+
+body:json {
+  {
+    "clothingImageUrl": "http://localhost:9000/public/listing/3e0f09b8-dfb5-40bb-9151-47f761d4c255_istockphoto-1209887384-612x612.jpg"
+  }
+}
+
+settings {
+  encodeUrl: true
+}
