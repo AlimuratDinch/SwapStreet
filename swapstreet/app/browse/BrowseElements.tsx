@@ -7,12 +7,22 @@ import {
   Globe,
   User,
   ChevronDown,
+  Shirt, 
+  Star,
+  X,
+  MapPin, 
+  Navigation,
 } from "lucide-react";
-import Image from "next/image";
-import { useState, useEffect } from "react";
+
+import { 
+  useState, 
+  useEffect 
+} from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
-import { Shirt, Star } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -22,7 +32,9 @@ import {
   NavigationMenuLink,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+
 import "./CardItemStyle.css";
+import { LocationFilterModal } from "./LocationFilterModal";
 
 type HeaderProps = {
   showCenterNav?: boolean;
@@ -145,6 +157,12 @@ export function Sidebar() {
   const [showPrice, setShowPrice] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showCondition, setShowCondition] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+    radiusKm: number;
+  } | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -157,7 +175,7 @@ export function Sidebar() {
     const _fetchCategories = async () => {
       try {
         const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+          process.env.NEXT_PUBLIC_API_URL;
         const res = await fetch(`${apiUrl}/api/catalog/categories`, {
           cache: "no-store",
           credentials: "include",
@@ -188,6 +206,11 @@ export function Sidebar() {
     if (maxPriceVal) params.set("maxPrice", maxPriceVal.toString());
     if (selectedSize) params.set("size", selectedSize);
     if (conditions.length > 0) params.set("conditions", conditions.join(","));
+    if (location) {
+      params.set("lat", location.lat.toString());
+      params.set("lng", location.lng.toString());
+      params.set("radiusKm", location.radiusKm.toString());
+    }
     const query = params.toString();
     router.push(query ? `/browse?${query}` : "/browse");
   }, [categoryId, minPriceVal, maxPriceVal, selectedSize, conditions, router]);
@@ -358,6 +381,24 @@ export function Sidebar() {
             </div>
           )}
         </div>
+        <div className="h-px bg-black my-3" />
+        <div>
+          <button
+          onClick={() => setShowLocationModal(true)}
+          className="w-full flex items-center justify-between mb-2 hover:text-teal-500 transition"
+          >
+            <h4 className="text-sm font-medium">Location</h4>
+          </button>
+          {showLocationModal && (
+          <LocationFilterModal
+            onClose={() => setShowLocationModal(false)}
+            onApply={(loc: LocationResult) => {
+              setLocation(loc);
+              setShowLocationModal(false);
+            }}
+          />
+          )}
+        </div>
       </section>
     </aside>
   );
@@ -401,4 +442,10 @@ interface CardItemProps {
   imgSrc?: string;
   price: number;
   condition?: string;
+}
+
+interface LocationResult {
+  lat: number;
+  lng: number;
+  radiusKm: number;
 }
