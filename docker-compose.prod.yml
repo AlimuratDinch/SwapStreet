@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+  # --- Database (Locked Down) ---
+  postgres:
+    image: postgres:15
+    container_name: swapstreet-db-prod
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    # No "ports" section = Not accessible from the internet or host machine
+    networks:
+      - app-net
+
+  # --- Object Storage (Locked Down) ---
+  minio:
+    image: minio/minio:latest
+    container_name: minio-prod
+    restart: always
+    command: server /data --console-address ":9001"
+    env_file:
+      - .env
+    volumes:
+      - minio_data_prod:/data
+    # No "ports" section. Nginx/Backend talk to it internally via http://minio:9000
+    networks:
+      - app-net
+
+  # --- App Services ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend-prod
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - app-net
+
+  swapstreet: # Frontend
+    build: ./swapstreet
+    container_name: swapstreet-frontend-prod
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    networks:
+      - app-net
+
+  # --- Reverse Proxy ---
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-prod
+    restart: always
+    volumes:
+      # production-ready nginx config here
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - swapstreet
+      - minio
+    networks:
+      - app-net
+
+  # --- Cloudflare Tunnel ---
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    restart: always
+    command: tunnel run
+    env_file:
+      - .env
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  postgres_data_prod:
+  minio_data_prod:

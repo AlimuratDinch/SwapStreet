@@ -9,17 +9,11 @@ docker compose up --build
 # Build images and start all containers in background (detached - terminal is free to use)
 docker compose up -d --build
 
-# Rebuild only the backend service
-docker compose up -d --build backend
+- For Development -
+docker-compose -f docker-compose.dev.yml up --build
 
-# Rebuild only the Postgres database (usually not needed unless Dockerfile changes)
-docker compose up -d --build postgres
-
-# Rebuild only pgAdmin (rarely needed)
-docker compose up -d --build pgadmin
-
-# Use lighter setup ( frontend + in-mem sqlite backend (2 containers for quick API testing))
-docker compose -f compose-lite.yml up --build
+- For Production -
+docker-compose -f docker-compose.prod.yml up -d
 
 
 2. Stop & Remove Containers
