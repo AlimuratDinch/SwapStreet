@@ -50,7 +50,7 @@ namespace backend.Data.Seed
 
             // Get the test profile ID
             var profileId = ProfileSeeder.TestProfileId;
-            
+
             // Verify profile exists
             var profileExists = await context.Profiles.AnyAsync(p => p.Id == profileId);
             if (!profileExists)
