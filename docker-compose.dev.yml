@@ -58,6 +58,8 @@ services:
     container_name: backend
     env_file:
       - .env
+    environment:
+      - FrontendUrl=${FRONTEND_URL}
     ports:
       - "8080:8080"
     depends_on:

@@ -39,6 +39,7 @@ services:
       - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - FrontendUrl=${FRONTEND_URL}
     depends_on:
       - postgres
       - minio
