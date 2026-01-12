@@ -138,6 +138,14 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Listing>()
             .Property(l => l.Price)
             .HasColumnType("decimal(10,2)");
+        modelBuilder.Entity<Listing>()
+            .HasGeneratedTsVectorColumn(
+                l => l.SearchVector,           // the tsvector property
+                "english",                     // text search config (stemming, etc.)
+                l => new { l.Title, l.Description }  // fields to index (weight equal)
+            )
+            .HasIndex(l => l.SearchVector)
+            .HasMethod("GIN");  // GIN index for fast full-text lookups
 
 
         // Relationships for Listing

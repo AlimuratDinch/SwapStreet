@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using NpgsqlTypes;
 
+namespace backend.Models;
 public class Listing
 {
     // Primary Key
@@ -9,7 +11,7 @@ public class Listing
 
     [Required]
     [StringLength(255)]
-    public string Name { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
 
     [Column(TypeName = "decimal(10,2)")]
     public decimal Price { get; set; }
@@ -29,6 +31,9 @@ public class Listing
 
     [ForeignKey("TagId")]
     public Tag? Tag { get; set; }
+
+    // Full-Text Search Vector
+    public NpgsqlTsVector SearchVector { get; set; } = default!; 
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
