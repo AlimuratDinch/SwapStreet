@@ -7,6 +7,8 @@ using backend.Contracts.Auth;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 using AwesomeAssertions;
+using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
 
 namespace backend.Tests
 {
@@ -15,18 +17,32 @@ namespace backend.Tests
         private readonly AuthDbContext _db;
         private readonly UserService _service;
 
+        private readonly SpyEmailService _emailService;
+
         public UserServiceTests()
         {
+            // 1. Setup In-Memory DB
             var options = new DbContextOptionsBuilder<AuthDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
             _db = new AuthDbContext(options);
 
-            // simple fake password hasher: hash = "HASHED:" + password
+            // 2. Setup Spy Email Service (so we can check if emails were sent)
+            _emailService = new SpyEmailService();
+
+            // 3. Setup Configuration (Simulate appsettings)
+            var inMemorySettings = new Dictionary<string, string> {
+                {"FrontendUrl", "http://test-frontend.com"}
+            };
+            IConfiguration config = new ConfigurationBuilder()
+                .AddInMemoryCollection(inMemorySettings)
+                .Build();
+
+            // 4. Simple fake hasher
             var hasher = new FakePasswordHasher();
 
-            _service = new UserService(hasher, _db);
+            _service = new UserService(hasher, _db, _emailService, config);
         }
 
         public void Dispose()
@@ -122,6 +138,193 @@ namespace backend.Tests
             found.Should().BeNull();
         }
 
+        [Fact]
+        public async Task ConfirmEmailAsync_WithValidToken_ShouldVerifyUser()
+        {
+            // Arrange
+            var user = new User
+            {
+                Email = "verify@example.com",
+                Username = "example" + Random.Shared.Next(1, 10000).ToString(),
+                ConfirmationToken = "valid-token",
+                ConfirmationTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
+                EmailConfirmedAt = null,
+                EncryptedPassword = "p"
+            };
+            await _db.Users.AddAsync(user);
+            await _db.SaveChangesAsync();
+
+            // Act
+            var result = await _service.ConfirmEmailAsync("verify@example.com", "valid-token");
+
+            // Assert
+            result.Should().BeTrue();
+
+            var dbUser = await _db.Users.FindAsync(user.Id);
+            dbUser.EmailConfirmedAt.Should().NotBeNull(); // Should be verified
+            dbUser.ConfirmationToken.Should().BeNull();   // Token should be wiped
+        }
+
+        [Fact]
+        public async Task ConfirmEmailAsync_WithInvalidToken_ShouldReturnFalse()
+        {
+            // Arrange
+            var user = new User
+            {
+                Email = "wrongtoken@example.com",
+                Username = "example" + Random.Shared.Next(1, 10000).ToString(),
+                ConfirmationToken = "real-token",
+                ConfirmationTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
+                EncryptedPassword = "p"
+            };
+            await _db.Users.AddAsync(user);
+            await _db.SaveChangesAsync();
+
+            // Act
+            var result = await _service.ConfirmEmailAsync("wrongtoken@example.com", "bad-input-token");
+
+            // Assert
+            result.Should().BeFalse();
+            var dbUser = await _db.Users.FindAsync(user.Id);
+            dbUser.EmailConfirmedAt.Should().BeNull(); // Should NOT be verified
+        }
+
+        [Fact]
+        public async Task ConfirmEmailAsync_WithExpiredToken_ShouldReturnFalse()
+        {
+            // Arrange
+            var user = new User
+            {
+                Email = "expired@example.com",
+                Username = "example" + Random.Shared.Next(1, 10000).ToString(),
+                ConfirmationToken = "old-token",
+                // Set expiration to the past
+                ConfirmationTokenExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-10),
+                EncryptedPassword = "p"
+            };
+            await _db.Users.AddAsync(user);
+            await _db.SaveChangesAsync();
+
+            // Act
+            var result = await _service.ConfirmEmailAsync("expired@example.com", "old-token");
+
+            // Assert
+            result.Should().BeFalse();
+            var dbUser = await _db.Users.FindAsync(user.Id);
+            dbUser.EmailConfirmedAt.Should().BeNull();
+        }
+
+
+        // ==========================================
+        // NEW TESTS: ResendConfirmationEmailAsync
+        // ==========================================
+
+        [Fact]
+        public async Task ResendEmail_ValidRequest_ShouldUpdateToken_AndSendEmail()
+        {
+            // Arrange
+            var user = new User
+            {
+                Email = "resend@example.com",
+                Username = "ResendUser",
+                ConfirmationToken = "old-token",
+                EncryptedPassword = "p",
+                EmailConfirmedAt = null
+            };
+            await _db.Users.AddAsync(user);
+            await _db.SaveChangesAsync();
+
+            // Act
+            var result = await _service.ResendConfirmationEmailAsync("resend@example.com");
+
+            // Assert
+            result.Should().NotBeNull();
+            result.ConfirmationToken.Should().NotBe("old-token"); // Must rotate token
+
+            // Verify Email was "sent"
+            _emailService.WelcomeEmailSent.Should().BeTrue();
+            _emailService.LastLink.Should().Contain("http://test-frontend.com");
+            _emailService.LastLink.Should().Contain(result.ConfirmationToken);
+        }
+
+        [Fact]
+        public async Task ResendEmail_UserAlreadyVerified_ShouldNotChangeToken_OrSendEmail()
+        {
+            // Arrange
+            var user = new User
+            {
+                Email = "verified@example.com",
+                Username = "example" + Random.Shared.Next(1, 10000).ToString(),
+                EmailConfirmedAt = DateTimeOffset.UtcNow, // Verified!
+                ConfirmationToken = "constant-token",
+                EncryptedPassword = "p"
+            };
+            await _db.Users.AddAsync(user);
+            await _db.SaveChangesAsync();
+
+            // Act
+            var result = await _service.ResendConfirmationEmailAsync("verified@example.com");
+
+            // Assert
+            result.Should().NotBeNull(); // Returns user
+            result.ConfirmationToken.Should().Be("constant-token"); // Token unchanged
+            _emailService.WelcomeEmailSent.Should().BeFalse(); // No email sent
+        }
+
+        [Fact]
+        public async Task ResendEmail_DuringCooldown_ShouldBlock()
+        {
+            // Arrange
+            var user = new User
+            {
+                Email = "spam@example.com",
+                Username = "example" + Random.Shared.Next(1, 10000).ToString(),
+                // Sent one 1 minute ago (Cooldown is 5 mins)
+                ConfirmationEmailSentAt = DateTimeOffset.UtcNow.AddMinutes(-1),
+                ConfirmationToken = "keep-this-token",
+                EncryptedPassword = "p"
+            };
+            await _db.Users.AddAsync(user);
+            await _db.SaveChangesAsync();
+
+            // Act
+            var result = await _service.ResendConfirmationEmailAsync("spam@example.com");
+
+            // Assert
+            result.Should().NotBeNull();
+            result.ConfirmationToken.Should().Be("keep-this-token"); // Should NOT change
+            _emailService.WelcomeEmailSent.Should().BeFalse(); // Should NOT send email
+        }
+
+        [Fact]
+        public async Task ResendEmail_AfterCooldown_ShouldSend()
+        {
+            // Arrange
+            var user = new User
+            {
+                Email = "patient@example.com",
+                Username = "example" + Random.Shared.Next(1, 10000).ToString(),
+                // Sent 10 minutes ago (Cooldown expired)
+                ConfirmationEmailSentAt = DateTimeOffset.UtcNow.AddMinutes(-10),
+                ConfirmationToken = "old-token",
+                EncryptedPassword = "p"
+            };
+            await _db.Users.AddAsync(user);
+            await _db.SaveChangesAsync();
+
+            // Act
+            var result = await _service.ResendConfirmationEmailAsync("patient@example.com");
+
+            // Assert
+            result.ConfirmationToken.Should().NotBe("old-token"); // Changed!
+            _emailService.WelcomeEmailSent.Should().BeTrue(); // Sent!
+        }
+
+
+        // ==========================================
+        // HELPER CLASSES 
+        // ==========================================
+
         // Simple fake hasher used for tests
         private class FakePasswordHasher : IPasswordHasher
         {
@@ -137,6 +340,35 @@ namespace backend.Tests
                 var hasher = new FakePasswordHasher();
                 return hasher.HashPassword(password) == hashedPassword;
             }
+        }
+    }
+    // fake email for unit tests
+    class SpyEmailService : IEmailService
+    {
+        // Public fields so our tests can check them
+        public bool WelcomeEmailSent = false;
+        public string LastLink = "";
+        public string LastTo = "";
+
+        // 1. Generic Sender (Not used in these tests)
+        public Task SendEmailAsync(string to, string subject, string body)
+        {
+            return Task.CompletedTask;
+        }
+
+        // 2. The Method We Are Testing
+        public Task SendWelcomeEmailAsync(string to, string name, string link)
+        {
+            WelcomeEmailSent = true;
+            LastLink = link;
+            LastTo = to;
+            return Task.CompletedTask;
+        }
+
+        // 3. Password Reset
+        public Task SendPasswordResetEmailAsync(string toEmail, string firstName, string resetLink)
+        {
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import webpack from "webpack";
 
 const nextConfig: NextConfig = {
   images: {
@@ -33,6 +34,20 @@ const nextConfig: NextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
+
+  serverComponentsExternalPackages: ["tslog"],
+  webpack: (config, { isServer }) => {
+    // Prevent tslog from being bundled in client-side code
+    if (!isServer) {
+      // Use IgnorePlugin to completely ignore tslog in client bundles
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^tslog$/,
+        }),
+      );
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

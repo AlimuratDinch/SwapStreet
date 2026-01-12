@@ -20,7 +20,7 @@ namespace backend.Models.Authentication
 
         [Required]
         [MaxLength(255)]
-        public string Status { get; set; } = "authenticated";
+        public string Status { get; set; } = "pending";
 
         [MaxLength(255)]
         [EmailAddress]
@@ -50,9 +50,16 @@ namespace backend.Models.Authentication
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
         public virtual ICollection<AuditLogEntry> AuditLogEntries { get; set; }
 
-        // public DateTimeOffset? InvitedAt { get; set; }
-        // public string ConfirmationToken { get; set; }
-        // public DateTimeOffset? ConfirmationSentAt { get; set; }
+        // NEW FIELDS FOR EMAIL SERVICE
+
+        public string? ConfirmationToken { get; set; }
+
+        public DateTimeOffset? ConfirmationTokenExpiresAt { get; set; }
+
+        public DateTimeOffset? ConfirmationEmailSentAt { get; set; }
+
+        public bool IsEmailConfirmed => EmailConfirmedAt.HasValue;
+
         // public string RecoveryToken { get; set; }
         // public DateTimeOffset? RecoverySentAt { get; set; }
         // public string EmailChange { get; set; }
@@ -61,7 +68,7 @@ namespace backend.Models.Authentication
 
         public override string ToString()
         {
-            return $"Email={Email}, Username={Username}, Status={Status}, PasswordHash={EncryptedPassword}";
+            return $"Id={Id}, Email={Email}, Username={Username}, Status={Status}";
         }
 
 
