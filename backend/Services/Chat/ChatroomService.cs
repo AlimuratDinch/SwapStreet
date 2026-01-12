@@ -59,7 +59,7 @@ namespace backend.Services.Chat
             {
                 var c = x.Chatroom;
                 var lastMessage = x.LastMessage;
-                
+
                 return new ChatroomDto
                 {
                     Id = c.Id,
@@ -110,7 +110,7 @@ namespace backend.Services.Chat
         public async Task<ChatroomDto?> GetOrCreateChatroomAsync(Guid sellerId, Guid buyerId)
         {
             var existingChatroom = await _context.Chatrooms
-                .FirstOrDefaultAsync(c => 
+                .FirstOrDefaultAsync(c =>
                     (c.SellerId == sellerId && c.BuyerId == buyerId) ||
                     (c.SellerId == buyerId && c.BuyerId == sellerId));
 

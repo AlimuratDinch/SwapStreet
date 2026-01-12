@@ -15,7 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<ListingImage> ListingImages { get; set; } = null!;
     public DbSet<GeneratedImage> GeneratedImages { get; set; } = null!;
     public DbSet<TryOnImage> TryOnImages { get; set; } = null!;
-    
+
     // --- DbSets for Chatting ---
     public DbSet<Chatroom> Chatrooms { get; set; } = null!;
     public DbSet<Message> Messages { get; set; } = null!;
@@ -154,11 +154,11 @@ public class AppDbContext : DbContext
             .HasOne(l => l.Tag) // Characteristics
             .WithMany()
             .HasForeignKey(l => l.TagId);
-        
+
         // =======================================================
         // CHATTING
         // =======================================================
-        
+
         modelBuilder.Entity<Message>().ToTable("messages");
         modelBuilder.Entity<Message>()
             .HasOne(m => m.Chatroom)
@@ -168,7 +168,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Message>()
             .Property(m => m.Content)
             .HasConversion<string>();
-        
+
         modelBuilder.Entity<Chatroom>().ToTable("chatrooms");
         modelBuilder.Entity<Chatroom>()
             .HasMany(c => c.Messages)
@@ -185,7 +185,7 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(c => c.BuyerId)
             .IsRequired();
-        
+
         // =======================================================
         // JUNCTION/ASSOCIATION TABLES
         // =======================================================

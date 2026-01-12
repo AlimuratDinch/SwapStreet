@@ -57,7 +57,7 @@ namespace backend.Controllers
             try
             {
                 var userId = GetUserId();
-                
+
                 // Verify user belongs to chatroom
                 var belongsToChatroom = await _chatroomService.UserBelongsToChatroomAsync(userId, chatroomId);
                 if (!belongsToChatroom)
@@ -88,7 +88,7 @@ namespace backend.Controllers
             try
             {
                 var userId = GetUserId();
-                
+
                 // User must be either seller or buyer
                 if (dto.SellerId != userId && dto.BuyerId != userId)
                 {
@@ -117,7 +117,7 @@ namespace backend.Controllers
             try
             {
                 var userId = GetUserId();
-                
+
                 // User must be either seller or buyer
                 if (dto.SellerId != userId && dto.BuyerId != userId)
                 {
@@ -146,7 +146,7 @@ namespace backend.Controllers
             try
             {
                 var userId = GetUserId();
-                
+
                 // Verify user belongs to chatroom
                 var belongsToChatroom = await _chatroomService.UserBelongsToChatroomAsync(userId, chatroomId);
                 if (!belongsToChatroom)

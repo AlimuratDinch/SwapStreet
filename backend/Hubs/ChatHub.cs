@@ -45,7 +45,7 @@ namespace backend.Hubs
             try
             {
                 var userId = GetUserId();
-                
+
                 // Verify user belongs to chatroom
                 var belongsToChatroom = await _chatroomService.UserBelongsToChatroomAsync(userId, chatroomId);
                 if (!belongsToChatroom)
@@ -89,7 +89,7 @@ namespace backend.Hubs
             try
             {
                 var userId = GetUserId();
-                
+
                 // Verify user belongs to chatroom
                 var belongsToChatroom = await _chatroomService.UserBelongsToChatroomAsync(userId, chatroomId);
                 if (!belongsToChatroom)
