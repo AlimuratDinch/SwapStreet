@@ -15,6 +15,10 @@ public class AppDbContext : DbContext
     public DbSet<ListingImage> ListingImages { get; set; } = null!;
     public DbSet<GeneratedImage> GeneratedImages { get; set; } = null!;
     public DbSet<TryOnImage> TryOnImages { get; set; } = null!;
+    
+    // --- DbSets for Chatting ---
+    public DbSet<Chatroom> Chatrooms { get; set; } = null!;
+    public DbSet<Message> Messages { get; set; } = null!;
 
     // --- DbSets for Lookup/Reference Tables ---
     public DbSet<City> Cities { get; set; } = null!;

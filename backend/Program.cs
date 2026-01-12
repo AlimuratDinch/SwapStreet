@@ -13,6 +13,9 @@ using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
 using backend.Data.Seed;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.SignalR;
+using backend.Hubs;
+using backend.Services.Chat;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +82,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
+// Add SignalR
+builder.Services.AddSignalR();
+
 // Register services
 //builder.Services.AddScoped<ICatalogService, CatalogService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -88,6 +94,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
+builder.Services.AddScoped<IChatroomService, ChatroomService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 //builder.Services.AddScoped<IWishlistService, WishlistService>();
 
 var jwtSecret = builder.Configuration["JWT_SECRET"]
@@ -119,6 +127,24 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = key
+    };
+
+    // Configure SignalR to use JWT token from query string or header
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            
+            // If the request is for the SignalR hub, get token from query string
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
+            {
+                context.Token = accessToken;
+            }
+            
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -245,6 +271,7 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ChatHub>("/chathub");
 
 await app.RunAsync();
 
