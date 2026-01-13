@@ -24,29 +24,37 @@ namespace backend.Services
                 string? cursor
             )
         {
-            if (string.IsNullOrWhiteSpace(query))
-                return (Array.Empty<Listing>(), null, false);
+
 
             // Decode cursor if present
             ListingCursor? decodedCursor = null;
             ListingCursor.TryDecode(cursor, out decodedCursor);
 
-            // Build tsquery (light fuzzy)
-            var tsQuery = EF.Functions.PlainToTsQuery("english", query);
+            IQueryable<(Listing Listing, float Rank)> baseQuery; // the base query will contain the sql query plan/logic
 
-            // Base query with ranking
-            var baseQuery =
-                _db.Listings
-                .AsNoTracking()
-                .Select(l => new
-                {
-                    Listing = l,
-                    Rank = l.SearchVector.RankCoverDensity(tsQuery)
-                })
-                .Where(x => x.Rank > 0)
-                .OrderByDescending(x => x.Rank)
-                .ThenByDescending(x => x.Listing.CreatedAt)
-                .ThenByDescending(x => x.Listing.Id);
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                // Recent first
+                baseQuery = _db.Listings.AsNoTracking()
+                .Select(l => new ValueTuple<Listing, float>(l, 0f))
+                .OrderByDescending(x => x.Item1.CreatedAt)
+                .ThenByDescending(x => x.Item1.Id);
+                
+            }
+            else{
+                // Build tsquery (light fuzzy)
+                var tsQuery = EF.Functions.PlainToTsQuery("english", query);
+
+                // Base query with ranking
+                baseQuery =
+                    _db.Listings
+                    .AsNoTracking()
+                    .Select(l => new ValueTuple<Listing, float>(l, l.SearchVector.RankCoverDensity(tsQuery)))
+                    .Where(x => x.Item2 > 0)
+                    .OrderByDescending(x => x.Item2)
+                    .ThenByDescending(x => x.Item1.CreatedAt)
+                    .ThenByDescending(x => x.Item1.Id);
+            }
 
             // Cursor pagination filter
             if (decodedCursor != null)
@@ -65,9 +73,9 @@ namespace backend.Services
             }
 
             // Fetch one extra row to determine HasNextPage
-            var results = await baseQuery
-                .Take(pageSize + 1)
-                .ToListAsync();
+            var results = await baseQuery 
+                .Take(pageSize + 1) // this limits the query to pageSize + 1 results
+                .ToListAsync(); // execute the query
 
             var hasNextPage = results.Count > pageSize;
             var items = results.Take(pageSize).ToList();
@@ -76,7 +84,7 @@ namespace backend.Services
 
             if (hasNextPage)
             {
-                var last = items[^1];
+                var last = items[^1]; // same as doing items[items.Count - 1]
                 nextCursor = new ListingCursor
                 {
                     Rank = last.Rank,
