@@ -9,7 +9,7 @@ namespace backend.Data.Seed
     // TEMPORARY: Test listing for virtual try-on feature (uses the seeded test profile)
     public static class ListingSeeder
     {
-        public static async Task SeedAsync(AppDbContext context)
+        public static async Task SeedAsync(AppDbContext context, Microsoft.Extensions.Logging.ILogger logger)
         {
             var testListingId = Guid.Parse("550e8400-e29b-41d4-a716-446655440000");
 
@@ -30,7 +30,7 @@ namespace backend.Data.Seed
             await context.Listings.AddAsync(testListing);
             await context.SaveChangesAsync();
 
-            Console.WriteLine("Test listing created for virtual try-on");
+            logger.LogInformation("Test listing created for virtual try-on");
         }
     }
 }

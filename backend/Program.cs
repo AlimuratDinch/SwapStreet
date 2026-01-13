@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using backend.DbContexts;
 using backend.Contracts;
 using backend.Services;
@@ -15,6 +16,11 @@ using backend.Data.Seed;
 using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 // Add environment variables to configuration
 builder.Configuration.AddEnvironmentVariables();
@@ -42,10 +48,15 @@ var geminiApiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL")
 builder.Configuration["Gemini:ApiKey"] = geminiApiKey;
 builder.Configuration["Gemini:ApiUrl"] = geminiApiUrl;
 
+// Frontend URL Fallback
+var frontendUrl = Environment.GetEnvironmentVariable("FrontendUrl") ?? "http://localhost:3000";
+builder.Configuration["FrontendUrl"] = frontendUrl;
+
 // Configure EF Core depending on flag
 if (useInMemory)
 {
-    Console.WriteLine("Using in-memory database (dev mode)");
+    var _tempLogger = LoggerFactory.Create(lb => lb.AddConsole()).CreateLogger("Startup");
+    _tempLogger.LogInformation("Using in-memory database (dev mode)");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
         options
@@ -121,6 +132,24 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = key
     };
 });
+
+// EMAIL SERVICE NEW
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddTransient<IEmailService, MockEmailService>();
+}
+else
+{
+    var brevoApiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY");
+    var emailSenderName = Environment.GetEnvironmentVariable("EMAIL_SENDER_NAME") ?? "SwapStreet";
+    var emailSenderAddress = Environment.GetEnvironmentVariable("EMAIL_SENDER_ADDRESS");
+
+    builder.Configuration["BREVO_API_KEY"] = brevoApiKey;
+    builder.Configuration["EMAIL_SENDER_NAME"] = emailSenderName;
+    builder.Configuration["EMAIL_SENDER_ADDRESS"] = emailSenderAddress;
+
+    builder.Services.AddTransient<IEmailService, BrevoEmailService>();
+}
 
 
 builder.Services.AddAuthorization();
@@ -214,21 +243,21 @@ using (var scope = app.Services.CreateScope())
         {
             appDb.Database.Migrate();
             authDb.Database.Migrate();
-            await DatabaseSeeder.SeedAsync(appDb);
-            Console.WriteLine("Database migrations applied successfully.");
+            await DatabaseSeeder.SeedAsync(appDb, services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>().CreateLogger("DatabaseSeeder"));
+            app.Logger.LogInformation("Database migrations applied successfully.");
 
         }
         else
         {
-            Console.WriteLine("Skipping migrations (in-memory mode)");
-            Console.WriteLine("Starting Database Seeding...");
-            await DatabaseSeeder.SeedAsync(appDb);
-            Console.WriteLine("Database Seeding Completed.");
+            app.Logger.LogInformation("Skipping migrations (in-memory mode)");
+            app.Logger.LogInformation("Starting Database Seeding...");
+            await DatabaseSeeder.SeedAsync(appDb, services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>().CreateLogger("DatabaseSeeder"));
+            app.Logger.LogInformation("Database Seeding Completed.");
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database initialization failed: {ex.Message}");
+        app.Logger.LogError(ex, "Database initialization failed");
     }
 }
 

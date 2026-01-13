@@ -18,6 +18,7 @@ namespace backend.Services.Auth
 
         private readonly string _jwtSecret;
 
+        //Default values are for local testing with XUnit and are not used in dev or prod
         public TokenService(AuthDbContext db, IConfiguration config)
         {
             _db = db;
@@ -42,7 +43,8 @@ namespace backend.Services.Auth
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("username", user.Username ?? ""),
-                new Claim("isAdmin", user.IsAdmin.ToString())
+                new Claim("isAdmin", user.IsAdmin.ToString()),
+                new Claim("isEmailConfirmed", user.IsEmailConfirmed.ToString())
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor

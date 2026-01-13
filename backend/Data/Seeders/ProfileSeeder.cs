@@ -10,7 +10,7 @@ namespace backend.Data.Seed
     {
         public static readonly Guid TestProfileId = Guid.Parse("019b71a5-2eec-7d07-ae98-5de517d62015");
 
-        public static async Task SeedAsync(AppDbContext context)
+        public static async Task SeedAsync(AppDbContext context, Microsoft.Extensions.Logging.ILogger logger)
         {
             if (await context.Profiles.AnyAsync(p => p.Id == TestProfileId))
                 return;

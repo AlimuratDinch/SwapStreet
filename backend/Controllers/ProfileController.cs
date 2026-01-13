@@ -12,10 +12,12 @@ namespace backend.Controllers
     public class ProfileController : ControllerBase
     {
         private readonly IProfileService _profileService;
+        private readonly Microsoft.Extensions.Logging.ILogger<ProfileController> _logger;
 
-        public ProfileController(IProfileService profileService)
+        public ProfileController(IProfileService profileService, Microsoft.Extensions.Logging.ILogger<ProfileController> logger)
         {
             _profileService = profileService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -63,7 +65,7 @@ namespace backend.Controllers
         public async Task<IActionResult> CreateProfile([FromBody] CreateProfileDto dto)
         {
             // Log received data for debugging
-            Console.WriteLine($"Received CreateProfileDto: FirstName={dto?.FirstName}, LastName={dto?.LastName}, CityId={dto?.CityId}, FSA={dto?.FSA}");
+            _logger.LogDebug("Received CreateProfileDto: FirstName={FirstName}, LastName={LastName}, CityId={CityId}, FSA={FSA}", dto?.FirstName, dto?.LastName, dto?.CityId, dto?.FSA);
 
             if (dto == null)
             {
@@ -77,7 +79,7 @@ namespace backend.Controllers
                     .SelectMany(x => x.Value!.Errors.Select(e => $"{x.Key}: {e.ErrorMessage}"))
                     .ToList();
 
-                Console.WriteLine($"ModelState validation errors: {string.Join("; ", errors)}");
+                _logger.LogWarning("ModelState validation errors: {Errors}", string.Join("; ", errors));
                 return BadRequest(new { Error = string.Join("; ", errors) });
             }
 
