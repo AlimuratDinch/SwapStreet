@@ -1,0 +1,22 @@
+meta {
+  name: Resend Email Verification
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:8080/api/auth/resend-verification/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email" : "deadawesome360@gmail.com"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
