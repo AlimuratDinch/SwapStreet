@@ -39,9 +39,10 @@ namespace backend.Services
                 .Select(l => new ValueTuple<Listing, float>(l, 0f))
                 .OrderByDescending(x => x.Item1.CreatedAt)
                 .ThenByDescending(x => x.Item1.Id);
-                
+
             }
-            else{
+            else
+            {
                 // Build tsquery (light fuzzy)
                 var tsQuery = EF.Functions.PlainToTsQuery("english", query);
 
@@ -73,7 +74,7 @@ namespace backend.Services
             }
 
             // Fetch one extra row to determine HasNextPage
-            var results = await baseQuery 
+            var results = await baseQuery
                 .Take(pageSize + 1) // this limits the query to pageSize + 1 results
                 .ToListAsync(); // execute the query
 
