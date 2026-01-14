@@ -7,7 +7,7 @@
 // using Xunit;
 // using AwesomeAssertions;
 
-// namespace backend.Tests
+// namespace backend.Tests.Services
 // {
 //     public class CatalogServiceTests : IDisposable
 //     {
@@ -17,11 +17,11 @@
 //         public CatalogServiceTests()
 //         {
 //             // Use InMemory database
-//             var options = new DbContextOptionsBuilder<AppDbContext>()
+//             var options = new DbContextOptionsBuilder<TestAppDbContext>()
 //                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
 //                 .Options;
 
-//             _db = new AppDbContext(options);
+//             _db = new TestAppDbContext(options);
 //             _service = new CatalogService(_db);
 
 //             // Seed initial clothing category

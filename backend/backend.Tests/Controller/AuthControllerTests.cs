@@ -10,7 +10,7 @@
 // using Xunit;
 // using AwesomeAssertions;
 
-// namespace backend.Tests
+// namespace backend.Tests.Controller
 // {
 //     public class AuthControllerTests
 //     {

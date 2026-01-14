@@ -20,8 +20,12 @@ using Moq;
 using Xunit;
 using AwesomeAssertions;
 
-namespace backend.Tests
+namespace backend.Tests.Services
 {
+    
+
+
+
     public class TryOnServiceTests : IDisposable
     {
         private readonly AppDbContext _context;
@@ -34,12 +38,11 @@ namespace backend.Tests
 
         public TryOnServiceTests()
         {
-            var options = new DbContextOptionsBuilder<AppDbContext>()
+            var options = new DbContextOptionsBuilder<TestAppDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            _context = new AppDbContext(options);
-
+            _context = new TestAppDbContext(options);
             _mockTokenService = new Mock<ITokenService>();
             _mockGeminiService = new Mock<IGenerativeService>();
             _mockLogger = new Mock<ILogger<TryOnService>>();

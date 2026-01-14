@@ -7,7 +7,7 @@ using Xunit;
 using AwesomeAssertions;
 using Microsoft.Extensions.Configuration;
 
-namespace backend.Tests
+namespace backend.Tests.Services
 {
     public class TokenServiceTests
     {

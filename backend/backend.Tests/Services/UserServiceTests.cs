@@ -10,7 +10,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 
-namespace backend.Tests
+namespace backend.Tests.Services
 {
     public class UserServiceTests : IDisposable
     {

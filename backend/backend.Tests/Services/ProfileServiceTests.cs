@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Xunit;
 using AwesomeAssertions;
 
-namespace backend.Tests
+namespace backend.Tests.Services
 {
     public class ProfileServiceTests : IDisposable
     {
@@ -20,11 +20,11 @@ namespace backend.Tests
 
         public ProfileServiceTests()
         {
-            var options = new DbContextOptionsBuilder<AppDbContext>()
+            var options = new DbContextOptionsBuilder<TestAppDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            _db = new AppDbContext(options);
+            _db = new TestAppDbContext(options);
             _service = new ProfileService(_db);
 
             _testUserId = Guid.NewGuid();
