@@ -22,10 +22,6 @@ using AwesomeAssertions;
 
 namespace backend.Tests.Services
 {
-    
-
-
-
     public class TryOnServiceTests : IDisposable
     {
         private readonly AppDbContext _context;
