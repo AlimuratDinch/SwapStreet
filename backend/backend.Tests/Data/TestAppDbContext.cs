@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
 
-namespace backend.Tests.Data;
+
 
 public class TestAppDbContext(DbContextOptions<TestAppDbContext> options) : AppDbContext(options)
 {
