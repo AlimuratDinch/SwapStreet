@@ -20,11 +20,11 @@ namespace backend.Tests.Services
         {
             // 1. Setup In-Memory Database
             // We use a unique name for each test run to ensure isolation
-            var options = new DbContextOptionsBuilder<TestAppDbContext>()
+            var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            _context = new TestAppDbContext(options);
+            _context = new AppDbContext(options);
             _service = new LocationService(_context);
 
             // 2. Seed Test Data

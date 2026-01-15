@@ -1,104 +1,116 @@
 using Microsoft.EntityFrameworkCore;
-using backend.Contracts;
-using backend.Models;
 using backend.DbContexts;
-using backend.DTOs.CatalogDTOs;
-using NpgsqlTypes;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
+using backend.DTOs.Listing;
+using backend.Contracts;
 
-
-namespace backend.Services
+namespace backend.Services;
+public class ListingSearchService : IListingSearchService
 {
-    public sealed class ListingSearchService : IListingSearchService
+    private readonly AppDbContext _db;
+
+    public ListingSearchService(AppDbContext db)
     {
-        private readonly AppDbContext _db;
+        _db = db;
+    }
 
-        public ListingSearchService(AppDbContext db)
+    public async Task<(IReadOnlyList<Listing> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
+        string query,
+        int pageSize,
+        string? cursor)
+    {
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        // Blank query => "recent listings"
+        if (string.IsNullOrWhiteSpace(query))
         {
-            _db = db;
-        }
+            var rows = await _db.Listings.AsNoTracking()
+                .OrderByDescending(l => l.CreatedAt)
+                .ThenByDescending(l => l.Id)
+                .Take(pageSize + 1)
+                .ToListAsync();
 
-        public async Task<(IReadOnlyList<Listing> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
-                string query,
-                int pageSize,
-                string? cursor
-            )
-        {
+            var hasNext = rows.Count > pageSize;
+            var items = rows.Take(pageSize).ToList();
 
-
-            // Decode cursor if present
-            ListingCursor? decodedCursor = null;
-            ListingCursor.TryDecode(cursor, out decodedCursor);
-
-            IQueryable<(Listing Listing, float Rank)> baseQuery; // the base query will contain the sql query plan/logic
-
-            if (string.IsNullOrWhiteSpace(query))
+            string? next = null;
+            if (hasNext)
             {
-                // Recent first
-                baseQuery = _db.Listings.AsNoTracking()
-                .Select(l => new ValueTuple<Listing, float>(l, 0f))
-                .OrderByDescending(x => x.Item1.CreatedAt)
-                .ThenByDescending(x => x.Item1.Id);
-
-            }
-            else
-            {
-                // Build tsquery (light fuzzy)
-                var tsQuery = EF.Functions.PlainToTsQuery("english", query);
-
-                // Base query with ranking
-                baseQuery =
-                    _db.Listings
-                    .AsNoTracking()
-                    .Select(l => new ValueTuple<Listing, float>(l, l.SearchVector.RankCoverDensity(tsQuery)))
-                    .Where(x => x.Item2 > 0)
-                    .OrderByDescending(x => x.Item2)
-                    .ThenByDescending(x => x.Item1.CreatedAt)
-                    .ThenByDescending(x => x.Item1.Id);
-            }
-
-            // Cursor pagination filter
-            if (decodedCursor != null)
-            {
-                baseQuery = baseQuery.Where(x =>
-                    x.Rank < decodedCursor.Rank
-                    || (x.Rank == decodedCursor.Rank &&
-                        x.Listing.CreatedAt < decodedCursor.CreatedAt)
-                    || (x.Rank == decodedCursor.Rank &&
-                        x.Listing.CreatedAt == decodedCursor.CreatedAt &&
-                        x.Listing.Id.CompareTo(decodedCursor.Id) < 0)
-                )
-                .OrderByDescending(x => x.Rank)
-                .ThenByDescending(x => x.Listing.CreatedAt)
-                .ThenByDescending(x => x.Listing.Id);
-            }
-
-            // Fetch one extra row to determine HasNextPage
-            var results = await baseQuery
-                .Take(pageSize + 1) // this limits the query to pageSize + 1 results
-                .ToListAsync(); // execute the query
-
-            var hasNextPage = results.Count > pageSize;
-            var items = results.Take(pageSize).ToList();
-
-            string? nextCursor = null;
-
-            if (hasNextPage)
-            {
-                var last = items[^1]; // same as doing items[items.Count - 1]
-                nextCursor = new ListingCursor
+                var last = items[^1];
+                next = new ListingCursor
                 {
-                    Rank = last.Rank,
-                    CreatedAt = last.Listing.CreatedAt,
-                    Id = last.Listing.Id
+                    Rank = null,              // indicates "recent mode"
+                    CreatedAt = last.CreatedAt,
+                    Id = last.Id
                 }.Encode();
             }
 
-            return (
-                Items: items.Select(x => x.Listing).ToList(),
-                NextCursor: nextCursor,
-                HasNextPage: hasNextPage
-            );
+            return (items, next, hasNext);
         }
+
+        query = query.Trim();
+
+        const double threshold = 0.25;
+
+        // Project Rank from pg_trgm similarity(SearchText, query) [0..1]
+        var baseQuery = _db.Listings.AsNoTracking()
+            .Select(l => new
+            {
+                Listing = l,
+                Rank = EF.Functions.TrigramsSimilarity(
+                    EF.Property<string>(l, "SearchText"),
+                    query)
+            })
+            .Where(x => x.Rank >= threshold);
+
+        // Cursor filter (Rank DESC, CreatedAt DESC, Id DESC)
+        if (ListingCursor.TryDecode(cursor, out var c) && c != null)
+        {
+            // If cursor came from ranked mode it must have Rank
+            if (c.Rank.HasValue)
+            {
+                var cr = c.Rank.Value;
+                var ct = c.CreatedAt;
+                var cid = c.Id;
+
+                baseQuery = baseQuery.Where(x =>
+                    x.Rank < cr ||
+                    (x.Rank == cr && x.Listing.CreatedAt < ct) ||
+                    (x.Rank == cr && x.Listing.CreatedAt == ct && x.Listing.Id.CompareTo(cid) < 0));
+            }
+            else
+            {
+                // Cursor from recent mode; fall back to CreatedAt/Id cut
+                var ct = c.CreatedAt;
+                var cid = c.Id;
+
+                baseQuery = baseQuery.Where(x =>
+                    x.Listing.CreatedAt < ct ||
+                    (x.Listing.CreatedAt == ct && x.Listing.Id.CompareTo(cid) < 0));
+            }
+        }
+
+        var rowsPage = await baseQuery
+            .OrderByDescending(x => x.Rank)
+            .ThenByDescending(x => x.Listing.CreatedAt)
+            .ThenByDescending(x => x.Listing.Id)
+            .Take(pageSize + 1)
+            .ToListAsync();
+
+        var hasNextPage = rowsPage.Count > pageSize;
+        var page = rowsPage.Take(pageSize).ToList();
+
+        string? nextCursor = null;
+        if (hasNextPage)
+        {
+            var last = page[^1];
+            nextCursor = new ListingCursor
+            {
+                Rank = last.Rank,
+                CreatedAt = last.Listing.CreatedAt,
+                Id = last.Listing.Id
+            }.Encode();
+        }
+
+        return (page.Select(x => x.Listing).ToList(), nextCursor, hasNextPage);
     }
 }

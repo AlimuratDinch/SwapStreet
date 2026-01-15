@@ -8,15 +8,16 @@ public class Listing
     [Key]
     public Guid Id { get; set; }
 
-    [Required]
-    [StringLength(255)]
+    [Required(ErrorMessage = "Title is required")]
+    [StringLength(255, MinimumLength = 3)]
     public string Title { get; set; } = string.Empty;
 
-    [Column(TypeName = "decimal(10,2)")]
-    public decimal Price { get; set; }
+    [Required(ErrorMessage = "Description is required")]
+    [StringLength(1000, MinimumLength = 10)]
+    public string Description { get; set; } = string.Empty;
 
-    [StringLength(1000)]
-    public string? Description { get; set; }
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal Price { get; set; } = 0.00M;
 
     // Foreign Key to Profile (the seller)
     [Required]
@@ -31,8 +32,7 @@ public class Listing
     [ForeignKey("TagId")]
     public Tag? Tag { get; set; }
 
-    // Full-Text Search Vector
-    public NpgsqlTsVector SearchVector { get; set; } = default!;
+    // Full-Text Search Vector, "SearchText" (computed column in DB) and can be accessed context.Listings.Where(l => EF.Property<string>(l, "SearchText") != null)
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

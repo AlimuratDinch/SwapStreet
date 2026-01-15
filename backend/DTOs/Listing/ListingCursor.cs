@@ -1,50 +1,11 @@
 using System.Text;
 using System.Text.Json;
 
-namespace backend.DTOs.CatalogDTOs;
-
-// Category DTOs
-public record CategoryResponse(
-    int Id,
-    string Name,
-    IEnumerable<ItemResponse> Items
-);
-
-public record CreateCategoryRequest(string Name);
-public record UpdateCategoryRequest(string Name);
-
-// Item DTOs
-public record CreateItemRequest(
-    string Title,
-    string Description,
-    string Condition,
-    decimal Price,
-    string ImageUrl,
-    int CategoryId
-);
-
-public record ItemResponse(
-    int Id,
-    string Title,
-    string Description,
-    string Condition,
-    decimal Price,
-    string ImageUrl,
-    int CategoryId
-);
-
-public record UpdateItemRequest(
-    string Title,
-    string Description,
-    string Condition,
-    decimal Price,
-    string ImageUrl,
-    int CategoryId
-);
+namespace backend.DTOs.Listing;
 
 public sealed class ListingCursor
 {
-    public float Rank { get; set; }
+    public double? Rank { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid Id { get; set; }
 

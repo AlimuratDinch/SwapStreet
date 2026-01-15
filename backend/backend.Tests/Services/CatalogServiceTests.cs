@@ -17,7 +17,7 @@
 //         public CatalogServiceTests()
 //         {
 //             // Use InMemory database
-//             var options = new DbContextOptionsBuilder<TestAppDbContext>()
+//             var options = new DbContextOptionsBuilder<AppDbContext>()
 //                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
 //                 .Options;
 

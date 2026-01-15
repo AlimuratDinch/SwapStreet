@@ -136,20 +136,25 @@ public class AppDbContext : DbContext
         // =======================================================
         // LISTING MODELS
         // =======================================================
-
+        modelBuilder.HasPostgresExtension("pg_trgm"); // Enable pg_trgm extension for trigram indexing
         modelBuilder.Entity<Listing>().ToTable("listings");
         modelBuilder.Entity<Listing>()
             .Property(l => l.Price)
             .HasColumnType("decimal(10,2)");
-        modelBuilder.Entity<Listing>()
-            .HasGeneratedTsVectorColumn(
-                l => l.SearchVector,           // the tsvector property
-                "english",                     // text search config (stemming, etc.)
-                l => new { l.Title, l.Description }  // fields to index (weight equal)
-            )
-            .HasIndex(l => l.SearchVector)
-            .HasMethod("GIN");  // GIN index for fast full-text lookups
+        modelBuilder.Entity<Listing>(entity =>
+            {
+                // Adds the computed column for text-search, will be recomputed on insert/update.
+                entity.Property<string>("SearchText")
+                .HasComputedColumnSql("COALESCE(Title || ' ' || Description || ' ', '') STORED")
+                .ValueGeneratedOnAddOrUpdate();
 
+                // Creates a GIN index on the shadow SearchText column optimized for pg_trgm trigram fuzzy matching.
+                entity.HasIndex("SearchText")
+                .HasMethod("gin")
+                .HasOperators("gin_trgm_ops")
+                .HasDatabaseName("idx_listings_search_trgm");
+            }
+        );
 
         // Relationships for Listing
         modelBuilder.Entity<Listing>()

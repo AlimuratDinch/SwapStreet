@@ -40,11 +40,11 @@ namespace backend.Tests.Services
             var optionsWrapper = Options.Create(_settings);
 
             // --- 1. Setup In-Memory Database for testing ---
-            var options = new DbContextOptionsBuilder<TestAppDbContext>()
+            var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            _context = new TestAppDbContext(options);
+            _context = new AppDbContext(options);
 
             // --- 2. Inject Context into Service ---
             _service = new MinioFileStorageService(_minioMock.Object, optionsWrapper, _context);

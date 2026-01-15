@@ -34,11 +34,11 @@ namespace backend.Tests.Services
 
         public TryOnServiceTests()
         {
-            var options = new DbContextOptionsBuilder<TestAppDbContext>()
+            var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            _context = new TestAppDbContext(options);
+            _context = new AppDbContext(options);
             _mockTokenService = new Mock<ITokenService>();
             _mockGeminiService = new Mock<IGenerativeService>();
             _mockLogger = new Mock<ILogger<TryOnService>>();

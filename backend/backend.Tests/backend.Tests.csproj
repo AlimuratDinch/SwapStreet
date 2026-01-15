@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\backend.csproj" />
+    <Using Include="backend.Tests.Data" />
   </ItemGroup>
 
 

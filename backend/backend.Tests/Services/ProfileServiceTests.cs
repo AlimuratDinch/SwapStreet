@@ -20,11 +20,11 @@ namespace backend.Tests.Services
 
         public ProfileServiceTests()
         {
-            var options = new DbContextOptionsBuilder<TestAppDbContext>()
+            var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            _db = new TestAppDbContext(options);
+            _db = new AppDbContext(options);
             _service = new ProfileService(_db);
 
             _testUserId = Guid.NewGuid();

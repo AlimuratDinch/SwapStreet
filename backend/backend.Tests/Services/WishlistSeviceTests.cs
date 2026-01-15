@@ -14,11 +14,11 @@
 //     {
 //         private AppDbContext GetInMemoryDbContext()
 //         {
-//             var options = new DbContextOptionsBuilder<TestAppDbContext>()
+//             var options = new DbContextOptionsBuilder<AppDbContext>()
 //                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
 //                 .Options;
 
-//             return new TestAppDbContext(options);;
+//             return new AppDbContext(options);;
 //         }
 
 //         [Fact]
