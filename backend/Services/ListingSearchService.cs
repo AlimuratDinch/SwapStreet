@@ -5,6 +5,7 @@ using backend.DTOs;
 
 namespace backend.Services;
 public class ListingSearchService : IListingSearchService
+
 {
     private readonly AppDbContext _db;
 
