@@ -49,7 +49,7 @@ public class ListingSearchService : IListingSearchService
 
         query = query.Trim();
 
-        const double threshold = 0.25;
+        const double threshold = 0.1; // minimum similarity to consider a match
 
         // Project Rank from pg_trgm similarity(SearchText, query) [0..1]
         var baseQuery = _db.Listings.AsNoTracking()
