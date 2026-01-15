@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace backend.DTOs;
-public class CreateListingDto
 
+public class CreateListingDto
 {
     [Required(ErrorMessage = "Title is required")]
     [StringLength(255, MinimumLength = 3, ErrorMessage = "Title must be 3-255 characters")]

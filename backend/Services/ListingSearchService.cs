@@ -4,6 +4,7 @@ using backend.Contracts;
 using backend.DTOs;
 
 namespace backend.Services;
+
 public class ListingSearchService : IListingSearchService
 
 {
