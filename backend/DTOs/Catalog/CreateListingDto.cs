@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.DTOs.Listing;
+namespace backend.DTOs;
 public class CreateListingDto
 {
     [Required(ErrorMessage = "Title is required")]

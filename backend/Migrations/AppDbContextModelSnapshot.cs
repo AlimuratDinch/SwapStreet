@@ -165,7 +165,7 @@ namespace backend.Migrations
                     b.Property<string>("SearchText")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("text")
-                        .HasComputedColumnSql("COALESCE(Title || ' ' || Description || ' ', '') STORED", true);
+                        .HasComputedColumnSql("COALESCE(\"Title\" || ' ' || \"Description\" || ' ', '')", true);
 
                     b.Property<Guid?>("TagId")
                         .HasColumnType("uuid");

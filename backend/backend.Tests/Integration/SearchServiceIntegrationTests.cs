@@ -1,10 +1,13 @@
 using backend.DbContexts;
 using backend.Services;
 using backend.Tests.Fixtures;
+using backend.Models;
+using backend.Models.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 using System.Threading.Tasks;
 using System;
+using System.Linq;
 
 namespace backend.Tests.Integration;
 
@@ -21,16 +24,138 @@ public class ListingSearchServicePgTrgmTests
         _fx = fx;
     }
 
+    /// <summary>
+    /// Helper method to create a valid User and Profile required for inserting Listings.
+    /// Uses in-memory databases for auth and profile data to avoid PostgreSQL dependency.
+    /// </summary>
+    private async Task<(Guid ProfileId, AppDbContext AppDb, AuthDbContext AuthDb)> CreateUserAndProfileAsync()
+    {
+        // Create in-memory databases for auth and profile setup
+        var appOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        var authOptions = new DbContextOptionsBuilder<AuthDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        var db = new AppDbContext(appOptions);
+        var authDb = new AuthDbContext(authOptions);
+
+        // 1. Create a City (required by Profile)
+        var province = new Province { Name = "Ontario", Code = "ON" };
+        db.Provinces.Add(province);
+        await db.SaveChangesAsync();
+
+        var city = new City { Name = "Toronto", ProvinceId = province.Id };
+        db.Cities.Add(city);
+        await db.SaveChangesAsync();
+
+        // 2. Create a User
+        var userId = Guid.NewGuid();
+        var email = $"testuser_{Guid.NewGuid().ToString().Substring(0, 8)}@test.com";
+        var user = new User
+        {
+            Id = userId,
+            Email = email,
+            Username = email.Split('@')[0],
+            EncryptedPassword = "hashed_password",
+            Status = "active",
+            EmailConfirmedAt = DateTime.UtcNow
+        };
+        authDb.Users.Add(user);
+        await authDb.SaveChangesAsync();
+
+        // 3. Create a Profile
+        var profileId = Guid.NewGuid();
+        var profile = new Profile
+        {
+            Id = profileId,
+            Status = ProfileStatusEnum.Online,
+            FirstName = "Test",
+            LastName = "User",
+            Rating = 4.5f,
+            CityId = city.Id,
+            FSA = "M5H"
+        };
+        db.Profiles.Add(profile);
+        await db.SaveChangesAsync();
+
+        return (profileId, db, authDb);
+    }
+
+    /// <summary>
+    /// Cleans up listing data and disposes contexts.
+    /// </summary>
+    private void CleanupData(AppDbContext db, AuthDbContext authDb)
+    {
+        if (db != null)
+        {
+            db.Listings.RemoveRange(db.Listings);
+            db.SaveChanges();
+            db.Dispose();
+        }
+
+        if (authDb != null)
+        {
+            authDb.Dispose();
+        }
+    }
+
     private async Task SeedAsync()
     {
-        await using var db = new AppDbContext(_fx.DbOptions);
+        // Create in-memory databases for user and profile setup
+        var (profileId, inMemoryAppDb, inMemoryAuthDb) = await CreateUserAndProfileAsync();
 
-        // Clean between tests (simple approach)
-        await db.Database.ExecuteSqlRawAsync(@"DELETE FROM ""Listings"";");
+        // Clean up in-memory contexts
+        CleanupData(inMemoryAppDb, inMemoryAuthDb);
 
-        var profileId = Guid.NewGuid();
+        // Now create listings in PostgreSQL database
+        using var pgDb = new AppDbContext(_fx.DbOptions);
 
-        db.Listings.AddRange(
+        // Clean previous listings
+        pgDb.Listings.RemoveRange(pgDb.Listings);
+        await pgDb.SaveChangesAsync();
+
+        // Create profile in PostgreSQL database if it doesn't exist
+        if (!pgDb.Profiles.Any(p => p.Id == profileId))
+        {
+            // Ensure province exists
+            var province = pgDb.Provinces.FirstOrDefault();
+            if (province == null)
+            {
+                province = new Province { Name = "Ontario", Code = "ON" };
+                pgDb.Provinces.Add(province);
+                await pgDb.SaveChangesAsync();
+            }
+
+            // Ensure city exists
+            var city = pgDb.Cities.FirstOrDefault();
+            if (city == null)
+            {
+                city = new City { Name = "Toronto", ProvinceId = province.Id };
+                pgDb.Cities.Add(city);
+                await pgDb.SaveChangesAsync();
+            }
+
+            // Create profile
+            var pgProfile = new Profile
+            {
+                Id = profileId,
+                Status = ProfileStatusEnum.Online,
+                FirstName = "Test",
+                LastName = "User",
+                Rating = 4.5f,
+                CityId = city.Id,
+                FSA = "M5H"
+            };
+            pgDb.Profiles.Add(pgProfile);
+            await pgDb.SaveChangesAsync();
+        }
+
+        // Add test listings
+        var now = DateTime.UtcNow;
+        pgDb.Listings.AddRange(
             new Listing
             {
                 Id = Guid.NewGuid(),
@@ -38,8 +163,8 @@ public class ListingSearchServicePgTrgmTests
                 Description = "Great running sneakers size 10",
                 Price = 80m,
                 ProfileId = profileId,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-3),
-                UpdatedAt = DateTime.UtcNow.AddMinutes(-3)
+                CreatedAt = now.AddMinutes(-3),
+                UpdatedAt = now.AddMinutes(-3)
             },
             new Listing
             {
@@ -48,8 +173,8 @@ public class ListingSearchServicePgTrgmTests
                 Description = "Cozy hoodie, like new",
                 Price = 35m,
                 ProfileId = profileId,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-2),
-                UpdatedAt = DateTime.UtcNow.AddMinutes(-2)
+                CreatedAt = now.AddMinutes(-2),
+                UpdatedAt = now.AddMinutes(-2)
             },
             new Listing
             {
@@ -58,14 +183,13 @@ public class ListingSearchServicePgTrgmTests
                 Description = "Classic shoes, white, size 9",
                 Price = 50m,
                 ProfileId = profileId,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-1),
-                UpdatedAt = DateTime.UtcNow.AddMinutes(-1)
+                CreatedAt = now.AddMinutes(-1),
+                UpdatedAt = now.AddMinutes(-1)
             }
         );
 
-        await db.SaveChangesAsync();
+        await pgDb.SaveChangesAsync();
     }
-
     [Fact]
     public async Task Search_FuzzyTypo_ReturnsExpectedListings()
     {
@@ -79,7 +203,6 @@ public class ListingSearchServicePgTrgmTests
         Assert.NotEmpty(items);
         Assert.Contains(items, l => l.Title.Contains("Converse", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(items, l => l.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
-
         Assert.False(hasNext);
         Assert.Null(nextCursor);
     }
@@ -125,5 +248,21 @@ public class ListingSearchServicePgTrgmTests
 
         Assert.True(hasNext);          // we seeded 3
         Assert.NotNull(nextCursor);
+    }
+
+    [Fact]
+    public async Task Search_NoTypoQuery_ReturnsExpectedListings()
+    {
+        await SeedAsync();
+        await using var db = new AppDbContext(_fx.DbOptions);
+        var svc = new ListingSearchService(db);
+
+        // Search for "Nike" (exact match, no typo)
+        var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("Nike shoes", pageSize: 20, cursor: null);
+
+        Assert.NotEmpty(items);
+        Assert.Contains(items, l => l.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+        Assert.False(hasNext);
+        Assert.Null(nextCursor);
     }
 }

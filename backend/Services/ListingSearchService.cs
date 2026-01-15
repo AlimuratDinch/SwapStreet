@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
-using backend.DTOs.Listing;
 using backend.Contracts;
+using backend.DTOs;
 
 namespace backend.Services;
 public class ListingSearchService : IListingSearchService

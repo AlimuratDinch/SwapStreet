@@ -12,8 +12,8 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260115201727_AddPgTrgmSearchTextStoredTrue")]
-    partial class AddPgTrgmSearchTextStoredTrue
+    [Migration("20260115220044_AddSearchTextComputed")]
+    partial class AddSearchTextComputed
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -168,7 +168,7 @@ namespace backend.Migrations
                     b.Property<string>("SearchText")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("text")
-                        .HasComputedColumnSql("COALESCE(Title || ' ' || Description || ' ', '') STORED", true);
+                        .HasComputedColumnSql("COALESCE(\"Title\" || ' ' || \"Description\" || ' ', '')", true);
 
                     b.Property<Guid?>("TagId")
                         .HasColumnType("uuid");

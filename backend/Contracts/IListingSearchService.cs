@@ -1,4 +1,3 @@
-using backend.Models;
 namespace backend.Contracts
 {
     public interface IListingSearchService

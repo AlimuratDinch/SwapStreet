@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using backend.Models;
 
 namespace backend.DbContexts;
 
@@ -145,7 +144,7 @@ public class AppDbContext : DbContext
             {
                 // Adds the computed column for text-search, will be recomputed on insert/update.
                 entity.Property<string>("SearchText")
-                .HasComputedColumnSql("COALESCE(Title || ' ' || Description || ' ', '')", stored: true)
+                .HasComputedColumnSql("COALESCE(\"Title\" || ' ' || \"Description\" || ' ', '')", stored: true)
                 .ValueGeneratedOnAddOrUpdate();
 
                 // Creates a GIN index on the shadow SearchText column optimized for pg_trgm trigram fuzzy matching.
