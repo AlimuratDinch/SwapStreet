@@ -10,7 +10,7 @@ namespace backend.Tests.Fixtures;
 public sealed class PostgresFixture : IAsyncLifetime
 {
     public PostgreSqlContainer Container { get; } =
-            new PostgreSqlBuilder("postgres:15") // or your version
+            new PostgreSqlBuilder("postgres:latest") // or your version
             .WithDatabase("testdb")
             .WithUsername("postgres")
             .WithPassword("postgres")

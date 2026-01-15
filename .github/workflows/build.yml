@@ -54,7 +54,7 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
         scanMetadataReportFile: swapstreet/.scannerwork/report-task.txt
-
+  
   backend-sonarqube:
     name: Backend SonarQube
     runs-on: windows-latest
@@ -113,6 +113,9 @@ jobs:
       shell: powershell
       working-directory: backend
       run: dotnet build --no-incremental
+
+    - name: Pull Postgres image (for Testcontainers)
+      run: docker pull postgres:latest
 
     - name: Run tests and collect coverage with threshold
       shell: pwsh
