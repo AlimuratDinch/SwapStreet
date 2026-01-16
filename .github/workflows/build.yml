@@ -116,6 +116,9 @@ jobs:
     - name: Pull Postgres image (optional, speeds up / makes failures obvious)
       run: docker pull postgres:16
 
+    - name: Install xmllint
+      run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
     - name: Run tests and collect coverage with threshold
       shell: bash
       working-directory: backend
