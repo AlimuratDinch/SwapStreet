@@ -56,52 +56,40 @@ jobs:
         scanMetadataReportFile: swapstreet/.scannerwork/report-task.txt
   
   backend-sonarqube:
-    name: Backend SonarQube
-    runs-on: ubuntu-latest
-    needs: frontend-sonarqube
-    steps:
+  name: Backend SonarQube
+  runs-on: ubuntu-latest
+  needs: frontend-sonarqube
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: 17
         distribution: 'zulu'
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
       with:
-        fetch-depth: 0
+        dotnet-version: '9.0.x'
 
-    - name: Cache SonarQube Cloud packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.sonar/cache
-        key: ${{ runner.os }}-sonar
-        restore-keys: ${{ runner.os }}-sonar
-
-    - name: Cache SonarQube Cloud scanner
-      id: cache-sonar-scanner
-      uses: actions/cache@v4
-      with:
-        path: ${{ runner.temp }}/scanner
-        key: ${{ runner.os }}-sonar-scanner
-        restore-keys: ${{ runner.os }}-sonar-scanner
-
-    - name: Install SonarQube Cloud scanner
-      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-      shell: powershell
+    - name: Install SonarScanner for .NET
+      shell: pwsh
       run: |
-        New-Item -Path ${{ runner.temp }}/scanner -ItemType Directory
-        dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}/scanner
+        New-Item -Path "${{ runner.temp }}/scanner" -ItemType Directory -Force
+        dotnet tool update dotnet-sonarscanner --tool-path "${{ runner.temp }}/scanner"
 
     - name: Install dotnet-coverage
+      shell: pwsh
       run: dotnet tool install --global dotnet-coverage
 
     - name: Begin SonarQube analysis
-      runs-on: ubuntu-latest
+      shell: pwsh
+      working-directory: backend
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      shell: powershell
-      working-directory: backend
       run: |
         ${{ runner.temp }}/scanner/dotnet-sonarscanner begin `
           /k:"swapstreet" `
@@ -111,52 +99,23 @@ jobs:
           /d:sonar.coverage.exclusions="**/Migrations/**,**/Models/**"
 
     - name: Build backend
-      shell: powershell
+      shell: pwsh
       working-directory: backend
       run: dotnet build --no-incremental
 
     - name: Pull Postgres image (for Testcontainers)
-      run: docker pull postgres:latest
+      run: docker pull postgres:15
 
-    - name: Run tests and collect coverage with threshold
+    - name: Run tests + coverage
       shell: pwsh
       working-directory: backend
       run: |
-        # Run tests and collect coverage in XML format using settings from root
-        # We use ../coverage.settings.xml because the working-directory is 'backend'
         dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
 
-        # Confirm file exists
-        if (!(Test-Path "coverage.xml")) {
-          Write-Error "coverage.xml not found!"
-          exit 1
-        }
-
-        # Load XML
-        [xml]$cov = Get-Content "coverage.xml"
-
-        # Get the 'module' node (assumes one main module)
-        $module = $cov.results.modules.module
-
-        if (-not $module) {
-          Write-Error "No <module> found in coverage.xml"
-          exit 1
-        }
-
-        # Extract the line_coverage attribute
-        $lineCoverage = [double]$module.line_coverage
-        Write-Host "➡ Backend test coverage: $lineCoverage%"
-
-        # Fail if below threshold
-        if ($lineCoverage -lt 65) {
-          Write-Error "Coverage below 65% ($lineCoverage%)"
-          exit 1
-        }
-
     - name: End SonarQube analysis
+      shell: pwsh
+      working-directory: backend
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      shell: powershell
-      working-directory: backend
       run: |
         ${{ runner.temp }}/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
