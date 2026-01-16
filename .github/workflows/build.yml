@@ -116,9 +116,6 @@ jobs:
     - name: Pull Postgres image (optional, speeds up / makes failures obvious)
       run: docker pull postgres:16
 
-    - name: Install xmllint
-      run: sudo apt-get update && sudo apt-get install -y libxml2-utils
-
     - name: Run tests and collect coverage with threshold
       shell: bash
       working-directory: backend
@@ -126,33 +123,39 @@ jobs:
         # Run tests and collect coverage in XML format using settings from root
         # We use ../coverage.settings.xml because the working-directory is 'backend'
         dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
-
-        # Confirm file exists
-        if [ ! -f "coverage.xml" ]; then
-          echo "coverage.xml not found!"
+    
+    - name: Validate backend coverage (PowerShell)
+      shell: pwsh
+      working-directory: backend
+      run: |
+        if (!(Test-Path "coverage.xml")) {
+          Write-Error "coverage.xml not found!"
           exit 1
-        fi
+        }
 
-        # Load XML
-        cov=$(cat "coverage.xml")
-
-        # Get the 'module' node (assumes one main module)
-        module=$(echo "$cov" | xmllint --xpath "string(//module)" -)
-
-        if [ -z "$module" ]; then
-          echo "No <module> found in coverage.xml"
+        # Load XML (fail with a useful message if the file isn't valid XML)
+        $content = Get-Content "coverage.xml" -Raw
+        try {
+          [xml]$cov = $content
+        } catch {
+          Write-Error "coverage.xml is not valid XML. First 300 chars:`n$($content.Substring(0, [Math]::Min(300, $content.Length)))"
           exit 1
-        fi
+        }
 
-        # Extract the line_coverage attribute
-        lineCoverage=$(echo "$module" | xmllint --xpath "string(@line_coverage)" -)
-        echo "➡ Backend test coverage: $lineCoverage%"
-
-        # Fail if below threshold
-        if (( $(echo "$lineCoverage < 65" | bc -l) )); then
-          echo "Coverage below 65% ($lineCoverage%)"
+        # Get first <module> and read the line_coverage attribute
+        $module = $cov.SelectSingleNode("//module")
+        if (-not $module) {
+          Write-Error "No <module> found in coverage.xml"
           exit 1
-        fi
+        }
+
+        $lineCoverage = [double]$module.GetAttribute("line_coverage")
+        Write-Host "Backend test coverage: $lineCoverage%"
+
+        if ($lineCoverage -lt 65) {
+          Write-Error "Coverage below 65% ($lineCoverage%)"
+          exit 1
+        }
 
     - name: End SonarQube analysis
       env:
