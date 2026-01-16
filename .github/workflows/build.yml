@@ -57,7 +57,7 @@ jobs:
   
   backend-sonarqube:
     name: Backend SonarQube
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     needs: frontend-sonarqube
     steps:
     - name: Set up JDK 17
@@ -74,7 +74,7 @@ jobs:
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
       with:
-        path: ~\sonar\cache
+        path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
 
@@ -82,7 +82,7 @@ jobs:
       id: cache-sonar-scanner
       uses: actions/cache@v4
       with:
-        path: ${{ runner.temp }}\scanner
+        path: ${{ runner.temp }}/scanner
         key: ${{ runner.os }}-sonar-scanner
         restore-keys: ${{ runner.os }}-sonar-scanner
 
@@ -90,19 +90,20 @@ jobs:
       if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
       shell: powershell
       run: |
-        New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory
-        dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
+        New-Item -Path ${{ runner.temp }}/scanner -ItemType Directory
+        dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}/scanner
 
     - name: Install dotnet-coverage
       run: dotnet tool install --global dotnet-coverage
 
     - name: Begin SonarQube analysis
+      runs-on: ubuntu-latest
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       shell: powershell
       working-directory: backend
       run: |
-        ${{ runner.temp }}\scanner\dotnet-sonarscanner begin `
+        ${{ runner.temp }}/scanner/dotnet-sonarscanner begin `
           /k:"swapstreet" `
           /o:"swapstreet" `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
@@ -158,4 +159,4 @@ jobs:
       shell: powershell
       working-directory: backend
       run: |
-        ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+        ${{ runner.temp }}/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
