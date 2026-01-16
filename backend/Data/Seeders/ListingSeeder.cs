@@ -68,24 +68,16 @@ namespace backend.Data.Seed
 
             for (int i = 0; i < listingsToCreate; i++)
             {
-                var baseItem = ClothingItems[random.Next(ClothingItems.Length)];
-                var listing = new Listing
-                {
-                    Id = Guid.NewGuid(),
-                    Name = $"{baseItem} #{existingCount + i + 1}",
-                    Description = Descriptions[random.Next(Descriptions.Length)],
-                    Price = Math.Round((decimal)(random.NextDouble() * 200 + 10), 2), // Price between $10 and $210
-                    ProfileId = profileId,
-                    TagId = null, // Keep tags null
-                    CreatedAt = DateTime.UtcNow.AddDays(-random.Next(0, 90)), // Random date within last 90 days
-                    UpdatedAt = DateTime.UtcNow
-                };
+                Id = testListingId,
+                Title = "Test Item for Try-On",
+                Description = "Test listing",
+                Price = 24.99m,
+                ProfileId = ProfileSeeder.TestProfileId,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
 
-                listings.Add(listing);
-            }
-
-            // Add all listings in batches for better performance
-            await context.Listings.AddRangeAsync(listings);
+            await context.Listings.AddAsync(testListing);
             await context.SaveChangesAsync();
 
             logger.LogInformation($"Successfully seeded {listingsToCreate} listings. Total listings: {await context.Listings.CountAsync()}");
