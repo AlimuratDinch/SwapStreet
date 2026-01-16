@@ -19,7 +19,7 @@ namespace backend.Data.Seed
             var testListing = new Listing
             {
                 Id = testListingId,
-                Name = "Test Item for Try-On",
+                Title = "Test Item for Try-On",
                 Description = "Test listing",
                 Price = 24.99m,
                 ProfileId = ProfileSeeder.TestProfileId,
