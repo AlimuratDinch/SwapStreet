@@ -275,5 +275,43 @@ namespace backend.Controllers
             }
         }
 
+        [AllowAnonymous]
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequestDTO request)
+        {
+
+            var result = await _userService.ConfirmEmailAsync(request.Email, request.Token);
+
+            if (result) return Ok(new { message = "Email confirmed successfully!" });
+
+            return BadRequest(new { Error = "Email Not Confirmed" });
+        }
+
+        [HttpPost("resend-verification")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResendVerification([FromBody] ResendRequestDTO request)
+        {
+            // Call the service
+            User? user = await _userService.ResendConfirmationEmailAsync(request.Email);
+
+            // SECURITY: Always return OK.
+            // Never say "User not found" (prevents hackers from guessing emails).
+            if (user == null)
+            {
+                return Ok(new { message = "If an unverified account exists, a new email has been sent." });
+            }
+
+            // Check if we actually generated a new token (by checking the time we just updated)
+            // If the database time is OLDER than 10 seconds ago, we hit the cooldown.
+            bool hitCooldown = user.ConfirmationEmailSentAt < DateTimeOffset.UtcNow.AddSeconds(-10);
+
+            if (!hitCooldown && !user.EmailConfirmedAt.HasValue)
+            {
+
+            }
+
+            return Ok(new { message = "If an unverified account exists, a new email has been sent." });
+        }
+
     }
 }
