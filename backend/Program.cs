@@ -40,12 +40,6 @@ ConfigureCors(builder);
 
 ConfigureGemini(builder);
 
-
-if (!builder.Environment.IsEnvironment("Test"))
-{
-    ConfigureDatabase(builder);
-}
-
 ConfigureMinio(builder);
 
 // ===============================================================================
@@ -73,6 +67,11 @@ RegisterServices(builder);
 
 if (!builder.Environment.IsEnvironment("Test"))
 {
+    ConfigureDatabase(builder);
+}
+
+if (!builder.Environment.IsEnvironment("Test"))
+{
     builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 }
 
@@ -80,8 +79,11 @@ var app = builder.Build();
 
 if (!builder.Environment.IsEnvironment("Test"))
 {
-    await InitializeDatabaseAsync(app);
+
     await InitializeMinio(app);
+
+
+    await InitializeDatabaseAsync(app);
 }
 
 // ===============================================================================
@@ -232,6 +234,9 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
     builder.Services.AddScoped<IProfileService, ProfileService>();
     builder.Services.AddScoped<ILocationService, LocationService>();
+    builder.Services.AddScoped<MinioFileStorageService>();
+    builder.Services.AddScoped<IFileStorageService>(sp => sp.GetRequiredService<MinioFileStorageService>());
+    builder.Services.AddScoped<ImageSeeder>();
 
     // Email Service (environment-dependent)
     if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Test"))
@@ -288,6 +293,7 @@ static async Task InitializeDatabaseAsync(WebApplication app)
         {
             await DatabaseSeeder.SeedAsync(
                 appDb,
+                services,
                 loggerFactory.CreateLogger("DatabaseSeeder")
             );
         }

@@ -3,30 +3,41 @@ using backend.DbContexts;
 using backend.DTOs.Image;
 using backend.Helpers;
 using backend.Models;
+using backend.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Data.Seed
 {
     public class ImageSeeder
     {
-        private readonly IFileStorageService _fileStorage;
+        private readonly MinioFileStorageService _minioFileStorage;
         private readonly AppDbContext _context;
+
+        private int roundRobinCounter = 0;
+
+        private List<Guid> _listings;
+
+        private readonly List<string> _pathList;
         private readonly ILogger<ImageSeeder> _logger;
+
         private readonly Random _random = new Random();
 
         public ImageSeeder(
-            IFileStorageService fileStorage,
+            MinioFileStorageService minioFileStorage,
             AppDbContext context,
             ILogger<ImageSeeder> logger)
         {
-            _fileStorage = fileStorage;
+            _minioFileStorage = minioFileStorage;
             _context = context;
             _logger = logger;
+            _pathList = new List<string>();
         }
 
         public async Task SeedImagesAsync(string contentRootPath)
         {
-            var seedImagesPath = Path.Combine(contentRootPath, "Data", "Seed", "Images");
+            if (await _minioFileStorage.HasImagesInPublicBucketAsync()) return;
+
+            var seedImagesPath = Path.Combine(contentRootPath, "Data", "TestImages");
 
             if (!Directory.Exists(seedImagesPath))
             {
@@ -42,54 +53,64 @@ namespace backend.Data.Seed
                 return;
             }
 
-            // 2. Get a System User to act as the "Uploader"
-            var systemUser = await _context.Profiles.FirstOrDefaultAsync();
-            if (systemUser == null)
+            foreach (var file in imageFiles)
             {
-                _logger.LogWarning("Skipping image seeding: No users found.");
-                return;
+                var formFile = new LocalFormFile(file, "image/jpeg");
+                var newPath = await _minioFileStorage.UploadImageInternalAsync(formFile, UploadType.Listing);
+                _pathList.Add(newPath);
+                _logger.LogInformation($"New Path Added: {newPath}");
             }
 
-            // // 3. Get all Listings that DON'T have images yet
-            // // We use Include to check existing images efficiently
-            // var listings = await _context.Listings
-            //     .Include(l => l.Images)
-            //     .Where(l => !l.Images.Any()) 
-            //     .ToListAsync();
+            // Get all listingsIds
+            _listings = await _context.Listings
+                    .AsNoTracking()
+                    .Select(l => l.Id)
+                    .ToListAsync();
 
-            _logger.LogInformation($"Found {listings.Count} listings needing images. Distributing {imageFiles.Length} source images among them.");
+            await BatchInsertImagesAsync(_pathList);
 
-            foreach (var listing in listings)
+        }
+
+
+        private async Task BatchInsertImagesAsync(List<string> uploadedImagePaths)
+        {
+            var imagesToInsert = new List<ListingImage>();
+
+            foreach (var listingId in _listings)
             {
-                try
-                {
-                    // 4. Pick a RANDOM image from your local pool
-                    var randomFilePath = imageFiles[_random.Next(imageFiles.Length)];
-                    
-                    // 5. Wrap it as a FormFile
-                    // We generate a "fake" file name so Minio doesn't overwrite if we uploaded this exact file before
-                    // e.g. "House1.jpg" becomes "Listing_GUID_House1.jpg" effectively inside the service
-                    var formFile = new LocalFormFile(randomFilePath, "image/jpeg");
+                int imagesCount = _random.Next(1, 4);
 
-                    // 6. Upload via Service
-                    // This creates a NEW unique object in Minio and a NEW row in ListingImages
-                    await _fileStorage.UploadFileAsync(
-                        file: formFile,
-                        type: UploadType.Listing,
-                        userId: systemUser.Id,
-                        listingId: listing.Id
-                    );
-                    
-                    
-                    await Task.Delay(10); 
-                }
-                catch (Exception ex)
+                for (int i = 0; i < imagesCount; i++)
                 {
-                    _logger.LogError(ex, $"Failed to seed image for Listing {listing.Id}");
+                    // 2. Pick an image using Round Robin
+                    var pathIndex = roundRobinCounter % uploadedImagePaths.Count;
+                    var selectedPath = uploadedImagePaths[pathIndex];
+
+                    // Increment so the next image/listing gets a different one
+                    roundRobinCounter++;
+
+                    var newImage = new ListingImage
+                    {
+                        Id = Guid.NewGuid(),
+                        ListingId = listingId,
+                        ImagePath = selectedPath,
+
+                        // 3. Set DisplayOrder correctly (0, 1, 2)
+                        DisplayOrder = i,
+
+                        ForTryon = false, // Set to false if these are standard listing photos
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    imagesToInsert.Add(newImage);
                 }
             }
-            
-            _logger.LogInformation("Random image seeding completed.");
+
+            // Batch Add & Save
+            await _context.ListingImages.AddRangeAsync(imagesToInsert);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Successfully inserted {imagesToInsert.Count} images across {_listings.Count} listings.");
         }
     }
 }
