@@ -49,6 +49,7 @@
 
   <ItemGroup>
   <None Update="Data\CSVs\*.csv">
+  <None Update="Data\TestImages\*">
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </None>
 </ItemGroup>
