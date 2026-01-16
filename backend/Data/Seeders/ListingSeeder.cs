@@ -75,7 +75,8 @@ namespace backend.Data.Seed
                 ProfileId = ProfileSeeder.TestProfileId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            };
+            }
+            ;
 
             await context.Listings.AddAsync(testListing);
             await context.SaveChangesAsync();
