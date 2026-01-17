@@ -1,0 +1,20 @@
+meta {
+  name: Delete Me
+  type: http
+  seq: 5
+}
+
+delete {
+  url: http://localhost:8080/api/profile
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: 
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

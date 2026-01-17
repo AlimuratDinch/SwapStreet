@@ -1,0 +1,23 @@
+meta {
+  name: Sign In
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/api/auth/signin
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "test@email.com",
+    "password": "Password123"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
