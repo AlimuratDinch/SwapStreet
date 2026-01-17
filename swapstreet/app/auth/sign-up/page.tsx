@@ -43,7 +43,7 @@ export default function RegistrationPage() {
       await response.json();
 
       logger.info("Register successful - showing email sent message");
-      
+
       // Show the email sent modal
       setShowEmailSentModal(true);
     } catch (err: unknown) {
@@ -71,8 +71,12 @@ export default function RegistrationPage() {
         <div className="w-full max-w-md">
           {/* Heading */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-            <p className="text-teal-600">Join the sustainable fashion community</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Create Account
+            </h1>
+            <p className="text-teal-600">
+              Join the sustainable fashion community
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -83,7 +87,10 @@ export default function RegistrationPage() {
             )}
 
             <div>
-              <label htmlFor="name" className="block text-gray-700 text-sm font-medium mb-2">
+              <label
+                htmlFor="name"
+                className="block text-gray-700 text-sm font-medium mb-2"
+              >
                 Name
               </label>
               <input
@@ -149,7 +156,10 @@ export default function RegistrationPage() {
           {/* Sign In Link */}
           <p className="mt-8 text-center text-sm text-gray-700">
             Already have an account?{" "}
-            <a href="/auth/sign-in" className="text-teal-600 hover:text-teal-700 font-medium">
+            <a
+              href="/auth/sign-in"
+              className="text-teal-600 hover:text-teal-700 font-medium"
+            >
               Sign In
             </a>
           </p>
@@ -157,7 +167,7 @@ export default function RegistrationPage() {
       </div>
 
       {/* Right Side - Image/Background */}
-      <div 
+      <div
         className="hidden lg:block lg:w-1/2 bg-cover bg-center relative"
         style={{
           backgroundImage: `url('/images/login&signup.jpg')`,
@@ -165,9 +175,12 @@ export default function RegistrationPage() {
       >
         <div className="absolute inset-0 bg-gradient-to-br from-teal-600/80 to-emerald-700/80 flex items-center justify-center">
           <div className="text-center text-white px-12 max-w-lg">
-            <h2 className="text-4xl font-bold mb-4">Start Your Sustainable Fashion Journey</h2>
+            <h2 className="text-4xl font-bold mb-4">
+              Start Your Sustainable Fashion Journey
+            </h2>
             <p className="text-lg text-white/90">
-              Join thousands of fashion lovers buying and selling second-hand clothing while making a positive environmental impact.
+              Join thousands of fashion lovers buying and selling second-hand
+              clothing while making a positive environmental impact.
             </p>
           </div>
         </div>
@@ -190,7 +203,9 @@ export default function RegistrationPage() {
                   </svg>
                 </div>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">Check Your Email</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Check Your Email
+              </h2>
               <p className="text-gray-600 mb-2">
                 We've sent a verification link to:
               </p>
@@ -198,7 +213,8 @@ export default function RegistrationPage() {
                 {email}
               </p>
               <p className="text-sm text-gray-500 mb-8">
-                Click the link in the email to verify your account and get started.
+                Click the link in the email to verify your account and get
+                started.
               </p>
             </div>
           </div>
