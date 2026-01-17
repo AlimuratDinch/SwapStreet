@@ -104,7 +104,7 @@ export default function View() {
      * to debounce fetches.*/
     fetch(`http://localhost:8080/api/catalog/items/${params?.id}`)
       .then((res) => {
-        var m;
+        let m;
 
         switch (res.status) {
           case 200:
