@@ -1,4 +1,4 @@
-import { Sidebar, CardItem, Header } from "./BrowseElements";
+import { Sidebar, CardItem, Header,CreateListingButton } from "./BrowseElements";
 
 export async function fetchClothingItems(
   searchParams: Promise<{
@@ -91,6 +91,7 @@ export default async function BrowsePage({
           )}
         </main>
       </div>
+      <CreateListingButton />
     </div>
   );
 }
