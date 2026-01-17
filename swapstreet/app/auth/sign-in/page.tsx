@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthInput } from "../AuthFormElements";
-import { ImageElement } from "../AuthFormElements";
-import { PromptElement } from "../AuthFormElements";
-import { logger } from "../../../components/common/logger";
+import { logger } from "@/components/common/logger";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,7 +48,7 @@ export default function LoginPage() {
       const errorMessage =
         err instanceof Error
           ? err.message
-          : "Failed to create account. Please try again.";
+          : "Failed to login. Please try again.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -59,86 +56,85 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="relative flex min-h-screen justify-center 
-              items-start bg-[var(--bg-color)] p-6 overflow-hidden"
-    >
-      {/* Background design: simple circles with hover grow */}
-      {/* Top-left circle: primary-dark with slight orange tint */}
-      <div
-        className="absolute -top-32 -left-32 w-96 h-96 rounded-full 
-                      bg-[rgba(1,108,93,0.15)]  
-                      transition-transform duration-500 ease-in-out hover:scale-110"
-      ></div>
+    <div className="flex min-h-screen">
+      {/* Logo - Top Left */}
+      <div className="fixed top-0 left-0 p-6 z-10">
+        <h2 className="text-2xl font-bold">
+          <span className="text-teal-600">SWAP</span>
+          <span className="text-gray-900">STREET</span>
+        </h2>
+      </div>
 
-      {/* Bottom-right circle: primary-dark */}
-      <div
-        className="absolute bottom-[-100px] right-[-100px] w-72 h-72 rounded-full 
-                      bg-[rgba(1,108,93,0.15)]  
-                      transition-transform duration-500 ease-in-out hover:scale-110"
-      ></div>
+      {/* Left Side - Form */}
+      <div className="w-full lg:w-1/2 bg-white flex items-center justify-center px-8 sm:px-12 lg:px-16 xl:px-24 py-12">
+        <div className="w-full max-w-md">
+          {/* Heading */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+            <p className="text-teal-600">Sign in to your account</p>
+          </div>
 
-      {/* Gradient border wrapper */}
-      <div
-        className="mt-10 md:mt-16 w-full max-w-5xl rounded-2xl 
-                bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] 
-                p-[3px] shadow-lg flex flex-col md:flex-row overflow-hidden"
-      >
-        {/* Left: Login Form */}
-        <div
-          className="relative w-full md:w-1/2 bg-[var(--bg-color)] p-8 flex flex-col 
-                      justify-start md:justify-center rounded-2xl md:rounded-l-2xl md:rounded-r-none"
-        >
-          {/* Form */}
-          <h1 className="mt-12 mb-8 text-center text-3xl font-bold text-[var(--text-color)]">
-            Login
-          </h1>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded">
+                <p className="text-sm">{error}</p>
+              </div>
+            )}
 
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-4 flex flex-col items-center"
-          >
-            <AuthInput
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <AuthInput
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
+
             <button
               type="submit"
-              className="mt-6 w-1/2 rounded-lg bg-[var(--primary-color)] px-3 py-2 
-                       text-sm font-semibold text-white transition 
-                       hover:bg-[var(--primary-dark)] hover:cursor-pointer"
+              disabled={loading}
+              className="w-full mt-6 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-medium 
+                         py-3 px-4 rounded-lg transition-colors shadow-sm"
             >
-              Sign In
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
-          {/* Error message goes here, **inside the form container** */}
-          {error && (
-            <p role="alert" className="mt-4 text-red-600">
-              {error}
-            </p>
-          )}
-
-          {/* Sign Up prompt */}
-          <PromptElement
-            prompt="Don't have an account?"
-            linkText="Sign Up"
-            linkHref="/auth/sign-up"
-          />
+          {/* Sign Up Link */}
+          <p className="mt-8 text-center text-sm text-gray-700">
+            Don't have an account?{" "}
+            <a href="/auth/sign-up" className="text-teal-600 hover:text-teal-700 font-medium">
+              Sign Up
+            </a>
+          </p>
         </div>
+      </div>
 
-        {/* Right: Cloth Image */}
-        <ImageElement />
+      {/* Right Side - Image/Background */}
+      <div 
+        className="hidden lg:block lg:w-1/2 bg-cover bg-center relative"
+        style={{
+          backgroundImage: `url('/images/login&signup.jpg')`,
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-600/80 to-emerald-700/80"></div>
       </div>
     </div>
   );
