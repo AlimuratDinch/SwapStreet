@@ -268,4 +268,136 @@ describe("VerifyEmailPage", () => {
       expect(redBg).toBeInTheDocument();
     });
   });
+
+  it("shows resend verification email button on error", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ Error: "Token expired" }),
+    } as unknown as Response);
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /resend verification email/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("resends verification email successfully", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ Error: "Token expired" }),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+      } as Response);
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/verification failed/i)).toBeInTheDocument();
+    });
+
+    const resendButton = screen.getByRole("button", {
+      name: /resend verification email/i,
+    });
+    resendButton.click();
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "http://localhost:8080/api/auth/resend-verification",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ email: "test@example.com" }),
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/verification email sent/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows loading state when resending email", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ Error: "Token expired" }),
+      } as unknown as Response)
+      .mockImplementationOnce(
+        () => new Promise(() => {}), // keep loading state
+      );
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/verification failed/i)).toBeInTheDocument();
+    });
+
+    const resendButton = screen.getByRole("button", {
+      name: /resend verification email/i,
+    });
+    resendButton.click();
+
+    await waitFor(() => {
+      expect(screen.getByText(/sending\.\.\./i)).toBeInTheDocument();
+    });
+  });
+
+  it("handles resend email failure", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ Error: "Token expired" }),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ Error: "Failed to send email" }),
+      } as unknown as Response);
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/verification failed/i)).toBeInTheDocument();
+    });
+
+    const resendButton = screen.getByRole("button", {
+      name: /resend verification email/i,
+    });
+    resendButton.click();
+
+    await waitFor(() => {
+      expect(screen.getByText(/failed to send email/i)).toBeInTheDocument();
+    });
+  });
+
+  it("disables resend button while sending", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ Error: "Token expired" }),
+      } as unknown as Response)
+      .mockImplementationOnce(
+        () => new Promise(() => {}), // keep loading state
+      );
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/verification failed/i)).toBeInTheDocument();
+    });
+
+    const resendButton = screen.getByRole("button", {
+      name: /resend verification email/i,
+    }) as HTMLButtonElement;
+    resendButton.click();
+
+    await waitFor(() => {
+      expect(resendButton.disabled).toBe(true);
+    });
+  });
 });

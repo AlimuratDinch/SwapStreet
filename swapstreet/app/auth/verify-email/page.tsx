@@ -15,6 +15,8 @@ export default function VerifyEmailPage() {
     "verifying",
   );
   const [errorMessage, setErrorMessage] = useState("");
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   useEffect(() => {
     if (token && email) {
@@ -68,6 +70,46 @@ export default function VerifyEmailPage() {
           : "Failed to verify email. Please try again.";
       setErrorMessage(errorMsg);
       logger.error("Email verification error", err);
+    }
+  };
+
+  const resendVerificationEmail = async () => {
+    if (!email) return;
+
+    setIsResending(true);
+    setResendSuccess(false);
+
+    try {
+      const response = await fetch(
+        "http://localhost:8080/api/auth/resend-verification",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ email }),
+        },
+      );
+
+      if (response.ok) {
+        setResendSuccess(true);
+        logger.info("Verification email resent successfully");
+      } else {
+        const data = await response.json();
+        const error = data.Error || "Failed to resend verification email";
+        setErrorMessage(error);
+        logger.error("Failed to resend verification email", { error });
+      }
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : "Failed to resend verification email";
+      setErrorMessage(errorMsg);
+      logger.error("Resend verification email error", err);
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -168,13 +210,32 @@ export default function VerifyEmailPage() {
               <p className="text-sm text-gray-600 mb-6">
                 The verification link may have expired or is invalid.
               </p>
-              <button
-                onClick={() => router.push("/auth/sign-up")}
-                className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 px-4 py-3 
-                           text-sm font-semibold text-white transition"
-              >
-                Go to Sign Up
-              </button>
+              {resendSuccess && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-600">
+                    Verification email sent! Please check your inbox.
+                  </p>
+                </div>
+              )}
+              <div className="space-y-3">
+                {email && (
+                  <button
+                    onClick={resendVerificationEmail}
+                    disabled={isResending}
+                    className="w-full rounded-lg bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 px-4 py-3 
+                               text-sm font-semibold text-white transition"
+                  >
+                    {isResending ? "Sending..." : "Resend Verification Email"}
+                  </button>
+                )}
+                <button
+                  onClick={() => router.push("/auth/sign-up")}
+                  className="w-full rounded-lg bg-gray-200 hover:bg-gray-300 px-4 py-3 
+                             text-sm font-semibold text-gray-700 transition"
+                >
+                  Go to Sign Up
+                </button>
+              </div>
             </div>
           )}
         </div>
