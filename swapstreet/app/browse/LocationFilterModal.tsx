@@ -8,6 +8,7 @@ type LocationResult = {
   lat: number;
   lng: number;
   radiusKm: number;
+  name: string;
 };
 
 type Props = {
@@ -56,12 +57,14 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
         lat: data.lat,
         lng: data.lng,
         radiusKm: radius,
+        name: data.name,
       });
       
       onApply({
         lat: data.lat,
         lng: data.lng,
         radiusKm: radius,
+        name: data.name,
       });
 
       onClose();
@@ -83,7 +86,7 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
+        const lng = position.coords.longitude;
 
       console.log("Applying location", lat, lng);
 
@@ -91,6 +94,7 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
         lat,
         lng,
         radiusKm : radius,
+        name: "wip"
       });
         
         onClose();
@@ -105,12 +109,12 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-lg rounded-xl bg-neutral-900 text-white shadow-xl">
+      <div className="w-full max-w-lg rounded-xl bg-white text-black shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
-          <h2 className="text-lg font-semibold">Change location</h2>
+          <h2 className="text-lg font-semibold ">Change location</h2>
           <button onClick={onClose}>
-            <X className="h-5 w-5 text-neutral-400 hover:text-white" />
+            <X className="h-5 w-5 text-black hover:text-red-700" />
           </button>
         </div>
 
@@ -119,7 +123,12 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
           {/* Use my location */}
           <button
             onClick={handleUseMyLocation}
-            className="flex w-full items-center gap-3 rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-3 text-sm hover:bg-neutral-700"
+            className="flex w-full items-center gap-3 rounded-lg border
+              shadow
+              bg-white px-4 py-3 
+              text-sm 
+              hover:border-teal-400
+              transition"
           >
             <Navigation className="h-4 w-4 text-teal-400" />
             Use my current location
@@ -127,15 +136,15 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
 
           {/* FSA input */}
           <div>
-            <label className="text-sm text-neutral-400">
-              Enter postal code (FSA)
+            <label className="text-sm text-black">
+              Enter three first characters of postal code
             </label>
             <input
               value={fsa}
               onChange={(e) => setFsa(normalizeFSA(e.target.value))}
               placeholder="H3Z"
               maxLength={3}
-              className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-3 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="mt-1 w-full rounded-lg shadow bg-white px-4 py-3 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
             {!isValidFsa && fsa.length > 0 && (
               <p className="mt-1 text-xs text-red-400">
@@ -146,7 +155,7 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
 
           {/* Radius */}
           <div>
-            <div className="flex justify-between text-sm text-neutral-400">
+            <div className="flex justify-between text-sm text-back">
               <span>Radius</span>
               <span>{radius} km</span>
             </div>

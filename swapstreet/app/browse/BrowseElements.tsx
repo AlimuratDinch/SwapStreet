@@ -9,9 +9,6 @@ import {
   ChevronDown,
   Shirt, 
   Star,
-  X,
-  MapPin, 
-  Navigation,
 } from "lucide-react";
 
 import { 
