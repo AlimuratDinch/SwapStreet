@@ -25,6 +25,8 @@ export default function VerifyEmailPage() {
       setStatus("error");
       setErrorMessage("Missing verification token or email");
     }
+    // (Skip lint verification under since verifying only once)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, email]);
 
   const verifyEmail = async (
