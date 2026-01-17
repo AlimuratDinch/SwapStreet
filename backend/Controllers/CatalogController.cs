@@ -16,7 +16,7 @@ public class ListingsController : ControllerBase
 
     [HttpGet("search")]
     public async Task<IActionResult> SearchListings(
-        [FromQuery] string q,
+        [FromQuery] string? q,
         [FromQuery] string? cursor = null,
         [FromQuery] int limit = 20)
     {
