@@ -395,6 +395,18 @@ export function CardItem({ title, imgSrc, price, condition }: CardItemProps) {
   );
 }
 
+export function CreateListingButton(){
+  return(
+    <div className="fixed bottom-4 right-4">
+      <Link href="/../seller/listing/page.tsx">
+        <button className="bg-teal-400 hover:bg-teal-500 text-white font-bold py-4 px-4 rounded-full shadow-lg transition duration-150 ease-in-out">
+          +
+        </button>
+      </Link>
+    </div>
+  );
+}
+
 // ---------- Card ----------
 interface CardItemProps {
   title: string;
