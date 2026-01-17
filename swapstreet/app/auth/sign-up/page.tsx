@@ -83,10 +83,11 @@ export default function RegistrationPage() {
             )}
 
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
+              <label htmlFor="name" className="block text-gray-700 text-sm font-medium mb-2">
                 Name
               </label>
               <input
+                id="name"
                 type="text"
                 value={username}
                 onChange={(e) => setName(e.target.value)}
@@ -96,10 +97,11 @@ export default function RegistrationPage() {
             </div>
 
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
+              <label htmlFor="email" className="block text-gray-700 text-sm font-medium mb-2">
                 Email
               </label>
               <input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -109,10 +111,11 @@ export default function RegistrationPage() {
             </div>
 
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
+              <label htmlFor="password" className="block text-gray-700 text-sm font-medium mb-2">
                 Password
               </label>
               <input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -123,10 +126,11 @@ export default function RegistrationPage() {
             </div>
 
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
+              <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-medium mb-2">
                 Confirm Password
               </label>
               <input
+                id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
