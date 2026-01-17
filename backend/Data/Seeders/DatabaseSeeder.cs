@@ -1,27 +1,37 @@
 using System.Threading.Tasks;
 using backend.DbContexts;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Hosting;
 
 namespace backend.Data.Seed
 {
-    // This orchestrator ensures data is seeded in the correct dependency order
     public static class DatabaseSeeder
     {
-        public static async Task SeedAsync(AppDbContext context, Microsoft.Extensions.Logging.ILogger logger)
+        // 1. Update signature to accept IServiceProvider
+        public static async Task SeedAsync(AppDbContext context, IServiceProvider serviceProvider, Microsoft.Extensions.Logging.ILogger logger)
         {
-            // 1. Seed Provinces FIRST
-            // Cities cannot be seeded without Provinces because they need the ProvinceId (FK)
+            // --- Standard Static Seeds (No dependencies) ---
             await ProvinceSeeder.SeedAsync(context, logger);
-
-            // 2. Seed Cities and FSAs NEXT
-            // This relies on the Provinces table being populated
             await CitySeeder.SeedAsync(context, logger);
-
-            // --------------------------------------------------------------------------------
-            // 3. (TEMPORARY) Seed test profile for virtual try-on
             await ProfileSeeder.SeedAsync(context, logger);
-
-            // 4. (TEMPORARY) Seed test listing for virtual try-on
             await ListingSeeder.SeedAsync(context, logger);
+
+            // --- Service-Based Seeds (Complex dependencies) ---
+            try
+            {
+                // 2. Resolve the ImageSeeder instance from DI
+                var imageSeeder = serviceProvider.GetRequiredService<ImageSeeder>();
+
+                // 3. Resolve Environment to get the Root Path
+                var env = serviceProvider.GetRequiredService<IWebHostEnvironment>();
+
+                // 4. Call the instance method
+                await imageSeeder.SeedImagesAsync(env.ContentRootPath);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to seed images.");
+            }
         }
     }
 }
