@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { logger } from "@/components/common/logger";
 import AuthLayout from "@/components/auth/AuthLayout";
+import FormField from "@/components/auth/FormField";
+import ErrorMessage from "@/components/auth/ErrorMessage";
+import AuthButton from "@/components/auth/AuthButton";
 
 export default function RegistrationPage() {
   const [username, setName] = useState("");
@@ -71,89 +74,47 @@ export default function RegistrationPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded">
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
+          <ErrorMessage message={error} />
 
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-gray-700 text-sm font-medium mb-2"
-            >
-              Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={username}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            />
-          </div>
+          <FormField
+            id="name"
+            label="Name"
+            type="text"
+            value={username}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
 
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-gray-700 text-sm font-medium mb-2"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            />
-          </div>
+          <FormField
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-gray-700 text-sm font-medium mb-2"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            />
-          </div>
+          <FormField
+            id="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+          />
 
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-gray-700 text-sm font-medium mb-2"
-            >
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            />
-          </div>
+          <FormField
+            id="confirmPassword"
+            label="Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={8}
+          />
 
-          <button
-            type="submit"
-            className="w-full mt-6 bg-teal-600 hover:bg-teal-700 text-white font-medium 
-                       py-3 px-4 rounded-lg transition-colors shadow-sm"
-          >
-            Sign Up
-          </button>
+          <AuthButton>Sign Up</AuthButton>
         </form>
 
         {/* Sign In Link */}
