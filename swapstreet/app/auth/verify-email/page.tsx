@@ -7,11 +7,13 @@ import { logger } from "@/components/common/logger";
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const token = searchParams.get("token");
   const email = searchParams.get("email");
-  
-  const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
+
+  const [status, setStatus] = useState<"verifying" | "success" | "error">(
+    "verifying",
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -23,7 +25,10 @@ export default function VerifyEmailPage() {
     }
   }, [token, email]);
 
-  const verifyEmail = async (verificationToken: string, verificationEmail: string) => {
+  const verifyEmail = async (
+    verificationToken: string,
+    verificationEmail: string,
+  ) => {
     try {
       const response = await fetch(
         "http://localhost:8080/api/auth/verify-email",
@@ -37,7 +42,7 @@ export default function VerifyEmailPage() {
             token: verificationToken,
             email: verificationEmail,
           }),
-        }
+        },
       );
 
       if (response.ok) {

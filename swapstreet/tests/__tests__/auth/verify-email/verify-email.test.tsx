@@ -53,13 +53,15 @@ describe("VerifyEmailPage", () => {
 
   it("shows verifying state initially", async () => {
     (global.fetch as jest.Mock).mockImplementationOnce(
-      () => new Promise(() => {}) // keep verifying state
+      () => new Promise(() => {}), // keep verifying state
     );
 
     render(<VerifyEmailPage />);
-    
+
     expect(screen.getByText(/verifying your email/i)).toBeInTheDocument();
-    expect(screen.getByText(/please wait while we verify/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/please wait while we verify/i),
+    ).toBeInTheDocument();
   });
 
   it("calls verification API with token and email", async () => {
@@ -78,7 +80,7 @@ describe("VerifyEmailPage", () => {
             token: "test-token-123",
             email: "test@example.com",
           }),
-        })
+        }),
       );
     });
   });
@@ -94,7 +96,9 @@ describe("VerifyEmailPage", () => {
       expect(screen.getByText(/email verified/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/your email has been successfully verified/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/your email has been successfully verified/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/redirecting you to sign in/i)).toBeInTheDocument();
 
     // trigger redirect
@@ -120,7 +124,7 @@ describe("VerifyEmailPage", () => {
 
     expect(screen.getByText(errorMsg)).toBeInTheDocument();
     expect(
-      screen.getByText(/the verification link may have expired or is invalid/i)
+      screen.getByText(/the verification link may have expired or is invalid/i),
     ).toBeInTheDocument();
   });
 
@@ -133,7 +137,9 @@ describe("VerifyEmailPage", () => {
     render(<VerifyEmailPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /go to sign up/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /go to sign up/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -154,7 +160,9 @@ describe("VerifyEmailPage", () => {
   });
 
   it("shows error state when API call fails", async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error("Network error"),
+    );
 
     render(<VerifyEmailPage />);
 
@@ -174,7 +182,9 @@ describe("VerifyEmailPage", () => {
     render(<VerifyEmailPage />);
 
     await waitFor(() => {
-      const button = screen.getByRole("button", { name: /go to sign up/i }) as HTMLButtonElement;
+      const button = screen.getByRole("button", {
+        name: /go to sign up/i,
+      }) as HTMLButtonElement;
       expect(button).toBeInTheDocument();
       expect(button.disabled).toBe(false);
     });

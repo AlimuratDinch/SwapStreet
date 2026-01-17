@@ -70,7 +70,9 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Heading */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome Back
+            </h1>
             <p className="text-teal-600">Sign in to your account</p>
           </div>
 
@@ -82,7 +84,10 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-gray-700 text-sm font-medium mb-2">
+              <label
+                htmlFor="email"
+                className="block text-gray-700 text-sm font-medium mb-2"
+              >
                 Email
               </label>
               <input
@@ -96,7 +101,10 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-gray-700 text-sm font-medium mb-2">
+              <label
+                htmlFor="password"
+                className="block text-gray-700 text-sm font-medium mb-2"
+              >
                 Password
               </label>
               <input
@@ -122,7 +130,10 @@ export default function LoginPage() {
           {/* Sign Up Link */}
           <p className="mt-8 text-center text-sm text-gray-700">
             Don't have an account?{" "}
-            <a href="/auth/sign-up" className="text-teal-600 hover:text-teal-700 font-medium">
+            <a
+              href="/auth/sign-up"
+              className="text-teal-600 hover:text-teal-700 font-medium"
+            >
               Sign Up
             </a>
           </p>
@@ -130,7 +141,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Image/Background */}
-      <div 
+      <div
         className="hidden lg:block lg:w-1/2 bg-cover bg-center relative"
         style={{
           backgroundImage: `url('/images/login&signup.jpg')`,
