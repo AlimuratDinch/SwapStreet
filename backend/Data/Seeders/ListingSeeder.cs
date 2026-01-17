@@ -72,7 +72,7 @@ namespace backend.Data.Seed
                 var listing = new Listing
                 {
                     Id = Guid.NewGuid(),
-                    Name = $"{baseItem} #{existingCount + i + 1}",
+                    Title = $"{baseItem} #{existingCount + i + 1}",
                     Description = Descriptions[random.Next(Descriptions.Length)],
                     Price = Math.Round((decimal)(random.NextDouble() * 200 + 10), 2), // Price between $10 and $210
                     ProfileId = profileId,

@@ -12,5 +12,8 @@ namespace backend.Contracts
         Task<string> UploadFileAsync(IFormFile file, UploadType type, Guid userId, Guid? listingId = null);
         Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600);
         string GetPublicFileUrl(string fileName);
+
+        Task<string> UploadImageInternalAsync(IFormFile file, UploadType type);
+        Task<bool> HasImagesInPublicBucketAsync();
     }
 }

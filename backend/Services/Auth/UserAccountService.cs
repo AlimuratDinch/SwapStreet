@@ -5,7 +5,7 @@ public class UserAccountService : IUserAccountService
     private readonly ITokenService _tokenService;
     private readonly IUserService _userService;
 
-    public UserAccountService(AuthDbContext dbContext, ITokenService tokenService, IUserService userService)
+    public UserAccountService(AuthDbContext dbContext, ITokenService tokenService, IUserService userService, IEmailService emailService)
     {
         _dbContext = dbContext;
         _userService = userService;
@@ -28,4 +28,5 @@ public class UserAccountService : IUserAccountService
             throw new Exception("Error deleting user and tokens", ex);
         }
     }
+
 }

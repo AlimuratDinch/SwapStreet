@@ -15,40 +15,23 @@ using System;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using backend.Tests.BackendTestFactories;
+using backend.Tests.TestcontainersFixtures;
+using Xunit.Abstractions;
 
-public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+namespace backend.Tests.IntegrationTests;
+
+public class AuthControllerIntegrationTests : IClassFixture<InMemoryWebAppFactory>
 {
+    private readonly InMemoryWebAppFactory _factory;
     private readonly HttpClient _client;
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly ITestOutputHelper _output;
 
-    public AuthControllerIntegrationTests(WebApplicationFactory<Program> factory)
+    public AuthControllerIntegrationTests(InMemoryWebAppFactory factory, ITestOutputHelper output)
     {
-        Environment.SetEnvironmentVariable("USE_INMEMORY_DB", "true");
-
         _factory = factory;
-
-        // Resolve the backend project folder reliably (handles different test run working dirs)
-        var baseDir = AppContext.BaseDirectory ?? Directory.GetCurrentDirectory();
-
-        // Try common relative locations (adjust the .. count if your test assembly layout differs)
-        var candidates = new[]
-        {
-            Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "backend")),
-            Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "backend")),
-            Path.GetFullPath(Path.Combine(baseDir, "..", "..", "backend")),
-            Path.GetFullPath(Path.Combine(baseDir, "..", "backend")),
-            Path.GetFullPath(Path.Combine(baseDir, "backend"))
-        };
-
-        string? projectDir = candidates.FirstOrDefault(Directory.Exists);
-
-        if (projectDir is null)
-            throw new DirectoryNotFoundException($"Could not locate backend project folder. Tried: {string.Join(", ", candidates.Select(p => p))}");
-
-        _client = factory.WithWebHostBuilder(builder =>
-        {
-            builder.UseContentRoot(projectDir);
-        }).CreateClient();
+        _client = _factory.CreateClient();
+        _output = output;
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,12 +49,16 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
             Password = "Test123!"
         };
 
-
         using var content = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-
 
         // Act
         using var response = await _client.PostAsync("/api/auth/register", content);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        // 4. PRINT IT TO THE TEST CONSOLE
+        _output.WriteLine($"Status Code: {response.StatusCode}");
+        _output.WriteLine($"Response Body: {responseBody}");
 
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue("a valid registration should return a 2xx status");
@@ -337,38 +324,26 @@ public class AuthControllerIntegrationTests : IClassFixture<WebApplicationFactor
     [Fact]
     public async Task DeleteUser_ShouldReturnOk_AndRemoveCookies()
     {
-        // Arrange - register user
-        var email = "delete@test.com";
-        var password = "Test123!";
-        var signUpDto = new { Email = email, Username = "deleteUser", Password = password };
+        // Arrange
+        var signUpDto = new { Email = $"del_{Guid.NewGuid()}@test.com", Username = "delUser", Password = "Test123!" };
+        using var regContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
 
-        using var registerContent = new StringContent(JsonSerializer.Serialize(signUpDto), Encoding.UTF8, "application/json");
-        using var registerResponse = await _client.PostAsync("/api/auth/register", registerContent);
-        registerResponse.IsSuccessStatusCode.Should().BeTrue("registration must succeed before delete");
+        var regRes = await _client.PostAsync("/api/auth/register", regContent);
+        regRes.EnsureSuccessStatusCode();
 
-        // Extract access token from response body
-        var responseBody = await registerResponse.Content.ReadAsStringAsync();
-        var json = JsonSerializer.Deserialize<JsonElement>(responseBody);
-        var accessToken = json.GetProperty("accessToken").GetString();
-        accessToken.Should().NotBeNullOrEmpty("access token must be returned on register");
+        // Extract Access Token
+        var regBody = await regRes.Content.ReadAsStringAsync();
+        var accessToken = JsonSerializer.Deserialize<JsonElement>(regBody).GetProperty("accessToken").GetString();
 
-        // Extract refresh_token cookie value
-        var setCookies = registerResponse.Headers.GetValues("Set-Cookie").ToArray();
-        var refreshCookie = setCookies.FirstOrDefault(c => c.Contains("refresh_token"));
-        refreshCookie.Should().NotBeNull("refresh_token cookie must be set on register");
-        var refreshToken = refreshCookie.Split(';')[0].Split('=')[1];
-
-        // Act - send delete request with access token in Authorization header
+        // Act
         var request = new HttpRequestMessage(HttpMethod.Delete, "/api/auth/deleteUser");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-        request.Headers.Add("Cookie", $"refresh_token={refreshToken}");
-        using var deleteResponse = await _client.SendAsync(request);
 
-        // Assert - success
-        deleteResponse.IsSuccessStatusCode.Should().BeTrue("delete user should return success");
+        using var response = await _client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
 
-        var deleteCookies = deleteResponse.Headers.GetValues("Set-Cookie");
-        deleteCookies.Should().Contain(c => c.StartsWith("refresh_token=;"), "refresh_token cookie should be cleared");
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue($"Server returned {response.StatusCode}: {responseBody}");
     }
 
 

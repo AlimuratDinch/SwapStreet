@@ -13,6 +13,8 @@ using SixLabors.ImageSharp.Processing;
 using backend.DTOs.Image;
 using backend.DbContexts;
 using Microsoft.AspNetCore.Connections;
+using System.Reactive.Linq;
+using Minio.DataModel;
 
 namespace backend.Services
 {
@@ -29,7 +31,6 @@ namespace backend.Services
             _settings = settings.Value;
             _context = context;
         }
-
 
         // Upload picture 
         public async Task<string> UploadFileAsync(IFormFile file, UploadType type, Guid userId, Guid? listingId = null)
@@ -164,6 +165,73 @@ namespace backend.Services
                 UploadType.Generated => (5 * 1024 * 1024, 2000, 2000),   // 5MB, max 2000x2000
                 _ => throw new ArgumentOutOfRangeException(nameof(type), "Unknown upload type")
             };
+        }
+
+        // Helper for seeding 
+        public async Task<string> UploadImageInternalAsync(IFormFile file, UploadType type)
+        {
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("File is empty.", nameof(file));
+
+            var (maxSize, maxWidth, maxHeight) = GetConstraints(type);
+
+            if (file.Length > maxSize)
+                throw new ArgumentException($"File too large. Max: {maxSize / 1024 / 1024}MB");
+
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+            if (!allowedTypes.Contains(file.ContentType))
+                throw new ArgumentException("Invalid file type.");
+
+            // Check dimensions
+            using (var image = Image.Load(file.OpenReadStream()))
+            {
+                if (image.Width > maxWidth || image.Height > maxHeight)
+                    throw new ArgumentException($"Dimensions exceed {maxWidth}x{maxHeight}");
+            }
+
+            // Generate Name
+            var fileName = $"{type.ToString().ToLower()}/{Guid.NewGuid()}_{file.FileName}";
+
+            // Determine Bucket
+            var bucket = (type == UploadType.TryOn || type == UploadType.Generated)
+                ? _settings.PrivateBucketName
+                : _settings.PublicBucketName;
+
+            // Upload to Minio
+            using var stream = file.OpenReadStream();
+            await _minio.PutObjectAsync(new PutObjectArgs()
+                .WithBucket(bucket)
+                .WithObject(fileName)
+                .WithStreamData(stream)
+                .WithObjectSize(file.Length)
+                .WithContentType(file.ContentType));
+
+            return fileName;
+        }
+
+
+        public async Task<bool> HasImagesInPublicBucketAsync()
+        {
+            var found = await _minio.BucketExistsAsync(new BucketExistsArgs().WithBucket(_settings.PublicBucketName));
+            if (!found) return false;
+
+            // 2. Prepare arguments
+            var args = new ListObjectsArgs()
+                .WithBucket(_settings.PublicBucketName)
+                .WithRecursive(true);
+
+            // 3. Get the Async Enumerable (It does not fetch data yet)
+            var asyncEnumerable = _minio.ListObjectsEnumAsync(args);
+
+            // 4. Check if there is at least one item
+            // We start the loop; if we find 1 item, we return true immediately.
+            await foreach (var item in asyncEnumerable)
+            {
+                return true;
+            }
+
+            // 5. If the loop finishes without entering, the bucket is empty
+            return false;
         }
 
     }

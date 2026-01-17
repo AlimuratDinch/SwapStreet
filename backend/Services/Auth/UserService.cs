@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
 using backend.DTOs.Auth;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Configuration;
 
 
 namespace backend.Services.Auth
@@ -13,10 +14,16 @@ namespace backend.Services.Auth
         private readonly IPasswordHasher _passwordHasher;
         private readonly AuthDbContext _authDBContext;
 
-        public UserService(IPasswordHasher passwordHasher, AuthDbContext authDBContext)
+        private readonly IEmailService _emailService;
+
+        private readonly IConfiguration _config;
+
+        public UserService(IPasswordHasher passwordHasher, AuthDbContext authDBContext, IEmailService emailService, IConfiguration config)
         {
             _passwordHasher = passwordHasher;
             _authDBContext = authDBContext;
+            _emailService = emailService;
+            _config = config;
         }
 
         public async Task<User> RegisterAsync(string email, string username, string password)
@@ -31,11 +38,15 @@ namespace backend.Services.Auth
                 Email = email,
                 EncryptedPassword = _passwordHasher.HashPassword(password),
                 Username = username,
-                Status = "authenticated"
+                ConfirmationToken = Guid.NewGuid().ToString("N"),
+                ConfirmationTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(24),
+                Status = "pending"
             };
 
             await _authDBContext.Users.AddAsync(user);
             await _authDBContext.SaveChangesAsync();
+
+            await SendConfirmationEmail(user);
 
             return user;
         }
@@ -59,6 +70,15 @@ namespace backend.Services.Auth
         {
             return await _authDBContext.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
+
+        public async Task<User?> GetUserByIdStringAsync(string guid)
+        {
+            if (!Guid.TryParse(guid, out var userId))
+                return null;
+
+            return await _authDBContext.Users.FindAsync(userId);
+        }
+
 
         public UserDto? LoginWithPassword(User user, string password)
         {
@@ -112,6 +132,85 @@ namespace backend.Services.Auth
             user.Email = newEmail;
             await _authDBContext.SaveChangesAsync();
             return user;
+        }
+
+
+        public async Task<User?> ResendConfirmationEmailAsync(string email)
+        {
+            User user = await GetUserByEmailAsync(email);
+
+            // 1. User doesn't exist? Return null.
+            if (user is null) return null;
+
+            // 2. Already verified? Return user (but Controller won't email).
+            if (user.EmailConfirmedAt.HasValue) return user;
+
+            // 3. --- SECURITY FIX: The Cooldown ---
+            // If we sent one in the last 5 minutes, BLOCK IT.
+            if (user.ConfirmationEmailSentAt.HasValue &&
+                user.ConfirmationEmailSentAt.Value.AddMinutes(5) > DateTimeOffset.UtcNow)
+            {
+                // Return the user so the controller thinks it succeeded, 
+                // but DO NOT generate a new token.
+                return user;
+            }
+
+            // 4. Generate new token only if cooldown passed
+            user.ConfirmationToken = Guid.NewGuid().ToString("N");
+            user.ConfirmationTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(24);
+            user.ConfirmationEmailSentAt = DateTimeOffset.UtcNow; // Reset the timer
+            user.Status = "Pending";
+
+            await _authDBContext.SaveChangesAsync();
+
+            await SendConfirmationEmail(user);
+
+            return user;
+        }
+
+
+        // Email verification
+        public async Task<bool> ConfirmEmailAsync(string email, string token)
+        {
+            // 1. Look up by Email
+            User user = await GetUserByEmailAsync(email);
+
+            if (user is null) return false;
+
+            // Check if Token Matches
+            if (user.ConfirmationToken != token) return false;
+
+            // Chekc if expired
+            if (user.ConfirmationTokenExpiresAt < DateTimeOffset.UtcNow)
+            {
+                return false;
+            }
+
+            // 4. Success Logic
+            user.EmailConfirmedAt = DateTimeOffset.UtcNow;
+
+            // Clean up used token so it cannot be used a second time
+            user.ConfirmationToken = null;
+            user.ConfirmationTokenExpiresAt = null;
+
+            await _authDBContext.SaveChangesAsync();
+
+            return true;
+        }
+
+
+        public async Task SendConfirmationEmail(User user)
+        {
+
+            var frontendUrl = _config["FrontendUrl"];
+
+            if (string.IsNullOrEmpty(frontendUrl))
+            {
+                frontendUrl = "http://localhost:3000";
+            }
+            var link = $"{frontendUrl}/verify-email?token={user.ConfirmationToken}&email={user.Email}";
+
+            await _emailService.SendWelcomeEmailAsync(user.Email, user.Username, link);
         }
     }
 }
