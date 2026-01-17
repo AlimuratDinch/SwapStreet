@@ -188,6 +188,7 @@ namespace backend.Services.Auth
 
             // 4. Success Logic
             user.EmailConfirmedAt = DateTimeOffset.UtcNow;
+            user.Status = "verified";
 
             // Clean up used token so it cannot be used a second time
             user.ConfirmationToken = null;
