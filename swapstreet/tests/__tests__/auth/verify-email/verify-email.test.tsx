@@ -316,9 +316,7 @@ describe("VerifyEmailPage", () => {
     });
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/verification email sent/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/verification email sent/i)).toBeInTheDocument();
     });
   });
 
