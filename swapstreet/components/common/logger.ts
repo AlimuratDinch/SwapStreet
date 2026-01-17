@@ -17,11 +17,11 @@ function createConsoleLogger(): Logger {
   return {
     debug: (...args: unknown[]) => {
       if (isDev) {
-        console.debug(`${timestamp()} DEBUG ${prefix} →`, ...args);
+        console.warn(`${timestamp()} DEBUG ${prefix} →`, ...args);
       }
     },
     info: (...args: unknown[]) => {
-      console.info(`${timestamp()} INFO ${prefix} →`, ...args);
+      console.warn(`${timestamp()} INFO ${prefix} →`, ...args);
     },
     warn: (...args: unknown[]) => {
       console.warn(`${timestamp()} WARN ${prefix} →`, ...args);
