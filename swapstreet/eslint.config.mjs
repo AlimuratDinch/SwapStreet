@@ -16,6 +16,7 @@ const eslintConfig = [
     files: ["**/*.{js,ts,jsx,tsx}"],
     rules: {
       "no-console": ["error", { allow: ["warn", "error"] }],
+      "react/no-unescaped-entities": "off",
     },
   },
 

@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthInput } from "../AuthFormElements";
-import { ImageElement } from "../AuthFormElements";
-import { PromptElement } from "../AuthFormElements";
-import { logger } from "../../../components/common/logger";
+import { logger } from "@/components/common/logger";
+import AuthLayout from "@/components/auth/AuthLayout";
+import FormField from "@/components/auth/FormField";
+import ErrorMessage from "@/components/auth/ErrorMessage";
+import AuthButton from "@/components/auth/AuthButton";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function LoginPage() {
       const errorMessage =
         err instanceof Error
           ? err.message
-          : "Failed to create account. Please try again.";
+          : "Failed to login. Please try again.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -59,87 +60,53 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="relative flex min-h-screen justify-center 
-              items-start bg-[var(--bg-color)] p-6 overflow-hidden"
-    >
-      {/* Background design: simple circles with hover grow */}
-      {/* Top-left circle: primary-dark with slight orange tint */}
-      <div
-        className="absolute -top-32 -left-32 w-96 h-96 rounded-full 
-                      bg-[rgba(1,108,93,0.15)]  
-                      transition-transform duration-500 ease-in-out hover:scale-110"
-      ></div>
-
-      {/* Bottom-right circle: primary-dark */}
-      <div
-        className="absolute bottom-[-100px] right-[-100px] w-72 h-72 rounded-full 
-                      bg-[rgba(1,108,93,0.15)]  
-                      transition-transform duration-500 ease-in-out hover:scale-110"
-      ></div>
-
-      {/* Gradient border wrapper */}
-      <div
-        className="mt-10 md:mt-16 w-full max-w-5xl rounded-2xl 
-                bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] 
-                p-[3px] shadow-lg flex flex-col md:flex-row overflow-hidden"
-      >
-        {/* Left: Login Form */}
-        <div
-          className="relative w-full md:w-1/2 bg-[var(--bg-color)] p-8 flex flex-col 
-                      justify-start md:justify-center rounded-2xl md:rounded-l-2xl md:rounded-r-none"
-        >
-          {/* Form */}
-          <h1 className="mt-12 mb-8 text-center text-3xl font-bold text-[var(--text-color)]">
-            Login
+    <AuthLayout>
+      <div className="w-full max-w-md">
+        {/* Heading */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome Back
           </h1>
-
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-4 flex flex-col items-center"
-          >
-            <AuthInput
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <AuthInput
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="submit"
-              className="mt-6 w-1/2 rounded-lg bg-[var(--primary-color)] px-3 py-2 
-                       text-sm font-semibold text-white transition 
-                       hover:bg-[var(--primary-dark)] hover:cursor-pointer"
-            >
-              Sign In
-            </button>
-          </form>
-
-          {/* Error message goes here, **inside the form container** */}
-          {error && (
-            <p role="alert" className="mt-4 text-red-600">
-              {error}
-            </p>
-          )}
-
-          {/* Sign Up prompt */}
-          <PromptElement
-            prompt="Don't have an account?"
-            linkText="Sign Up"
-            linkHref="/auth/sign-up"
-          />
+          <p className="text-teal-600">Sign in to your account</p>
         </div>
 
-        {/* Right: Cloth Image */}
-        <ImageElement />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <ErrorMessage message={error} />
+
+          <FormField
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <FormField
+            id="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <AuthButton disabled={loading}>
+            {loading ? "Signing in..." : "Sign In"}
+          </AuthButton>
+        </form>
+
+        {/* Sign Up Link */}
+        <p className="mt-8 text-center text-sm text-gray-700">
+          Don't have an account?{" "}
+          <a
+            href="/auth/sign-up"
+            className="text-teal-600 hover:text-teal-700 font-medium"
+          >
+            Sign Up
+          </a>
+        </p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
