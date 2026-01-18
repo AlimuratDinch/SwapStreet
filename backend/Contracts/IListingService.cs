@@ -1,5 +1,12 @@
-// using backend.Models;
-// namespace backend.Contracts
+using backend.Models;
+namespace backend.Contracts;
+
+public interface IListingService
+{
+    Task<Listing> createListing(
+        
+    );
+}
 // {
 //     public interface ICatalogService
 //     {
