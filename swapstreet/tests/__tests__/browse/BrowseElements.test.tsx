@@ -427,6 +427,26 @@ describe("Sidebar", () => {
     // Reset mock for other tests
     (useSearchParams as jest.Mock).mockReturnValue(new URLSearchParams());
   });
+  it("applies location filter and updates router query", async () => {
+    await act(async () => {
+      render(<Sidebar />);
+    });
+
+    fireEvent.click(screen.getByText("Location"));
+
+    fireEvent.click(
+      screen.getByText(/Use my current location/i)
+    );
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalled();
+      const call = mockPush.mock.calls.at(-1)?.[0];
+      expect(call).toContain("lat=");
+      expect(call).toContain("lng=");
+      expect(call).toContain("radiusKm=");
+    });
+  });
+
 });
 
 // ---------------- CardItem ----------------

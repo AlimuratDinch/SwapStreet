@@ -13,6 +13,7 @@ type Listing = {
   price: number;
   category: string;
   subcategory: string;
+  fsa?: string;
   images: string[];
   timestamp: string;
   status: string;
