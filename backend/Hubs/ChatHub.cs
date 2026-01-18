@@ -120,7 +120,7 @@ namespace backend.Hubs
             {
                 await Clients.Caller.SendAsync("Error", ex.Message);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await Clients.Caller.SendAsync("Error", "An error occurred while sending the message");
             }

@@ -65,7 +65,14 @@ jobs:
       run: |
         CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx)$' || true)
         SWAPSTREET_FILES=$(echo "$CHANGED_FILES" | grep "^swapstreet/" | sed 's|^swapstreet/||' | tr '\n' ' ')
-        echo "FILES=$SWAPSTREET_FILES" >> $GITHUB_ENV
+        # Filter out deleted files (only include files that exist)
+        EXISTING_FILES=""
+        for file in $SWAPSTREET_FILES; do
+          if [ -f "swapstreet/$file" ]; then
+            EXISTING_FILES="$EXISTING_FILES $file"
+          fi
+        done
+        echo "FILES=$EXISTING_FILES" >> $GITHUB_ENV
 
     # ESLint (style + security rules, no console logs)
     - name: Run ESLint on changed files only

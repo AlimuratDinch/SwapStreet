@@ -57,7 +57,7 @@ jobs:
 
   backend-sonarqube:
     name: Backend SonarQube
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     needs: frontend-sonarqube
     steps:
     - name: Set up JDK 17
@@ -74,7 +74,7 @@ jobs:
     - name: Cache SonarQube Cloud packages
       uses: actions/cache@v4
       with:
-        path: ~\sonar\cache
+        path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
 
@@ -82,68 +82,76 @@ jobs:
       id: cache-sonar-scanner
       uses: actions/cache@v4
       with:
-        path: ${{ runner.temp }}\scanner
+        path: ${{ runner.temp }}/scanner
         key: ${{ runner.os }}-sonar-scanner
         restore-keys: ${{ runner.os }}-sonar-scanner
 
     - name: Install SonarQube Cloud scanner
       if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-      shell: powershell
+      shell: bash
       run: |
-        New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory
-        dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
-
+        mkdir -p ${{ runner.temp }}/scanner
+        dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}/scanner
     - name: Install dotnet-coverage
       run: dotnet tool install --global dotnet-coverage
 
     - name: Begin SonarQube analysis
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      shell: powershell
+      shell: bash
       working-directory: backend
       run: |
-        ${{ runner.temp }}\scanner\dotnet-sonarscanner begin `
-          /k:"swapstreet" `
-          /o:"swapstreet" `
-          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml `
+        ${{ runner.temp }}/scanner/dotnet-sonarscanner begin \
+          /k:"swapstreet" \
+          /o:"swapstreet" \
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
           /d:sonar.coverage.exclusions="**/Migrations/**,**/Models/**"
 
     - name: Build backend
-      shell: powershell
+      shell: bash
       working-directory: backend
       run: dotnet build --no-incremental
 
+    - name: Pull Postgres image (optional, speeds up / makes failures obvious)
+      run: docker pull postgres:16
+
     - name: Run tests and collect coverage with threshold
-      shell: pwsh
+      shell: bash
       working-directory: backend
       run: |
         # Run tests and collect coverage in XML format using settings from root
         # We use ../coverage.settings.xml because the working-directory is 'backend'
         dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
-
-        # Confirm file exists
+    
+    - name: Validate backend coverage (PowerShell)
+      shell: pwsh
+      working-directory: backend
+      run: |
         if (!(Test-Path "coverage.xml")) {
           Write-Error "coverage.xml not found!"
           exit 1
         }
 
-        # Load XML
-        [xml]$cov = Get-Content "coverage.xml"
+        # Load XML (fail with a useful message if the file isn't valid XML)
+        $content = Get-Content "coverage.xml" -Raw
+        try {
+          [xml]$cov = $content
+        } catch {
+          Write-Error "coverage.xml is not valid XML. First 300 chars:`n$($content.Substring(0, [Math]::Min(300, $content.Length)))"
+          exit 1
+        }
 
-        # Get the 'module' node (assumes one main module)
-        $module = $cov.results.modules.module
-
+        # Get first <module> and read the line_coverage attribute
+        $module = $cov.SelectSingleNode("//module")
         if (-not $module) {
           Write-Error "No <module> found in coverage.xml"
           exit 1
         }
 
-        # Extract the line_coverage attribute
-        $lineCoverage = [double]$module.line_coverage
-        Write-Host "➡ Backend test coverage: $lineCoverage%"
+        $lineCoverage = [double]$module.GetAttribute("line_coverage")
+        Write-Host "Backend test coverage: $lineCoverage%"
 
-        # Fail if below threshold
         if ($lineCoverage -lt 65) {
           Write-Error "Coverage below 65% ($lineCoverage%)"
           exit 1
@@ -152,7 +160,7 @@ jobs:
     - name: End SonarQube analysis
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      shell: powershell
+      shell: bash
       working-directory: backend
       run: |
-        ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+        ${{ runner.temp }}/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

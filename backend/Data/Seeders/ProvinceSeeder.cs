@@ -62,7 +62,6 @@ namespace backend.Data.Seed
             {
                 // Handle exceptions during file reading or database insertion
                 logger.LogError(ex, "An error occurred during province seeding");
-                // Depending on the context, you might rethrow or log the error.
             }
         }
     }
