@@ -5,11 +5,11 @@ using backend.Contracts;
 
 [ApiController]
 [Route("api/search")]
-public class ListingsController : ControllerBase
+public class ListingSearchController : ControllerBase
 {
     private readonly IListingSearchService _listingSearchService;
 
-    public ListingsController(IListingSearchService listingSearchService)
+    public ListingSearchController(IListingSearchService listingSearchService)
     {
         _listingSearchService = listingSearchService;
     }

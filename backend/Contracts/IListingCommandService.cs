@@ -1,7 +1,7 @@
 using backend.Models;
 namespace backend.Contracts;
 
-public interface IListingService
+public interface IListingCommandService
 {
     Task<Listing> createListing(
         

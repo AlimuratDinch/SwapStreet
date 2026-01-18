@@ -238,6 +238,7 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<IFileStorageService>(sp => sp.GetRequiredService<MinioFileStorageService>());
     builder.Services.AddScoped<ImageSeeder>();
     builder.Services.AddScoped<IListingSearchService, ListingSearchService>();
+    builder.Services.AddScoped<IListingCommandService, ListingCommandService>();
 
     // Email Service (environment-dependent)
     if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Test"))
