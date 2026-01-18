@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using NetTopologySuite.Geometries;
 
 public class Fsa
 {
@@ -12,6 +13,11 @@ public class Fsa
     [Required]
     [StringLength(3, MinimumLength = 3)]
     public string Code { get; set; } = string.Empty;
+
+        
+    // Add for PostGIS radius search
+    [Required]
+    public Point Centroid { get; set; } = default!;
 
     // Foreign Key to City
     [Required]

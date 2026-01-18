@@ -34,6 +34,11 @@ public class Listing
 
     // Full-Text Search Vector, "SearchText" (computed column in DB) and can be accessed context.Listings.Where(l => EF.Property<string>(l, "SearchText") != null)
 
+    [Required]
+    [StringLength(3, MinimumLength = 3)]
+    public string FSA { get; set; } = default!;
+
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
