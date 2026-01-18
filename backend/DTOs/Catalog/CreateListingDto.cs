@@ -18,4 +18,8 @@ public class CreateListingDto
     public Guid ProfileId { get; set; }
 
     public Guid? TagId { get; set; }  // Optional
+
+    [Required(ErrorMessage = "FSA is required")]
+    [StringLength(3, MinimumLength = 3, ErrorMessage = "FSA must be exactly 3 characters")]
+    public string FSA { get; set; } = string.Empty;
 }

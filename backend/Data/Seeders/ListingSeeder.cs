@@ -50,10 +50,10 @@ namespace backend.Data.Seed
 
             // Get the test profile ID
             var profileId = ProfileSeeder.TestProfileId;
-
-            // Verify profile exists
-            var profileExists = await context.Profiles.AnyAsync(p => p.Id == profileId);
-            if (!profileExists)
+            
+            // Verify profile exists and get its FSA
+            var profile = await context.Profiles.FirstOrDefaultAsync(p => p.Id == profileId);
+            if (profile == null)
             {
                 logger.LogWarning("Test profile not found. Cannot seed listings.");
                 return;
@@ -61,6 +61,18 @@ namespace backend.Data.Seed
 
             // Get random number generator
             var random = new Random();
+
+            // Fetch valid FSAs from the database for random selection
+            var validFSAs = await context.Fsas
+                .Select(f => f.Code)
+                .ToListAsync();
+
+            // Fallback to generating random valid FSAs if database is empty
+            if (validFSAs.Count == 0)
+            {
+                logger.LogWarning("No FSAs found in database. Generating random valid FSAs.");
+                validFSAs = GenerateRandomValidFSAs(50, random); // Generate 50 random valid FSAs
+            }
 
             // Calculate how many listings we need to create
             var listingsToCreate = 100 - existingCount;
@@ -77,6 +89,7 @@ namespace backend.Data.Seed
                     Price = Math.Round((decimal)(random.NextDouble() * 200 + 10), 2), // Price between $10 and $210
                     ProfileId = profileId,
                     TagId = null, // Keep tags null
+                    FSA = validFSAs[random.Next(validFSAs.Count)], // Random FSA from valid FSAs
                     CreatedAt = DateTime.UtcNow.AddDays(-random.Next(0, 90)), // Random date within last 90 days
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -89,6 +102,25 @@ namespace backend.Data.Seed
             await context.SaveChangesAsync();
 
             logger.LogInformation($"Successfully seeded {listingsToCreate} listings. Total listings: {await context.Listings.CountAsync()}");
+        }
+
+        private static List<string> GenerateRandomValidFSAs(int count, Random random)
+        {
+            var fsas = new HashSet<string>();
+            var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            var numbers = "0123456789";
+
+            while (fsas.Count < count)
+            {
+                var firstLetter = letters[random.Next(letters.Length)];
+                var number = numbers[random.Next(numbers.Length)];
+                var secondLetter = letters[random.Next(letters.Length)];
+                
+                var fsa = $"{firstLetter}{number}{secondLetter}";
+                fsas.Add(fsa);
+            }
+
+            return fsas.ToList();
         }
     }
 }

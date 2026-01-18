@@ -1,9 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { getMyProfile } from "@/lib/api/profile";
 
 export default function SellerListingPage() {
   const router = useRouter();
+  const { accessToken } = useAuth();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -12,8 +15,27 @@ export default function SellerListingPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [category, setCategory] = useState<string>("");
   const [subcategory, setSubcategory] = useState<string>("");
+  const [fsa, setFsa] = useState<string>("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load user's FSA from profile on mount
+  useEffect(() => {
+    const loadUserFSA = async () => {
+      if (!accessToken) return;
+      
+      try {
+        const profile = await getMyProfile(accessToken);
+        if (profile.fsa) {
+          setFsa(profile.fsa.toUpperCase());
+        }
+      } catch (err) {
+        console.error("Failed to load user profile:", err);
+      }
+    };
+
+    loadUserFSA();
+  }, [accessToken]);
 
   // Category options
   const categories = {
@@ -53,6 +75,11 @@ export default function SellerListingPage() {
 
   const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSubcategory(e.target.value);
+  };
+
+  const handleFsaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+    setFsa(value);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,6 +146,12 @@ export default function SellerListingPage() {
       return;
     }
 
+    if (!fsa.trim() || fsa.length !== 3) {
+      setError("Please enter a valid FSA (3 characters, e.g., M5V).");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const listingData = {
         id: Date.now().toString(),
@@ -127,6 +160,7 @@ export default function SellerListingPage() {
         price,
         category,
         subcategory,
+        fsa: fsa.trim().toUpperCase(),
         images: imagePreviews,
         timestamp: new Date().toISOString(),
         status: "active",
@@ -233,6 +267,30 @@ export default function SellerListingPage() {
               required
             />
           </div>
+        </div>
+
+        {/* FSA */}
+        <div>
+          <label
+            htmlFor="fsa"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Location (FSA) *
+          </label>
+          <input
+            id="fsa"
+            type="text"
+            value={fsa}
+            onChange={handleFsaChange}
+            placeholder="M5V (First 3 characters of postal code)"
+            maxLength={3}
+            pattern="[A-Za-z][0-9][A-Za-z]"
+            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Forward Sortation Area - first 3 characters of your postal code (e.g., M5V)
+          </p>
         </div>
 
         {/* Category and Subcategory */}

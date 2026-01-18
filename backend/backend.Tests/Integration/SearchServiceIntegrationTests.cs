@@ -163,6 +163,7 @@ public class ListingSearchServicePgTrgmTests
                 Description = "Great running sneakers size 10",
                 Price = 80m,
                 ProfileId = profileId,
+                FSA = "M5V",
                 CreatedAt = now.AddMinutes(-3),
                 UpdatedAt = now.AddMinutes(-3)
             },
@@ -173,6 +174,7 @@ public class ListingSearchServicePgTrgmTests
                 Description = "Cozy hoodie, like new",
                 Price = 35m,
                 ProfileId = profileId,
+                FSA = "M5V",
                 CreatedAt = now.AddMinutes(-2),
                 UpdatedAt = now.AddMinutes(-2)
             },
@@ -183,6 +185,7 @@ public class ListingSearchServicePgTrgmTests
                 Description = "Classic shoes, white, size 9",
                 Price = 50m,
                 ProfileId = profileId,
+                FSA = "M5V",
                 CreatedAt = now.AddMinutes(-1),
                 UpdatedAt = now.AddMinutes(-1)
             }

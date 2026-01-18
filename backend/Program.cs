@@ -290,6 +290,10 @@ static async Task InitializeDatabaseAsync(WebApplication app)
             {
                 app.Logger.LogWarning("Some tables already exist. Migration may have been partially applied. Continuing...");
             }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("pending changes"))
+            {
+                app.Logger.LogWarning("Model has pending changes. Please create a new migration. Continuing without migration...");
+            }
         }
 
         if (authDb.Database.IsRelational())

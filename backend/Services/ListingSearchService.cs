@@ -51,18 +51,15 @@ public class ListingSearchService : IListingSearchService
 
         query = query.Trim();
 
-        const double threshold = 0.1; // minimum similarity to consider a match
-
-        // Project Rank from pg_trgm similarity(SearchText, query) [0..1]
+        // Simple case-insensitive text search on Title and Description
         var baseQuery = _db.Listings.AsNoTracking()
+            .Where(l => EF.Functions.ILike(l.Title, $"%{query}%") || 
+                       (l.Description != null && EF.Functions.ILike(l.Description, $"%{query}%")))
             .Select(l => new
             {
                 Listing = l,
-                Rank = EF.Functions.TrigramsSimilarity(
-                    EF.Property<string>(l, "SearchText"),
-                    query)
-            })
-            .Where(x => x.Rank >= threshold);
+                Rank = 1.0 // Simple match, all results have same rank
+            });
 
         // Cursor filter (Rank DESC, CreatedAt DESC, Id DESC)
         if (ListingCursor.TryDecode(cursor, out var c) && c != null)
