@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { logger } from "@/components/common/logger";
 import AuthLayout from "@/components/auth/AuthLayout";
 import FormField from "@/components/auth/FormField";
@@ -14,6 +14,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from") || "/";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +48,7 @@ export default function LoginPage() {
       sessionStorage.setItem("accessToken", data.accessToken);
       logger.debug("Access token stored");
 
-      router.push("/browse");
+      router.push(from);
     } catch (err: unknown) {
       logger.error("Login error", err);
       const errorMessage =

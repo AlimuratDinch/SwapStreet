@@ -17,7 +17,7 @@ interface AuthContextProps {
   login: (token: string) => void;
   logout: () => void;
   refreshToken: () => Promise<string | null>;
-  isAuthenticated: boolean;
+  isInitialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUsername(userData.username);
       setEmail(userData.email);
     }
+    setIsInitialized(true); // Signal that the check is complete
   }, []);
 
   const login = (token: string) => {
@@ -91,7 +93,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const isAuthenticated = !!accessToken;
+  // const isAuthenticated = !!accessToken;
 
   return (
     <AuthContext.Provider
@@ -103,10 +105,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         login,
         logout,
         refreshToken,
-        isAuthenticated,
+        isInitialized,
       }}
     >
-      {children}
+      {isInitialized ? children : null} 
     </AuthContext.Provider>
   );
 };
