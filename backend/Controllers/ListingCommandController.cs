@@ -14,7 +14,7 @@ namespace backend.Controllers
         private readonly ILogger<ListingCommandController> _logger;
 
         public ListingCommandController(
-            IListingCommandService listingCommandService, 
+            IListingCommandService listingCommandService,
             ILogger<ListingCommandController> logger)
         {
             _listingCommandService = listingCommandService;
@@ -30,14 +30,14 @@ namespace backend.Controllers
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateListing(
-            [FromBody] CreateListingRequestDto dto, 
+            [FromBody] CreateListingRequestDto dto,
             CancellationToken cancellationToken = default)
         {
             _logger.LogDebug(
-                "Received CreateListingRequestDto: Title={Title}, Price={Price}, ProfileId={ProfileId}, FSA={FSA}", 
-                dto?.Title, 
-                dto?.Price, 
-                dto?.ProfileId, 
+                "Received CreateListingRequestDto: Title={Title}, Price={Price}, ProfileId={ProfileId}, FSA={FSA}",
+                dto?.Title,
+                dto?.Price,
+                dto?.ProfileId,
                 dto?.FSA);
 
             if (dto == null)
