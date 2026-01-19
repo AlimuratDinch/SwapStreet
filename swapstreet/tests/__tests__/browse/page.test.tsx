@@ -268,10 +268,11 @@ describe("BrowsePage", () => {
     expect(screen.getByText("Item 2")).toBeInTheDocument();
     expect(screen.getByText("Item 3")).toBeInTheDocument();
 
-    // Check that the prices are rendered
-    expect(screen.getByAltText("Item 1")).toHaveAttribute("src", "/img1.jpg");
-    expect(screen.getByAltText("Item 2")).toHaveAttribute("src", "/img2.jpg");
-    expect(screen.getByAltText("Item 3")).toHaveAttribute("src", "/img3.jpg");
+    // Check that the img sources are rendered correctly
+    const imgSources = screen.getAllByTestId("img-src");
+    expect(imgSources[0]).toHaveTextContent("/img1.jpg");
+    expect(imgSources[1]).toHaveTextContent("/img2.jpg");
+    expect(imgSources[2]).toHaveTextContent("/img3.jpg");
   });
 
   it("should pass correct props to CardItem components", async () => {
@@ -294,8 +295,7 @@ describe("BrowsePage", () => {
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
     expect(screen.getByText("Test Item")).toBeInTheDocument();
-    expect(screen.getByAltText("Test Item")).toHaveAttribute(
-      "src",
+    expect(screen.getByTestId("img-src")).toHaveTextContent(
       "/test.jpg",
     );
   });
@@ -320,7 +320,7 @@ describe("BrowsePage", () => {
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
     expect(screen.getByText("No Image Item")).toBeInTheDocument();
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("img-src")).not.toBeInTheDocument();
   });
 
   it("should apply correct CSS classes for layout", async () => {
