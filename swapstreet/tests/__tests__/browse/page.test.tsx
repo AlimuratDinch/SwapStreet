@@ -295,9 +295,7 @@ describe("BrowsePage", () => {
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
     expect(screen.getByText("Test Item")).toBeInTheDocument();
-    expect(screen.getByTestId("img-src")).toHaveTextContent(
-      "/test.jpg",
-    );
+    expect(screen.getByTestId("img-src")).toHaveTextContent("/test.jpg");
   });
 
   it("should handle items without images", async () => {
