@@ -1,8 +1,8 @@
-version: "3.9"
+
 
 services:
   postgres:
-    image: postgres:15
+    image: postgis/postgis:16-3.4
     container_name: swapstreet-db
     env_file:
       - .env
@@ -60,6 +60,9 @@ services:
       - .env
     environment:
       - FrontendUrl=${FRONTEND_URL}
+      - ASPNETCORE_ENVIRONMENT=Development
+
+
     ports:
       - "8080:8080"
     depends_on:

@@ -78,8 +78,8 @@ namespace backend.Data.Seed
 
                         foreach (var code in fsaCodes)
                         {
-                            city.Fsas.Add(new Fsa 
-                            { 
+                            city.Fsas.Add(new Fsa
+                            {
                                 Code = code,
                                 Centroid = new Point(r.Longitude, r.Latitude)
                             });

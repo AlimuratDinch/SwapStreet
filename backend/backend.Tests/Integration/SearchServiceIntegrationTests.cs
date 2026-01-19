@@ -162,6 +162,7 @@ public class ListingSearchServicePgTrgmTests
                 Title = "Nike Air Max shoes",
                 Description = "Great running sneakers size 10",
                 Price = 80m,
+                FSA = "M5H",
                 ProfileId = profileId,
                 CreatedAt = now.AddMinutes(-3),
                 UpdatedAt = now.AddMinutes(-3)
@@ -172,6 +173,7 @@ public class ListingSearchServicePgTrgmTests
                 Title = "Adidas sweatshirt",
                 Description = "Cozy hoodie, like new",
                 Price = 35m,
+                FSA = "M5H",
                 ProfileId = profileId,
                 CreatedAt = now.AddMinutes(-2),
                 UpdatedAt = now.AddMinutes(-2)
@@ -182,6 +184,7 @@ public class ListingSearchServicePgTrgmTests
                 Title = "Converse sneakers",
                 Description = "Classic shoes, white, size 9",
                 Price = 50m,
+                FSA = "M5H",
                 ProfileId = profileId,
                 CreatedAt = now.AddMinutes(-1),
                 UpdatedAt = now.AddMinutes(-1)
