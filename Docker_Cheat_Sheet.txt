@@ -96,7 +96,7 @@ reportgenerator -reports:./coverage/coverage.opencover.xml -targetdir:./coverage
 dotnet format backend.sln
 
 # For whitespace formatting
-dotnet format whitespace backend.slm 
+dotnet format whitespace backend.sln
 
 12. Creating JWT secrets for Development
 
