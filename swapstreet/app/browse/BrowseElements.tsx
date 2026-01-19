@@ -101,13 +101,15 @@ export function Header({ showCenterNav = true }: HeaderProps) {
         </div>
       )}
 
-      <div className="flex gap-5">
-        <Globe className="w-5.5 h-5.5 cursor-pointer" />
-        <Leaf className="w-5.5 h-5.5 cursor-pointer" />
+      <div className="flex gap-5 items-center">
+        <Globe className="w-5.5 h-5.5 cursor-default text-gray-400" />
+        <Leaf className="w-5.5 h-5.5 cursor-default text-gray-400" />
         <Link href="/wardrobe">
-          <ShoppingBag className="w-5.5 h-5.5 cursor-pointer" />
+          <button className="group p-2 rounded-full transition-all duration-200 hover:bg-gray-200 hover:scale-110" title="Shopping Bag">
+            <ShoppingBag className="w-5.5 h-5.5 cursor-pointer text-black transition-colors duration-200 group-hover:text-teal-500" />
+          </button>
         </Link>
-        <User className="w-5.5 h-5.5 cursor-pointer" />
+        <User className="w-5.5 h-5.5 cursor-default text-gray-400" />
       </div>
     </header>
   );
@@ -138,7 +140,7 @@ export function Sidebar() {
 
   // Numeric price values used by the slider UI
   const [minPriceVal, setMinPriceVal] = useState<number>(0);
-  const [maxPriceVal, setMaxPriceVal] = useState<number>(100);
+  const [maxPriceVal, setMaxPriceVal] = useState<number>(999999);
   const [conditions, setConditions] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -202,7 +204,7 @@ export function Sidebar() {
 
   const clearFilters = () => {
     setMinPriceVal(0);
-    setMaxPriceVal(100);
+    setMaxPriceVal(999999);
     setSelectedSize(null);
     setConditions([]);
     setCategoryId(null);
@@ -363,7 +365,7 @@ export function Sidebar() {
   );
 }
 
-export function CardItem({ title, imgSrc, price, condition }: CardItemProps) {
+export function CardItem({ title, imgSrc, price }: CardItemProps) {
   return (
     <div className="card-item">
       {/* Square image container */}
@@ -380,10 +382,9 @@ export function CardItem({ title, imgSrc, price, condition }: CardItemProps) {
           <span className="card-item-placeholder">Image</span>
         )}
       </div>
-      {/* Bottom section with title, condition, and price */}
+      {/* Bottom section with title and price */}
       <div className="card-item-content">
         <h4 className="card-item-title">{title}</h4>
-        <p className="card-item-condition">{condition}</p>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
           <button className="card-item-wishlist-btn" title="Add to wishlist">
@@ -400,5 +401,4 @@ interface CardItemProps {
   title: string;
   imgSrc?: string;
   price: number;
-  condition?: string;
 }
