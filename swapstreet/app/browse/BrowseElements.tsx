@@ -105,7 +105,10 @@ export function Header({ showCenterNav = true }: HeaderProps) {
         <Globe className="w-5.5 h-5.5 cursor-default text-gray-400" />
         <Leaf className="w-5.5 h-5.5 cursor-default text-gray-400" />
         <Link href="/wardrobe">
-          <button className="group p-2 rounded-full transition-all duration-200 hover:bg-gray-200 hover:scale-110" title="Shopping Bag">
+          <button
+            className="group p-2 rounded-full transition-all duration-200 hover:bg-gray-200 hover:scale-110"
+            title="Shopping Bag"
+          >
             <ShoppingBag className="w-5.5 h-5.5 cursor-pointer text-black transition-colors duration-200 group-hover:text-teal-500" />
           </button>
         </Link>
