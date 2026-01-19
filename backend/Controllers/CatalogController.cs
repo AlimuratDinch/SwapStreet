@@ -59,7 +59,7 @@ public class CatalogController : ControllerBase
         // Price filtering
         if (minPrice.HasValue)
             query = query.Where(l => l.Price >= minPrice.Value);
-        
+
         if (maxPrice.HasValue)
             query = query.Where(l => l.Price <= maxPrice.Value);
 
@@ -86,7 +86,7 @@ public class CatalogController : ControllerBase
                 .OrderBy(li => li.DisplayOrder)
                 .FirstOrDefaultAsync();
 
-            var imageUrl = image?.ImagePath != null 
+            var imageUrl = image?.ImagePath != null
                 ? $"{minioUrl}/{image.ImagePath}"
                 : "/images/clothes_login_page.png";
 
