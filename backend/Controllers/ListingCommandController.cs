@@ -57,13 +57,13 @@ namespace backend.Controllers
             }
 
             // Verify the authenticated user owns the profile (optional security check)
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
-            {
-                // You might want to verify that the ProfileId belongs to the authenticated user
-                // For now, we'll allow any authenticated user to create listings for any profile
-                // Implement authorization logic here if needed
-            }
+            // var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+            // {
+            //     // You might want to verify that the ProfileId belongs to the authenticated user
+            //     // For now, we'll allow any authenticated user to create listings for any profile
+            //     // Implement authorization logic here if needed
+            // }
 
             try
             {
