@@ -159,26 +159,6 @@ export function Sidebar() {
   }, [searchParams]);
 
   useEffect(() => {
-    const _fetchCategories = async () => {
-      try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-        const res = await fetch(`${apiUrl}/api/catalog/categories`, {
-          cache: "no-store",
-          credentials: "include",
-        });
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        // Do not override the fixed category list; keep API fetch for future use if needed
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
-      }
-    };
-    // _fetchCategories();
-  }, []);
-
-  useEffect(() => {
     // Sync initial conditions from URL
     const conditionsParam = searchParams.get("conditions");
     if (conditionsParam) {

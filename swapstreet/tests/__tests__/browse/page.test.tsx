@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import BrowsePage, { fetchClothingItems } from "@/app/browse/page";
 
 // Type definition for clothing items
@@ -11,15 +11,21 @@ type ClothingItem = {
   price: number;
 };
 
+interface CardItemProps {
+  title: string;
+  imgSrc?: string;
+  price: number;
+}
+
 // Mock the BrowseElements components
 jest.mock("@/app/browse/BrowseElements", () => ({
   Header: () => <div data-testid="header">Header</div>,
   Sidebar: () => <div data-testid="sidebar">Sidebar</div>,
-  CardItem: ({ title, imgSrc, price }: any) => (
+  CardItem: ({ title, imgSrc, price }: CardItemProps) => (
     <div data-testid="card-item">
       <h4>{title}</h4>
       <span>{price}</span>
-      {imgSrc && <img src={imgSrc} alt={title} />}
+      {imgSrc && <span data-testid="img-src">{imgSrc}</span>}
     </div>
   ),
 }));

@@ -24,7 +24,7 @@ export async function fetchClothingItems(
     const res = await fetch(url, {
       cache: "no-store",
     });
-    console.log("URL used:", url);
+
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
