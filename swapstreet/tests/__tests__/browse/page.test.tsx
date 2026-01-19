@@ -15,10 +15,9 @@ type ClothingItem = {
 jest.mock("@/app/browse/BrowseElements", () => ({
   Header: () => <div data-testid="header">Header</div>,
   Sidebar: () => <div data-testid="sidebar">Sidebar</div>,
-  CardItem: ({ title, description, imgSrc, price }: any) => (
+  CardItem: ({ title, imgSrc, price }: any) => (
     <div data-testid="card-item">
       <h4>{title}</h4>
-      <p>{description}</p>
       <span>{price}</span>
       {imgSrc && <img src={imgSrc} alt={title} />}
     </div>
@@ -208,7 +207,7 @@ describe("BrowsePage", () => {
     expect(container.querySelector("main")).toBeInTheDocument();
   });
 
-  it("should display dummy item when no items returned", async () => {
+  it("should show 'No items available' when no items returned", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => [],
@@ -216,8 +215,8 @@ describe("BrowsePage", () => {
 
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
-    // When no items are returned, a dummy item is displayed
-    expect(screen.getByText("Vintage Blue Jeans")).toBeInTheDocument();
+    // When no items are returned, show no items message
+    expect(screen.getByText("No items available.")).toBeInTheDocument();
   });
 
   it("should render CardItem components for each item", async () => {
