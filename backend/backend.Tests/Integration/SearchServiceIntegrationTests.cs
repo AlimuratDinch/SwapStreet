@@ -17,11 +17,11 @@ namespace backend.Tests.Integration;
 public class PostgresCollection : ICollectionFixture<PostgresFixture> { }
 
 [Collection(nameof(PostgresCollection))]
-public class ListingSearchServicePgTrgmTests
+public class SearchServiceIntegrationTests
 {
     private readonly PostgresFixture _fx;
 
-    public ListingSearchServicePgTrgmTests(PostgresFixture fx)
+    public SearchServiceIntegrationTests(PostgresFixture fx)
     {
         _fx = fx;
     }
@@ -286,7 +286,7 @@ public class ListingSearchServicePgTrgmTests
         foreach (var item in items)
         {
             Assert.NotNull(item.Images);
-            Assert.IsType<List<ListingImage >>(item.Images);
+            Assert.IsType<List<ListingImageDto>>(item.Images);
         }
     }
 }
