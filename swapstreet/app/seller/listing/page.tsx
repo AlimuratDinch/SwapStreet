@@ -317,7 +317,9 @@ export default function SellerListingPage() {
                     alt={`Preview ${index + 1}`}
                     fill
                     className="rounded-lg object-cover ring-1 ring-gray-200"
-                    unoptimized={typeof preview === "string" && preview.startsWith("blob:")}
+                    unoptimized={
+                      typeof preview === "string" && preview.startsWith("blob:")
+                    }
                   />
                   <button
                     type="button"

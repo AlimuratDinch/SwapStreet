@@ -3,9 +3,16 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import ProfilePage from "@/app/profile/page";
 
 jest.mock("next/image", () => {
-  const MockNextImage = (props: Record<string, any>) => {
+  const MockNextImage = (props: React.ComponentProps<"img">) => {
     const { src, alt, ...rest } = props;
-    return <img src={typeof src === "string" ? src : "/default.png"} alt={alt ?? "image"} {...rest} />;
+    // eslint-disable-next-line @next/next/no-img-element
+    return (
+      <img
+        src={typeof src === "string" ? src : "/default.png"}
+        alt={alt ?? "image"}
+        {...rest}
+      />
+    );
   };
   MockNextImage.displayName = "MockNextImage";
   return MockNextImage;
@@ -27,7 +34,7 @@ jest.mock("@/contexts/AuthContext", () => ({
 
 const mockGetMyProfile = jest.fn();
 jest.mock("@/lib/api/profile", () => ({
-  getMyProfile: (...args: any[]) => mockGetMyProfile(...args),
+  getMyProfile: (...args: unknown[]) => mockGetMyProfile(...args),
 }));
 
 describe("ProfilePage", () => {
@@ -42,7 +49,9 @@ describe("ProfilePage", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/No Profile Found/i)).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Create Profile/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Create Profile/i }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /Create Profile/i }));
@@ -84,15 +93,17 @@ describe("ProfilePage", () => {
     render(<ProfilePage />);
 
     expect(await screen.findByText(/No Profile Found/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Create Profile/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Create Profile/i }),
+    ).toBeInTheDocument();
   });
 
   it("shows a loading indicator while fetching, then renders profile", async () => {
     mockUseAuth.mockReturnValue({ accessToken: "token-xyz" });
 
-    let resolveProfile: (v: any) => void;
+    let resolveProfile: (v: unknown) => void;
     const pending = new Promise((res) => {
-      resolveProfile = res as (v: any) => void;
+      resolveProfile = res as (v: unknown) => void;
     });
     mockGetMyProfile.mockReturnValue(pending);
 
@@ -111,7 +122,9 @@ describe("ProfilePage", () => {
     });
 
     expect(await screen.findByText(/Alex Kim/)).toBeInTheDocument();
-    await waitFor(() => expect(queryByText(/Loading profile/)).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(queryByText(/Loading profile/)).not.toBeInTheDocument(),
+    );
   });
 
   it("shows 'Location not set' when city is missing", async () => {
@@ -174,7 +187,9 @@ describe("ProfilePage", () => {
     const banner = screen.getByAltText(/Profile Banner/i) as HTMLImageElement;
     const avatar = screen.getByAltText(/Jamie Fox/i) as HTMLImageElement;
 
-    expect(banner.src).toContain("http://minio.test/public/banners/jamie-hero.jpg");
+    expect(banner.src).toContain(
+      "http://minio.test/public/banners/jamie-hero.jpg",
+    );
     expect(avatar.src).toContain("http://minio.test/public/avatars/jamie.jpg");
 
     process.env.NEXT_PUBLIC_MINIO_URL = original;

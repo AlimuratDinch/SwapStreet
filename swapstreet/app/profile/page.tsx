@@ -10,7 +10,7 @@ import { Phone, Mail, MapPin, Star } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const {  accessToken } = useAuth();
+  const { accessToken } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +28,8 @@ export default function ProfilePage() {
         setProfile(data);
       } catch (err) {
         console.error("Failed to fetch profile:", err);
-        const errorMessage = err instanceof Error ? err.message : "Failed to load profile";
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load profile";
         setError(errorMessage);
       } finally {
         setLoading(false);
@@ -63,7 +64,8 @@ export default function ProfilePage() {
               No Profile Found
             </h2>
             <p className="text-gray-600 mb-6">
-              You haven't created a profile yet. Create one to get started with SwapStreet!
+              You haven't created a profile yet. Create one to get started with
+              SwapStreet!
             </p>
             <button
               onClick={() => router.push("/seller/onboarding")}
@@ -83,7 +85,8 @@ export default function ProfilePage() {
     : "Location not set";
 
   // Generate MinIO URL for images
-  const minioUrl = process.env.NEXT_PUBLIC_MINIO_URL || "http://localhost:9000/public";
+  const minioUrl =
+    process.env.NEXT_PUBLIC_MINIO_URL || "http://localhost:9000/public";
   const profileImageUrl = profile.profileImagePath
     ? `${minioUrl}/${profile.profileImagePath}`
     : "/images/default-avatar-icon.jpg";
@@ -94,7 +97,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
       <Header />
-      
+
       <div className="mx-auto max-w-6xl px-4 pt-24 pb-8">
         {/* Banner and Profile Section */}
         <div className="rounded-xl bg-white shadow-sm overflow-hidden">
@@ -105,7 +108,10 @@ export default function ProfilePage() {
               alt="Profile Banner"
               fill
               className="object-cover"
-              unoptimized={typeof bannerImageUrl === "string" && bannerImageUrl.startsWith("blob:")}
+              unoptimized={
+                typeof bannerImageUrl === "string" &&
+                bannerImageUrl.startsWith("blob:")
+              }
             />
           </div>
 
@@ -119,7 +125,10 @@ export default function ProfilePage() {
                   alt={fullName}
                   fill
                   className="object-cover"
-                  unoptimized={typeof profileImageUrl === "string" && profileImageUrl.startsWith("blob:")}
+                  unoptimized={
+                    typeof profileImageUrl === "string" &&
+                    profileImageUrl.startsWith("blob:")
+                  }
                 />
               </div>
             </div>
@@ -154,7 +163,9 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Phone</p>
-                  <p className="text-sm font-medium text-gray-900">Not available</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    Not available
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -163,7 +174,9 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Email</p>
-                  <p className="text-sm font-medium text-gray-900">Not available</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    Not available
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -172,7 +185,9 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Location</p>
-                  <p className="text-sm font-medium text-gray-900">{location}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {location}
+                  </p>
                 </div>
               </div>
             </div>
@@ -181,7 +196,9 @@ export default function ProfilePage() {
 
         {/* Listings Section - Placeholder */}
         <div className="mt-6 rounded-xl bg-white shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">My Listings</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            My Listings
+          </h2>
           <div className="text-center py-12 text-gray-500">
             <p>Your listings will appear here</p>
             <p className="text-sm mt-2">Listing functionality coming soon</p>

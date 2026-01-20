@@ -21,7 +21,8 @@ export default function WardrobePage() {
   useEffect(() => {
     const fetchListingId = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        const API_URL =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
         const response = await fetch(`${API_URL}/api/catalog/items`);
         if (response.ok) {
           const items = await response.json();
@@ -128,7 +129,9 @@ export default function WardrobePage() {
       }
 
       if (!firstListingId) {
-        setError("No listings available. Please wait or create a listing first.");
+        setError(
+          "No listings available. Please wait or create a listing first.",
+        );
         setLoading(false);
         return;
       }

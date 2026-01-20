@@ -47,7 +47,9 @@ Object.defineProperty(window, "sessionStorage", {
 });
 
 // Helper: first fetch on mount hits /api/catalog/items and expects an array
-const mockCatalogFetch = (items: Array<{ id: string }> = [{ id: "listing-1" }]) => {
+const mockCatalogFetch = (
+  items: Array<{ id: string }> = [{ id: "listing-1" }],
+) => {
   (global.fetch as jest.Mock).mockResolvedValueOnce({
     ok: true,
     json: async () => items,
@@ -111,7 +113,7 @@ describe("WardrobePage", () => {
         text: async () => "success",
       });
 
-      const { container } = render(<WardrobePage />);
+      render(<WardrobePage />);
 
       const file = new File(["dummy content"], "test.png", {
         type: "image/png",
@@ -158,16 +160,18 @@ describe("WardrobePage", () => {
         // Then check for error message
         // Ensure upload call was the second fetch (after catalog)
         await waitFor(() => {
-          expect((global.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(2);
+          expect(
+            (global.fetch as jest.Mock).mock.calls.length,
+          ).toBeGreaterThanOrEqual(2);
           expect((global.fetch as jest.Mock).mock.calls[1][0]).toEqual(
             expect.stringContaining("/api/images/upload"),
           );
         });
 
         // Use a11y role to find the alert and assert message
-        const alert = await screen.findByRole('alert', {}, { timeout: 3000 });
+        const alert = await screen.findByRole("alert", {}, { timeout: 3000 });
         expect(alert).toBeInTheDocument();
-        expect(alert.textContent || '').toMatch(/upload/i);
+        expect(alert.textContent || "").toMatch(/upload/i);
       }
     });
 

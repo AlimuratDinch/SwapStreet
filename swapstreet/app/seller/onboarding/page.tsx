@@ -264,7 +264,6 @@ export default function SellerOnboardingPage() {
       bannerFile,
       router,
       accessToken,
-      isAuthenticated,
       refreshToken,
     ],
   );
