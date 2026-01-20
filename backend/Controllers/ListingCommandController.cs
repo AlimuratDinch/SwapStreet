@@ -30,7 +30,7 @@ namespace backend.Controllers
         [Authorize]
         [HttpPost]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> CreateListing(
+        public async Task<IActionResult> Create(
             [FromForm] CreateListingRequestDto dto,
             CancellationToken cancellationToken = default)
         {
@@ -70,7 +70,7 @@ namespace backend.Controllers
                     dto.Images?.Count ?? 0);
 
                 return CreatedAtAction(
-                    nameof(CreateListing),
+                    nameof(Create),
                     new { id = listingId },
                     new { Id = listingId, Message = "Listing created successfully", ImageCount = dto.Images?.Count ?? 0 });
             }
