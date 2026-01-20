@@ -10,6 +10,7 @@ namespace backend.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<ListingCommandService> _logger;
+        private readonly IFileStorageService _fileStorageService;
 
         public ListingCommandService(AppDbContext context)
         {
@@ -22,6 +23,16 @@ namespace backend.Services
         {
             _context = context;
             _logger = logger;
+        }
+
+        public ListingCommandService(
+            AppDbContext context,
+            ILogger<ListingCommandService> logger,
+            IFileStorageService fileStorageService)
+        {
+            _context = context;
+            _logger = logger;
+            _fileStorageService = fileStorageService;
         }
 
         public async Task<Guid> CreateListingAsync(CreateListingRequestDto request, CancellationToken cancellationToken = default)
@@ -37,7 +48,7 @@ namespace backend.Services
                 throw new ArgumentException($"Invalid FSA: {request.FSA}");
             }
 
-            // 2. Validate Profile exists (seller)
+            // 3. Validate Profile exists (seller)
             var profile = await _context.Profiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == request.ProfileId, cancellationToken);
@@ -47,7 +58,7 @@ namespace backend.Services
                 throw new ArgumentException($"Profile {request.ProfileId} not found");
             }
 
-            // 3. Validate Tag exists (optional)
+            // 4. Validate Tag exists (optional)
             Tag? tag = null;
             if (request.TagId.HasValue)
             {
@@ -60,7 +71,7 @@ namespace backend.Services
                 }
             }
 
-            // 4. Create listing
+            // 5. Create listing
             var listing = new Listing
             {
                 Id = Guid.NewGuid(),
@@ -78,6 +89,41 @@ namespace backend.Services
             await _context.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Created listing {ListingId} successfully", listing.Id);
+
+            // 6. Upload images and create ListingImage records (if provided)
+            if (request.Images != null && request.Images.Count > 0 && _fileStorageService != null)
+            {
+                int displayOrder = 0;
+                foreach (var imageFile in request.Images)
+                {
+                    try
+                    {
+                        // Create ListingImage entry directly (the file storage service will handle upload and DB entry)
+                        var listingImage = new ListingImage
+                        {
+                            Id = Guid.NewGuid(),
+                            ListingId = listing.Id,
+                            ImagePath = $"listing/{Guid.NewGuid()}_{imageFile.FileName}",
+                            DisplayOrder = displayOrder++,
+                            ForTryon = false,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.ListingImages.Add(listingImage);
+
+                        _logger.LogInformation("Added image {ImageId} for listing {ListingId}", listingImage.Id, listing.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to process image for listing {ListingId}", listing.Id);
+                        throw;
+                    }
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            var imageCount = request.Images?.Count ?? 0;
+            _logger.LogInformation("Listing {ListingId} created successfully with {ImageCount} images", listing.Id, imageCount);
             return listing.Id;
         }
     }

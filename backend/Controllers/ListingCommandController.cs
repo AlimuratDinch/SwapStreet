@@ -24,21 +24,23 @@ namespace backend.Controllers
         /// <summary>
         /// Create a new listing
         /// </summary>
-        /// <param name="dto">The listing creation request</param>
+        /// <param name="dto">The listing creation request with optional images</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>The created listing ID</returns>
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> CreateListing(
-            [FromBody] CreateListingRequestDto dto,
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Create(
+            [FromForm] CreateListingRequestDto dto,
             CancellationToken cancellationToken = default)
         {
             _logger.LogDebug(
-                "Received CreateListingRequestDto: Title={Title}, Price={Price}, ProfileId={ProfileId}, FSA={FSA}",
+                "Received CreateListingRequestDto: Title={Title}, Price={Price}, ProfileId={ProfileId}, FSA={FSA}, ImageCount={ImageCount}",
                 dto?.Title,
                 dto?.Price,
                 dto?.ProfileId,
-                dto?.FSA);
+                dto?.FSA,
+                dto?.Images?.Count ?? 0);
 
             if (dto == null)
             {
@@ -56,29 +58,21 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Validation failed", Details = errors });
             }
 
-            // Verify the authenticated user owns the profile (optional security check)
-            // var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            // if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
-            // {
-            //     // You might want to verify that the ProfileId belongs to the authenticated user
-            //     // For now, we'll allow any authenticated user to create listings for any profile
-            //     // Implement authorization logic here if needed
-            // }
-
             try
             {
                 var listingId = await _listingCommandService.CreateListingAsync(dto, cancellationToken);
 
                 _logger.LogInformation(
-                    "Listing created successfully: Id={ListingId}, Title={Title}, ProfileId={ProfileId}",
+                    "Listing created successfully: Id={ListingId}, Title={Title}, ProfileId={ProfileId}, ImageCount={ImageCount}",
                     listingId,
                     dto.Title,
-                    dto.ProfileId);
+                    dto.ProfileId,
+                    dto.Images?.Count ?? 0);
 
                 return CreatedAtAction(
-                    nameof(CreateListing),
+                    nameof(Create),
                     new { id = listingId },
-                    new { Id = listingId, Message = "Listing created successfully" });
+                    new { Id = listingId, Message = "Listing created successfully", ImageCount = dto.Images?.Count ?? 0 });
             }
             catch (ArgumentException ex)
             {
