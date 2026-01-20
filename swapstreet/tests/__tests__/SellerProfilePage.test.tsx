@@ -1,14 +1,20 @@
 /* eslint-disable @next/next/no-img-element */
 import React from "react";
 import { render, screen, act } from "@testing-library/react";
-import type { ImageProps } from "next/image";
 import SellerProfilePage from "../../app/seller/[id]/page";
 
 // Mock next/image and next/link for Jest
 jest.mock("next/image", () => {
-  const MockNextImage = (props: ImageProps) => (
-    <img {...props} alt={props.alt ?? "image"} />
-  );
+  const MockNextImage = (props: Record<string, unknown>) => {
+    const { src, alt, ...imgProps } = props;
+    return (
+      <img
+        src={typeof src === "string" ? src : "/default.png"}
+        alt={(alt as string) ?? "image"}
+        {...imgProps}
+      />
+    );
+  };
   MockNextImage.displayName = "MockNextImage";
   return MockNextImage;
 });
