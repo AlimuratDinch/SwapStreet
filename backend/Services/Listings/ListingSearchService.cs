@@ -46,7 +46,10 @@ public class ListingSearchService : IListingSearchService
         // Blank query => "recent listings"
         if (string.IsNullOrWhiteSpace(query))
         {
+            // rows is the list of listings fetched from the database.
             var rows = await _db.Listings.AsNoTracking()
+                .Include(l => l.Tag)
+                .Include(l => l.Profile)
                 .OrderByDescending(l => l.CreatedAt)
                 .ThenByDescending(l => l.Id)
                 .Take(pageSize + 1)
@@ -81,8 +84,13 @@ public class ListingSearchService : IListingSearchService
 
         const double threshold = 0.1; // minimum similarity to consider a match
 
+
+        // baseQuery:
+        // the object containing the results of the database search.
         // Project Rank from pg_trgm similarity(SearchText, query) [0..1]
         var baseQuery = _db.Listings.AsNoTracking()
+            .Include(l => l.Tag)
+            .Include(l => l.Profile)
             .Select(l => new
             {
                 Listing = l,

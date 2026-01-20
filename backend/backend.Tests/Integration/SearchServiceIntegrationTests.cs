@@ -289,4 +289,25 @@ public class SearchServiceIntegrationTests
             Assert.IsType<List<ListingImageDto>>(item.Images);
         }
     }
+
+    [Fact]
+    public async Task ProfileAccessibleThroughListing_SearchListingsAsync_ReturnsProfileInfo()
+    {
+        await SeedAsync();
+        await using var db = new AppDbContext(_fx.DbOptions);
+        var svc = new ListingSearchService(db);
+
+        var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
+
+        Assert.NotEmpty(items);
+
+        // Verify all items have associated Profile info
+        foreach (var item in items)
+        {
+            var profile = await db.Profiles.FindAsync(item.Listing.ProfileId);
+            Assert.NotNull(profile);
+            Assert.False(string.IsNullOrWhiteSpace(profile.FirstName));
+            Assert.False(string.IsNullOrWhiteSpace(profile.LastName));
+        }
+    }
 }
