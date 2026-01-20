@@ -7,11 +7,11 @@ using backend.DbContexts;
 
 [ApiController]
 [Route("api/search")]
-public class ListingsController : ControllerBase
+public class ListingSearchController : ControllerBase
 {
     private readonly IListingSearchService _listingSearchService;
 
-    public ListingsController(IListingSearchService listingSearchService)
+    public ListingSearchController(IListingSearchService listingSearchService)
     {
         _listingSearchService = listingSearchService;
     }
@@ -22,7 +22,7 @@ public class ListingsController : ControllerBase
         [FromQuery] string? cursor = null,
         [FromQuery] int limit = 20)
     {
-        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q, Math.Min(limit, 50), cursor);  // Cap at 50
+        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q ?? string.Empty, Math.Min(limit, 50), cursor);  // Cap at 50
 
         return Ok(new
         {

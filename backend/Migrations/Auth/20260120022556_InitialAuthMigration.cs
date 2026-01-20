@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace backend.Migrations.Auth
+namespace backend.Migrations.AuthDb
 {
     /// <inheritdoc />
     public partial class InitialAuthMigration : Migration

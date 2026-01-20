@@ -1,6 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using NpgsqlTypes;
+using System.Linq;
 
 public class Listing
 {
@@ -33,6 +35,11 @@ public class Listing
     public Tag? Tag { get; set; }
 
     // Full-Text Search Vector, "SearchText" (computed column in DB) and can be accessed context.Listings.Where(l => EF.Property<string>(l, "SearchText") != null)
+
+    [Required(ErrorMessage = "FSA is required")]
+    [StringLength(3, MinimumLength = 3)]
+    public string FSA { get; set; } = string.Empty;
+
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

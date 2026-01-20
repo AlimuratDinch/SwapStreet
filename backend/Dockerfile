@@ -7,11 +7,11 @@ ENV DOTNET_DISABLE_PACKAGE_SOURCE_MAPPING=true
 WORKDIR /src
 COPY . .
 
-# Restore packages (mapping disabled via ENV)
-RUN dotnet restore
+# Restore packages for backend project only (not tests)
+RUN dotnet restore backend.csproj
 
-# Publish without restore 
-RUN dotnet publish -c Release -o /app --no-restore
+# Publish backend project only without restore 
+RUN dotnet publish backend.csproj -c Release -o /app --no-restore
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
