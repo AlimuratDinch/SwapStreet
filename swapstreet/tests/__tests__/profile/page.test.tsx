@@ -5,8 +5,8 @@ import ProfilePage from "@/app/profile/page";
 jest.mock("next/image", () => {
   const MockNextImage = (props: React.ComponentProps<"img">) => {
     const { src, alt, ...rest } = props;
-    // eslint-disable-next-line @next/next/no-img-element
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={typeof src === "string" ? src : "/default.png"}
         alt={alt ?? "image"}
