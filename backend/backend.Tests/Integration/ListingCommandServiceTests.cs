@@ -4,6 +4,7 @@ using backend.DTOs;
 using backend.Services;
 using backend.Tests.Fixtures;
 using AwesomeAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,8 @@ using Xunit;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using System.Collections.Generic;
+using System.IO;
 using NetTopologySuite.Geometries;
 
 namespace backend.Tests.Integration;
@@ -47,7 +50,8 @@ public class ListingCommandServiceTests
             Price = 89.99m,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            TagId = TestData.TestTagId
+            TagId = TestData.TestTagId,
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -88,7 +92,8 @@ public class ListingCommandServiceTests
             Description = "Classic blue denim, size 32. Well-maintained.",
             Price = 45.50m,
             ProfileId = TestData.TestProfileId,
-            FSA = "M5A"
+            FSA = "M5A",
+            Images = CreateTestImages()
             // TagId is null/not provided
         };
 
@@ -120,7 +125,8 @@ public class ListingCommandServiceTests
             Description = "White leather sneakers, size 9",
             Price = 65.00m,
             ProfileId = TestData.TestProfileId,
-            FSA = "H2X"
+            FSA = "H2X",
+            Images = CreateTestImages()
         };
 
         var request2 = new CreateListingRequestDto
@@ -129,7 +135,8 @@ public class ListingCommandServiceTests
             Description = "Black running shoes, size 10",
             Price = 75.00m,
             ProfileId = TestData.TestSecondProfileId,
-            FSA = "M5A"
+            FSA = "M5A",
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -173,7 +180,8 @@ public class ListingCommandServiceTests
             Price = 100.00m,
             ProfileId = baseRequest.ProfileId,
             FSA = baseRequest.FSA,
-            TagId = TestData.TestTagId
+            TagId = TestData.TestTagId,
+            Images = CreateTestImages()
         };
 
         var request2 = new CreateListingRequestDto
@@ -182,7 +190,8 @@ public class ListingCommandServiceTests
             Description = "Second listing from same seller",
             Price = 150.00m,
             ProfileId = baseRequest.ProfileId,
-            FSA = baseRequest.FSA
+            FSA = baseRequest.FSA,
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -209,6 +218,32 @@ public class ListingCommandServiceTests
     #region Validation Tests - Invalid FSA
 
     [Fact]
+    public async Task CreateListingAsync_NoImagesProvided_ThrowsArgumentException()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var request = new CreateListingRequestDto
+        {
+            Title = "No Images",
+            Description = "Should fail when images are missing",
+            Price = 10.00m,
+            ProfileId = TestData.TestProfileId,
+            FSA = "H2X",
+            Images = new List<IFormFile>()
+        };
+
+        using var context = new AppDbContext(_fixture.DbOptions);
+        var service = new ListingCommandService(context, CreateMockLogger());
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            async () => await service.CreateListingAsync(request));
+
+        exception.Message.Should().Contain("At least one image is required");
+    }
+
+    [Fact]
     public async Task CreateListingAsync_InvalidFsa_ThrowsArgumentException()
     {
         // Arrange
@@ -220,7 +255,8 @@ public class ListingCommandServiceTests
             Description = "Should fail on invalid FSA",
             Price = 50.00m,
             ProfileId = TestData.TestProfileId,
-            FSA = "ZZZ" // Invalid FSA code
+            FSA = "ZZZ", // Invalid FSA code
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -245,7 +281,8 @@ public class ListingCommandServiceTests
             Description = "FSA not in database",
             Price = 99.99m,
             ProfileId = TestData.TestProfileId,
-            FSA = "X9X" // Not seeded
+            FSA = "X9X", // Not seeded
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -276,7 +313,8 @@ public class ListingCommandServiceTests
             Description = "Profile does not exist",
             Price = 75.00m,
             ProfileId = invalidProfileId,
-            FSA = "H2X"
+            FSA = "H2X",
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -314,7 +352,8 @@ public class ListingCommandServiceTests
             Description = "Should fail",
             Price = 50.00m,
             ProfileId = deletedProfileId,
-            FSA = "H2X"
+            FSA = "H2X",
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -346,7 +385,8 @@ public class ListingCommandServiceTests
             Price = 120.00m,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            TagId = invalidTagId
+            TagId = invalidTagId,
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -377,7 +417,8 @@ public class ListingCommandServiceTests
             Description = "Testing timestamp creation",
             Price = 30.00m,
             ProfileId = TestData.TestProfileId,
-            FSA = "M5A"
+            FSA = "M5A",
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -410,7 +451,8 @@ public class ListingCommandServiceTests
             Price = 99.99m,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            TagId = TestData.TestTagId
+            TagId = TestData.TestTagId,
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -442,7 +484,8 @@ public class ListingCommandServiceTests
             Description = "  Description with spaces  ",
             Price = 50.00m,
             ProfileId = TestData.TestProfileId,
-            FSA = "H2X"
+            FSA = "H2X",
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -478,7 +521,8 @@ public class ListingCommandServiceTests
             Description = "Giving away for free",
             Price = 0m,
             ProfileId = TestData.TestProfileId,
-            FSA = "H2X"
+            FSA = "H2X",
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -509,7 +553,8 @@ public class ListingCommandServiceTests
             Description = "High-value listing",
             Price = largePrice,
             ProfileId = TestData.TestProfileId,
-            FSA = "H2X"
+            FSA = "H2X",
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -541,7 +586,8 @@ public class ListingCommandServiceTests
             Description = maxDescription,
             Price = 50.00m,
             ProfileId = TestData.TestProfileId,
-            FSA = "H2X"
+            FSA = "H2X",
+            Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -669,6 +715,23 @@ public class ListingCommandServiceTests
         );
 
         await context.SaveChangesAsync();
+    }
+
+    private List<IFormFile> CreateTestImages(int count = 1)
+    {
+        var images = new List<IFormFile>();
+        for (int i = 0; i < count; i++)
+        {
+            var content = new byte[] { 1, 2, 3, 4 };
+            var stream = new MemoryStream(content);
+            images.Add(new FormFile(stream, 0, content.Length, $"file{i}", $"image{i}.jpg")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "image/jpeg"
+            });
+        }
+
+        return images;
     }
 
     #endregion
