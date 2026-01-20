@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace backend.DTOs
 {
@@ -23,5 +24,8 @@ namespace backend.DTOs
         [Required(ErrorMessage = "FSA is required")]
         [RegularExpression(@"^[A-Z]\d[A-Z]\d?[A-Z]\d$", ErrorMessage = "Invalid Canadian FSA format")]
         public string FSA { get; set; } = string.Empty;
+
+        // [Required(ErrorMessage = "At least one image is required")]
+        public List<IFormFile> Images { get; set; } = new List<IFormFile>();
     }
 }
