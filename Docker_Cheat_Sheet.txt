@@ -12,6 +12,9 @@ docker compose up -d --build
 - For Development -
 docker-compose -f docker-compose.dev.yml up --build
 
+# Backend only (postgres)
+docker compose -f docker-compose.dev.yml up backend --build
+
 - For Production -
 docker-compose -f docker-compose.prod.yml up -d
 
@@ -91,3 +94,11 @@ reportgenerator -reports:./coverage/coverage.opencover.xml -targetdir:./coverage
 # Format Backend
 
 dotnet format backend.sln
+
+# For whitespace formatting
+dotnet format whitespace backend.sln
+
+12. Creating JWT secrets for Development
+
+# Create 32 byte key
+openssl rand -base64 32

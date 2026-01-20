@@ -1,6 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using NpgsqlTypes;
+using System.Linq;
 
 public class Listing
 {
@@ -36,6 +38,11 @@ public class Listing
     [Required]
     [StringLength(3)]
     public string FSA { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "FSA is required")]
+    [StringLength(3, MinimumLength = 3)]
+    public string FSA { get; set; } = string.Empty;
+
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

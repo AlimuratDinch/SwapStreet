@@ -16,7 +16,7 @@ public class ListingSearchService : IListingSearchService
     }
 
     public async Task<(IReadOnlyList<Listing> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
-        string query,
+        string? query,
         int pageSize,
         string? cursor)
     {

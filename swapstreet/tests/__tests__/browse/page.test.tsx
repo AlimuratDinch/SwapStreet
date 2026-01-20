@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import BrowsePage, { fetchClothingItems } from "@/app/browse/page";
 
 // Type definition for clothing items
@@ -11,16 +11,21 @@ type ClothingItem = {
   price: number;
 };
 
+interface CardItemProps {
+  title: string;
+  imgSrc?: string;
+  price: number;
+}
+
 // Mock the BrowseElements components
 jest.mock("@/app/browse/BrowseElements", () => ({
   Header: () => <div data-testid="header">Header</div>,
   Sidebar: () => <div data-testid="sidebar">Sidebar</div>,
-  CardItem: ({ title, description, imgSrc, price }: any) => (
+  CardItem: ({ title, imgSrc, price }: CardItemProps) => (
     <div data-testid="card-item">
       <h4>{title}</h4>
-      <p>{description}</p>
       <span>{price}</span>
-      {imgSrc && <img src={imgSrc} alt={title} />}
+      {imgSrc && <span data-testid="img-src">{imgSrc}</span>}
     </div>
   ),
 }));
@@ -208,7 +213,7 @@ describe("BrowsePage", () => {
     expect(container.querySelector("main")).toBeInTheDocument();
   });
 
-  it("should display dummy item when no items returned", async () => {
+  it("should show 'No items available' when no items returned", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => [],
@@ -216,8 +221,8 @@ describe("BrowsePage", () => {
 
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
-    // When no items are returned, a dummy item is displayed
-    expect(screen.getByText("Vintage Blue Jeans")).toBeInTheDocument();
+    // When no items are returned, show no items message
+    expect(screen.getByText("No items available.")).toBeInTheDocument();
   });
 
   it("should render CardItem components for each item", async () => {
@@ -263,10 +268,11 @@ describe("BrowsePage", () => {
     expect(screen.getByText("Item 2")).toBeInTheDocument();
     expect(screen.getByText("Item 3")).toBeInTheDocument();
 
-    // Check that the prices are rendered
-    expect(screen.getByAltText("Item 1")).toHaveAttribute("src", "/img1.jpg");
-    expect(screen.getByAltText("Item 2")).toHaveAttribute("src", "/img2.jpg");
-    expect(screen.getByAltText("Item 3")).toHaveAttribute("src", "/img3.jpg");
+    // Check that the img sources are rendered correctly
+    const imgSources = screen.getAllByTestId("img-src");
+    expect(imgSources[0]).toHaveTextContent("/img1.jpg");
+    expect(imgSources[1]).toHaveTextContent("/img2.jpg");
+    expect(imgSources[2]).toHaveTextContent("/img3.jpg");
   });
 
   it("should pass correct props to CardItem components", async () => {
@@ -289,10 +295,7 @@ describe("BrowsePage", () => {
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
     expect(screen.getByText("Test Item")).toBeInTheDocument();
-    expect(screen.getByAltText("Test Item")).toHaveAttribute(
-      "src",
-      "/test.jpg",
-    );
+    expect(screen.getByTestId("img-src")).toHaveTextContent("/test.jpg");
   });
 
   it("should handle items without images", async () => {
@@ -315,7 +318,7 @@ describe("BrowsePage", () => {
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
     expect(screen.getByText("No Image Item")).toBeInTheDocument();
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("img-src")).not.toBeInTheDocument();
   });
 
   it("should apply correct CSS classes for layout", async () => {

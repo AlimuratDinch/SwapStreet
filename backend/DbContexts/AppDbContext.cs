@@ -60,6 +60,13 @@ public class AppDbContext : DbContext
         // Indexing: Optimize FSA lookups (e.g., searching for "M5V")
         modelBuilder.Entity<Fsa>()
             .HasIndex(f => f.Code);
+        modelBuilder.Entity<Fsa>()
+            .Property(f => f.Centroid)
+            .HasColumnType("geography(POINT,4326)");
+
+        modelBuilder.Entity<Fsa>()
+            .HasIndex(f => f.Centroid)
+            .HasMethod("GIST");  // Spatial index
 
         // =======================================================
         // PROFILE MODEL

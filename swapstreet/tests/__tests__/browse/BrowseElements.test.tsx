@@ -283,10 +283,11 @@ describe("Sidebar", () => {
     const minInput = inputs[0];
     fireEvent.change(minInput, { target: { value: "150" } });
     await waitFor(() => {
-      // Min should be clamped to not exceed max (100)
+      // With maxPrice=999999 default, no clamping happens
       const calls = mockPush.mock.calls;
       const lastCall = calls[calls.length - 1][0];
-      expect(lastCall).toMatch(/minPrice=100/);
+      expect(lastCall).toMatch(/minPrice=150/);
+      expect(lastCall).toMatch(/maxPrice=999999/);
     });
   });
 
@@ -308,14 +309,14 @@ describe("Sidebar", () => {
 
     fireEvent.click(mediumButton!);
     await waitFor(() => {
-      // maxPrice=100 is always included because it's the default max state
-      expect(mockPush).toHaveBeenCalledWith("/browse?maxPrice=100&size=M");
+      // maxPrice=999999 is the new default max state with size param
+      expect(mockPush).toHaveBeenCalledWith("/browse?maxPrice=999999&size=M");
     });
 
     // Toggle off
     fireEvent.click(mediumButton!);
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/browse?maxPrice=100");
+      expect(mockPush).toHaveBeenCalledWith("/browse?maxPrice=999999");
     });
   });
 
@@ -386,7 +387,7 @@ describe("Sidebar", () => {
     // Click again to uncheck
     fireEvent.click(checkbox);
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/browse?maxPrice=100");
+      expect(mockPush).toHaveBeenCalledWith("/browse?maxPrice=999999");
     });
   });
 
@@ -452,21 +453,13 @@ describe("Sidebar", () => {
 // ---------------- CardItem ----------------
 describe("CardItem", () => {
   it("renders with image", () => {
-    render(
-      <CardItem
-        title="T-Shirt"
-        condition="Like New"
-        imgSrc="/test.jpg"
-        price={20}
-      />,
-    );
+    render(<CardItem title="T-Shirt" imgSrc="/test.jpg" price={20} />);
     expect(screen.getByText("T-Shirt")).toBeInTheDocument();
-    expect(screen.getByText("Like New")).toBeInTheDocument();
     expect(screen.getByAltText("T-Shirt")).toBeInTheDocument();
   });
 
   it("renders fallback text without image", () => {
-    render(<CardItem title="No Image" condition="Used" price={0} />);
+    render(<CardItem title="No Image" price={0} />);
     expect(screen.getByText("Image")).toBeInTheDocument();
   });
 });

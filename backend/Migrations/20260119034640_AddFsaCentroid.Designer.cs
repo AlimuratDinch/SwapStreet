@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.DbContexts;
 
@@ -12,8 +13,8 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260115220044_AddSearchTextComputed")]
-    partial class AddSearchTextComputed
+    [Migration("20260119034640_AddFsaCentroid")]
+    partial class AddFsaCentroid
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -23,6 +24,8 @@ namespace backend.Migrations
                 .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("ArticleType", b =>
@@ -98,6 +101,10 @@ namespace backend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<Point>("Centroid")
+                        .IsRequired()
+                        .HasColumnType("geography(POINT,4326)");
+
                     b.Property<int>("CityId")
                         .HasColumnType("integer");
 
@@ -107,6 +114,10 @@ namespace backend.Migrations
                         .HasColumnType("character varying(3)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Centroid");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Centroid"), "GIST");
 
                     b.HasIndex("CityId");
 
@@ -157,6 +168,11 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("FSA")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(10,2)");

@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -7,11 +8,14 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace backend.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSearchTextComputed : Migration
+    public partial class AddFsaCentroid : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AlterDatabase()
+                .Annotation("Npgsql:PostgresExtension:pg_trgm", ",,")
+                .Annotation("Npgsql:PostgresExtension:postgis", ",,");
 
             migrationBuilder.CreateTable(
                 name: "article_types",
@@ -159,6 +163,7 @@ namespace backend.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Code = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+                    Centroid = table.Column<Point>(type: "geography(POINT,4326)", nullable: false),
                     CityId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -211,7 +216,7 @@ namespace backend.Migrations
                     Price = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     ProfileId = table.Column<Guid>(type: "uuid", nullable: false),
                     TagId = table.Column<Guid>(type: "uuid", nullable: true),
-                    FSA = table.Column<string>(type: "varchar(3)", maxLength: 3, nullable: false),
+                    FSA = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
@@ -331,6 +336,12 @@ namespace backend.Migrations
                 name: "IX_cities_ProvinceId",
                 table: "cities",
                 column: "ProvinceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_fsas_Centroid",
+                table: "fsas",
+                column: "Centroid")
+                .Annotation("Npgsql:IndexMethod", "GIST");
 
             migrationBuilder.CreateIndex(
                 name: "IX_fsas_CityId",

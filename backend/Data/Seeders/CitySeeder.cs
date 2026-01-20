@@ -4,6 +4,7 @@ using backend.Models;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 
 namespace backend.Data.Seed
 {
@@ -77,7 +78,11 @@ namespace backend.Data.Seed
 
                         foreach (var code in fsaCodes)
                         {
-                            city.Fsas.Add(new Fsa { Code = code });
+                            city.Fsas.Add(new Fsa
+                            {
+                                Code = code,
+                                Centroid = new Point(r.Longitude, r.Latitude)
+                            });
                         }
                     }
 
