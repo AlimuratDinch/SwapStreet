@@ -3,6 +3,7 @@
 import { Header } from "../browse/BrowseElements";
 import { useState, useRef, useEffect } from "react";
 import { Star, X, Download, Grid, List, Info } from "lucide-react";
+import Image from "next/image";
 
 export default function WardrobePage() {
   const [loading, setLoading] = useState(false);
@@ -56,14 +57,6 @@ export default function WardrobePage() {
       title: `Wardrobe Item ${i + 1}`,
       isFavorite: i === 0,
     }));
-
-  // temporary placeholder GUID - will be replaced with actual listing ID
-  const testItem = {
-    id: "00000000-0000-0000-0000-000000000000", // Empty GUID as placeholder
-    imageUrl: "/images/test.jpg",
-    title: "Vintage Blue Jeans",
-    price: 24.99,
-  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -216,14 +209,27 @@ export default function WardrobePage() {
               }`}
             >
               {uploadedImage || generatedImage ? (
-                <img
+                <Image
                   src={
                     (showOriginal
                       ? uploadedImage
                       : generatedImage || uploadedImage) ?? ""
                   }
                   alt={showOriginal ? "Uploaded photo" : "AI Result"}
-                  className="w-full h-full object-cover rounded"
+                  fill
+                  className="object-cover rounded"
+                  unoptimized={(() => {
+                    const url =
+                      (showOriginal
+                        ? uploadedImage
+                        : generatedImage || uploadedImage) ?? "";
+                    return (
+                      typeof url === "string" &&
+                      (url.startsWith("blob:") ||
+                        url.includes("localhost:9000") ||
+                        url.includes("minio:9000"))
+                    );
+                  })()}
                 />
               ) : (
                 <div className="text-center">
@@ -299,13 +305,23 @@ export default function WardrobePage() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="flex-1 aspect-[2/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden"
+                className="relative flex-1 aspect-[2/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden"
               >
                 {recentResults[i] ? (
-                  <img
+                  <Image
                     src={recentResults[i]}
                     alt={`Try-on result ${i + 1}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    unoptimized={(() => {
+                      const url = recentResults[i] ?? "";
+                      return (
+                        typeof url === "string" &&
+                        (url.startsWith("blob:") ||
+                          url.includes("localhost:9000") ||
+                          url.includes("minio:9000"))
+                      );
+                    })()}
                   />
                 ) : null}
               </div>

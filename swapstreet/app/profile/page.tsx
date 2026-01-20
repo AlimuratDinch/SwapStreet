@@ -100,44 +100,27 @@ export default function ProfilePage() {
         <div className="rounded-xl bg-white shadow-sm overflow-hidden">
           {/* Banner Image */}
           <div className="relative h-48 sm:h-64 bg-gray-200">
-            {typeof bannerImageUrl === "string" && bannerImageUrl.startsWith("blob:") ? (
-              <img
-                src={bannerImageUrl}
-                alt="Profile Banner"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <Image
-                src={bannerImageUrl}
-                alt="Profile Banner"
-                fill
-                className="object-cover"
-              />
-            )}
+            <Image
+              src={bannerImageUrl}
+              alt="Profile Banner"
+              fill
+              className="object-cover"
+              unoptimized={typeof bannerImageUrl === "string" && bannerImageUrl.startsWith("blob:")}
+            />
           </div>
 
           {/* Profile Info Container */}
           <div className="relative px-6 pb-6">
             {/* Profile Picture */}
             <div className="relative -mt-16 mb-4">
-              <div className="h-32 w-32 overflow-hidden rounded-full border-4 border-white shadow-lg">
-                {typeof profileImageUrl === "string" && profileImageUrl.startsWith("blob:") ? (
-                  <img
-                    src={profileImageUrl}
-                    alt={fullName}
-                    className="h-full w-full object-cover rounded-full"
-                  />
-                ) : (
-                  <div className="relative h-32 w-32">
-                    <Image
-                      src={profileImageUrl}
-                      alt={fullName}
-                      fill
-                      className="object-cover rounded-full"
-                      style={{ objectFit: 'cover' }}
-                    />
-                  </div>
-                )}
+              <div className="relative h-32 w-32 overflow-hidden rounded-full border-4 border-white shadow-lg">
+                <Image
+                  src={profileImageUrl}
+                  alt={fullName}
+                  fill
+                  className="object-cover"
+                  unoptimized={typeof profileImageUrl === "string" && profileImageUrl.startsWith("blob:")}
+                />
               </div>
             </div>
 

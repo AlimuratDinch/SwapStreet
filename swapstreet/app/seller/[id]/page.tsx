@@ -119,22 +119,14 @@ export default function SellerProfilePage({
     <div className="min-h-screen bg-neutral-50">
       {/* Banner */}
       <div className="relative h-40 w-full sm:h-56 border-b border-gray-200">
-        {typeof seller.bannerUrl === "string" &&
-        seller.bannerUrl.startsWith("blob:") ? (
-          <img
-            src={seller.bannerUrl}
-            alt={`${seller.name || "Seller"} banner`}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <Image
-            src={seller.bannerUrl}
-            alt={`${seller.name || "Seller"} banner`}
-            fill
-            priority
-            className="object-cover"
-          />
-        )}
+        <Image
+          src={seller.bannerUrl}
+          alt={`${seller.name || "Seller"} banner`}
+          fill
+          priority
+          className="object-cover"
+          unoptimized={typeof seller.bannerUrl === "string" && seller.bannerUrl.startsWith("blob:")}
+        />
       </div>
 
       <div className="mx-auto w-full max-w-6xl px-4 pb-16">
@@ -142,21 +134,13 @@ export default function SellerProfilePage({
         <div className="flex flex-col gap-4">
           <div className="mt-2 sm:mt-2 flex items-center gap-4">
             <div className="relative z-10 h-20 w-20 overflow-hidden rounded-full border-4 border-white shadow-md sm:h-24 sm:w-24">
-              {typeof seller.avatarUrl === "string" &&
-              seller.avatarUrl.startsWith("blob:") ? (
-                <img
-                  src={seller.avatarUrl}
-                  alt={seller.name || "Seller"}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <Image
-                  src={seller.avatarUrl}
-                  alt={seller.name || "Seller"}
-                  fill
-                  className="object-cover"
-                />
-              )}
+              <Image
+                src={seller.avatarUrl}
+                alt={seller.name || "Seller"}
+                fill
+                className="object-cover"
+                unoptimized={typeof seller.avatarUrl === "string" && seller.avatarUrl.startsWith("blob:")}
+              />
             </div>
             <div className="relative z-10 flex-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -322,11 +306,13 @@ export default function SellerProfilePage({
                     className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
                   >
                     {listing.images.length > 0 && (
-                      <div className="aspect-square overflow-hidden">
-                        <img
+                      <div className="relative aspect-square overflow-hidden">
+                        <Image
                           src={listing.images[0]}
                           alt={listing.title}
-                          className="h-full w-full object-cover"
+                          fill
+                          className="object-cover"
+                          unoptimized={typeof listing.images[0] === "string" && listing.images[0].startsWith("blob:")}
                         />
                       </div>
                     )}
