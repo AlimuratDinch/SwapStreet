@@ -25,7 +25,7 @@ namespace backend.DTOs
         [RegularExpression(@"^[A-Z]\d[A-Z]\d?[A-Z]\d$", ErrorMessage = "Invalid Canadian FSA format")]
         public string FSA { get; set; } = string.Empty;
 
-        // [Required(ErrorMessage = "At least one image is required")]
+        [Required(ErrorMessage = "At least one image is required")]
         public List<IFormFile> Images { get; set; } = new List<IFormFile>();
     }
 }

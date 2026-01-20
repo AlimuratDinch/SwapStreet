@@ -39,7 +39,14 @@ namespace backend.Services
         {
             _logger.LogInformation("Creating listing for ProfileId {ProfileId}", request.ProfileId);
 
-            // 1. Validate FSA exists
+            // 1. Validate Images
+            if (request.Images == null || request.Images.Count == 0)
+            {
+                _logger.LogWarning("No images provided for listing");
+                throw new ArgumentException("At least one image is required");
+            }
+
+            // 2. Validate FSA exists
             var fsa = await _context.Fsas
                 .FirstOrDefaultAsync(f => f.Code == request.FSA, cancellationToken);
             if (fsa == null)
@@ -90,40 +97,36 @@ namespace backend.Services
 
             _logger.LogInformation("Created listing {ListingId} successfully", listing.Id);
 
-            // 6. Upload images and create ListingImage records (if provided)
-            if (request.Images != null && request.Images.Count > 0 && _fileStorageService != null)
+            // 6. Upload images and create ListingImage records
+            int displayOrder = 0;
+            foreach (var imageFile in request.Images)
             {
-                int displayOrder = 0;
-                foreach (var imageFile in request.Images)
+                try
                 {
-                    try
+                    // Create ListingImage entry directly (the file storage service will handle upload and DB entry)
+                    var listingImage = new ListingImage
                     {
-                        // Create ListingImage entry directly (the file storage service will handle upload and DB entry)
-                        var listingImage = new ListingImage
-                        {
-                            Id = Guid.NewGuid(),
-                            ListingId = listing.Id,
-                            ImagePath = $"listing/{Guid.NewGuid()}_{imageFile.FileName}",
-                            DisplayOrder = displayOrder++,
-                            ForTryon = false,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        _context.ListingImages.Add(listingImage);
+                        Id = Guid.NewGuid(),
+                        ListingId = listing.Id,
+                        ImagePath = $"listing/{Guid.NewGuid()}_{imageFile.FileName}",
+                        DisplayOrder = displayOrder++,
+                        ForTryon = false,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.ListingImages.Add(listingImage);
 
-                        _logger.LogInformation("Added image {ImageId} for listing {ListingId}", listingImage.Id, listing.Id);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to process image for listing {ListingId}", listing.Id);
-                        throw;
-                    }
+                    _logger.LogInformation("Added image {ImageId} for listing {ListingId}", listingImage.Id, listing.Id);
                 }
-
-                await _context.SaveChangesAsync(cancellationToken);
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to process image for listing {ListingId}", listing.Id);
+                    throw;
+                }
             }
 
-            var imageCount = request.Images?.Count ?? 0;
-            _logger.LogInformation("Listing {ListingId} created successfully with {ImageCount} images", listing.Id, imageCount);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Listing {ListingId} created successfully with {ImageCount} images", listing.Id, request.Images.Count);
             return listing.Id;
         }
     }
