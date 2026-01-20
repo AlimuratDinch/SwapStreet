@@ -2,8 +2,6 @@
 import { use, useEffect, useState } from "react";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import DefaultAvatar from "../../images/default-avatar-icon.jpg";
-import DefaultBanner from "../../images/default-seller-banner.png";
 
 // Listing model (minimal fields for UI)
 type Listing = {
@@ -67,8 +65,8 @@ export default function SellerProfilePage({
     name: "",
     handle: "",
     location: "",
-    avatarUrl: DefaultAvatar,
-    bannerUrl: DefaultBanner,
+    avatarUrl: "/images/default-avatar-icon.jpg",
+    bannerUrl: "/images/default-seller-banner.png",
     stats: { totalSales: 0, avgRating: 0, reviews: 0 },
     about: "",
     memberSince: "",

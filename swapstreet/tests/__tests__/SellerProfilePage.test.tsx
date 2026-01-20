@@ -12,10 +12,6 @@ jest.mock("next/link", () => {
   return ({ children }: any) => <div>{children}</div>;
 });
 
-// Mock images
-jest.mock("../../images/default-avatar-icon.jpg", () => "default-avatar.jpg");
-jest.mock("../../images/default-seller-banner.png", () => "default-banner.png");
-
 describe("SellerProfilePage", () => {
   beforeEach(() => {
     localStorage.clear();
