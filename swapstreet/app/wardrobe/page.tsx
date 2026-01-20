@@ -1,7 +1,7 @@
 "use client";
 
 import { Header } from "../browse/BrowseElements";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Star, X, Download, Grid, List, Info } from "lucide-react";
 
 export default function WardrobePage() {
@@ -13,7 +13,27 @@ export default function WardrobePage() {
   const [showOriginal, setShowOriginal] = useState(true);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [recentResults, setRecentResults] = useState<string[]>([]);
+  const [firstListingId, setFirstListingId] = useState<string | null>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch a valid listing ID
+  useEffect(() => {
+    const fetchListingId = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        const response = await fetch(`${API_URL}/api/catalog/items`);
+        if (response.ok) {
+          const items = await response.json();
+          if (items && items.length > 0) {
+            setFirstListingId(items[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch listing ID:", err);
+      }
+    };
+    fetchListingId();
+  }, []);
 
   const toggleFavorite = (itemId: number) => {
     setFavorites((prev) => {
@@ -37,9 +57,9 @@ export default function WardrobePage() {
       isFavorite: i === 0,
     }));
 
-  // Hardcoded test item with valid GUID
+  // temporary placeholder GUID - will be replaced with actual listing ID
   const testItem = {
-    id: "550e8400-e29b-41d4-a716-446655440000",
+    id: "00000000-0000-0000-0000-000000000000", // Empty GUID as placeholder
     imageUrl: "/images/test.jpg",
     title: "Vintage Blue Jeans",
     price: 24.99,
@@ -114,6 +134,12 @@ export default function WardrobePage() {
         return;
       }
 
+      if (!firstListingId) {
+        setError("No listings available. Please wait or create a listing first.");
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`${API_URL}/api/tryon/virtual-tryon`, {
         method: "POST",
         headers: {
@@ -122,7 +148,7 @@ export default function WardrobePage() {
         },
         body: JSON.stringify({
           clothingImageUrl: uploadedImage, // Use the uploaded MinIO URL
-          listingId: testItem.id,
+          listingId: firstListingId, // Use the fetched valid listing ID
         }),
       });
 
