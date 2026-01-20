@@ -276,7 +276,11 @@ export default function WardrobePage() {
 
           {/* Error message display */}
           {error && (
-            <div className="mt-2 p-3 bg-red-100 border border-red-400 rounded text-red-700 text-sm">
+            <div
+              role="alert"
+              aria-live="polite"
+              className="mt-2 p-3 bg-red-100 border border-red-400 rounded text-red-700 text-sm"
+            >
               {error}
             </div>
           )}

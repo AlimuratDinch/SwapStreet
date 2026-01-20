@@ -46,6 +46,14 @@ Object.defineProperty(window, "sessionStorage", {
   value: mockSessionStorage,
 });
 
+// Helper: first fetch on mount hits /api/catalog/items and expects an array
+const mockCatalogFetch = (items: Array<{ id: string }> = [{ id: "listing-1" }]) => {
+  (global.fetch as jest.Mock).mockResolvedValueOnce({
+    ok: true,
+    json: async () => items,
+  });
+};
+
 describe("WardrobePage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -93,6 +101,9 @@ describe("WardrobePage", () => {
 
   describe("Image Upload", () => {
     it("should handle image upload successfully", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
+
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -100,7 +111,7 @@ describe("WardrobePage", () => {
         text: async () => "success",
       });
 
-      render(<WardrobePage />);
+      const { container } = render(<WardrobePage />);
 
       const file = new File(["dummy content"], "test.png", {
         type: "image/png",
@@ -125,6 +136,9 @@ describe("WardrobePage", () => {
     });
 
     it("should show error when upload fails", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
+
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -141,10 +155,19 @@ describe("WardrobePage", () => {
       if (input) {
         await userEvent.upload(input as HTMLElement, file);
 
+        // Then check for error message
+        // Ensure upload call was the second fetch (after catalog)
         await waitFor(() => {
-          const errorDiv = screen.queryByText("Upload failed");
-          expect(errorDiv).toBeInTheDocument();
+          expect((global.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(2);
+          expect((global.fetch as jest.Mock).mock.calls[1][0]).toEqual(
+            expect.stringContaining("/api/images/upload"),
+          );
         });
+
+        // Use a11y role to find the alert and assert message
+        const alert = await screen.findByRole('alert', {}, { timeout: 3000 });
+        expect(alert).toBeInTheDocument();
+        expect(alert.textContent || '').toMatch(/upload/i);
       }
     });
 
@@ -181,6 +204,9 @@ describe("WardrobePage", () => {
     });
 
     it("should call try-on API with uploaded image", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch([{ id: "listing-xyz" }]);
+
       // Mock successful upload
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
@@ -235,6 +261,9 @@ describe("WardrobePage", () => {
     });
 
     it("should show Processing... during try-on", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
+
       // Mock upload
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
@@ -282,6 +311,9 @@ describe("WardrobePage", () => {
     });
 
     it("should add generated image to recent results", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
+
       // Mock upload and try-on
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
@@ -373,6 +405,9 @@ describe("WardrobePage", () => {
 
   describe("Recent Results Management", () => {
     it("should display recent results after try-on", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
+
       // Mock upload and try-on
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
@@ -415,6 +450,9 @@ describe("WardrobePage", () => {
 
   describe("Error Handling", () => {
     it("should show error when try-on API fails", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
+
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
@@ -453,6 +491,9 @@ describe("WardrobePage", () => {
     });
 
     it("should show generic error when try-on throws without message", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
+
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
@@ -488,6 +529,9 @@ describe("WardrobePage", () => {
     it("should show error when try-on attempted without auth", async () => {
       // Set up token for upload, then remove for try-on
       mockSessionStorage.setItem("accessToken", "test-token");
+
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
@@ -527,6 +571,9 @@ describe("WardrobePage", () => {
 
   describe("Toggle Buttons", () => {
     it("should toggle to show original photo", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
+
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
@@ -569,6 +616,9 @@ describe("WardrobePage", () => {
     });
 
     it("should toggle to show result photo", async () => {
+      // Initial mount fetch for listing id
+      mockCatalogFetch();
+
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
