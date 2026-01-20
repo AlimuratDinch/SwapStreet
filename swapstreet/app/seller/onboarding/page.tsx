@@ -239,7 +239,7 @@ export default function SellerOnboardingPage() {
         await createProfile(accessToken, profileData, refreshToken);
 
         // Redirect to profile page
-        router.push("/seller/me");
+        router.push("/profile");
       } catch (err: unknown) {
         logger.error("Failed to create profile", err);
         const errorMessage =

@@ -142,7 +142,7 @@ export default function SellerListingPage() {
       localStorage.setItem("seller:listings", JSON.stringify(existingListings));
 
       // Redirect to seller profile
-      router.push("/seller/me"); // Assuming seller ID is 1
+      router.push("/profile");
       // router.back();
     } catch (err) {
       console.error("Failed to save listing:", err);
