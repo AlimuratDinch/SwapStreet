@@ -3,11 +3,13 @@ using backend.Services;
 using backend.Tests.Fixtures;
 using backend.Models;
 using backend.Models.Authentication;
+using backend.DTOs.Search;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace backend.Tests.Integration;
 
@@ -204,8 +206,8 @@ public class ListingSearchServicePgTrgmTests
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("sneakrs", pageSize: 20, cursor: null);
 
         Assert.NotEmpty(items);
-        Assert.Contains(items, l => l.Title.Contains("Converse", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(items, l => l.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(items, l => l.Listing.Title.Contains("Converse", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(items, l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
         Assert.False(hasNext);
         Assert.Null(nextCursor);
     }
@@ -230,7 +232,7 @@ public class ListingSearchServicePgTrgmTests
         Assert.Single(items2);
 
         // no duplicates across pages
-        Assert.NotEqual(items1[0].Id, items2[0].Id);
+        Assert.NotEqual(items1[0].Listing.Id, items2[0].Listing.Id);
 
         // cursor2 may be null depending on remaining matches
         _ = cursor2;
@@ -247,7 +249,7 @@ public class ListingSearchServicePgTrgmTests
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("", pageSize: 2, cursor: null);
 
         Assert.Equal(2, items.Count);
-        Assert.True(items[0].CreatedAt >= items[1].CreatedAt); // ordered by recency
+        Assert.True(items[0].Listing.CreatedAt >= items[1].Listing.CreatedAt); // ordered by recency
 
         Assert.True(hasNext);          // we seeded 3
         Assert.NotNull(nextCursor);
@@ -264,8 +266,27 @@ public class ListingSearchServicePgTrgmTests
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("Nike shoes", pageSize: 20, cursor: null);
 
         Assert.NotEmpty(items);
-        Assert.Contains(items, l => l.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(items, l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
         Assert.False(hasNext);
         Assert.Null(nextCursor);
+    }
+
+    [Fact]
+    public async Task Search_ReturnsListingsWithImages()
+    {
+        await SeedAsync();
+        await using var db = new AppDbContext(_fx.DbOptions);
+        var svc = new ListingSearchService(db);
+
+        var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
+
+        Assert.NotEmpty(items);
+
+        // Verify all items have Images collection (even if empty)
+        foreach (var item in items)
+        {
+            Assert.NotNull(item.Images);
+            Assert.IsType<List<ListingImage >>(item.Images);
+        }
     }
 }
