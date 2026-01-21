@@ -8,8 +8,7 @@ namespace backend.DTOs.Search
     public class ListingImageDto
     {
         [Required]
-        [StringLength(255)]
-        public string ImagePath { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
 
         [Required]
         public int DisplayOrder { get; set; }

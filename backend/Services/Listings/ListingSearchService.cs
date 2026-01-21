@@ -10,10 +10,12 @@ public class ListingSearchService : IListingSearchService
 
 {
     private readonly AppDbContext _db;
+    private readonly IFileStorageService _imageService;
 
-    public ListingSearchService(AppDbContext db)
+    public ListingSearchService(AppDbContext db, IFileStorageService imageService)
     {
         _db = db;
+        _imageService = imageService;
     }
 
     private async Task<ListingWithImagesDto> MapListingWithImagesAsync(Listing listing)
@@ -24,7 +26,7 @@ public class ListingSearchService : IListingSearchService
             .OrderBy(li => li.DisplayOrder)
             .Select(li => new ListingImageDto
             {
-                ImagePath = li.ImagePath,
+                ImageUrl = _imageService.GetPublicFileUrl(li.ImagePath),
                 DisplayOrder = li.DisplayOrder
             })
             .ToListAsync();
