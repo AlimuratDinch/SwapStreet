@@ -18,6 +18,31 @@ export default function SellerListingPage() {
   const [fsa, setFsa] = useState<string>("");
   const [profileLoading, setProfileLoading] = useState(true);
 
+  async function uploadListingImages(listingId: string) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+    for (const file of images) {
+      const imageFormData = new FormData();
+      imageFormData.append("File", file);
+      imageFormData.append("Type", "Listing");
+      imageFormData.append("ListingId", listingId);
+
+      const res = await fetch(`${apiUrl}/api/images/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: imageFormData,
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || "Image upload failed");
+      }
+    }
+  }
+
+
   // Fetch profile info for profileId and FSA
   useEffect(() => {
     async function fetchProfile() {
@@ -128,9 +153,6 @@ export default function SellerListingPage() {
       formData.append("Price", price?.toString() ?? "0");
       formData.append("ProfileId", profileId);
       formData.append("FSA", fsa);
-      images.forEach((file, idx) => {
-        formData.append("Images", file);
-      });
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const response = await fetch(`${apiUrl}/api/listings`, {
@@ -145,6 +167,13 @@ export default function SellerListingPage() {
         const errorText = await response.text();
         throw new Error(errorText || "Failed to create listing");
       }
+
+      const data = await response.json();
+      const listingId = data.id;
+
+      await uploadListingImages(listingId);
+
+      console.log("Created listing ID:", listingId);
 
       // Redirect to browse
       router.push("/browse");

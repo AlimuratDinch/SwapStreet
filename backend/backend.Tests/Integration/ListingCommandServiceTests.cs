@@ -51,7 +51,7 @@ public class ListingCommandServiceTests
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
             TagId = TestData.TestTagId,
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -93,7 +93,7 @@ public class ListingCommandServiceTests
             Price = 45.50m,
             ProfileId = TestData.TestProfileId,
             FSA = "M5A",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
             // TagId is null/not provided
         };
 
@@ -126,7 +126,7 @@ public class ListingCommandServiceTests
             Price = 65.00m,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         var request2 = new CreateListingRequestDto
@@ -136,7 +136,7 @@ public class ListingCommandServiceTests
             Price = 75.00m,
             ProfileId = TestData.TestSecondProfileId,
             FSA = "M5A",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -181,7 +181,7 @@ public class ListingCommandServiceTests
             ProfileId = baseRequest.ProfileId,
             FSA = baseRequest.FSA,
             TagId = TestData.TestTagId,
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         var request2 = new CreateListingRequestDto
@@ -191,7 +191,7 @@ public class ListingCommandServiceTests
             Price = 150.00m,
             ProfileId = baseRequest.ProfileId,
             FSA = baseRequest.FSA,
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -230,7 +230,7 @@ public class ListingCommandServiceTests
             Price = 10.00m,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            Images = new List<IFormFile>()
+            // Images = new List<IFormFile>()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -256,7 +256,7 @@ public class ListingCommandServiceTests
             Price = 50.00m,
             ProfileId = TestData.TestProfileId,
             FSA = "ZZZ", // Invalid FSA code
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -282,7 +282,7 @@ public class ListingCommandServiceTests
             Price = 99.99m,
             ProfileId = TestData.TestProfileId,
             FSA = "X9X", // Not seeded
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -314,7 +314,7 @@ public class ListingCommandServiceTests
             Price = 75.00m,
             ProfileId = invalidProfileId,
             FSA = "H2X",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -353,7 +353,7 @@ public class ListingCommandServiceTests
             Price = 50.00m,
             ProfileId = deletedProfileId,
             FSA = "H2X",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -386,7 +386,7 @@ public class ListingCommandServiceTests
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
             TagId = invalidTagId,
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -418,7 +418,7 @@ public class ListingCommandServiceTests
             Price = 30.00m,
             ProfileId = TestData.TestProfileId,
             FSA = "M5A",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -452,7 +452,7 @@ public class ListingCommandServiceTests
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
             TagId = TestData.TestTagId,
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -485,7 +485,7 @@ public class ListingCommandServiceTests
             Price = 50.00m,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -522,7 +522,7 @@ public class ListingCommandServiceTests
             Price = 0m,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -554,7 +554,7 @@ public class ListingCommandServiceTests
             Price = largePrice,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
@@ -587,7 +587,7 @@ public class ListingCommandServiceTests
             Price = 50.00m,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            Images = CreateTestImages()
+            // Images = CreateTestImages()
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
