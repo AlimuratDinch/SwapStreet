@@ -34,6 +34,9 @@ public class Listing
     [ForeignKey("TagId")]
     public Tag? Tag { get; set; }
 
+    // Navigation property for listing images
+    public ICollection<ListingImage> ListingImages { get; set; } = new List<ListingImage>();
+
     // Full-Text Search Vector, "SearchText" (computed column in DB) and can be accessed context.Listings.Where(l => EF.Property<string>(l, "SearchText") != null)
 
     [Required(ErrorMessage = "FSA is required")]

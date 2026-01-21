@@ -25,7 +25,9 @@ export default function WardrobePage() {
           process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
         const response = await fetch(`${API_URL}/api/catalog/items`);
         if (response.ok) {
-          const items = await response.json();
+          const data = await response.json();
+          // Handle paginated response: { items: [...], pagination: {...} }
+          const items = Array.isArray(data) ? data : data.items || [];
           if (items && items.length > 0) {
             setFirstListingId(items[0].id);
           }

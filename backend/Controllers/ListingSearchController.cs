@@ -52,27 +52,38 @@ public class CatalogController : ControllerBase
         [FromQuery] decimal? minPrice = null,
         [FromQuery] decimal? maxPrice = null,
         [FromQuery] int? categoryId = null,
-        [FromQuery] string? conditions = null)
+        [FromQuery] string? conditions = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int limit = 20)
     {
+        // Validate and cap pagination parameters
+        page = Math.Max(1, page);
+        limit = Math.Min(Math.Max(1, limit), 50); // Cap at 50 items per page
+
         var query = _db.Listings.AsNoTracking();
 
-        // Price filtering
+        // Price filtering in database
         if (minPrice.HasValue)
             query = query.Where(l => l.Price >= minPrice.Value);
 
         if (maxPrice.HasValue)
             query = query.Where(l => l.Price <= maxPrice.Value);
 
-        // Order by most recent and take all
+        // Get total count before pagination
+        var totalCount = await query.CountAsync();
+
+        // Order and paginate in database
         var items = await query
             .OrderByDescending(l => l.CreatedAt)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .Include(l => l.Profile)
+            .Include(l => l.ListingImages)
             .Select(l => new
             {
                 Listing = l,
-                Profile = _db.Profiles.AsNoTracking()
-                    .FirstOrDefault(p => p.Id == l.ProfileId),
-                Image = _db.ListingImages.AsNoTracking()
-                    .Where(li => li.ListingId == l.Id)
+                Profile = l.Profile,
+                Image = l.ListingImages
                     .OrderBy(li => li.DisplayOrder)
                     .FirstOrDefault()
             })
@@ -83,19 +94,14 @@ public class CatalogController : ControllerBase
         var minioBucket = _configuration["MINIO_PUBLIC_BUCKET"] ?? "public";
         var minioUrl = $"http://{minioEndpoint}/{minioBucket}";
 
-        // Map -> DTO with image information
-        var result = new List<object>();
-        foreach (var item in items)
+        // Map to DTO with image information
+        var result = items.Select(item =>
         {
-            var profile = item.Profile;
-
-            var image = item.Image;
-
-            var imageUrl = image?.ImagePath != null
-                ? $"{minioUrl}/{image.ImagePath}"
+            var imageUrl = item.Image?.ImagePath != null
+                ? $"{minioUrl}/{item.Image.ImagePath}"
                 : "/images/clothes_login_page.png";
 
-            result.Add(new
+            return new
             {
                 item.Listing.Id,
                 item.Listing.Title,
@@ -103,10 +109,23 @@ public class CatalogController : ControllerBase
                 item.Listing.Price,
                 imageUrl,
                 item.Listing.CreatedAt,
-                sellerName = profile?.FirstName + " " + profile?.LastName
-            });
-        }
+                sellerName = item.Profile != null 
+                    ? $"{item.Profile.FirstName} {item.Profile.LastName}" 
+                    : "Unknown"
+            };
+        }).ToList();
 
-        return Ok(result);
+        return Ok(new
+        {
+            items = result,
+            pagination = new
+            {
+                page,
+                limit,
+                totalCount,
+                totalPages = (int)Math.Ceiling(totalCount / (double)limit),
+                hasNextPage = page < Math.Ceiling(totalCount / (double)limit)
+            }
+        });
     }
 }
