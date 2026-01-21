@@ -34,7 +34,8 @@ namespace backend.Services.Chat
                     Id = m.Id,
                     SendDate = m.SendDate,
                     Content = m.Content,
-                    ChatroomId = m.ChatroomId
+                    ChatroomId = m.ChatroomId,
+                    AuthorId = m.AuthorId
                 }).ToList()
             };
         }
@@ -73,7 +74,8 @@ namespace backend.Services.Chat
                             Id = lastMessage.Id,
                             SendDate = lastMessage.SendDate,
                             Content = lastMessage.Content,
-                            ChatroomId = lastMessage.ChatroomId
+                            ChatroomId = lastMessage.ChatroomId,
+                            AuthorId = lastMessage.AuthorId
                         }
                     } : new List<MessageDto>()
                 };

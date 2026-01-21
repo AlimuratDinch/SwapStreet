@@ -14,7 +14,7 @@ namespace backend.Services.Chat
             _context = context;
         }
 
-        public async Task<MessageDto> SendMessageAsync(Guid chatroomId, Guid senderId, string content)
+        public async Task<MessageDto> SendMessageAsync(Guid chatroomId, Guid authorId, string content)
         {
             // Validate chatroom exists
             var chatroom = await _context.Chatrooms.FindAsync(chatroomId);
@@ -22,7 +22,7 @@ namespace backend.Services.Chat
                 throw new ArgumentException("Chatroom not found");
 
             // Validate sender belongs to chatroom
-            if (chatroom.SellerId != senderId && chatroom.BuyerId != senderId)
+            if (chatroom.SellerId != authorId && chatroom.BuyerId != authorId)
                 throw new UnauthorizedAccessException("User does not belong to this chatroom");
 
             // Validate content
@@ -34,7 +34,8 @@ namespace backend.Services.Chat
                 Id = Guid.NewGuid(),
                 SendDate = DateTimeOffset.UtcNow,
                 Content = content,
-                ChatroomId = chatroomId
+                ChatroomId = chatroomId,
+                AuthorId = authorId
             };
 
             _context.Messages.Add(message);
@@ -45,7 +46,8 @@ namespace backend.Services.Chat
                 Id = message.Id,
                 SendDate = message.SendDate,
                 Content = message.Content,
-                ChatroomId = message.ChatroomId
+                ChatroomId = message.ChatroomId,
+                AuthorId = message.AuthorId
             };
         }
 
@@ -63,7 +65,8 @@ namespace backend.Services.Chat
                 Id = m.Id,
                 SendDate = m.SendDate,
                 Content = m.Content,
-                ChatroomId = m.ChatroomId
+                ChatroomId = m.ChatroomId,
+                AuthorId = m.AuthorId
             }).Reverse().ToList(); // Reverse to get chronological order
         }
 
@@ -78,7 +81,8 @@ namespace backend.Services.Chat
                 Id = message.Id,
                 SendDate = message.SendDate,
                 Content = message.Content,
-                ChatroomId = message.ChatroomId
+                ChatroomId = message.ChatroomId,
+                AuthorId = message.AuthorId
             };
         }
         
