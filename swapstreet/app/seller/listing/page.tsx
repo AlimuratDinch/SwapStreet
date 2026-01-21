@@ -1,35 +1,48 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 
 export default function SellerListingPage() {
   const router = useRouter();
-
+  const { accessToken } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [category, setCategory] = useState<string>("");
-  const [subcategory, setSubcategory] = useState<string>("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profileId, setProfileId] = useState<string>("");
+  const [fsa, setFsa] = useState<string>("");
+  const [profileLoading, setProfileLoading] = useState(true);
 
-  // Category options
-  const categories = {
-    Shirts: ["T-shirts", "Polos", "Blouses", "Shirts", "Sweaters"],
-    Pants: ["Jeans", "Trousers", "Shorts", "Leggings", "Joggers"],
-    Dresses: ["Long", "Short", "Mid-length", "Mini", "Maxi"],
-    Accessories: ["Shoes", "Bags", "Jewelry", "Hats", "Scarves"],
-    Portables: [
-      "Backpacks",
-      "Tote Bags",
-      "Messenger Bags",
-      "Wallets",
-      "Purses",
-    ],
-  };
+  // Fetch profile info for profileId and FSA
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!accessToken) return;
+      setProfileLoading(true);
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/profile/me`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        const data = await res.json();
+        setProfileId(data.id);
+        setFsa(data.fsa);
+      } catch (err) {
+        setError("Could not load profile info. Please refresh or re-login.");
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+    fetchProfile();
+  }, [accessToken]);
 
   // Handle form input changes
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,15 +58,6 @@ export default function SellerListingPage() {
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPrice(value ? Number(value) : null);
-  };
-
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCategory(e.target.value);
-    setSubcategory(""); // Reset subcategory when category changes
-  };
-
-  const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSubcategory(e.target.value);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,62 +93,61 @@ export default function SellerListingPage() {
       setIsSubmitting(false);
       return;
     }
-
     if (!description.trim()) {
       setError("Please enter a description.");
       setIsSubmitting(false);
       return;
     }
-
     if (!price || price <= 0) {
       setError("Please enter a valid price.");
       setIsSubmitting(false);
       return;
     }
-
     if (!images.length) {
       setError("Please upload at least one image.");
       setIsSubmitting(false);
       return;
     }
-
-    if (!category) {
-      setError("Please select a category.");
+    if (!profileId) {
+      setError("Profile ID missing. Please refresh or re-login.");
       setIsSubmitting(false);
       return;
     }
-
-    if (!subcategory) {
-      setError("Please select a subcategory.");
+    if (!fsa) {
+      setError("FSA missing. Please refresh or re-login.");
       setIsSubmitting(false);
       return;
     }
 
     try {
-      const listingData = {
-        id: Date.now().toString(),
-        title: title.trim(),
-        description: description.trim(),
-        price,
-        category,
-        subcategory,
-        images: imagePreviews,
-        timestamp: new Date().toISOString(),
-        status: "active",
-      };
+        console.log("Submitting FSA value:", fsa);
+      // Prepare form data for backend
+      const formData = new FormData();
+      formData.append("Title", title.trim());
+      formData.append("Description", description.trim());
+      formData.append("Price", price?.toString() ?? "0");
+      formData.append("ProfileId", profileId);
+      formData.append("FSA", fsa);
+      images.forEach((file, idx) => {
+        formData.append("Images", file);
+      });
 
-      // Save to localStorage
-      // TODO: Change this code to save to the database
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const response = await fetch(`${apiUrl}/api/listings`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      });
 
-      const existingListings = JSON.parse(
-        localStorage.getItem("seller:listings") || "[]",
-      );
-      existingListings.push(listingData);
-      localStorage.setItem("seller:listings", JSON.stringify(existingListings));
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to create listing");
+      }
 
-      // Redirect to seller profile
-      router.push("/profile");
-      // router.back();
+      // Redirect to browse
+      router.push("/browse");
     } catch (err) {
       console.error("Failed to save listing:", err);
       setError("Failed to save listing. Please try again.");
@@ -162,10 +165,13 @@ export default function SellerListingPage() {
         Add a new item to your product catalog.
       </p>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-8 space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
-      >
+      {profileLoading ? (
+        <div className="mt-8 text-center text-gray-500">Loading profile info...</div>
+      ) : (
+        <form
+          onSubmit={handleSubmit}
+          className="mt-8 space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
+        >
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}
@@ -236,60 +242,6 @@ export default function SellerListingPage() {
           </div>
         </div>
 
-        {/* Category and Subcategory */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Category *
-            </label>
-            <select
-              id="category"
-              value={category}
-              onChange={handleCategoryChange}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="" disabled>
-                Select a category
-              </option>
-              {Object.keys(categories).map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="subcategory"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Subcategory *
-            </label>
-            <select
-              id="subcategory"
-              value={subcategory}
-              onChange={handleSubcategoryChange}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-              disabled={!category}
-            >
-              <option value="" disabled>
-                {category ? "Select a subcategory" : "Select a category first"}
-              </option>
-              {category &&
-                categories[category as keyof typeof categories].map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-            </select>
-          </div>
-        </div>
-
         {/* Image Upload */}
         <div>
           <label
@@ -334,7 +286,9 @@ export default function SellerListingPage() {
           )}
         </div>
 
-        {}
+        {/* Hidden fields for profileId and FSA */}
+        <input type="hidden" name="profileId" value={profileId} />
+        <input type="hidden" name="fsa" value={fsa} />
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
@@ -352,6 +306,7 @@ export default function SellerListingPage() {
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }

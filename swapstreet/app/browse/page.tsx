@@ -84,3 +84,6 @@ export default async function BrowsePage({
     </div>
   );
 }
+<button className="bg-teal-400 hover:bg-teal-500 text-white font-bold w-12 h-12 rounded-full shadow-lg transition duration-150 ease-in-out">
+            +
+            </button>
