@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
 export default function SellerListingPage() {
   const router = useRouter();
   const { accessToken } = useAuth();
@@ -18,7 +20,6 @@ export default function SellerListingPage() {
   const [fsa, setFsa] = useState<string>("");
   const [profileLoading, setProfileLoading] = useState(true);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   async function uploadListingImages(listingId: string) {
     for (const file of images) {
@@ -36,8 +37,8 @@ export default function SellerListingPage() {
       });
 
       if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || "Image upload failed");
+        const errorText = await res.text();
+        throw new Error(errorText || "Image upload failed");
       }
     }
   }
@@ -59,7 +60,8 @@ export default function SellerListingPage() {
         const data = await res.json();
         setProfileId(data.id);
         setFsa(data.fsa);
-      } catch (err) {
+      } catch (error) {
+        console.error(error);
         setError("Could not load profile info. Please refresh or re-login.");
       } finally {
         setProfileLoading(false);
@@ -173,7 +175,8 @@ export default function SellerListingPage() {
 
       // Redirect to browse
       router.push("/browse");
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       setError("Failed to create listing");
     } finally {
       setIsSubmitting(false);
