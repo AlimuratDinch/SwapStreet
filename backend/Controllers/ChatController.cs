@@ -165,5 +165,39 @@ namespace backend.Controllers
                 return Unauthorized(new { Error = ex.Message });
             }
         }
+        
+        /// <summary>
+        /// Delete messages
+        /// </summary>
+        [HttpGet("chatrooms/delete/{chatroomId}")]
+        public async Task<IActionResult> DeleteChatroom(Guid chatroomId)
+        {
+            try
+            {
+                var userId = GetUserId();
+                bool isInChatroom = await _chatroomService
+                    .UserBelongsToChatroomAsync(userId, chatroomId);
+                
+                if (isInChatroom)
+                {
+                    _chatroomService.DeleteChatroom(userId);
+                }
+                else
+                {
+                    return Forbid("You are not part of this chatroom");
+                }
+                
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            
+            return Ok();
+        }
     }
 }

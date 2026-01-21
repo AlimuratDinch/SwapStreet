@@ -186,7 +186,10 @@ public class AppDbContext : DbContext
             .HasOne(m => m.Chatroom)
             .WithMany()
             .HasForeignKey(m => m.ChatroomId)
-            .IsRequired();
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        // Delete messages if a user deletes a chatroom
+            
         modelBuilder.Entity<Message>()
             .Property(m => m.Content)
             .HasConversion<string>();

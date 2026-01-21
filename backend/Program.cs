@@ -172,6 +172,7 @@ static void ConfigureMinio(WebApplicationBuilder builder)
 static void ConfigureAuthentication(WebApplicationBuilder builder)
 {
     var jwtSecret = builder.Configuration["JWT_SECRET"]
+                  ?? builder.Configuration["Jtw:Key"]
                   ?? "402375d38deb9c479fb043f369d1b2d2";
 
     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));

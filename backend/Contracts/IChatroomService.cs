@@ -9,5 +9,6 @@ namespace backend.Contracts
         Task<ChatroomDto> CreateChatroomAsync(CreateChatroomDto dto);
         Task<ChatroomDto?> GetOrCreateChatroomAsync(Guid sellerId, Guid buyerId);
         Task<bool> UserBelongsToChatroomAsync(Guid userId, Guid chatroomId);
+        void DeleteChatroom(Guid chatroomId);
     }
 }
