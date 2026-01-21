@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Security.Claims;
+using backend.Contracts.Auth;
 
 namespace backend.Controllers;
 
@@ -16,13 +17,17 @@ public class TryOnController : ControllerBase
     private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<TryOnController> _logger;
 
+    private readonly IUserService _userService;
+
     public TryOnController(
         ITryOnService tryOnService,
         IFileStorageService fileStorageService,
+        IUserService userService,
         ILogger<TryOnController> logger)
     {
         _tryOnService = tryOnService;
         _fileStorageService = fileStorageService;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -45,13 +50,6 @@ public class TryOnController : ControllerBase
                 return BadRequest(new { error = "Request body is required" });
             }
 
-            // Get access token from Authorization header or cookie
-
-            // if(string.IsNullOrEmpty(request.UserImageUrl))
-            // {
-            //     return BadRequest(new { error = "User image URL is required" });
-            // }
-
             if (string.IsNullOrEmpty(request.ClothingImageUrl))
             {
                 return BadRequest(new { error = "Clothing image URL is required" });
@@ -59,7 +57,22 @@ public class TryOnController : ControllerBase
 
             _logger.LogInformation("Starting try-on processing...");
 
-            // Process the try-on request (automatically fetches user image from DB)
+
+            var deductResult = await _userService.DeductTokenAsync(userId);
+
+            // Check result
+            if (!deductResult)
+            {
+                _logger.LogWarning("Try-On blocked for user {UserId}: Insufficient tokens or unverified account.", userId);
+
+                // Return 402 Payment Required (or 403 Forbidden)
+                return StatusCode(402, new { error = "You have no tokens remaining. Verify your email or wait for the daily reset." });
+            }
+
+            // Log Success (Using structured logging)
+            _logger.LogInformation("Token deducted successfully for {UserId}. Proceeding to generation.", userId);
+
+            // Process the try-on request
             var generatedImagePath = await _tryOnService.ProcessTryOnRequestAsync(
                 userId,
                 request.ClothingImageUrl);
@@ -120,4 +133,6 @@ public class TryOnController : ControllerBase
             return StatusCode(500, new { error = $"An error occurred: {ex.Message}" });
         }
     }
+
+
 }
