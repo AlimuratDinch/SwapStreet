@@ -19,7 +19,10 @@ export async function fetchClothingItems(
       params.set("categoryId", resolvedParams.categoryId);
     if (resolvedParams.conditions)
       params.set("conditions", resolvedParams.conditions);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl =
+      process.env.API_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:8080";
     const url = `${apiUrl}/api/catalog/items${params.toString() ? `?${params.toString()}` : ""}`;
     const res = await fetch(url, {
       cache: "no-store",
@@ -77,6 +80,13 @@ export default async function BrowsePage({
             </p>
           )}
         </main>
+      </div>
+      <div className="fixed bottom-4 right-4">
+        <a href="/seller/createListing">
+          <button className="bg-teal-400 hover:bg-teal-500 text-white font-bold w-12 h-12 rounded-full shadow-lg transition duration-150 ease-in-out">
+            +
+          </button>
+        </a>
       </div>
     </div>
   );

@@ -35,12 +35,11 @@ namespace backend.Controllers
             CancellationToken cancellationToken = default)
         {
             _logger.LogDebug(
-                "Received CreateListingRequestDto: Title={Title}, Price={Price}, ProfileId={ProfileId}, FSA={FSA}, ImageCount={ImageCount}",
+                "Received CreateListingRequestDto: Title={Title}, Price={Price}, ProfileId={ProfileId}, FSA={FSA}",
                 dto?.Title,
                 dto?.Price,
                 dto?.ProfileId,
-                dto?.FSA,
-                dto?.Images?.Count ?? 0);
+                dto?.FSA);
 
             if (dto == null)
             {
@@ -63,16 +62,17 @@ namespace backend.Controllers
                 var listingId = await _listingCommandService.CreateListingAsync(dto, cancellationToken);
 
                 _logger.LogInformation(
-                    "Listing created successfully: Id={ListingId}, Title={Title}, ProfileId={ProfileId}, ImageCount={ImageCount}",
+                    "Listing created successfully: Id={ListingId}, Title={Title}, ProfileId={ProfileId}, FSA={FSA}",
                     listingId,
                     dto.Title,
                     dto.ProfileId,
-                    dto.Images?.Count ?? 0);
+                    dto.FSA
+                    );
 
                 return CreatedAtAction(
                     nameof(Create),
                     new { id = listingId },
-                    new { Id = listingId, Message = "Listing created successfully", ImageCount = dto.Images?.Count ?? 0 });
+                    new { Id = listingId, Message = "Listing created successfully" });
             }
             catch (ArgumentException ex)
             {

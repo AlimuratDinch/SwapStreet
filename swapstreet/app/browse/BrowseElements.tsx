@@ -40,7 +40,7 @@ type HeaderProps = {
 export function Header({ showCenterNav = true }: HeaderProps) {
   return (
     <header
-      className="fixed top-0 left-0 right-0 shadow-sm px-6 py-4 flex items-center justify-between z-[100]"
+      className="fixed top-0 left-0 right-0 shadow-sm px-6 py-2 flex items-center justify-between z-[100]"
       style={{ backgroundColor: "#eae9ea" }}
     >
       <div className="flex items-center gap-3">
@@ -110,18 +110,29 @@ export function Header({ showCenterNav = true }: HeaderProps) {
         </div>
       )}
 
-      <div className="flex gap-5 items-center">
-        <Globe className="w-5.5 h-5.5 cursor-default text-gray-400" />
-        <Leaf className="w-5.5 h-5.5 cursor-default text-gray-400" />
+      <div className="flex gap-2 items-center">
+        <div className="p-2.5">
+          <Globe className="w-6.5 h-6.5 text-gray-400" />
+        </div>
+        <div className="p-2.5">
+          <Leaf className="w-6.5 h-6.5 text-gray-400" />
+        </div>
         <Link href="/wardrobe">
           <button
-            className="group p-2 rounded-full transition-all duration-200 hover:bg-gray-200 hover:scale-110"
+            className="p-2 rounded-full bg-gray-300 transition-colors duration-200 hover:bg-gray-400"
             title="Shopping Bag"
           >
-            <ShoppingBag className="w-5.5 h-5.5 cursor-pointer text-black transition-colors duration-200 group-hover:text-teal-500" />
+            <ShoppingBag className="w-6.5 h-6.5 text-gray-600" />
           </button>
         </Link>
-        <User className="w-5.5 h-5.5 cursor-default text-gray-400" />
+        <Link href="/profile">
+          <button
+            className="p-2 rounded-full bg-gray-300 transition-colors duration-200 hover:bg-gray-400"
+            title="Profile"
+          >
+            <User className="w-6.5 h-6.5 text-gray-600" />
+          </button>
+        </Link>
       </div>
     </header>
   );
