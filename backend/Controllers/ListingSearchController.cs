@@ -66,6 +66,16 @@ public class CatalogController : ControllerBase
         // Order by most recent and take all
         var items = await query
             .OrderByDescending(l => l.CreatedAt)
+            .Select(l => new
+            {
+                Listing = l,
+                Profile = _db.Profiles.AsNoTracking()
+                    .FirstOrDefault(p => p.Id == l.ProfileId),
+                Image = _db.ListingImages.AsNoTracking()
+                    .Where(li => li.ListingId == l.Id)
+                    .OrderBy(li => li.DisplayOrder)
+                    .FirstOrDefault()
+            })
             .ToListAsync();
 
         // Get MinIO configuration
@@ -77,14 +87,9 @@ public class CatalogController : ControllerBase
         var result = new List<object>();
         foreach (var item in items)
         {
-            var profile = await _db.Profiles.AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == item.ProfileId);
+            var profile = item.Profile;
 
-            var image = await _db.ListingImages
-                .AsNoTracking()
-                .Where(li => li.ListingId == item.Id)
-                .OrderBy(li => li.DisplayOrder)
-                .FirstOrDefaultAsync();
+            var image = item.Image;
 
             var imageUrl = image?.ImagePath != null
                 ? $"{minioUrl}/{image.ImagePath}"
@@ -92,12 +97,12 @@ public class CatalogController : ControllerBase
 
             result.Add(new
             {
-                item.Id,
-                item.Title,
-                item.Description,
-                item.Price,
+                item.Listing.Id,
+                item.Listing.Title,
+                item.Listing.Description,
+                item.Listing.Price,
                 imageUrl,
-                item.CreatedAt,
+                item.Listing.CreatedAt,
                 sellerName = profile?.FirstName + " " + profile?.LastName
             });
         }

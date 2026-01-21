@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function SellerListingPage() {
   const router = useRouter();
@@ -142,7 +143,7 @@ export default function SellerListingPage() {
       localStorage.setItem("seller:listings", JSON.stringify(existingListings));
 
       // Redirect to seller profile
-      router.push("/seller/me"); // Assuming seller ID is 1
+      router.push("/profile");
       // router.back();
     } catch (err) {
       console.error("Failed to save listing:", err);
@@ -310,11 +311,15 @@ export default function SellerListingPage() {
           {imagePreviews.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
               {imagePreviews.map((preview, index) => (
-                <div key={index} className="relative">
-                  <img
+                <div key={index} className="relative h-32 w-full">
+                  <Image
                     src={preview}
                     alt={`Preview ${index + 1}`}
-                    className="h-32 w-full rounded-lg object-cover ring-1 ring-gray-200"
+                    fill
+                    className="rounded-lg object-cover ring-1 ring-gray-200"
+                    unoptimized={
+                      typeof preview === "string" && preview.startsWith("blob:")
+                    }
                   />
                   <button
                     type="button"
