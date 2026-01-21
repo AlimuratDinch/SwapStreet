@@ -37,21 +37,6 @@ export default function SellerOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
-  // Redirect if not authenticated (with a small delay to allow AuthContext to load)
-  useEffect(() => {
-    // Check both AuthContext and sessionStorage as fallback
-    const checkAuth = () => {
-      const tokenInStorage = sessionStorage.getItem("accessToken");
-      if (!isAuthenticated && !tokenInStorage) {
-        router.push("/auth/sign-in");
-      }
-    };
-
-    // Give AuthContext a moment to load from sessionStorage
-    const timeoutId = setTimeout(checkAuth, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [isAuthenticated, router]);
 
   // Fetch provinces on mount
   useEffect(() => {
@@ -300,6 +285,12 @@ export default function SellerOnboardingPage() {
         onSubmit={handleSubmit}
         className="mt-8 space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
       >
+        {!accessToken && !isAuthenticated && (
+          <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
+            It looks like you're not signed in. If you're already signed, try refreshing this page.
+          </div>
+        )}
+
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}
