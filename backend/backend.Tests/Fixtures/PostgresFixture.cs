@@ -4,13 +4,14 @@ using Xunit;
 using backend.DbContexts;
 using System.Threading.Tasks;
 using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace backend.Tests.Fixtures;
 
 public sealed class PostgresFixture : IAsyncLifetime
 {
     public PostgreSqlContainer Container { get; } =
-            new PostgreSqlBuilder("postgres:16") // or your version
+            new PostgreSqlBuilder("postgis/postgis:16-3.4") // or your version
             .WithDatabase("testdb")
             .WithUsername("postgres")
             .WithPassword("postgres")
@@ -26,7 +27,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         var connectionString = Container.GetConnectionString();
 
         DbOptions = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql(connectionString)
+            .UseNpgsql(connectionString, o => o.UseNetTopologySuite())
             .Options;
 
         AuthDbOptions = new DbContextOptionsBuilder<AuthDbContext>()

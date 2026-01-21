@@ -9,7 +9,7 @@ namespace backend.DbContexts
         public AppDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-            optionsBuilder.UseNpgsql(Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection"));
+            optionsBuilder.UseNpgsql(Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection"), o => o.UseNetTopologySuite());
 
             return new AppDbContext(optionsBuilder.Options);
         }
