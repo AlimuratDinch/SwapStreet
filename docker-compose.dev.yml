@@ -3,6 +3,7 @@
 services:
   postgres:
     image: postgis/postgis:16-3.4
+    platform: linux/amd64
     container_name: swapstreet-db
     env_file:
       - .env
@@ -34,6 +35,7 @@ services:
 
   minio:
     image: minio/minio:latest
+    platform: linux/amd64
     container_name: minio
     command: server /data --console-address ":9001"
     env_file:
