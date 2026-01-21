@@ -4,8 +4,6 @@ export async function fetchClothingItems(
   searchParams: Promise<{
     minPrice?: string;
     maxPrice?: string;
-    categoryId?: string;
-    conditions?: string;
   }>,
 ) {
   try {
@@ -15,10 +13,6 @@ export async function fetchClothingItems(
       params.set("minPrice", resolvedParams.minPrice);
     if (resolvedParams.maxPrice)
       params.set("maxPrice", resolvedParams.maxPrice);
-    if (resolvedParams.categoryId)
-      params.set("categoryId", resolvedParams.categoryId);
-    if (resolvedParams.conditions)
-      params.set("conditions", resolvedParams.conditions);
     const apiUrl =
       process.env.API_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
@@ -44,8 +38,6 @@ export default async function BrowsePage({
   searchParams: Promise<{
     minPrice?: string;
     maxPrice?: string;
-    categoryId?: string;
-    conditions?: string;
   }>;
 }) {
   const items = await fetchClothingItems(searchParams);
@@ -62,15 +54,16 @@ export default async function BrowsePage({
                 id: number;
                 title: string;
                 description: string;
-                imageUrl: string;
-                condition: string;
+                imageUrl: string;       
                 price: number;
+                fsa: string;
               }) => (
                 <CardItem
                   key={item.id}
                   title={item.title}
                   imgSrc={item.imageUrl}
                   price={item.price ?? 0}
+                  fsa={item.fsa ?? "Err"}
                 />
               ),
             )
