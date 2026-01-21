@@ -103,6 +103,7 @@ public class CatalogController : ControllerBase
                 item.Listing.Price,
                 imageUrl,
                 item.Listing.CreatedAt,
+                item.Listing.FSA,
                 sellerName = profile?.FirstName + " " + profile?.LastName
             });
         }
