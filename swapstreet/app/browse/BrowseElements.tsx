@@ -1,5 +1,4 @@
 "use client";
-
 import {
   Search,
   Leaf,
@@ -7,6 +6,7 @@ import {
   Globe,
   User,
   ChevronDown,
+  MapPin,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -282,10 +282,12 @@ export function CardItem({ title, imgSrc, price, fsa }: CardItemProps) {
         <h4 className="card-item-title">{title}</h4>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
-          <p className="card-item-price">{fsa}</p>
           <button className="card-item-wishlist-btn" title="Add to wishlist">
             <Star className="w-6 h-6" />
           </button>
+        </div>
+        <div className="card-item-fsa-container">
+         <p className="card-item-fsa"><MapPin size={12}/>{fsa}</p>
         </div>
       </div>
     </div>
