@@ -121,7 +121,7 @@ static void ConfigureCors(WebApplicationBuilder builder)
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost:3000")
+            policy.WithOrigins("http://localhost:3000", "http://localhost:8080") 
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -388,6 +388,7 @@ static void ConfigureMiddleware(WebApplication app)
     });
 
     app.UseCors("AllowFrontend");
+    app.UseStaticFiles(); // Enable serving static files from wwwroot (e.g., chat-test.html)
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
