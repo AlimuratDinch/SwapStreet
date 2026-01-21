@@ -2,6 +2,7 @@
 services:
   postgres:
     image: postgis/postgis:16-3.5
+    platform: linux/amd64
     container_name: swapstreet-db
     env_file:
       - .env
