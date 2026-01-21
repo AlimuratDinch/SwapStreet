@@ -177,11 +177,6 @@ namespace backend.Migrations
                     b.Property<Guid>("ProfileId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("SearchText")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("text")
-                        .HasComputedColumnSql("COALESCE(\"Title\" || ' ' || \"Description\" || ' ', '')", true);
-
                     b.Property<Guid?>("TagId")
                         .HasColumnType("uuid");
 
@@ -198,12 +193,6 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProfileId");
-
-                    b.HasIndex("SearchText")
-                        .HasDatabaseName("idx_listings_search_trgm");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchText"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("SearchText"), new[] { "gin_trgm_ops" });
 
                     b.HasIndex("TagId");
 

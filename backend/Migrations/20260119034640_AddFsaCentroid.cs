@@ -218,8 +218,7 @@ namespace backend.Migrations
                     TagId = table.Column<Guid>(type: "uuid", nullable: true),
                     FSA = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
-                    SearchText = table.Column<string>(type: "text", nullable: true, computedColumnSql: "COALESCE(\"Title\" || ' ' || \"Description\" || ' ', '')", stored: true)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
                 constraints: table =>
                 {
@@ -368,13 +367,6 @@ namespace backend.Migrations
                 name: "IX_listing_images_ListingId",
                 table: "listing_images",
                 column: "ListingId");
-
-            migrationBuilder.CreateIndex(
-                name: "idx_listings_search_trgm",
-                table: "listings",
-                column: "SearchText")
-                .Annotation("Npgsql:IndexMethod", "gin")
-                .Annotation("Npgsql:IndexOperators", new[] { "gin_trgm_ops" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_listings_ProfileId",

@@ -55,10 +55,10 @@ namespace backend.Data.Seed
 
             // Get the test profile ID
             var profileId = ProfileSeeder.TestProfileId;
-
-            // Verify profile exists
-            var profileExists = await context.Profiles.AnyAsync(p => p.Id == profileId);
-            if (!profileExists)
+            
+            // Verify profile exists and get its FSA
+            var profile = await context.Profiles.FirstOrDefaultAsync(p => p.Id == profileId);
+            if (profile == null)
             {
                 logger.LogWarning("Test profile not found. Cannot seed listings.");
                 return;
@@ -112,6 +112,18 @@ namespace backend.Data.Seed
             // Get random number generator
             var random = new Random();
 
+            // Fetch valid FSAs from the database for random selection
+            var validFSAs = await context.Fsas
+                .Select(f => f.Code)
+                .ToListAsync();
+
+            // Fallback to generating random valid FSAs if database is empty
+            if (validFSAs.Count == 0)
+            {
+                logger.LogWarning("No FSAs found in database. Generating random valid FSAs.");
+                validFSAs = GenerateRandomValidFSAs(50, random); // Generate 50 random valid FSAs
+            }
+
             // Calculate how many listings we need to create
             var listingsToCreate = 100 - existingCount;
             var listings = new List<Listing>();
@@ -159,6 +171,25 @@ namespace backend.Data.Seed
                 logger.LogError(ex, "Failed to seed listings. Error: {ErrorMessage}", ex.Message);
                 throw;
             }
+        }
+
+        private static List<string> GenerateRandomValidFSAs(int count, Random random)
+        {
+            var fsas = new HashSet<string>();
+            var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            var numbers = "0123456789";
+
+            while (fsas.Count < count)
+            {
+                var firstLetter = letters[random.Next(letters.Length)];
+                var number = numbers[random.Next(numbers.Length)];
+                var secondLetter = letters[random.Next(letters.Length)];
+                
+                var fsa = $"{firstLetter}{number}{secondLetter}";
+                fsas.Add(fsa);
+            }
+
+            return fsas.ToList();
         }
     }
 }

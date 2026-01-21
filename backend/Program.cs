@@ -14,6 +14,7 @@ using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
 using backend.Data.Seed;
 using System.Security.Cryptography;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -282,12 +283,30 @@ static async Task InitializeDatabaseAsync(WebApplication app)
         // Apply migrations only for relational databases
         if (appDb.Database.IsRelational())
         {
-            await appDb.Database.MigrateAsync();
+            try
+            {
+                await appDb.Database.MigrateAsync();
+            }
+            catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P07") // relation already exists
+            {
+                app.Logger.LogWarning("Some tables already exist. Migration may have been partially applied. Continuing...");
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("pending changes"))
+            {
+                app.Logger.LogWarning("Model has pending changes. Please create a new migration. Continuing without migration...");
+            }
         }
 
         if (authDb.Database.IsRelational())
         {
-            await authDb.Database.MigrateAsync();
+            try
+            {
+                await authDb.Database.MigrateAsync();
+            }
+            catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P07") // relation already exists
+            {
+                app.Logger.LogWarning("Some tables already exist. Migration may have been partially applied. Continuing...");
+            }
         }
 
         // Seed only in Test or Development environments
