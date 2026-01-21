@@ -689,5 +689,48 @@ namespace backend.Tests.Services
             result[0].Messages.Should().HaveCount(1);
             result[0].Messages[0].Content.Should().Be("Last");
         }
+        
+        [Fact]
+        public async Task DeleteChatroomAsync_ShouldDisappear()
+        {
+            // Arrange
+            var dto = new CreateChatroomDto { SellerId = _sellerId, BuyerId = _buyerId };
+            var chatroom = await _service.CreateChatroomAsync(dto);
+            
+            // Act
+            _service.DeleteChatroomAsync(chatroom.Id);
+            
+            // Assert
+            var result = await _service.GetUserChatroomsAsync(_sellerId);
+            result.Should().HaveCount(0);
+            result = await _service.GetUserChatroomsAsync(_buyerId);
+            result.Should().HaveCount(0);
+        }
+        
+        [Fact]
+        public async Task DeleteChatroomAsync_NothingHappens_WhenChatroomDoesNotExist()
+        {
+            // Arange
+            var dto = new CreateChatroomDto { SellerId = _sellerId, BuyerId = _buyerId };
+            await _service.CreateChatroomAsync(dto);
+            // Only to create dummy chatroom so that the amount of 
+            // chatrooms equals one.
+            
+            Exception exception = null;
+            try
+            {
+                // Act
+                _service.DeleteChatroomAsync(Guid.NewGuid());
+                
+            }
+            catch (ArgumentException argumentException)
+            {
+                exception = argumentException;
+            }
+            
+            // Assert
+            exception.Should().NotBeNull();
+            exception.Message.Should().Be("Cannot find chatroom");
+        }
     }
 }

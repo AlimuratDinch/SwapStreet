@@ -13,7 +13,7 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260121173143_InitialCreate")]
+    [Migration("20260121212918_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -273,6 +273,9 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ChatroomId")
                         .HasColumnType("uuid");
 
@@ -284,6 +287,8 @@ namespace backend.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
 
                     b.HasIndex("ChatroomId");
 
@@ -608,11 +613,19 @@ namespace backend.Migrations
 
             modelBuilder.Entity("Message", b =>
                 {
+                    b.HasOne("Profile", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Chatroom", "Chatroom")
                         .WithMany("Messages")
                         .HasForeignKey("ChatroomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Author");
 
                     b.Navigation("Chatroom");
                 });

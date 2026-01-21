@@ -81,5 +81,20 @@ namespace backend.Services.Chat
                 ChatroomId = message.ChatroomId
             };
         }
+        
+        public async void DeleteMessageByIdAsync(Guid messageId)
+        {
+            var message = await _context.Messages.FindAsync(messageId);
+            
+            if (message != null)
+            {
+                _context.Messages.Remove(message);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new ArgumentException("Cannot find message");
+            }
+        }
     }
 }

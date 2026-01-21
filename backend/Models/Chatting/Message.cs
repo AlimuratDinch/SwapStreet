@@ -16,4 +16,10 @@ public class Message
 
     [Required]
     public Guid ChatroomId { get; set; }
+    
+    [ForeignKey("AuthorId")]
+    public Profile? Author { get; set; }
+    
+    [Required]
+    public Guid AuthorId { get; set; }
 }

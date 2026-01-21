@@ -291,7 +291,8 @@ namespace backend.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     SendDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Content = table.Column<string>(type: "text", nullable: false),
-                    ChatroomId = table.Column<Guid>(type: "uuid", nullable: false)
+                    ChatroomId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AuthorId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -300,6 +301,12 @@ namespace backend.Migrations
                         name: "FK_messages_chatrooms_ChatroomId",
                         column: x => x.ChatroomId,
                         principalTable: "chatrooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_messages_profiles_AuthorId",
+                        column: x => x.AuthorId,
+                        principalTable: "profiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -441,6 +448,11 @@ namespace backend.Migrations
                 name: "IX_listings_TagId",
                 table: "listings",
                 column: "TagId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_messages_AuthorId",
+                table: "messages",
+                column: "AuthorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_messages_ChatroomId",

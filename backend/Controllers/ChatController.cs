@@ -167,9 +167,9 @@ namespace backend.Controllers
         }
         
         /// <summary>
-        /// Delete messages
+        /// Delete a chatroom
         /// </summary>
-        [HttpGet("chatrooms/delete/{chatroomId}")]
+        [HttpGet("chatrooms/{chatroomId}/delete")]
         public async Task<IActionResult> DeleteChatroom(Guid chatroomId)
         {
             try
@@ -180,7 +180,7 @@ namespace backend.Controllers
                 
                 if (isInChatroom)
                 {
-                    _chatroomService.DeleteChatroom(userId);
+                    _chatroomService.DeleteChatroomAsync(chatroomId);
                 }
                 else
                 {
@@ -197,6 +197,41 @@ namespace backend.Controllers
                 return BadRequest(new { Error = ex.Message });
             }
             
+            return Ok();
+        }
+        
+        // It is important to check that the message belongs to the 
+        // chatroom. Otherwise, a malicious could take another user's 
+        [HttpGet("chatrooms/message/{messageId}/delete")]
+        public async Task<IActionResult> DeleteMessage(Guid messageId)
+        {
+            try 
+            {
+                var messageDTO = await _chatService.GetMessageByIdAsync(messageId);
+                
+                if (messageDTO == null)
+                    return BadRequest(new { Error = "Message does not exist" });
+                
+                var chatroomId = messageDTO.ChatroomId;
+                
+                var chatroomDTO = await _chatroomService.GetChatroomByIdAsync(chatroomId);
+                var userId = GetUserId();
+                bool isInChatroom = await _chatroomService
+                    .UserBelongsToChatroomAsync(userId, chatroomDTO.Id);
+                
+                if (isInChatroom)
+                {
+                    _chatService.DeleteMessageByIdAsync(messageDTO.Id);
+                }
+                else
+                {
+                    return Forbid("Message to delete is not yours");
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
             return Ok();
         }
     }
