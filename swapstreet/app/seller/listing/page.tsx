@@ -18,16 +18,16 @@ export default function SellerListingPage() {
   const [fsa, setFsa] = useState<string>("");
   const [profileLoading, setProfileLoading] = useState(true);
 
-  async function uploadListingImages(listingId: string) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+  async function uploadListingImages(listingId: string) {
     for (const file of images) {
       const imageFormData = new FormData();
       imageFormData.append("File", file);
       imageFormData.append("Type", "Listing");
       imageFormData.append("ListingId", listingId);
 
-      const res = await fetch(`${apiUrl}/api/images/upload`, {
+      const res = await fetch(`${API_URL}/api/images/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -49,11 +49,10 @@ export default function SellerListingPage() {
       if (!accessToken) return;
       setProfileLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/profile/me`, {
+        const res = await fetch(`${API_URL}/api/profile/me`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
           },
         });
         if (!res.ok) throw new Error("Failed to fetch profile");
@@ -145,8 +144,6 @@ export default function SellerListingPage() {
     }
 
     try {
-        console.log("Submitting FSA value:", fsa);
-      // Prepare form data for backend
       const formData = new FormData();
       formData.append("Title", title.trim());
       formData.append("Description", description.trim());
@@ -154,8 +151,7 @@ export default function SellerListingPage() {
       formData.append("ProfileId", profileId);
       formData.append("FSA", fsa);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      const response = await fetch(`${apiUrl}/api/listings`, {
+      const response = await fetch(`${API_URL}/api/listings`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -165,7 +161,9 @@ export default function SellerListingPage() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || "Failed to create listing");
+        setError(errorText || "Failed to create listing");
+        setIsSubmitting(false);
+        return;
       }
 
       const data = await response.json();
@@ -173,13 +171,10 @@ export default function SellerListingPage() {
 
       await uploadListingImages(listingId);
 
-      console.log("Created listing ID:", listingId);
-
       // Redirect to browse
       router.push("/browse");
     } catch (err) {
-      console.error("Failed to save listing:", err);
-      setError("Failed to save listing. Please try again.");
+      setError("Failed to create listing");
     } finally {
       setIsSubmitting(false);
     }
@@ -194,6 +189,12 @@ export default function SellerListingPage() {
         Add a new item to your product catalog.
       </p>
 
+      {error && (
+        <div className="mt-8 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 text-center">
+          {error}
+        </div>
+      )}
+
       {profileLoading ? (
         <div className="mt-8 text-center text-gray-500">Loading profile info...</div>
       ) : (
@@ -201,11 +202,6 @@ export default function SellerListingPage() {
           onSubmit={handleSubmit}
           className="mt-8 space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
         >
-        {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
 
         {/* Title */}
         <div>
