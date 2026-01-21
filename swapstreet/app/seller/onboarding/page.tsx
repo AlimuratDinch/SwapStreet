@@ -195,10 +195,13 @@ export default function SellerOnboardingPage() {
           return;
         }
 
-        // Check authentication
-        if (!isAuthenticated || !accessToken) {
+        // Ensure we have an access token (attempt refresh once if missing)
+        let tokenToUse = accessToken;
+        if (!tokenToUse) {
+          tokenToUse = await refreshToken();
+        }
+        if (!tokenToUse) {
           setError("You must be logged in to create a profile.");
-          router.push("/auth/sign-in");
           return;
         }
 
@@ -208,7 +211,7 @@ export default function SellerOnboardingPage() {
 
         if (avatarFile) {
           profileImagePath = await uploadImage(
-            accessToken,
+            tokenToUse,
             avatarFile,
             "Profile",
             refreshToken,
@@ -217,7 +220,7 @@ export default function SellerOnboardingPage() {
 
         if (bannerFile) {
           bannerImagePath = await uploadImage(
-            accessToken,
+            tokenToUse,
             bannerFile,
             "Banner",
             refreshToken,
@@ -236,10 +239,10 @@ export default function SellerOnboardingPage() {
         };
 
         logger.debug("Profile data being sent", { profileData });
-        await createProfile(accessToken, profileData, refreshToken);
+        await createProfile(tokenToUse, profileData, refreshToken);
 
         // Redirect to profile page
-        router.push("/seller/me");
+        router.push("/profile");
       } catch (err: unknown) {
         logger.error("Failed to create profile", err);
         const errorMessage =
@@ -261,7 +264,6 @@ export default function SellerOnboardingPage() {
       bannerFile,
       router,
       accessToken,
-      isAuthenticated,
       refreshToken,
     ],
   );
