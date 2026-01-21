@@ -4,7 +4,9 @@ using backend.Tests.Fixtures;
 using backend.Models;
 using backend.Models.Authentication;
 using backend.DTOs.Search;
+using backend.Contracts;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 using System.Threading.Tasks;
 using System;
@@ -248,7 +250,9 @@ public class SearchServiceIntegrationTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         // "sneakrs" typo should match listings containing "sneakers"
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("sneakrs", pageSize: 20, cursor: null);
@@ -265,7 +269,9 @@ public class SearchServiceIntegrationTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         // page 1
         var (items1, cursor1, hasNext1) = await svc.SearchListingsAsync("shoes", pageSize: 1, cursor: null);
@@ -292,7 +298,9 @@ public class SearchServiceIntegrationTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("", pageSize: 2, cursor: null);
 
@@ -308,7 +316,9 @@ public class SearchServiceIntegrationTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         // Search for "Nike" (exact match, no typo)
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("Nike shoes", pageSize: 20, cursor: null);
@@ -324,7 +334,9 @@ public class SearchServiceIntegrationTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
 
@@ -343,7 +355,9 @@ public class SearchServiceIntegrationTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
 
@@ -365,7 +379,9 @@ public class SearchServiceIntegrationTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         var (items, _, _) = await svc.SearchListingsAsync("Nike", pageSize: 20, cursor: null);
 
