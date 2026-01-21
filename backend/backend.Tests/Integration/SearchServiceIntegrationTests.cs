@@ -202,7 +202,7 @@ public class SearchServiceIntegrationTests
         pgDb.Tags.Add(tag);
         await pgDb.SaveChangesAsync();
 
-                // Add test listings
+        // Add test listings
         var now = DateTime.UtcNow;
         pgDb.Listings.AddRange(
             new Listing
@@ -375,7 +375,7 @@ public class SearchServiceIntegrationTests
         var nikeListing = items.FirstOrDefault(l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(nikeListing); // Ensure we found the Nike listing
         Assert.NotNull(nikeListing.Listing.Tag); // Ensure Tag is not null
-        
+
         // Verify enums
         Assert.Equal(ColorEnum.White, nikeListing.Listing.Tag.Color);
         Assert.Equal(SexEnum.Unisex, nikeListing.Listing.Tag.Sex);
