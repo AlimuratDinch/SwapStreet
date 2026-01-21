@@ -13,17 +13,17 @@ import SellerListingPage from "@/app/seller/createListing/page";
 beforeAll(() => {
   global.fetch = jest.fn((url) => {
     if (typeof url === "string" && url.includes("/api/profile/me")) {
-      return Promise.resolve(({
+      return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
-      } as unknown) as Response);
+      } as unknown as Response);
     }
     // Default mock for other fetches
-    return Promise.resolve(({
+    return Promise.resolve({
       ok: true,
       json: () => Promise.resolve({}),
-      text: () => Promise.resolve("")
-    } as unknown) as Response);
+      text: () => Promise.resolve(""),
+    } as unknown as Response);
   }) as unknown as jest.Mock;
 });
 
@@ -83,12 +83,7 @@ describe("SellerListingPage", () => {
     it("renders all form fields", async () => {
       render(<SellerListingPage />);
       await waitFor(() => {
-        [
-          "Title",
-          "Description",
-          "Price",
-          "Images",
-        ].forEach((field) => {
+        ["Title", "Description", "Price", "Images"].forEach((field) => {
           expect(
             screen.getByLabelText(new RegExp(`^${field}`, "i")),
           ).toBeInTheDocument();
@@ -103,7 +98,6 @@ describe("SellerListingPage", () => {
         screen.getByText(/Add a new item to your product catalog/i),
       ).toBeInTheDocument();
     });
-
 
     it("renders submit and cancel buttons", async () => {
       render(<SellerListingPage />);
@@ -146,7 +140,6 @@ describe("SellerListingPage", () => {
       expect(priceInput).toHaveValue(null);
     });
   });
-
 
   // ----------------------------
   // Image handling
@@ -233,7 +226,6 @@ describe("SellerListingPage", () => {
       await waitFor(() => expect(mockPush).toHaveBeenCalled());
     });
 
-
     it("shows error when title is missing", async () => {
       render(<SellerListingPage />);
       const descInput = await screen.findByLabelText(/^Description/i);
@@ -314,7 +306,6 @@ describe("SellerListingPage", () => {
       });
     });
 
-
     it("shows error when more than 5 images are uploaded", async () => {
       render(<SellerListingPage />);
       const imagesInput = await screen.findByLabelText(/^Images/i);
@@ -333,103 +324,109 @@ describe("SellerListingPage", () => {
       // Mock fetch for listing creation to fail
       (global.fetch as jest.Mock).mockImplementation((url) => {
         if (typeof url === "string" && url.includes("/api/profile/me")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
-          } as unknown) as Response);
+          } as unknown as Response);
         }
         if (typeof url === "string" && url.includes("/api/listings")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: false,
             text: () => Promise.resolve("Failed to create listing"),
-          } as unknown) as Response);
+          } as unknown as Response);
         }
-        return Promise.resolve(({
+        return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({}),
-          text: () => Promise.resolve("")
-        } as unknown) as Response);
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
       });
 
       render(<SellerListingPage />);
       await fillValidForm();
       submitForm();
 
-      expect(await screen.findByText(/Failed to create listing/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/Failed to create listing/i),
+      ).toBeInTheDocument();
     });
 
     it("shows error when profile fetch fails", async () => {
       (global.fetch as jest.Mock).mockImplementation((url) => {
         if (typeof url === "string" && url.includes("/api/profile/me")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: false,
-            text: () => Promise.resolve("fail")
-          } as unknown) as Response);
+            text: () => Promise.resolve("fail"),
+          } as unknown as Response);
         }
-        return Promise.resolve(({
+        return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({}),
-          text: () => Promise.resolve("")
-        } as unknown) as Response);
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
       });
 
       render(<SellerListingPage />);
-      expect(await screen.findByText(/Could not load profile info/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/Could not load profile info/i),
+      ).toBeInTheDocument();
     });
 
     it("shows error when profileId is missing", async () => {
       (global.fetch as jest.Mock).mockImplementation((url) => {
         if (typeof url === "string" && url.includes("/api/profile/me")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ fsa: "A1A" })
-          } as unknown) as Response);
+            json: () => Promise.resolve({ fsa: "A1A" }),
+          } as unknown as Response);
         }
         if (typeof url === "string" && url.includes("/api/listings")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ id: "new-id" })
-          } as unknown) as Response);
+            json: () => Promise.resolve({ id: "new-id" }),
+          } as unknown as Response);
         }
-        return Promise.resolve(({
+        return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({}),
-          text: () => Promise.resolve("")
-        } as unknown) as Response);
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
       });
 
       render(<SellerListingPage />);
       await fillValidForm();
       submitForm();
-      expect(await screen.findByText(/Profile ID missing/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/Profile ID missing/i),
+      ).toBeInTheDocument();
     });
 
     it("shows error when fsa is missing", async () => {
       (global.fetch as jest.Mock).mockImplementation((url) => {
         if (typeof url === "string" && url.includes("/api/profile/me")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ id: "test-profile-id" })
-          } as unknown) as Response);
+            json: () => Promise.resolve({ id: "test-profile-id" }),
+          } as unknown as Response);
         }
         if (typeof url === "string" && url.includes("/api/listings")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ id: "new-id" })
-          } as unknown) as Response);
+            json: () => Promise.resolve({ id: "new-id" }),
+          } as unknown as Response);
         }
         if (typeof url === "string" && url.includes("/api/images/upload")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({}),
-            text: () => Promise.resolve("")
-          } as unknown) as Response);
+            text: () => Promise.resolve(""),
+          } as unknown as Response);
         }
-        return Promise.resolve(({
+        return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({}),
-          text: () => Promise.resolve("")
-        } as unknown) as Response);
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
       });
 
       render(<SellerListingPage />);
@@ -441,34 +438,36 @@ describe("SellerListingPage", () => {
     it("shows error when image upload fails after listing creation", async () => {
       (global.fetch as jest.Mock).mockImplementation((url) => {
         if (typeof url === "string" && url.includes("/api/profile/me")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" })
-          } as unknown) as Response);
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
         }
         if (typeof url === "string" && url.includes("/api/listings")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ id: "new-listing" })
-          } as unknown) as Response);
+            json: () => Promise.resolve({ id: "new-listing" }),
+          } as unknown as Response);
         }
         if (typeof url === "string" && url.includes("/api/images/upload")) {
-          return Promise.resolve(({
+          return Promise.resolve({
             ok: false,
-            text: () => Promise.resolve("Image upload failed")
-          } as unknown) as Response);
+            text: () => Promise.resolve("Image upload failed"),
+          } as unknown as Response);
         }
-        return Promise.resolve(({
+        return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({}),
-          text: () => Promise.resolve("")
-        } as unknown) as Response);
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
       });
 
       render(<SellerListingPage />);
       await fillValidForm();
       submitForm();
-      expect(await screen.findByText(/Failed to create listing/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/Failed to create listing/i),
+      ).toBeInTheDocument();
     });
   });
 

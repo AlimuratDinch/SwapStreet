@@ -20,7 +20,6 @@ export default function SellerListingPage() {
   const [fsa, setFsa] = useState<string>("");
   const [profileLoading, setProfileLoading] = useState(true);
 
-
   async function uploadListingImages(listingId: string) {
     for (const file of images) {
       const imageFormData = new FormData();
@@ -42,7 +41,6 @@ export default function SellerListingPage() {
       }
     }
   }
-
 
   // Fetch profile info for profileId and FSA
   useEffect(() => {
@@ -199,141 +197,143 @@ export default function SellerListingPage() {
       )}
 
       {profileLoading ? (
-        <div className="mt-8 text-center text-gray-500">Loading profile info...</div>
+        <div className="mt-8 text-center text-gray-500">
+          Loading profile info...
+        </div>
       ) : (
         <form
           onSubmit={handleSubmit}
           className="mt-8 space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
         >
-
-        {/* Title */}
-        <div>
-          <label
-            htmlFor="title"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Title *
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={handleTitleChange}
-            placeholder="Enter a descriptive title for your item"
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        {/* Description */}
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Description *
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={handleDescriptionChange}
-            placeholder="Describe your item in detail. Include condition, size, brand, etc."
-            rows={4}
-            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        {/* Price */}
-        <div>
-          <label
-            htmlFor="price"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Price (CAD) *
-          </label>
-          <div className="relative mt-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 sm:text-sm">$</span>
-            </div>
+          {/* Title */}
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Title *
+            </label>
             <input
-              id="price"
-              type="number"
-              value={price || ""}
-              onChange={handlePriceChange}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              className="w-full pl-7 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              id="title"
+              type="text"
+              value={title}
+              onChange={handleTitleChange}
+              placeholder="Enter a descriptive title for your item"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
-        </div>
 
-        {/* Image Upload */}
-        <div>
-          <label
-            htmlFor="images"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Images * (Max 5 images)
-          </label>
-          <input
-            id="images"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-white hover:file:bg-blue-700"
-          />
+          {/* Description */}
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Description *
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={handleDescriptionChange}
+              placeholder="Describe your item in detail. Include condition, size, brand, etc."
+              rows={4}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
 
-          {/* Image Previews */}
-          {imagePreviews.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
-              {imagePreviews.map((preview, index) => (
-                <div key={index} className="relative h-32 w-full">
-                  <Image
-                    src={preview}
-                    alt={`Preview ${index + 1}`}
-                    fill
-                    className="rounded-lg object-cover ring-1 ring-gray-200"
-                    unoptimized={
-                      typeof preview === "string" && preview.startsWith("blob:")
-                    }
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs hover:bg-red-600"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+          {/* Price */}
+          <div>
+            <label
+              htmlFor="price"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Price (CAD) *
+            </label>
+            <div className="relative mt-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 sm:text-sm">$</span>
+              </div>
+              <input
+                id="price"
+                type="number"
+                value={price || ""}
+                onChange={handlePriceChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                className="w-full pl-7 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Hidden fields for profileId and FSA */}
-        <input type="hidden" name="profileId" value={profileId} />
-        <input type="hidden" name="fsa" value={fsa} />
-        <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {isSubmitting ? "Creating..." : "Create Listing"}
-          </button>
-        </div>
-      </form>
+          {/* Image Upload */}
+          <div>
+            <label
+              htmlFor="images"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Images * (Max 5 images)
+            </label>
+            <input
+              id="images"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-white hover:file:bg-blue-700"
+            />
+
+            {/* Image Previews */}
+            {imagePreviews.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative h-32 w-full">
+                    <Image
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      fill
+                      className="rounded-lg object-cover ring-1 ring-gray-200"
+                      unoptimized={
+                        typeof preview === "string" &&
+                        preview.startsWith("blob:")
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Hidden fields for profileId and FSA */}
+          <input type="hidden" name="profileId" value={profileId} />
+          <input type="hidden" name="fsa" value={fsa} />
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {isSubmitting ? "Creating..." : "Create Listing"}
+            </button>
+          </div>
+        </form>
       )}
     </div>
   );
