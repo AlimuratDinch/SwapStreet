@@ -23,6 +23,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import "./CardItemStyle.css";
+import { LocationFilterModal } from "./LocationFilterModal";
 
 type HeaderProps = {
   showCenterNav?: boolean;
@@ -161,6 +162,12 @@ export function Sidebar() {
   const [showPrice, setShowPrice] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showCondition, setShowCondition] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+    radiusKm: number;
+  } | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
