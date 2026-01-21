@@ -83,7 +83,7 @@ export default async function BrowsePage({
       </div>
       <div className="fixed bottom-4 right-4">
 
-          <a href="/seller/listing">
+          <a href="/seller/createListing">
               <button className="bg-teal-400 hover:bg-teal-500 text-white font-bold w-12 h-12 rounded-full shadow-lg transition duration-150 ease-in-out">
               +
               </button>

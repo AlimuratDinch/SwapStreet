@@ -218,7 +218,7 @@ public class ListingCommandServiceTests
     #region Validation Tests - Invalid FSA
 
     [Fact]
-    public async Task CreateListingAsync_NoImagesProvided_ThrowsArgumentException()
+    public async Task CreateListingAsync_NoImagesProvided_CreatesListingWithoutImages()
     {
         // Arrange
         await SeedTestDataAsync();
@@ -226,21 +226,26 @@ public class ListingCommandServiceTests
         var request = new CreateListingRequestDto
         {
             Title = "No Images",
-            Description = "Should fail when images are missing",
+            Description = "Service currently allows listings without images (BECAUSE CHECKED IN FRONTEND)",
             Price = 10.00m,
             ProfileId = TestData.TestProfileId,
             FSA = "H2X",
-            // Images = new List<IFormFile>()
+            // Images intentionally left null to assert current behavior
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
         var service = new ListingCommandService(context, CreateMockLogger());
 
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            async () => await service.CreateListingAsync(request));
+        // Act
+        var listingId = await service.CreateListingAsync(request);
 
-        exception.Message.Should().Contain("At least one image is required");
+        // Assert (listing should be created and have no images (AGAIN, CHECKED IN FRONTEND))
+        listingId.Should().NotBeEmpty();
+        var listing = await context.Listings.FirstAsync(l => l.Id == listingId);
+        listing.Should().NotBeNull();
+
+        var images = await context.ListingImages.Where(li => li.ListingId == listingId).ToListAsync();
+        images.Should().HaveCount(0);
     }
 
     [Fact]
