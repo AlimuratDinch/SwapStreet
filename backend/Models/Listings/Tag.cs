@@ -8,7 +8,7 @@ public class Tag
     public Guid Id { get; set; }
 
     // Foreign Key for ArticleType
-    // [Required]
+    [Required]
     public Guid ArticleTypeId { get; set; }
 
     [ForeignKey("ArticleTypeId")]
@@ -27,7 +27,7 @@ public class Tag
     public Size? SizeRef { get; set; }
 
     // Enum
-    // [Required]
+    [Required]
     public ColorEnum Color { get; set; }
 
     // Foreign Key for Brand
@@ -37,16 +37,16 @@ public class Tag
     public Brand? BrandRef { get; set; }
 
     // Enum
-    // [Required]
+    [Required]
     public SexEnum Sex { get; set; }
 
     // Enum
-    // [Required]
+    [Required]
     public ConditionEnum Condition { get; set; }
 
     // Material (Bit Vector) - Stored as an integer value
     // You would use bitwise operations on this integer to check/set material flags.
-    // [Required]
+    [Required]
     public int Material { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

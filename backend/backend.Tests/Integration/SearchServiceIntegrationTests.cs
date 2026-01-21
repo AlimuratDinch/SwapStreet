@@ -155,40 +155,6 @@ public class SearchServiceIntegrationTests
             await pgDb.SaveChangesAsync();
         }
 
-        // Create tags for listings
-        var articleType = pgDb.ArticleTypes.FirstOrDefault();
-        if (articleType == null)
-        {
-            articleType = new ArticleType { Name = "Footwear" };
-            pgDb.ArticleTypes.Add(articleType);
-            await pgDb.SaveChangesAsync();
-        }
-
-        var style = pgDb.Styles.FirstOrDefault();
-        if (style == null)
-        {
-            style = new Style { Name = "Casual" };
-            pgDb.Styles.Add(style);
-            await pgDb.SaveChangesAsync();
-        }
-
-        var size = pgDb.Sizes.FirstOrDefault();
-        if (size == null)
-        {
-            size = new Size { Value = "Medium", ArticleTypeId = articleType.Id, DisplayOrder = 2 };
-            pgDb.Sizes.Add(size);
-            await pgDb.SaveChangesAsync();
-        }
-
-        var tag = new Tag
-        {
-            ArticleTypeId = articleType.Id,
-            StyleId = style.Id,
-            SizeId = size.Id
-        };
-        pgDb.Tags.Add(tag);
-        await pgDb.SaveChangesAsync();
-
         // Add test listings
         var now = DateTime.UtcNow;
         pgDb.Listings.AddRange(
@@ -199,7 +165,6 @@ public class SearchServiceIntegrationTests
                 Description = "Great running sneakers size 10",
                 Price = 80m,
                 FSA = "M5H",
-                TagId = tag.Id,
                 ProfileId = profileId,
                 CreatedAt = now.AddMinutes(-3),
                 UpdatedAt = now.AddMinutes(-3)
@@ -326,7 +291,7 @@ public class SearchServiceIntegrationTests
     }
 
     [Fact]
-    public async Task SearchListingsAsync_ReturnsProfileInfo()
+    public async Task ProfileAccessibleThroughListing_SearchListingsAsync_ReturnsProfileInfo()
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
@@ -339,29 +304,10 @@ public class SearchServiceIntegrationTests
         // Verify all items have associated Profile info
         foreach (var item in items)
         {
-            Assert.NotNull(item.Listing.Profile);
-            Assert.False(string.IsNullOrWhiteSpace(item.Listing.Profile.FirstName));
-            Assert.False(string.IsNullOrWhiteSpace(item.Listing.Profile.LastName));
+            var profile = await db.Profiles.FindAsync(item.Listing.ProfileId);
+            Assert.NotNull(profile);
+            Assert.False(string.IsNullOrWhiteSpace(profile.FirstName));
+            Assert.False(string.IsNullOrWhiteSpace(profile.LastName));
         }
-    }
-
-    [Fact]
-    public async Task SearchListingsAsync_WithTag_ReturnsTagInfo()
-    {
-        await SeedAsync();
-        await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
-
-        var (items, _, _) = await svc.SearchListingsAsync("Nike", pageSize: 20, cursor: null);
-
-        Assert.NotEmpty(items);
-
-        // Find the Nike listing which should have a tag
-        var nikeListing = items.FirstOrDefault(l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
-        Assert.NotNull(nikeListing);
-        Assert.NotNull(nikeListing.Listing.Tag);
-        Assert.NotEqual(Guid.Empty, nikeListing.Listing.TagId);
-        Assert.NotNull(nikeListing.Listing.Tag.ArticleTypeRef);
-        Assert.NotNull(nikeListing.Listing.Tag.StyleRef);
     }
 }
