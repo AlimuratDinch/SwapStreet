@@ -238,7 +238,7 @@ describe("SellerListingPage", () => {
       render(<SellerListingPage />);
       fillValidForm();
       submitForm();
-      await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/seller/me"));
+      await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/profile"));
     });
 
     it("saves listing to localStorage", async () => {
@@ -368,8 +368,7 @@ describe("SellerListingPage", () => {
 
     it("handles error when localStorage save fails", async () => {
       // Mock localStorage.setItem to throw an error
-      const originalSetItem = localStorageMock.setItem;
-      localStorageMock.setItem = jest.fn(() => {
+      (localStorageMock.setItem as jest.Mock).mockImplementationOnce(() => {
         throw new Error("Storage quota exceeded");
       });
 
@@ -380,9 +379,6 @@ describe("SellerListingPage", () => {
       await waitFor(() => {
         expect(screen.getByText(/Failed to save listing/i)).toBeInTheDocument();
       });
-
-      // Restore original
-      localStorageMock.setItem = originalSetItem;
     });
   });
 

@@ -19,12 +19,15 @@ export async function fetchClothingItems(
       params.set("categoryId", resolvedParams.categoryId);
     if (resolvedParams.conditions)
       params.set("conditions", resolvedParams.conditions);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl =
+      process.env.API_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:8080";
     const url = `${apiUrl}/api/catalog/items${params.toString() ? `?${params.toString()}` : ""}`;
     const res = await fetch(url, {
       cache: "no-store",
     });
-    console.log("URL used:", url);
+
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
@@ -47,25 +50,14 @@ export default async function BrowsePage({
 }) {
   const items = await fetchClothingItems(searchParams);
 
-  const dummyItem = {
-    id: 999,
-    title: "Vintage Blue Jeans",
-    description: "Classic fit, great condition",
-    imageUrl: "/images/clothes_login_page.png",
-    condition: "Like New",
-    price: 24.99,
-  };
-
-  const allItems = items.length > 0 ? items : [dummyItem];
-
   return (
     <div className="flex flex-col h-screen">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max">
-          {allItems.length > 0 ? (
-            allItems.map(
+        <main className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
+          {items.length > 0 ? (
+            items.map(
               (item: {
                 id: number;
                 title: string;
@@ -77,8 +69,6 @@ export default async function BrowsePage({
                 <CardItem
                   key={item.id}
                   title={item.title}
-                  // description={item.description}
-                  condition={item.condition}
                   imgSrc={item.imageUrl}
                   price={item.price ?? 0}
                 />

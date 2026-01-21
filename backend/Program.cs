@@ -20,7 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 if (!builder.Environment.IsEnvironment("Test"))
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o => o.UseNetTopologySuite()));
 
     builder.Services.AddDbContext<AuthDbContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("AuthConnection")));
@@ -148,7 +148,7 @@ static void ConfigureDatabase(WebApplicationBuilder builder)
                            ?? "Host=localhost;Port=5432;Database=test_db;Username=postgres;Password=postgres";
 
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(connectionString));
+        options.UseNpgsql(connectionString, o => o.UseNetTopologySuite()));
 
     builder.Services.AddDbContext<AuthDbContext>(options =>
         options.UseNpgsql(connectionString));
@@ -237,6 +237,8 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<MinioFileStorageService>();
     builder.Services.AddScoped<IFileStorageService>(sp => sp.GetRequiredService<MinioFileStorageService>());
     builder.Services.AddScoped<ImageSeeder>();
+    builder.Services.AddScoped<IListingSearchService, ListingSearchService>();
+    builder.Services.AddScoped<IListingCommandService, ListingCommandService>();
 
     // Email Service (environment-dependent)
     if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Test"))

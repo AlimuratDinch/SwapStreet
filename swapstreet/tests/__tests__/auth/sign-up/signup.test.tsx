@@ -79,8 +79,8 @@ describe("RegistrationPage", () => {
     expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
   });
 
-  it("submits successfully and navigates on success", async () => {
-    const mockResponse = { accessToken: "abc123" }; // <-- must match component
+  it("submits successfully and shows email verification modal on success", async () => {
+    const mockResponse = {}; // Sign-up doesn't return specific data
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
@@ -103,7 +103,7 @@ describe("RegistrationPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith("/seller/onboarding");
+      expect(screen.getByText(/check your email/i)).toBeInTheDocument();
     });
   });
 
@@ -134,10 +134,10 @@ describe("RegistrationPage", () => {
     expect(errorEl).toBeInTheDocument();
   });
 
-  it("shows error if response does not contain accessToken", async () => {
+  it("shows error if response does not contain expected data", async () => {
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({}), // missing accessToken
+      json: async () => ({}), // empty response is fine for sign-up
     } as Response);
 
     renderWithAuth(<RegistrationPage />);
@@ -156,10 +156,9 @@ describe("RegistrationPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
-    const errorEl = await screen.findByText(
-      /access token not returned from backend/i,
-    );
-    expect(errorEl).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/check your email/i)).toBeInTheDocument();
+    });
   });
 
   it("shows error on network failure during registration", async () => {

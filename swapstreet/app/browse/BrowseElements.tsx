@@ -31,7 +31,7 @@ type HeaderProps = {
 export function Header({ showCenterNav = true }: HeaderProps) {
   return (
     <header
-      className="fixed top-0 left-0 right-0 shadow-sm px-6 py-4 flex items-center justify-between z-[100]"
+      className="fixed top-0 left-0 right-0 shadow-sm px-6 py-2 flex items-center justify-between z-[100]"
       style={{ backgroundColor: "#eae9ea" }}
     >
       <div className="flex items-center gap-3">
@@ -101,13 +101,29 @@ export function Header({ showCenterNav = true }: HeaderProps) {
         </div>
       )}
 
-      <div className="flex gap-5">
-        <Globe className="w-5.5 h-5.5 cursor-pointer" />
-        <Leaf className="w-5.5 h-5.5 cursor-pointer" />
+      <div className="flex gap-2 items-center">
+        <div className="p-2.5">
+          <Globe className="w-6.5 h-6.5 text-gray-400" />
+        </div>
+        <div className="p-2.5">
+          <Leaf className="w-6.5 h-6.5 text-gray-400" />
+        </div>
         <Link href="/wardrobe">
-          <ShoppingBag className="w-5.5 h-5.5 cursor-pointer" />
+          <button
+            className="p-2 rounded-full bg-gray-300 transition-colors duration-200 hover:bg-gray-400"
+            title="Shopping Bag"
+          >
+            <ShoppingBag className="w-6.5 h-6.5 text-gray-600" />
+          </button>
         </Link>
-        <User className="w-5.5 h-5.5 cursor-pointer" />
+        <Link href="/profile">
+          <button
+            className="p-2 rounded-full bg-gray-300 transition-colors duration-200 hover:bg-gray-400"
+            title="Profile"
+          >
+            <User className="w-6.5 h-6.5 text-gray-600" />
+          </button>
+        </Link>
       </div>
     </header>
   );
@@ -138,7 +154,7 @@ export function Sidebar() {
 
   // Numeric price values used by the slider UI
   const [minPriceVal, setMinPriceVal] = useState<number>(0);
-  const [maxPriceVal, setMaxPriceVal] = useState<number>(100);
+  const [maxPriceVal, setMaxPriceVal] = useState<number>(999999);
   const [conditions, setConditions] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -152,26 +168,6 @@ export function Sidebar() {
     const cat = searchParams.get("categoryId");
     if (cat) setCategoryId(cat);
   }, [searchParams]);
-
-  useEffect(() => {
-    const _fetchCategories = async () => {
-      try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-        const res = await fetch(`${apiUrl}/api/catalog/categories`, {
-          cache: "no-store",
-          credentials: "include",
-        });
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        // Do not override the fixed category list; keep API fetch for future use if needed
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
-      }
-    };
-    // _fetchCategories();
-  }, []);
 
   useEffect(() => {
     // Sync initial conditions from URL
@@ -202,7 +198,7 @@ export function Sidebar() {
 
   const clearFilters = () => {
     setMinPriceVal(0);
-    setMaxPriceVal(100);
+    setMaxPriceVal(999999);
     setSelectedSize(null);
     setConditions([]);
     setCategoryId(null);
@@ -363,7 +359,7 @@ export function Sidebar() {
   );
 }
 
-export function CardItem({ title, imgSrc, price, condition }: CardItemProps) {
+export function CardItem({ title, imgSrc, price }: CardItemProps) {
   return (
     <div className="card-item">
       {/* Square image container */}
@@ -380,10 +376,9 @@ export function CardItem({ title, imgSrc, price, condition }: CardItemProps) {
           <span className="card-item-placeholder">Image</span>
         )}
       </div>
-      {/* Bottom section with title, condition, and price */}
+      {/* Bottom section with title and price */}
       <div className="card-item-content">
         <h4 className="card-item-title">{title}</h4>
-        <p className="card-item-condition">{condition}</p>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
           <button className="card-item-wishlist-btn" title="Add to wishlist">
@@ -400,5 +395,4 @@ interface CardItemProps {
   title: string;
   imgSrc?: string;
   price: number;
-  condition?: string;
 }
