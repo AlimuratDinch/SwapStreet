@@ -426,3 +426,9 @@ interface CardItemProps {
   imgSrc?: string;
   price: number;
 }
+
+interface LocationResult {
+  lat: number;
+  lng: number;
+  radiusKm: number;
+}
