@@ -13,8 +13,8 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260120234121_RemoveRequiredConstraintsFromTag")]
-    partial class RemoveRequiredConstraintsFromTag
+    [Migration("20260121001757_AddFsaCentroid")]
+    partial class AddFsaCentroid
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

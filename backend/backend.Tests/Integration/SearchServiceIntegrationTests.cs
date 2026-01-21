@@ -155,7 +155,54 @@ public class SearchServiceIntegrationTests
             await pgDb.SaveChangesAsync();
         }
 
-        // Add test listings
+        // Create tags for listings
+        var articleType = pgDb.ArticleTypes.FirstOrDefault();
+        if (articleType == null)
+        {
+            articleType = new ArticleType { Name = "Footwear" };
+            pgDb.ArticleTypes.Add(articleType);
+            await pgDb.SaveChangesAsync();
+        }
+
+        var style = pgDb.Styles.FirstOrDefault();
+        if (style == null)
+        {
+            style = new Style { Name = "Casual" };
+            pgDb.Styles.Add(style);
+            await pgDb.SaveChangesAsync();
+        }
+
+        var size = pgDb.Sizes.FirstOrDefault();
+        if (size == null)
+        {
+            size = new Size { Value = "10", ArticleTypeId = articleType.Id };
+            pgDb.Sizes.Add(size);
+            await pgDb.SaveChangesAsync();
+        }
+
+        var brand = pgDb.Brands.FirstOrDefault();
+        if (brand == null)
+        {
+            brand = new Brand { Name = "Nike" };
+            pgDb.Brands.Add(brand);
+            await pgDb.SaveChangesAsync();
+        }
+
+        var tag = new Tag
+        {
+            ArticleTypeId = articleType.Id,
+            StyleId = style.Id,
+            SizeId = size.Id,
+            BrandId = brand.Id,
+            Color = ColorEnum.White,
+            Sex = SexEnum.Unisex,
+            Condition = ConditionEnum.ExcellentUsedCondition,
+            Material = (int)MaterialEnum.Leather
+        };
+        pgDb.Tags.Add(tag);
+        await pgDb.SaveChangesAsync();
+
+                // Add test listings
         var now = DateTime.UtcNow;
         pgDb.Listings.AddRange(
             new Listing
@@ -166,6 +213,7 @@ public class SearchServiceIntegrationTests
                 Price = 80m,
                 FSA = "M5H",
                 ProfileId = profileId,
+                TagId = tag.Id,
                 CreatedAt = now.AddMinutes(-3),
                 UpdatedAt = now.AddMinutes(-3)
             },
@@ -309,5 +357,29 @@ public class SearchServiceIntegrationTests
             Assert.False(string.IsNullOrWhiteSpace(profile.FirstName));
             Assert.False(string.IsNullOrWhiteSpace(profile.LastName));
         }
+    }
+
+
+    [Fact]
+    public async Task SearchListingsAsync_WithTag_ReturnsCompleteTagInfo()
+    {
+        await SeedAsync();
+        await using var db = new AppDbContext(_fx.DbOptions);
+        var svc = new ListingSearchService(db);
+
+        var (items, _, _) = await svc.SearchListingsAsync("Nike", pageSize: 20, cursor: null);
+
+        Assert.NotEmpty(items);
+
+        // Find the Nike listing which should have a complete tag
+        var nikeListing = items.FirstOrDefault(l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(nikeListing); // Ensure we found the Nike listing
+        Assert.NotNull(nikeListing.Listing.Tag); // Ensure Tag is not null
+        
+        // Verify enums
+        Assert.Equal(ColorEnum.White, nikeListing.Listing.Tag.Color);
+        Assert.Equal(SexEnum.Unisex, nikeListing.Listing.Tag.Sex);
+        Assert.Equal(ConditionEnum.ExcellentUsedCondition, nikeListing.Listing.Tag.Condition);
+        Assert.Equal((int)MaterialEnum.Leather, nikeListing.Listing.Tag.Material);
     }
 }
