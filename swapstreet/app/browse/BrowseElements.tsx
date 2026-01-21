@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Shirt, Star } from "lucide-react";
 import Link from "next/link";
 import {
@@ -37,7 +37,7 @@ export function Header({ showCenterNav = true }: HeaderProps) {
     >
       <div className="flex items-center gap-3">
         <Shirt className="h-8 w-8 text-teal-500" />
-        <Link href="/browse" className="font-bold text-2xl tracking-tight">
+        <Link href="/" className="font-bold text-2xl tracking-tight">
           <span>SWAP</span>
           <span>STREET</span>
         </Link>
@@ -144,24 +144,9 @@ export function SearchBar() {
 }
 
 export function Sidebar() {
-  // Fixed category options per design request
-  const [categories] = useState<{ id: number; name: string }[]>([
-    { id: 1, name: "Tops" },
-    { id: 2, name: "Bottoms" },
-    { id: 3, name: "Dresses/One-Pieces" },
-    { id: 4, name: "Footwear" },
-    { id: 5, name: "Accessories" },
-  ]);
-
-  // Numeric price values used by the slider UI
   const [minPriceVal, setMinPriceVal] = useState<number>(0);
   const [maxPriceVal, setMaxPriceVal] = useState<number>(999999);
-  const [conditions, setConditions] = useState<string[]>([]);
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [showPrice, setShowPrice] = useState(false);
-  const [showCategories, setShowCategories] = useState(false);
-  const [showCondition, setShowCondition] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [location, setLocation] = useState<{
     lat: number;
@@ -169,28 +154,11 @@ export function Sidebar() {
     radiusKm: number;
   } | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const cat = searchParams.get("categoryId");
-    if (cat) setCategoryId(cat);
-  }, [searchParams]);
-
-  useEffect(() => {
-    // Sync initial conditions from URL
-    const conditionsParam = searchParams.get("conditions");
-    if (conditionsParam) {
-      setConditions(conditionsParam.split(",").map((c) => c.trim()));
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     const params = new URLSearchParams();
-    if (categoryId) params.set("categoryId", categoryId);
     if (minPriceVal) params.set("minPrice", minPriceVal.toString());
     if (maxPriceVal) params.set("maxPrice", maxPriceVal.toString());
-    if (selectedSize) params.set("size", selectedSize);
-    if (conditions.length > 0) params.set("conditions", conditions.join(","));
     if (location) {
       params.set("lat", location.lat.toString());
       params.set("lng", location.lng.toString());
@@ -198,22 +166,11 @@ export function Sidebar() {
     }
     const query = params.toString();
     router.push(query ? `/browse?${query}` : "/browse");
-  }, [categoryId, minPriceVal, maxPriceVal, selectedSize, conditions, router]);
-
-  const handleConditionToggle = (condition: string) => {
-    setConditions((prev) =>
-      prev.includes(condition)
-        ? prev.filter((c) => c !== condition)
-        : [...prev, condition],
-    );
-  };
+  }, [minPriceVal, maxPriceVal, router]);
 
   const clearFilters = () => {
     setMinPriceVal(0);
     setMaxPriceVal(999999);
-    setSelectedSize(null);
-    setConditions([]);
-    setCategoryId(null);
     router.push("/browse");
   };
 
@@ -230,28 +187,6 @@ export function Sidebar() {
             Clear
           </button>
         </div>
-        {/* Size selector (always visible) */}
-        <div className="mb-4">
-          <h4 className="text-sm font-medium mb-2">Size</h4>
-          <div className="grid grid-cols-3 gap-2">
-            {["XS", "S", "M", "L", "XL", "XXL"].map((s) => (
-              <button
-                key={s}
-                onClick={() =>
-                  setSelectedSize((prev) => (prev === s ? null : s))
-                }
-                className={`rounded p-2 text-xs text-center transition hover:bg-teal-500 hover:text-white ${
-                  selectedSize === s ? "bg-teal-500 text-white" : "bg-gray-300"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="h-px bg-black my-3" />
-
         {/* Price inputs (collapsed by default) */}
         <div className="mb-4">
           <button
@@ -301,72 +236,8 @@ export function Sidebar() {
               </div>
             </div>
           )}
-        </div>
+        </div>      
         <div className="h-px bg-black my-3" />
-        <div className="mb-4">
-          <button
-            className="w-full flex items-center justify-between"
-            onClick={() => setShowCategories((s) => !s)}
-          >
-            <h4 className="text-sm font-medium">Categories</h4>
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${showCategories ? "rotate-180" : ""}`}
-            />
-          </button>
-          {showCategories && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => {
-                    setCategoryId(category.id.toString());
-                  }}
-                  className={`rounded p-2 text-xs text-center transition hover:bg-teal-500 hover:text-white ${
-                    categoryId === category.id.toString()
-                      ? "bg-teal-500 text-white"
-                      : "bg-gray-300"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="h-px bg-black my-3" />
-        <div>
-          <button
-            className="w-full flex items-center justify-between mb-2"
-            onClick={() => setShowCondition((s) => !s)}
-          >
-            <h4 className="text-sm font-medium">Condition</h4>
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${showCondition ? "rotate-180" : ""}`}
-            />
-          </button>
-          {showCondition && (
-            <div>
-              {["New", "Like New", "Used", "Good"].map((condition) => (
-                <label
-                  key={condition}
-                  className={`flex items-center gap-2 rounded p-2 text-xs transition ease-in-out bg-[#d9d9d9]`}
-                >
-                  <input
-                    type="checkbox"
-                    className="accent-teal-500 ml-2 w-4 h-4"
-                    checked={conditions.includes(condition)}
-                    onChange={() => {
-                      handleConditionToggle(condition);
-                    }}
-                  />
-                  <span>{condition}</span>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-         <div className="h-px bg-black my-3" />
         <div>
           <button
           onClick={() => setShowLocationModal(true)}
@@ -389,7 +260,7 @@ export function Sidebar() {
   );
 }
 
-export function CardItem({ title, imgSrc, price }: CardItemProps) {
+export function CardItem({ title, imgSrc, price, fsa }: CardItemProps) {
   return (
     <div className="card-item">
       {/* Square image container */}
@@ -411,6 +282,7 @@ export function CardItem({ title, imgSrc, price }: CardItemProps) {
         <h4 className="card-item-title">{title}</h4>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
+          <p className="card-item-price">{fsa}</p>
           <button className="card-item-wishlist-btn" title="Add to wishlist">
             <Star className="w-6 h-6" />
           </button>
@@ -425,6 +297,7 @@ interface CardItemProps {
   title: string;
   imgSrc?: string;
   price: number;
+  fsa: string;
 }
 
 interface LocationResult {
