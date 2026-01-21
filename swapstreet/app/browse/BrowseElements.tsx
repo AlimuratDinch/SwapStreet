@@ -366,6 +366,24 @@ export function Sidebar() {
             </div>
           )}
         </div>
+         <div className="h-px bg-black my-3" />
+        <div>
+          <button
+          onClick={() => setShowLocationModal(true)}
+          className="w-full flex items-center justify-between mb-2 hover:text-teal-500 transition"
+          >
+            <h4 className="text-sm font-medium">Location</h4>
+          </button>
+          {showLocationModal && (
+          <LocationFilterModal
+            onClose={() => setShowLocationModal(false)}
+            onApply={(loc: LocationResult) => {
+              setLocation(loc);
+              setShowLocationModal(false);
+            }}
+          />
+          )}
+        </div>
       </section>
     </aside>
   );
