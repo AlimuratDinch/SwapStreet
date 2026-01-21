@@ -191,6 +191,11 @@ export function Sidebar() {
     if (maxPriceVal) params.set("maxPrice", maxPriceVal.toString());
     if (selectedSize) params.set("size", selectedSize);
     if (conditions.length > 0) params.set("conditions", conditions.join(","));
+    if (location) {
+      params.set("lat", location.lat.toString());
+      params.set("lng", location.lng.toString());
+      params.set("radiusKm", location.radiusKm.toString());
+    }
     const query = params.toString();
     router.push(query ? `/browse?${query}` : "/browse");
   }, [categoryId, minPriceVal, maxPriceVal, selectedSize, conditions, router]);
