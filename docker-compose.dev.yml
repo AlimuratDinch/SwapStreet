@@ -35,6 +35,7 @@ services:
 
   minio:
     image: minio/minio:latest
+    platform: linux/amd64
     container_name: minio
     command: server /data --console-address ":9001"
     env_file:
