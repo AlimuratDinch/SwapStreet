@@ -246,7 +246,7 @@ namespace backend.Tests.Services
             page1.Should().HaveCount(2);
             page2.Should().HaveCount(2);
             page3.Should().HaveCount(1);
-            
+
             // Verify order (most recent first when paginating, then reversed)
             page1[0].Content.Should().Be("Message 4");
             page1[1].Content.Should().Be("Message 5");
