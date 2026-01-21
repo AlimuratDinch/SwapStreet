@@ -86,7 +86,7 @@ namespace backend.Services.Chat
             };
         }
         
-        public async void DeleteMessageByIdAsync(Guid messageId)
+        public async Task DeleteMessageByIdAsync(Guid messageId)
         {
             var message = await _context.Messages.FindAsync(messageId);
             

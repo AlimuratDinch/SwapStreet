@@ -7,6 +7,6 @@ namespace backend.Contracts
         Task<MessageDto> SendMessageAsync(Guid chatroomId, Guid senderId, string content);
         Task<List<MessageDto>> GetMessagesAsync(Guid chatroomId, int page = 1, int pageSize = 50);
         Task<MessageDto?> GetMessageByIdAsync(Guid messageId);
-        void DeleteMessageByIdAsync(Guid messageId);
+        Task DeleteMessageByIdAsync(Guid messageId);
     }
 }

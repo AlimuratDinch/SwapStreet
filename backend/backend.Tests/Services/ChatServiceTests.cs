@@ -280,6 +280,33 @@ namespace backend.Tests.Services
             // Assert
             result.Should().BeNull();
         }
+        
+        // Note: does not check the user deletion rights, only 
+        // the that deletion removes the target message.
+        [Fact]
+        public async Task DeleteMessageAsync_MessageShouldDisappear()
+        {
+            // Arange
+            MessageDto messageDto = await _chatService.SendMessageAsync(_chatroomId, _buyerId, "Message A");
+            await _chatService.SendMessageAsync(_chatroomId, _sellerId, "Message B");
+            
+            // Act
+            await _chatService.DeleteMessageByIdAsync(messageDto.Id);
+            
+            Exception exception = null;
+            try
+            {
+                await _chatService.GetMessageByIdAsync(messageDto.Id);
+            }
+            catch (ArgumentException argumentException)
+            {
+                exception = argumentException;
+            }
+            
+            // Assert
+            exception.Should().NotBeNull();
+            exception.Message.Should().Be("Cannot find message");
+        }
     }
 
     public class ChatroomServiceTests : IDisposable
@@ -698,7 +725,7 @@ namespace backend.Tests.Services
             var chatroom = await _service.CreateChatroomAsync(dto);
             
             // Act
-            _service.DeleteChatroomAsync(chatroom.Id);
+            await _service.DeleteChatroomAsync(chatroom.Id);
             
             // Assert
             var result = await _service.GetUserChatroomsAsync(_sellerId);
@@ -708,20 +735,15 @@ namespace backend.Tests.Services
         }
         
         [Fact]
-        public async Task DeleteChatroomAsync_NothingHappens_WhenChatroomDoesNotExist()
+        public async Task DeleteChatroomAsync_ThrowException_WhenChatroomDoesNotExist()
         {
             // Arange
-            var dto = new CreateChatroomDto { SellerId = _sellerId, BuyerId = _buyerId };
-            await _service.CreateChatroomAsync(dto);
-            // Only to create dummy chatroom so that the amount of 
-            // chatrooms equals one.
-            
             Exception exception = null;
+            
             try
             {
                 // Act
-                _service.DeleteChatroomAsync(Guid.NewGuid());
-                
+                await _service.DeleteChatroomAsync(Guid.NewGuid());
             }
             catch (ArgumentException argumentException)
             {

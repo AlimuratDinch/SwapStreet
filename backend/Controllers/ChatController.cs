@@ -219,7 +219,7 @@ namespace backend.Controllers
                 bool isInChatroom = await _chatroomService
                     .UserBelongsToChatroomAsync(userId, chatroomDTO.Id);
                 
-                if (isInChatroom)
+                if (isInChatroom && messageDTO.AuthorId == userId)
                 {
                     _chatService.DeleteMessageByIdAsync(messageDTO.Id);
                 }

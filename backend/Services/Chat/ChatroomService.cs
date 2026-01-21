@@ -136,7 +136,7 @@ namespace backend.Services.Chat
                 .AnyAsync(c => c.Id == chatroomId && (c.SellerId == userId || c.BuyerId == userId));
         }
         
-        public async void DeleteChatroomAsync(Guid chatroomId)
+        public async Task DeleteChatroomAsync(Guid chatroomId)
         {
             var chatroom = await _context.Chatrooms.FindAsync(chatroomId);
             
@@ -144,7 +144,6 @@ namespace backend.Services.Chat
             {
                 _context.Chatrooms.Remove(chatroom);
                 await _context.SaveChangesAsync();
-                return;
             }
             else
             {
