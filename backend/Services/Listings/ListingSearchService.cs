@@ -52,7 +52,7 @@ public class ListingSearchService : IListingSearchService
             IQueryable<Listing> baseRecent = _db.Listings.AsNoTracking()
                 .OrderByDescending(l => l.CreatedAt)
                 .ThenByDescending(l => l.Id);
-                
+
             // Cursor filter
             if (ListingCursor.TryDecode(cursor, out var decoded) && decoded != null)
             {
