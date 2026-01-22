@@ -931,10 +931,10 @@ describe("SellerOnboardingPage", () => {
 
     render(<SellerOnboardingPage />);
 
-    // Wait for the redirect to happen (the useEffect has a 100ms timeout)
     await waitFor(
       () => {
-        expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
+        expect(screen.getByText(/it looks like you're not signed in/i)).toBeInTheDocument();
+        expect(mockPush).not.toHaveBeenCalled();
       },
       { timeout: 500 },
     );
@@ -1004,7 +1004,7 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/you must be logged in/i)).toBeInTheDocument();
-      expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
+      expect(mockPush).not.toHaveBeenCalled();
     });
 
     // Restore original mock
