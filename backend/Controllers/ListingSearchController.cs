@@ -10,10 +10,14 @@ using backend.DbContexts;
 public class ListingSearchController : ControllerBase
 {
     private readonly IListingSearchService _listingSearchService;
+    private readonly AppDbContext _db;
+    private readonly IConfiguration _configuration;
 
-    public ListingSearchController(IListingSearchService listingSearchService)
+    public ListingSearchController(IListingSearchService listingSearchService, AppDbContext db, IConfiguration configuration)
     {
         _listingSearchService = listingSearchService;
+        _db = db;
+        _configuration = configuration;
     }
 
     [HttpGet("search")]
@@ -24,9 +28,67 @@ public class ListingSearchController : ControllerBase
     {
         var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q ?? string.Empty, Math.Min(limit, 50), cursor);  // Cap at 50
 
+        // Build MinIO base URL from configuration
+        var minioEndpoint = _configuration["MINIO_ENDPOINT"] ?? "minio:9000";
+        var minioBucket = _configuration["MINIO_PUBLIC_BUCKET"] ?? "public";
+        var minioUrl = $"http://{minioEndpoint}/{minioBucket}";
+
+        var listingIds = items.Select(i => i.Id).ToList();
+        var profileIds = items.Select(i => i.ProfileId).Distinct().ToList();
+
+        var profiles = await _db.Profiles.AsNoTracking()
+            .Where(p => profileIds.Contains(p.Id))
+            .ToListAsync();
+
+        var images = await _db.ListingImages.AsNoTracking()
+            .Where(li => listingIds.Contains(li.ListingId))
+            .OrderBy(li => li.DisplayOrder)
+            .ToListAsync();
+
+        // Group images by listing id
+        var imagesByListing = images.GroupBy(i => i.ListingId)
+            .ToDictionary(g => g.Key, g => g.Select(img => new
+            {
+                img.Id,
+                imageUrl = img.ImagePath != null ? $"{minioUrl}/{img.ImagePath}" : null,
+                img.DisplayOrder,
+                img.ForTryon
+            }).ToList());
+
+        var mapped = items.Select(l =>
+        {
+            var seller = profiles.FirstOrDefault(p => p.Id == l.ProfileId);
+            imagesByListing.TryGetValue(l.Id, out var imgs);
+
+            return new
+            {
+                l.Id,
+                l.Title,
+                l.Description,
+                l.Price,
+                createdAt = l.CreatedAt,
+                seller = seller == null ? null : new
+                {
+                    seller.Id,
+                    seller.FirstName,
+                    seller.LastName,
+                    seller.VerifiedSeller,
+                    seller.Rating,
+                    seller.Bio,
+                    seller.CityId,
+                    seller.FSA,
+                    profileImageUrl = seller.ProfileImagePath != null ? $"{minioUrl}/{seller.ProfileImagePath}" : null,
+                    bannerImageUrl = seller.BannerImagePath != null ? $"{minioUrl}/{seller.BannerImagePath}" : null,
+                    seller.CreatedAt,
+                    seller.UpdatedAt
+                },
+                images = imgs?.Cast<object>().ToList() ?? new List<object>()
+            };
+        }).ToList();
+
         return Ok(new
         {
-            items,
+            items = mapped,
             limit,
             nextCursor,
             hasNextPage

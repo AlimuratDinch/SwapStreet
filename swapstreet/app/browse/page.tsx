@@ -23,7 +23,7 @@ export async function fetchClothingItems(
       process.env.API_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
       "http://localhost:8080";
-    const url = `${apiUrl}/api/catalog/items${params.toString() ? `?${params.toString()}` : ""}`;
+    const url = `${apiUrl}/api/search/search${params.toString() ? `?${params.toString()}` : ""}`;
     const res = await fetch(url, {
       cache: "no-store",
     });
@@ -31,7 +31,11 @@ export async function fetchClothingItems(
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
-    return res.json();
+
+    const data = await res.json();
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.items)) return data.items;
+    return [];
   } catch (error) {
     console.error("Failed to fetch clothing items:", error);
     return [];
@@ -59,17 +63,17 @@ export default async function BrowsePage({
           {items.length > 0 ? (
             items.map(
               (item: {
-                id: number;
-                title: string;
-                description: string;
-                imageUrl: string;
-                condition: string;
-                price: number;
-              }) => (
+                  id: number;
+                  title: string;
+                  description: string;
+                  images?: { imageUrl: string }[];
+                  condition: string;
+                  price: number;
+                }) => (
                 <CardItem
                   key={item.id}
                   title={item.title}
-                  imgSrc={item.imageUrl}
+                  imgSrc={item.images?.[0]?.imageUrl}
                   price={item.price ?? 0}
                 />
               ),

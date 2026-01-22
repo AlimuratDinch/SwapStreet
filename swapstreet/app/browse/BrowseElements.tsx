@@ -364,7 +364,7 @@ export function CardItem({ title, imgSrc, price }: CardItemProps) {
     <div className="card-item">
       {/* Square image container */}
       <div className="card-item-image-container">
-        {imgSrc ? (
+        {imgSrc && (
           <Image
             src={imgSrc}
             alt={title}
@@ -372,8 +372,6 @@ export function CardItem({ title, imgSrc, price }: CardItemProps) {
             height={200}
             className="card-item-image"
           />
-        ) : (
-          <span className="card-item-placeholder">Image</span>
         )}
       </div>
       {/* Bottom section with title and price */}
@@ -381,9 +379,6 @@ export function CardItem({ title, imgSrc, price }: CardItemProps) {
         <h4 className="card-item-title">{title}</h4>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
-          <button className="card-item-wishlist-btn" title="Add to wishlist">
-            <Star className="w-6 h-6" />
-          </button>
         </div>
       </div>
     </div>
