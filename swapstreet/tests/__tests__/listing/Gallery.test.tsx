@@ -77,7 +77,9 @@ describe("Gallery", () => {
     const images = [{}, {}];
     render(<Gallery images={images as any} />);
     // Find a button that contains the fallback div
-    const fallback = screen.getAllByRole("button").find((b) => b.querySelector("div"));
+    const fallback = screen
+      .getAllByRole("button")
+      .find((b) => b.querySelector("div"));
     expect(fallback).toBeTruthy();
   });
 });

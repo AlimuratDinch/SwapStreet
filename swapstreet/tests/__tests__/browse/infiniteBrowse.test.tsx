@@ -26,20 +26,37 @@ describe("InfiniteBrowse", () => {
       }
       disconnect() {}
       unobserve() {}
-      takeRecords() { return []; }
+      takeRecords() {
+        return [];
+      }
     } as any;
 
     // First fetch returns two items
-    const page1 = { items: [{ id: "a", title: "A", price: 1, images: [] }], nextCursor: "c1", hasNextPage: true };
-    const page2 = { items: [{ id: "b", title: "B", price: 2, images: [] }], nextCursor: null, hasNextPage: false };
+    const page1 = {
+      items: [{ id: "a", title: "A", price: 1, images: [] }],
+      nextCursor: "c1",
+      hasNextPage: true,
+    };
+    const page2 = {
+      items: [{ id: "b", title: "B", price: 2, images: [] }],
+      nextCursor: null,
+      hasNextPage: false,
+    };
 
-    const fetchMock = jest.fn()
+    const fetchMock = jest
+      .fn()
       .mockResolvedValueOnce({ ok: true, json: async () => page1 })
       .mockResolvedValueOnce({ ok: true, json: async () => page2 });
 
     global.fetch = fetchMock as any;
 
-    render(<InfiniteBrowse initialItems={[]} initialCursor={null} initialHasNext={true} />);
+    render(
+      <InfiniteBrowse
+        initialItems={[]}
+        initialCursor={null}
+        initialHasNext={true}
+      />,
+    );
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
@@ -51,10 +68,29 @@ describe("InfiniteBrowse", () => {
   });
 
   it("shows no items message when nothing returned", async () => {
-    (global as any).IntersectionObserver = class { constructor(cb: any){} observe(){} disconnect(){} unobserve(){} takeRecords(){return[]} } as any;
-    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ items: [], nextCursor: null, hasNextPage: false }) }) as any;
+    (global as any).IntersectionObserver = class {
+      constructor(cb: any) {}
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+      takeRecords() {
+        return [];
+      }
+    } as any;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ items: [], nextCursor: null, hasNextPage: false }),
+      }) as any;
 
-    render(<InfiniteBrowse initialItems={[]} initialCursor={null} initialHasNext={false} />);
+    render(
+      <InfiniteBrowse
+        initialItems={[]}
+        initialCursor={null}
+        initialHasNext={false}
+      />,
+    );
 
     await waitFor(() => {
       expect(screen.getByText(/No items available/i)).toBeInTheDocument();
@@ -66,11 +102,34 @@ describe("InfiniteBrowse", () => {
     const initialItems = [{ id: "dup", title: "Dup", price: 1, images: [] }];
 
     // server returns same id -> newItems will be empty and component should stop
-    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ id: "dup", title: "Dup", price: 1 }], nextCursor: "c2", hasNextPage: true }) }) as any;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          items: [{ id: "dup", title: "Dup", price: 1 }],
+          nextCursor: "c2",
+          hasNextPage: true,
+        }),
+      }) as any;
 
-    (global as any).IntersectionObserver = class { constructor(cb: any){} observe(){} disconnect(){} unobserve(){} takeRecords(){return[]} } as any;
+    (global as any).IntersectionObserver = class {
+      constructor(cb: any) {}
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+      takeRecords() {
+        return [];
+      }
+    } as any;
 
-    render(<InfiniteBrowse initialItems={initialItems as any} initialCursor={null} initialHasNext={true} />);
+    render(
+      <InfiniteBrowse
+        initialItems={initialItems as any}
+        initialCursor={null}
+        initialHasNext={true}
+      />,
+    );
 
     // initial item present
     expect(screen.getByText(/Dup/)).toBeInTheDocument();

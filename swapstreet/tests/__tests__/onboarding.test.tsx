@@ -933,7 +933,9 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText(/it looks like you're not signed in/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/it looks like you're not signed in/i),
+        ).toBeInTheDocument();
         expect(mockPush).not.toHaveBeenCalled();
       },
       { timeout: 500 },

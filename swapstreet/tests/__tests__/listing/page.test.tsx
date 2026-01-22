@@ -16,10 +16,17 @@ describe("Listing page (server component)", () => {
       createdAt: new Date().toISOString(),
       description: "Warm and cozy",
       images: [{ imageUrl: "https://example.com/j1.jpg" }],
-      seller: { firstName: "Alice", lastName: "Smith", profileImageUrl: "https://example.com/p.jpg", FSA: "M5V" },
+      seller: {
+        firstName: "Alice",
+        lastName: "Smith",
+        profileImageUrl: "https://example.com/p.jpg",
+        FSA: "M5V",
+      },
     };
 
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => mockListing }) as any;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => mockListing }) as any;
 
     // Render server component
     const element = await (ListingPage as any)({ params: { id: "123" } });
@@ -34,7 +41,9 @@ describe("Listing page (server component)", () => {
   });
 
   it("renders error UI when fetch fails", async () => {
-    global.fetch = jest.fn().mockResolvedValueOnce({ ok: false, status: 500 }) as any;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 500 }) as any;
     const element = await (ListingPage as any)({ params: { id: "bad" } });
     render(element);
     // Check for error message
@@ -52,7 +61,9 @@ describe("Listing page (server component)", () => {
       seller: null,
       fsa: "Z9Z",
     };
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => mockListing }) as any;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => mockListing }) as any;
     const element = await (ListingPage as any)({ params: { id: "nomedia" } });
     render(element);
 
