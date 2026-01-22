@@ -77,12 +77,10 @@ describe("InfiniteBrowse", () => {
         return [];
       }
     } as any;
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ items: [], nextCursor: null, hasNextPage: false }),
-      }) as any;
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: [], nextCursor: null, hasNextPage: false }),
+    }) as any;
 
     render(
       <InfiniteBrowse
@@ -102,16 +100,14 @@ describe("InfiniteBrowse", () => {
     const initialItems = [{ id: "dup", title: "Dup", price: 1, images: [] }];
 
     // server returns same id -> newItems will be empty and component should stop
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          items: [{ id: "dup", title: "Dup", price: 1 }],
-          nextCursor: "c2",
-          hasNextPage: true,
-        }),
-      }) as any;
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [{ id: "dup", title: "Dup", price: 1 }],
+        nextCursor: "c2",
+        hasNextPage: true,
+      }),
+    }) as any;
 
     (global as any).IntersectionObserver = class {
       constructor(cb: any) {}
