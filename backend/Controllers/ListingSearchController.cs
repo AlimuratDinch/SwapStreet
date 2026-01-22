@@ -35,8 +35,8 @@ public class ListingSearchController : ControllerBase
         var minioBucket = _configuration["MINIO_PUBLIC_BUCKET"] ?? "public";
         var minioUrl = $"http://{minioEndpoint}/{minioBucket}";
 
-        var listingIds = items.Select(i => i.Id).ToList();
-        var profileIds = items.Select(i => i.ProfileId).Distinct().ToList();
+        var listingIds = items.Select(i => i.Listing.Id).ToList();
+        var profileIds = items.Select(i => i.Listing.ProfileId).Distinct().ToList();
 
         var profiles = await _db.Profiles.AsNoTracking()
             .Where(p => profileIds.Contains(p.Id))
@@ -59,16 +59,16 @@ public class ListingSearchController : ControllerBase
 
         var mapped = items.Select(l =>
         {
-            var seller = profiles.FirstOrDefault(p => p.Id == l.ProfileId);
-            imagesByListing.TryGetValue(l.Id, out var imgs);
+            var seller = profiles.FirstOrDefault(p => p.Id == l.Listing.ProfileId);
+            imagesByListing.TryGetValue(l.Listing.Id, out var imgs);
 
             return new
             {
-                l.Id,
-                l.Title,
-                l.Description,
-                l.Price,
-                createdAt = l.CreatedAt,
+                l.Listing.Id,
+                l.Listing.Title,
+                l.Listing.Description,
+                l.Listing.Price,
+                createdAt = l.Listing.CreatedAt,
                 seller = seller == null ? null : new
                 {
                     seller.Id,
