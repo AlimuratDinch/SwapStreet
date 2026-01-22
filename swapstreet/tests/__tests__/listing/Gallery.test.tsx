@@ -31,7 +31,6 @@ describe("Gallery", () => {
   });
 
   it("normalizes minio hostnames to window.location.hostname and handles prev/next wrap", async () => {
-
     const images = [
       { imageUrl: "http://minio:9000/public/a.jpg" },
       { imageUrl: "http://minio:9000/public/b.jpg" },
@@ -43,7 +42,7 @@ describe("Gallery", () => {
     // Initial main image should normalize minio URL
     const main = screen.getByAltText("image-0") as HTMLImageElement;
     expect(main).toBeInTheDocument();
-      expect(main.src).toContain("localhost");
+    expect(main.src).toContain("localhost");
 
     // Navigate using next/prev buttons
     const next = screen.getByLabelText("next");
@@ -69,7 +68,6 @@ describe("Gallery", () => {
     fireEvent.click(prev);
     await screen.findByAltText("image-2");
     expect(screen.getByAltText("image-2")).toBeInTheDocument();
-    
   });
 
   it("renders thumbnail fallback when thumbnail src missing", () => {
