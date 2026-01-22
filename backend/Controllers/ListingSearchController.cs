@@ -24,7 +24,7 @@ public class ListingSearchController : ControllerBase
     public async Task<IActionResult> SearchListings(
         [FromQuery] string? q,
         [FromQuery] string? cursor = null,
-        [FromQuery] int limit = 20)
+        [FromQuery] int limit = 18)
     {
         var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q ?? string.Empty, Math.Min(limit, 50), cursor);  // Cap at 50
 
