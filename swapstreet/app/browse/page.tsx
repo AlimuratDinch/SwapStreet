@@ -10,16 +10,23 @@ type SearchParams = {
 
 function getApiBase() {
   return (
-    process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+    process.env.API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080"
   );
 }
 
-function buildSearchUrl(resolvedParams: SearchParams, extras?: Record<string, string>) {
+function buildSearchUrl(
+  resolvedParams: SearchParams,
+  extras?: Record<string, string>,
+) {
   const params = new URLSearchParams();
   if (resolvedParams.minPrice) params.set("minPrice", resolvedParams.minPrice);
   if (resolvedParams.maxPrice) params.set("maxPrice", resolvedParams.maxPrice);
-  if (resolvedParams.categoryId) params.set("categoryId", resolvedParams.categoryId);
-  if (resolvedParams.conditions) params.set("conditions", resolvedParams.conditions);
+  if (resolvedParams.categoryId)
+    params.set("categoryId", resolvedParams.categoryId);
+  if (resolvedParams.conditions)
+    params.set("conditions", resolvedParams.conditions);
   if (extras) {
     Object.entries(extras).forEach(([k, v]) => params.set(k, v));
   }
@@ -63,7 +70,11 @@ export async function fetchSearchPage(searchParams: Promise<SearchParams>) {
   }
 }
 
-export default async function BrowsePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+export default async function BrowsePage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   // Fetch first page of items
   const {
     items: initialItems,
