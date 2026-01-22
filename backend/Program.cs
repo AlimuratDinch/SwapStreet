@@ -14,6 +14,7 @@ using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
 using backend.Data.Seed;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,6 +78,21 @@ if (!builder.Environment.IsEnvironment("Test"))
 
 var app = builder.Build();
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+if (!app.Environment.IsProduction()) // 3. SECURITY FIX: Hide Swagger in Prod
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Backend API V1");
+        c.RoutePrefix = string.Empty;
+    });
+}
+
 if (!builder.Environment.IsEnvironment("Test"))
 {
 
@@ -119,6 +135,8 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
 
 static void ConfigureCors(WebApplicationBuilder builder)
 {
+    var frontendUrl = builder.Configuration["FrontendUrl"];
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", policy =>
@@ -173,7 +191,16 @@ static void ConfigureMinio(WebApplicationBuilder builder)
 
 static void ConfigureAuthentication(WebApplicationBuilder builder)
 {
-    var jwtSecret = builder.Configuration["JWT_SECRET"] ?? GenerateRandomKey(32);
+    var jwtSecret = builder.Configuration["JWT_SECRET"];
+
+    if (string.IsNullOrEmpty(jwtSecret))
+    {
+        if (builder.Environment.IsProduction())
+            throw new InvalidOperationException("JWT_SECRET is missing. Cannot start in Production.");
+            
+        jwtSecret = GenerateRandomKey(32); 
+    }
+    
     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
     var accessTokenMinutes = int.TryParse(

@@ -1,4 +1,4 @@
-
+version: "3.9"
 
 services:
   # --- Database (Locked Down) ---
@@ -11,13 +11,17 @@ services:
       - .env
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
-    # No "ports" section = Not accessible from the internet or host machine
     networks:
       - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # --- Object Storage (Locked Down) ---
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-01-31T20-20-33Z
     platform: linux/amd64
     container_name: minio-prod
     restart: always
@@ -26,9 +30,13 @@ services:
       - .env
     volumes:
       - minio_data_prod:/data
-    # No "ports" section. Nginx/Backend talk to it internally via http://minio:9000
     networks:
       - app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
 
   # --- App Services ---
   backend:
@@ -41,10 +49,16 @@ services:
       - .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__AuthConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
+      # Point MinIO to the internal container name
+      - MINIO_ENDPOINT=minio:9000
       - FrontendUrl=${FRONTEND_URL}
     depends_on:
-      - postgres
-      - minio
+      postgres:
+        condition: service_healthy # Wait for DB to be actually ready
+      minio:
+        condition: service_started
     networks:
       - app-net
 
@@ -65,7 +79,6 @@ services:
     container_name: nginx-prod
     restart: always
     volumes:
-      # production-ready nginx config here
       - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend

@@ -40,6 +40,11 @@ namespace backend.Controllers
                 return Unauthorized(new { Error = "Invalid token" });
             }
 
+            // Ensure user is verified
+            var isEmailConfirmedClaim = User.FindFirst("isEmailConfirmed")?.Value;
+            bool isEmailConfirmed = bool.TryParse(isEmailConfirmedClaim, out var result) && result;
+            if (!isEmailConfirmed) return BadRequest("Not Verified");
+
             try
             {
                 if (request.File == null || request.File.Length == 0)

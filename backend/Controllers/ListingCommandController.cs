@@ -57,6 +57,11 @@ namespace backend.Controllers
                 return BadRequest(new { Error = "Validation failed", Details = errors });
             }
 
+            // Ensure user is verified
+            var isEmailConfirmedClaim = User.FindFirst("isEmailConfirmed")?.Value;
+            bool isEmailConfirmed = bool.TryParse(isEmailConfirmedClaim, out var result) && result;
+            if (!isEmailConfirmed) return BadRequest("Not Verified");
+
             try
             {
                 var listingId = await _listingCommandService.CreateListingAsync(dto, cancellationToken);
