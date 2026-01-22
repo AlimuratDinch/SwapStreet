@@ -63,15 +63,19 @@ services:
       - app-net
 
   swapstreet: # Frontend
-    build: ./swapstreet
-    container_name: swapstreet-frontend-prod
-    restart: always
-    env_file:
-      - .env
-    depends_on:
-      - backend
-    networks:
-      - app-net
+      build:
+        context: ./swapstreet
+        # ADD THIS SECTION ▼
+        args:
+          NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      container_name: swapstreet-frontend-prod
+      restart: always
+      env_file:
+        - .env
+      depends_on:
+        - backend
+      networks:
+        - app-net
 
   # --- Reverse Proxy ---
   nginx:
