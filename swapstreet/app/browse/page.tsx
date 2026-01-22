@@ -1,38 +1,38 @@
 import { Sidebar, Header } from "./BrowseElements";
 import InfiniteBrowse from "./InfiniteBrowse";
 
-export async function fetchClothingItems(
-  searchParams: Promise<{
-    minPrice?: string;
-    maxPrice?: string;
-    categoryId?: string;
-    conditions?: string;
-  }>,
-) {
+type SearchParams = {
+  minPrice?: string;
+  maxPrice?: string;
+  categoryId?: string;
+  conditions?: string;
+};
+
+function getApiBase() {
+  return (
+    process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+  );
+}
+
+function buildSearchUrl(resolvedParams: SearchParams, extras?: Record<string, string>) {
+  const params = new URLSearchParams();
+  if (resolvedParams.minPrice) params.set("minPrice", resolvedParams.minPrice);
+  if (resolvedParams.maxPrice) params.set("maxPrice", resolvedParams.maxPrice);
+  if (resolvedParams.categoryId) params.set("categoryId", resolvedParams.categoryId);
+  if (resolvedParams.conditions) params.set("conditions", resolvedParams.conditions);
+  if (extras) {
+    Object.entries(extras).forEach(([k, v]) => params.set(k, v));
+  }
+  const apiUrl = getApiBase();
+  return `${apiUrl}/api/search/search${params.toString() ? `?${params.toString()}` : ""}`;
+}
+
+export async function fetchClothingItems(searchParams: Promise<SearchParams>) {
   try {
-    const params = new URLSearchParams();
     const resolvedParams = await searchParams;
-    if (resolvedParams.minPrice)
-      params.set("minPrice", resolvedParams.minPrice);
-    if (resolvedParams.maxPrice)
-      params.set("maxPrice", resolvedParams.maxPrice);
-    if (resolvedParams.categoryId)
-      params.set("categoryId", resolvedParams.categoryId);
-    if (resolvedParams.conditions)
-      params.set("conditions", resolvedParams.conditions);
-    const apiUrl =
-      process.env.API_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:8080";
-    const url = `${apiUrl}/api/search/search${params.toString() ? `?${params.toString()}` : ""}`;
-    const res = await fetch(url, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-
+    const url = buildSearchUrl(resolvedParams);
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data)) return data;
     if (data && Array.isArray(data.items)) return data.items;
@@ -44,31 +44,10 @@ export async function fetchClothingItems(
 }
 
 // helper: fetches raw search response (items + cursor)
-export async function fetchSearchPage(
-  searchParams: Promise<{
-    minPrice?: string;
-    maxPrice?: string;
-    categoryId?: string;
-    conditions?: string;
-  }>,
-) {
+export async function fetchSearchPage(searchParams: Promise<SearchParams>) {
   try {
-    const params = new URLSearchParams();
     const resolvedParams = await searchParams;
-    if (resolvedParams.minPrice)
-      params.set("minPrice", resolvedParams.minPrice);
-    if (resolvedParams.maxPrice)
-      params.set("maxPrice", resolvedParams.maxPrice);
-    if (resolvedParams.categoryId)
-      params.set("categoryId", resolvedParams.categoryId);
-    if (resolvedParams.conditions)
-      params.set("conditions", resolvedParams.conditions);
-    params.set("limit", "18");
-    const apiUrl =
-      process.env.API_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:8080";
-    const url = `${apiUrl}/api/search/search${params.toString() ? `?${params.toString()}` : ""}`;
+    const url = buildSearchUrl(resolvedParams, { limit: "18" });
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
@@ -84,16 +63,7 @@ export async function fetchSearchPage(
   }
 }
 
-export default async function BrowsePage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    minPrice?: string;
-    maxPrice?: string;
-    categoryId?: string;
-    conditions?: string;
-  }>;
-}) {
+export default async function BrowsePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   // Fetch first page of items
   const {
     items: initialItems,
