@@ -364,7 +364,7 @@ export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
     <div className="card-item">
       {/* Square image container */}
       <div className="card-item-image-container">
-        {imgSrc && (
+        {imgSrc ? (
           <Image
             src={imgSrc}
             alt={title}
@@ -372,6 +372,8 @@ export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
             height={200}
             className="card-item-image"
           />
+        ) : (
+          <div className="card-item-image-fallback">Image</div>
         )}
       </div>
       {/* Bottom section with title and price */}
