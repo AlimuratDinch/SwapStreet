@@ -21,7 +21,7 @@ services:
 
   # --- Object Storage (Locked Down) ---
   minio:
-    image: minio/minio:RELEASE.2024-01-31T20-20-33Z
+    image: minio/minio:latest
     platform: linux/amd64
     container_name: minio-prod
     restart: always
