@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { logger } from "@/components/common/logger";
 import AuthLayout from "@/components/auth/AuthLayout";

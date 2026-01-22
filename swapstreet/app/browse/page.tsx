@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import { Sidebar, CardItem, Header } from "./BrowseElements";
 
 export async function fetchClothingItems(

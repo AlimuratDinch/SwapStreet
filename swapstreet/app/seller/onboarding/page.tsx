@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";

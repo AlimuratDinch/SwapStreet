@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import { Header } from "../browse/BrowseElements";
 import { useState, useRef, useEffect } from "react";
 import { Star, X, Download, Grid, List, Info } from "lucide-react";
