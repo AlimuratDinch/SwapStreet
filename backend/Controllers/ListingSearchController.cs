@@ -4,6 +4,7 @@ using backend.Models;
 using backend.Contracts;
 using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
+using backend.DTOs.Search;
 
 [ApiController]
 [Route("api/search")]
@@ -22,15 +23,17 @@ public class ListingSearchController : ControllerBase
         [FromQuery] string? cursor = null,
         [FromQuery] int limit = 20)
     {
-        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q ?? string.Empty, Math.Min(limit, 50), cursor);  // Cap at 50
+        var cappedLimit = Math.Min(limit, 50); // Cap at 50
+        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q ?? string.Empty, cappedLimit, cursor);
 
-        return Ok(new
+        var response = new SearchResponseDto
         {
-            items,
-            limit,
-            nextCursor,
-            hasNextPage
-        });
+            Items = items,
+            NextCursor = nextCursor,
+            HasNextPage = hasNextPage
+        };
+
+        return Ok(response);
     }
 }
 
