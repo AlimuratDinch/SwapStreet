@@ -25,12 +25,10 @@ describe("Listing page (server component)", () => {
       },
     };
 
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        json: async () => mockListing,
-      }) as unknown as typeof global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockListing,
+    }) as unknown as typeof global.fetch;
 
     // Render server component
     const element = await (
@@ -49,12 +47,10 @@ describe("Listing page (server component)", () => {
   });
 
   it("renders error UI when fetch fails", async () => {
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-      }) as unknown as typeof global.fetch;
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    }) as unknown as typeof global.fetch;
     const element = await (
       ListingPage as unknown as (props: {
         params: { id: string };
@@ -76,12 +72,10 @@ describe("Listing page (server component)", () => {
       seller: null,
       fsa: "Z9Z",
     };
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        json: async () => mockListing,
-      }) as unknown as typeof global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockListing,
+    }) as unknown as typeof global.fetch;
     const element = await (
       ListingPage as unknown as (props: {
         params: { id: string };
