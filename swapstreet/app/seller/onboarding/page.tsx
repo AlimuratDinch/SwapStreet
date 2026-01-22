@@ -91,7 +91,8 @@ export default function SellerOnboardingPage() {
       const file = e.target.files?.[0] || null;
       if (!file) {
         setAvatarFile(null);
-        if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+        if (avatarPreview && typeof URL.revokeObjectURL === "function")
+          URL.revokeObjectURL(avatarPreview);
         setAvatarPreview("");
         return;
       }
@@ -102,7 +103,8 @@ export default function SellerOnboardingPage() {
       }
       setError("");
       setAvatarFile(file);
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      if (avatarPreview && typeof URL.revokeObjectURL === "function")
+        URL.revokeObjectURL(avatarPreview);
       const nextUrl = URL.createObjectURL(file);
       setAvatarPreview(nextUrl);
     },
@@ -114,7 +116,8 @@ export default function SellerOnboardingPage() {
       const file = e.target.files?.[0] || null;
       if (!file) {
         setBannerFile(null);
-        if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+        if (bannerPreview && typeof URL.revokeObjectURL === "function")
+          URL.revokeObjectURL(bannerPreview);
         setBannerPreview("");
         return;
       }
@@ -124,7 +127,8 @@ export default function SellerOnboardingPage() {
       }
       setError("");
       setBannerFile(file);
-      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+      if (bannerPreview && typeof URL.revokeObjectURL === "function")
+        URL.revokeObjectURL(bannerPreview);
       const nextUrl = URL.createObjectURL(file);
       setBannerPreview(nextUrl);
     },
@@ -255,8 +259,10 @@ export default function SellerOnboardingPage() {
   // Cleanup any created object URLs when component unmounts
   useEffect(() => {
     return () => {
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+      if (avatarPreview && typeof URL.revokeObjectURL === "function")
+        URL.revokeObjectURL(avatarPreview);
+      if (bannerPreview && typeof URL.revokeObjectURL === "function")
+        URL.revokeObjectURL(bannerPreview);
     };
   }, [avatarPreview, bannerPreview]);
 
