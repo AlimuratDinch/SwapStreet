@@ -1,13 +1,67 @@
-FROM node:18
+# ==========================================
+# 1. Base Image
+# ==========================================
+FROM node:18-alpine AS base
 
-WORKDIR /usr/app
+# ==========================================
+# 2. Dependencies (Install modules)
+# ==========================================
+FROM base AS deps
+WORKDIR /app
+# Install dependencies needed for native modules (if any)
+RUN apk add --no-cache libc6-compat
 
-COPY package*.json ./
+COPY package.json package-lock.json* ./
+RUN npm ci
 
-RUN npm install
-
+# ==========================================
+# 3. Builder (Compile the app)
+# ==========================================
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# CRITICAL: We must pass these args so Next.js bakes them into the HTML
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_FRONTEND_URL=https://swapstreet.ca
+
+# Disable telemetry during build
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Build the application (Compiles Tailwind, TS, and Pages)
+RUN npm run build
+
+# ==========================================
+# 4. Runner (The actual production server)
+# ==========================================
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Create a non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# COPY THE BUILD ARTIFACTS
+# 1. Copy the public folder (images, favicon)
+COPY --from=builder /app/public ./public
+
+# 2. Copy the "Standalone" server (This fixes ENOENT errors)
+#    This folder contains a minimal version of your app and node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+# 3. Copy the Static Assets (This fixes 404s on CSS/JS)
+#    Standalone does not include these by default, so we copy them manually
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+CMD ["node", "server.js"]
