@@ -81,7 +81,7 @@ export default function Gallery({
             onClick={() => setIndex(i)}
             className={`min-w-[64px] h-16 rounded overflow-hidden ${i === index ? "ring-2 ring-teal-500" : ""}`}
           >
-              {src || images[i]?.imageUrl ? (
+            {src || images[i]?.imageUrl ? (
               <img
                 src={src ?? images[i]?.imageUrl}
                 alt={`thumb-${i}`}

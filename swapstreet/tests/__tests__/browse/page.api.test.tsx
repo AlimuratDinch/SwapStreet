@@ -12,7 +12,10 @@ describe("browse page API helpers", () => {
     const data = [{ id: "1" }, { id: "2" }];
     global.fetch = jest
       .fn()
-      .mockResolvedValue({ ok: true, json: async () => data }) as unknown as typeof global.fetch;
+      .mockResolvedValue({
+        ok: true,
+        json: async () => data,
+      }) as unknown as typeof global.fetch;
 
     const res = await fetchClothingItems(Promise.resolve({}));
     expect(Array.isArray(res)).toBe(true);
@@ -23,7 +26,10 @@ describe("browse page API helpers", () => {
     const payload = { items: [{ id: "a" }] };
     global.fetch = jest
       .fn()
-      .mockResolvedValue({ ok: true, json: async () => payload }) as unknown as typeof global.fetch;
+      .mockResolvedValue({
+        ok: true,
+        json: async () => payload,
+      }) as unknown as typeof global.fetch;
 
     const res = await fetchClothingItems(Promise.resolve({ minPrice: "10" }));
     expect(res).toEqual(payload.items);
@@ -34,7 +40,10 @@ describe("browse page API helpers", () => {
   it("returns empty array on non-ok response", async () => {
     global.fetch = jest
       .fn()
-      .mockResolvedValue({ ok: false, status: 500 }) as unknown as typeof global.fetch;
+      .mockResolvedValue({
+        ok: false,
+        status: 500,
+      }) as unknown as typeof global.fetch;
     const res = await fetchClothingItems(Promise.resolve({}));
     expect(res).toEqual([]);
   });
@@ -47,7 +56,10 @@ describe("browse page API helpers", () => {
     };
     global.fetch = jest
       .fn()
-      .mockResolvedValue({ ok: true, json: async () => payload }) as unknown as typeof global.fetch;
+      .mockResolvedValue({
+        ok: true,
+        json: async () => payload,
+      }) as unknown as typeof global.fetch;
 
     const res = await fetchSearchPage(Promise.resolve({ categoryId: "2" }));
     expect(res.items).toEqual(payload.items);
@@ -60,7 +72,10 @@ describe("browse page API helpers", () => {
     const arr = [{ id: "z" }];
     global.fetch = jest
       .fn()
-      .mockResolvedValue({ ok: true, json: async () => arr }) as unknown as typeof global.fetch;
+      .mockResolvedValue({
+        ok: true,
+        json: async () => arr,
+      }) as unknown as typeof global.fetch;
     const res = await fetchSearchPage(Promise.resolve({}));
     expect(res.items).toEqual(arr);
     expect(res.nextCursor).toBeNull();
@@ -68,7 +83,9 @@ describe("browse page API helpers", () => {
   });
 
   it("fetchSearchPage returns defaults on error", async () => {
-    global.fetch = jest.fn().mockRejectedValue(new Error("boom")) as unknown as typeof global.fetch;
+    global.fetch = jest
+      .fn()
+      .mockRejectedValue(new Error("boom")) as unknown as typeof global.fetch;
     const res = await fetchSearchPage(Promise.resolve({}));
     expect(res).toEqual({ items: [], nextCursor: null, hasNextPage: false });
   });

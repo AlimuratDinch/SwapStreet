@@ -4,7 +4,9 @@ import InfiniteBrowse from "@/app/browse/InfiniteBrowse";
 
 describe("InfiniteBrowse", () => {
   const originalFetch = global.fetch;
-  const originalIO = (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver;
+  const originalIO = (
+    globalThis as unknown as { IntersectionObserver?: unknown }
+  ).IntersectionObserver;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -12,7 +14,9 @@ describe("InfiniteBrowse", () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
-    (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver = originalIO;
+    (
+      globalThis as unknown as { IntersectionObserver?: unknown }
+    ).IntersectionObserver = originalIO;
   });
 
   it("renders initial items and loads more on intersection", async () => {
@@ -22,7 +26,11 @@ describe("InfiniteBrowse", () => {
         ioCb = cb;
       }
       observe(): void {
-        if (ioCb) ioCb([{ isIntersecting: true } as unknown as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+        if (ioCb)
+          ioCb(
+            [{ isIntersecting: true } as unknown as IntersectionObserverEntry],
+            this as unknown as IntersectionObserver,
+          );
       }
       disconnect(): void {}
       unobserve(): void {}
@@ -30,7 +38,9 @@ describe("InfiniteBrowse", () => {
         return [];
       }
     }
-    (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver = IO as unknown as typeof IntersectionObserver;
+    (
+      globalThis as unknown as { IntersectionObserver?: unknown }
+    ).IntersectionObserver = IO as unknown as typeof IntersectionObserver;
 
     // First fetch returns two items
     const page1 = {
@@ -78,7 +88,9 @@ describe("InfiniteBrowse", () => {
         return [];
       }
     }
-    (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver = IO2 as unknown as typeof IntersectionObserver;
+    (
+      globalThis as unknown as { IntersectionObserver?: unknown }
+    ).IntersectionObserver = IO2 as unknown as typeof IntersectionObserver;
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ items: [], nextCursor: null, hasNextPage: false }),
@@ -120,11 +132,20 @@ describe("InfiniteBrowse", () => {
         return [];
       }
     }
-    (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver = IO3 as unknown as typeof IntersectionObserver;
+    (
+      globalThis as unknown as { IntersectionObserver?: unknown }
+    ).IntersectionObserver = IO3 as unknown as typeof IntersectionObserver;
 
     render(
       <InfiniteBrowse
-        initialItems={initialItems as unknown as { id: string; title: string; price: number; images?: { imageUrl: string }[] }[]}
+        initialItems={
+          initialItems as unknown as {
+            id: string;
+            title: string;
+            price: number;
+            images?: { imageUrl: string }[];
+          }[]
+        }
         initialCursor={null}
         initialHasNext={true}
       />,

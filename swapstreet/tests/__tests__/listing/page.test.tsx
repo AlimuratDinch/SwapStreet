@@ -27,10 +27,17 @@ describe("Listing page (server component)", () => {
 
     global.fetch = jest
       .fn()
-      .mockResolvedValue({ ok: true, json: async () => mockListing }) as unknown as typeof global.fetch;
+      .mockResolvedValue({
+        ok: true,
+        json: async () => mockListing,
+      }) as unknown as typeof global.fetch;
 
     // Render server component
-    const element = await (ListingPage as unknown as (props: { params: { id: string } }) => Promise<React.ReactElement>)({ params: { id: "123" } });
+    const element = await (
+      ListingPage as unknown as (props: {
+        params: { id: string };
+      }) => Promise<React.ReactElement>
+    )({ params: { id: "123" } });
     render(element);
 
     await waitFor(() => {
@@ -44,8 +51,15 @@ describe("Listing page (server component)", () => {
   it("renders error UI when fetch fails", async () => {
     global.fetch = jest
       .fn()
-      .mockResolvedValueOnce({ ok: false, status: 500 }) as unknown as typeof global.fetch;
-    const element = await (ListingPage as unknown as (props: { params: { id: string } }) => Promise<React.ReactElement>)({ params: { id: "bad" } });
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      }) as unknown as typeof global.fetch;
+    const element = await (
+      ListingPage as unknown as (props: {
+        params: { id: string };
+      }) => Promise<React.ReactElement>
+    )({ params: { id: "bad" } });
     render(element);
     // Check for error message
     expect(screen.getByText(/Failed to load listing/i)).toBeInTheDocument();
@@ -64,8 +78,15 @@ describe("Listing page (server component)", () => {
     };
     global.fetch = jest
       .fn()
-      .mockResolvedValue({ ok: true, json: async () => mockListing }) as unknown as typeof global.fetch;
-    const element = await (ListingPage as unknown as (props: { params: { id: string } }) => Promise<React.ReactElement>)({ params: { id: "nomedia" } });
+      .mockResolvedValue({
+        ok: true,
+        json: async () => mockListing,
+      }) as unknown as typeof global.fetch;
+    const element = await (
+      ListingPage as unknown as (props: {
+        params: { id: string };
+      }) => Promise<React.ReactElement>
+    )({ params: { id: "nomedia" } });
     render(element);
 
     await waitFor(() => {
