@@ -15,7 +15,7 @@ namespace backend.DTOs.Chat
 
         [JsonPropertyName("chatroomId")]
         public Guid ChatroomId { get; set; }
-        
+
         [JsonPropertyName("author")]
         public Guid AuthorId { get; set; }
     }

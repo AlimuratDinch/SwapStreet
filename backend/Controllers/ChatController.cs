@@ -165,7 +165,7 @@ namespace backend.Controllers
                 return Unauthorized(new { Error = ex.Message });
             }
         }
-        
+
         /// <summary>
         /// Delete a chatroom
         /// </summary>
@@ -177,7 +177,7 @@ namespace backend.Controllers
                 var userId = GetUserId();
                 bool isInChatroom = await _chatroomService
                     .UserBelongsToChatroomAsync(userId, chatroomId);
-                
+
                 if (isInChatroom)
                 {
                     _chatroomService.DeleteChatroomAsync(chatroomId);
@@ -186,7 +186,7 @@ namespace backend.Controllers
                 {
                     return Forbid("You are not part of this chatroom");
                 }
-                
+
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -196,29 +196,29 @@ namespace backend.Controllers
             {
                 return BadRequest(new { Error = ex.Message });
             }
-            
+
             return Ok();
         }
-        
+
         // It is important to check that the message belongs to the 
         // chatroom. Otherwise, a malicious could take another user's 
         [HttpGet("chatrooms/message/{messageId}/delete")]
         public async Task<IActionResult> DeleteMessage(Guid messageId)
         {
-            try 
+            try
             {
                 var messageDTO = await _chatService.GetMessageByIdAsync(messageId);
-                
+
                 if (messageDTO == null)
                     return BadRequest(new { Error = "Message does not exist" });
-                
+
                 var chatroomId = messageDTO.ChatroomId;
-                
+
                 var chatroomDTO = await _chatroomService.GetChatroomByIdAsync(chatroomId);
                 var userId = GetUserId();
                 bool isInChatroom = await _chatroomService
                     .UserBelongsToChatroomAsync(userId, chatroomDTO.Id);
-                
+
                 if (isInChatroom && messageDTO.AuthorId == userId)
                 {
                     _chatService.DeleteMessageByIdAsync(messageDTO.Id);

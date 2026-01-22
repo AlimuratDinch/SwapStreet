@@ -187,13 +187,13 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(m => m.ChatroomId)
             .IsRequired();
-        
+
         modelBuilder.Entity<Message>()
             .HasOne(m => m.Author)
             .WithMany()
             .HasForeignKey(m => m.AuthorId)
             .IsRequired();
-        
+
         modelBuilder.Entity<Message>()
             .Property(m => m.Content)
             .HasConversion<string>();

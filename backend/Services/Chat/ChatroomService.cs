@@ -135,11 +135,11 @@ namespace backend.Services.Chat
             return await _context.Chatrooms
                 .AnyAsync(c => c.Id == chatroomId && (c.SellerId == userId || c.BuyerId == userId));
         }
-        
+
         public async Task DeleteChatroomAsync(Guid chatroomId)
         {
             var chatroom = await _context.Chatrooms.FindAsync(chatroomId);
-            
+
             if (chatroom != null)
             {
                 _context.Chatrooms.Remove(chatroom);

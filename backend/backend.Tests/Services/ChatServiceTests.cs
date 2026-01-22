@@ -280,7 +280,7 @@ namespace backend.Tests.Services
             // Assert
             result.Should().BeNull();
         }
-        
+
         // Note: does not check the user deletion rights, only 
         // the that deletion removes the target message.
         [Fact]
@@ -289,22 +289,14 @@ namespace backend.Tests.Services
             // Arange
             MessageDto messageDto = await _chatService.SendMessageAsync(_chatroomId, _buyerId, "Message A");
             await _chatService.SendMessageAsync(_chatroomId, _sellerId, "Message B");
-            
+
             // Act
             await _chatService.DeleteMessageByIdAsync(messageDto.Id);
-            
-            Exception exception = null;
-            try
-            {
-                await _chatService.GetMessageByIdAsync(messageDto.Id);
-            }
-            catch (ArgumentException argumentException)
-            {
-                exception = argumentException;
-            }
-            
-            // Assert
-            exception.Should().NotBeNull();
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _chatService.DeleteMessageByIdAsync(messageDto.Id)
+            );
+
             exception.Message.Should().Be("Cannot find message");
         }
     }
@@ -716,30 +708,30 @@ namespace backend.Tests.Services
             result[0].Messages.Should().HaveCount(1);
             result[0].Messages[0].Content.Should().Be("Last");
         }
-        
+
         [Fact]
         public async Task DeleteChatroomAsync_ShouldDisappear()
         {
             // Arrange
             var dto = new CreateChatroomDto { SellerId = _sellerId, BuyerId = _buyerId };
             var chatroom = await _service.CreateChatroomAsync(dto);
-            
+
             // Act
             await _service.DeleteChatroomAsync(chatroom.Id);
-            
+
             // Assert
             var result = await _service.GetUserChatroomsAsync(_sellerId);
             result.Should().HaveCount(0);
             result = await _service.GetUserChatroomsAsync(_buyerId);
             result.Should().HaveCount(0);
         }
-        
+
         [Fact]
         public async Task DeleteChatroomAsync_ThrowException_WhenChatroomDoesNotExist()
         {
             // Arange
             Exception exception = null;
-            
+
             try
             {
                 // Act
@@ -749,7 +741,7 @@ namespace backend.Tests.Services
             {
                 exception = argumentException;
             }
-            
+
             // Assert
             exception.Should().NotBeNull();
             exception.Message.Should().Be("Cannot find chatroom");

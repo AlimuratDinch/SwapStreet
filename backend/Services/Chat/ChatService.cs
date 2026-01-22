@@ -85,11 +85,11 @@ namespace backend.Services.Chat
                 AuthorId = message.AuthorId
             };
         }
-        
+
         public async Task DeleteMessageByIdAsync(Guid messageId)
         {
             var message = await _context.Messages.FindAsync(messageId);
-            
+
             if (message != null)
             {
                 _context.Messages.Remove(message);
