@@ -1,5 +1,5 @@
-"use client";
 export const dynamic = "force-dynamic";
+import { Suspense } from "react";
 import { Sidebar, CardItem, Header } from "./BrowseElements";
 
 export async function fetchClothingItems(
@@ -54,7 +54,9 @@ export default async function BrowsePage({
     <div className="flex flex-col h-screen">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <Suspense fallback={<div className="w-64 bg-gray-200 border-r h-full animate-pulse" />}>
+           <Sidebar />
+        </Suspense>
         <main className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
           {items.length > 0 ? (
             items.map(

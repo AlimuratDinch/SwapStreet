@@ -1,5 +1,4 @@
-"use client";
-export const dynamic = "force-dynamic";
+
 import {
   Search,
   Leaf,
@@ -23,6 +22,8 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import "./CardItemStyle.css";
+
+export const dynamic = "force-dynamic";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
