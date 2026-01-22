@@ -92,6 +92,7 @@ export default function InfiniteBrowse({
           title={item.title}
           imgSrc={item.images?.[0]?.imageUrl}
           price={item.price ?? 0}
+          href={`/listing/${item.id}`}
         />
       ))}
 

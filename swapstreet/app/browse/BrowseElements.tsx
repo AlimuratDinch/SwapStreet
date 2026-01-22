@@ -359,8 +359,8 @@ export function Sidebar() {
   );
 }
 
-export function CardItem({ title, imgSrc, price }: CardItemProps) {
-  return (
+export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
+  const content = (
     <div className="card-item">
       {/* Square image container */}
       <div className="card-item-image-container">
@@ -383,6 +383,16 @@ export function CardItem({ title, imgSrc, price }: CardItemProps) {
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }
 
 // ---------- Card ----------
@@ -390,4 +400,5 @@ interface CardItemProps {
   title: string;
   imgSrc?: string;
   price: number;
+  href?: string;
 }

@@ -94,6 +94,61 @@ public class ListingSearchController : ControllerBase
             hasNextPage
         });
     }
+
+    [HttpGet("listing/{id:guid}")]
+    public async Task<IActionResult> GetListing([FromRoute] Guid id)
+    {
+        // Build MinIO base URL from configuration
+        var minioEndpoint = _configuration["MINIO_ENDPOINT"] ?? "minio:9000";
+        var minioBucket = _configuration["MINIO_PUBLIC_BUCKET"] ?? "public";
+        var minioUrl = $"http://{minioEndpoint}/{minioBucket}";
+
+        var listing = await _db.Listings.AsNoTracking()
+            .FirstOrDefaultAsync(l => l.Id == id);
+
+        if (listing == null) return NotFound();
+
+        var seller = await _db.Profiles.AsNoTracking().FirstOrDefaultAsync(p => p.Id == listing.ProfileId);
+
+        var images = await _db.ListingImages.AsNoTracking()
+            .Where(li => li.ListingId == listing.Id)
+            .OrderBy(li => li.DisplayOrder)
+            .Select(img => new
+            {
+                img.Id,
+                imageUrl = img.ImagePath != null ? $"{minioUrl}/{img.ImagePath}" : null,
+                img.DisplayOrder,
+                img.ForTryon
+            })
+            .ToListAsync();
+
+        var mapped = new
+        {
+            listing.Id,
+            listing.Title,
+            listing.Description,
+            listing.Price,
+            createdAt = listing.CreatedAt,
+            seller = seller == null ? null : new
+            {
+                seller.Id,
+                seller.FirstName,
+                seller.LastName,
+                seller.VerifiedSeller,
+                seller.Rating,
+                seller.Bio,
+                seller.CityId,
+                seller.FSA,
+                profileImageUrl = seller.ProfileImagePath != null ? $"{minioUrl}/{seller.ProfileImagePath}" : null,
+                bannerImageUrl = seller.BannerImagePath != null ? $"{minioUrl}/{seller.BannerImagePath}" : null,
+                seller.CreatedAt,
+                seller.UpdatedAt
+            },
+            images = images.Cast<object>().ToList()
+        };
+
+        return Ok(mapped);
+    }
 }
 
 [ApiController]
