@@ -1,3 +1,5 @@
+"use client";
+
 import { Sidebar, CardItem, Header } from "./BrowseElements";
 
 export async function fetchClothingItems(
