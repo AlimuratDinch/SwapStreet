@@ -4,6 +4,7 @@ using backend.Models;
 using backend.Contracts;
 using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
+using backend.DTOs.Search;
 
 [ApiController]
 [Route("api/search")]
@@ -26,7 +27,8 @@ public class ListingSearchController : ControllerBase
         [FromQuery] string? cursor = null,
         [FromQuery] int limit = 18)
     {
-        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q ?? string.Empty, Math.Min(limit, 50), cursor);  // Cap at 50
+        var cappedLimit = Math.Min(limit, 50); // Cap at 50
+        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q ?? string.Empty, cappedLimit, cursor);
 
         // Build MinIO base URL from configuration
         var minioEndpoint = _configuration["MINIO_ENDPOINT"] ?? "minio:9000";
