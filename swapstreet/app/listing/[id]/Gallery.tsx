@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -14,7 +15,7 @@ function normalizeImageUrl(raw?: string) {
       return url.toString();
     }
     return url.toString();
-  } catch (e) {
+  } catch {
     return raw;
   }
 }
@@ -58,7 +59,6 @@ export default function Gallery({
           ◀
         </button>
         <div className="h-full w-full flex items-center justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={safeUrls[index] ?? images[index]?.imageUrl ?? ""}
             alt={`image-${index}`}
@@ -81,8 +81,7 @@ export default function Gallery({
             onClick={() => setIndex(i)}
             className={`min-w-[64px] h-16 rounded overflow-hidden ${i === index ? "ring-2 ring-teal-500" : ""}`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {src || images[i]?.imageUrl ? (
+              {src || images[i]?.imageUrl ? (
               <img
                 src={src ?? images[i]?.imageUrl}
                 alt={`thumb-${i}`}

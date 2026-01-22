@@ -1,17 +1,10 @@
 "use client";
 
-import {
-  Search,
-  Leaf,
-  ShoppingBag,
-  Globe,
-  User,
-  ChevronDown,
-} from "lucide-react";
+import { Search, Leaf, ShoppingBag, Globe, User, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Shirt, Star } from "lucide-react";
+import { Shirt } from "lucide-react";
 import Link from "next/link";
 import {
   NavigationMenu,

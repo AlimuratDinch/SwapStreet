@@ -4,7 +4,7 @@ import InfiniteBrowse from "@/app/browse/InfiniteBrowse";
 
 describe("InfiniteBrowse", () => {
   const originalFetch = global.fetch;
-  const originalIO = (global as any).IntersectionObserver;
+  const originalIO = (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -12,24 +12,25 @@ describe("InfiniteBrowse", () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
-    (global as any).IntersectionObserver = originalIO;
+    (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver = originalIO;
   });
 
   it("renders initial items and loads more on intersection", async () => {
-    let ioCb: any = null;
-    (global as any).IntersectionObserver = class {
-      constructor(cb: any) {
+    let ioCb: IntersectionObserverCallback | null = null;
+    class IO {
+      constructor(cb: IntersectionObserverCallback) {
         ioCb = cb;
       }
-      observe() {
-        if (ioCb) ioCb([{ isIntersecting: true }]);
+      observe(): void {
+        if (ioCb) ioCb([{ isIntersecting: true } as unknown as IntersectionObserverEntry], this as unknown as IntersectionObserver);
       }
-      disconnect() {}
-      unobserve() {}
-      takeRecords() {
+      disconnect(): void {}
+      unobserve(): void {}
+      takeRecords(): IntersectionObserverEntry[] {
         return [];
       }
-    } as any;
+    }
+    (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver = IO as unknown as typeof IntersectionObserver;
 
     // First fetch returns two items
     const page1 = {
@@ -48,7 +49,7 @@ describe("InfiniteBrowse", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => page1 })
       .mockResolvedValueOnce({ ok: true, json: async () => page2 });
 
-    global.fetch = fetchMock as any;
+    global.fetch = fetchMock as unknown as typeof global.fetch;
 
     render(
       <InfiniteBrowse
@@ -68,19 +69,20 @@ describe("InfiniteBrowse", () => {
   });
 
   it("shows no items message when nothing returned", async () => {
-    (global as any).IntersectionObserver = class {
-      constructor(cb: any) {}
-      observe() {}
-      disconnect() {}
-      unobserve() {}
-      takeRecords() {
+    class IO2 {
+      constructor() {}
+      observe(): void {}
+      disconnect(): void {}
+      unobserve(): void {}
+      takeRecords(): IntersectionObserverEntry[] {
         return [];
       }
-    } as any;
+    }
+    (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver = IO2 as unknown as typeof IntersectionObserver;
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ items: [], nextCursor: null, hasNextPage: false }),
-    }) as any;
+    }) as unknown as typeof global.fetch;
 
     render(
       <InfiniteBrowse
@@ -107,21 +109,22 @@ describe("InfiniteBrowse", () => {
         nextCursor: "c2",
         hasNextPage: true,
       }),
-    }) as any;
+    }) as unknown as typeof global.fetch;
 
-    (global as any).IntersectionObserver = class {
-      constructor(cb: any) {}
-      observe() {}
-      disconnect() {}
-      unobserve() {}
-      takeRecords() {
+    class IO3 {
+      constructor() {}
+      observe(): void {}
+      disconnect(): void {}
+      unobserve(): void {}
+      takeRecords(): IntersectionObserverEntry[] {
         return [];
       }
-    } as any;
+    }
+    (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver = IO3 as unknown as typeof IntersectionObserver;
 
     render(
       <InfiniteBrowse
-        initialItems={initialItems as any}
+        initialItems={initialItems as unknown as { id: string; title: string; price: number; images?: { imageUrl: string }[] }[]}
         initialCursor={null}
         initialHasNext={true}
       />,

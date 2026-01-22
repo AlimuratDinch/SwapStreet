@@ -1,4 +1,4 @@
-import { Sidebar, CardItem, Header } from "./BrowseElements";
+import { Sidebar, Header } from "./BrowseElements";
 import InfiniteBrowse from "./InfiniteBrowse";
 
 export async function fetchClothingItems(

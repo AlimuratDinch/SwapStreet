@@ -3,16 +3,14 @@ import { render, screen } from "@testing-library/react";
 import PostedAt from "@/app/listing/[id]/PostedAt";
 
 describe("PostedAt", () => {
-  const RealDateNow = Date.now;
-
   afterEach(() => {
-    (Date as any).now = RealDateNow;
+    jest.restoreAllMocks();
     jest.useRealTimers();
   });
 
   it("shows relative label and local time for a recent date", () => {
     const now = new Date("2025-01-01T12:00:00Z");
-    (Date as any).now = () => now.getTime();
+    jest.spyOn(Date, "now").mockImplementation(() => now.getTime());
 
     const fiveSecondsAgo = new Date(now.getTime() - 5000).toISOString();
 
@@ -80,8 +78,7 @@ describe("PostedAt", () => {
   });
 
   it("handles Date.now returning NaN and triggers isNaN(seconds) branch", () => {
-    const realNow = Date.now;
-    (Date as any).now = () => NaN;
+    jest.spyOn(Date, "now").mockImplementation(() => NaN);
     const iso = new Date().toISOString();
     const { container } = render(<PostedAt iso={iso} />);
     const el = container.querySelector(".text-gray-200");
@@ -89,7 +86,6 @@ describe("PostedAt", () => {
     const text = el?.textContent ?? "";
     expect(text.includes("(")).toBe(true);
     expect(/minute|hour|day|just now/.test(text)).toBe(false);
-    (Date as any).now = realNow;
   });
 
   it("renders empty when iso is undefined", () => {

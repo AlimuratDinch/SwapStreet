@@ -22,7 +22,26 @@ export default async function ListingPage({
   params: { id: string };
 }) {
   const id = params.id;
-  let listing: any = null;
+  type Seller = {
+    firstName?: string;
+    lastName?: string;
+    profileImageUrl?: string;
+    FSA?: string;
+    fsa?: string;
+  };
+  type Listing = {
+    title?: string;
+    price?: number | string;
+    createdAt?: string;
+    images?: { imageUrl?: string }[];
+    seller?: Seller | null;
+    description?: string;
+    location?: string;
+    fsa?: string;
+    FSA?: string;
+  };
+
+  let listing: Listing | null = null;
   try {
     listing = await fetchListing(id);
   } catch (e) {
@@ -37,8 +56,8 @@ export default async function ListingPage({
     );
   }
 
-  const images: { imageUrl?: string }[] = listing.images ?? [];
-  const seller = listing.seller ?? null;
+  const images: { imageUrl?: string }[] = listing?.images ?? [];
+  const seller = listing?.seller ?? null;
 
   return (
     <div className="h-screen overflow-hidden bg-[#111] text-white">
@@ -66,26 +85,26 @@ export default async function ListingPage({
             {/* Title & Price */}
             <div>
               <h1 className="text-2xl font-semibold text-white">
-                {listing.title}
+                {listing?.title}
               </h1>
               <div className="text-2xl text-teal-400 font-bold mt-2">
-                ${Number(listing.price).toFixed(2)}
+                ${Number(listing?.price ?? 0).toFixed(2)}
               </div>
             </div>
 
             {/* When listed */}
             <div className="text-gray-400">
               <div className="text-xs">Posted</div>
-              <PostedAt iso={listing.createdAt} />
+              <PostedAt iso={listing?.createdAt} />
             </div>
 
             {/* Location / Where */}
             <div>
               <div className="text-gray-400 text-xs">Location</div>
               <div className="text-gray-200">
-                {listing.location ??
-                  listing.fsa ??
-                  listing.FSA ??
+                {listing?.location ??
+                  listing?.fsa ??
+                  listing?.FSA ??
                   seller?.fsa ??
                   seller?.FSA ??
                   "Unknown"}
@@ -96,7 +115,7 @@ export default async function ListingPage({
             <div>
               <div className="text-gray-400 text-xs mb-2">Description</div>
               <div className="text-gray-200 whitespace-pre-wrap">
-                {listing.description}
+                {listing?.description}
               </div>
             </div>
 

@@ -32,7 +32,11 @@ describe("Gallery", () => {
 
   it("normalizes minio hostnames to window.location.hostname and handles prev/next wrap", async () => {
     // Mock window.location
-    (window as any).location = new URL("http://localhost");
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: new URL("http://localhost"),
+    });
 
     const images = [
       { imageUrl: "http://minio:9000/public/a.jpg" },
@@ -75,7 +79,8 @@ describe("Gallery", () => {
 
   it("renders thumbnail fallback when thumbnail src missing", () => {
     const images = [{}, {}];
-    render(<Gallery images={images as any} />);
+    type Img = { imageUrl?: string };
+    render(<Gallery images={images as unknown as Img[]} />);
     // Find a button that contains the fallback div
     const fallback = screen
       .getAllByRole("button")
