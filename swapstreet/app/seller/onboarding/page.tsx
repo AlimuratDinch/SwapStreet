@@ -37,7 +37,6 @@ export default function SellerOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
-
   // Fetch provinces on mount
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -287,7 +286,8 @@ export default function SellerOnboardingPage() {
       >
         {!accessToken && !isAuthenticated && (
           <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
-            It looks like you're not signed in. If you're already signed, try refreshing this page.
+            It looks like you're not signed in. If you're already signed, try
+            refreshing this page.
           </div>
         )}
 

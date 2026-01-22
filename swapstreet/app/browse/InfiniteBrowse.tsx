@@ -22,7 +22,9 @@ export default function InfiniteBrowse({
   const [items, setItems] = useState<Item[]>(initialItems);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [hasNext, setHasNext] = useState<boolean>(initialHasNext);
-  const seenIdsRef = useRef<Set<string>>(new Set(initialItems.map((i) => String(i.id))));
+  const seenIdsRef = useRef<Set<string>>(
+    new Set(initialItems.map((i) => String(i.id))),
+  );
   const [loading, setLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,7 +40,7 @@ export default function InfiniteBrowse({
       const res = await fetch(`${api}/api/search/search?${q.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const pageItems: Item[] = Array.isArray(data) ? data : data.items ?? [];
+      const pageItems: Item[] = Array.isArray(data) ? data : (data.items ?? []);
       // Deduplicate items by id
       const newItems = pageItems.filter((pi) => {
         const idStr = String(pi.id);
@@ -50,7 +52,10 @@ export default function InfiniteBrowse({
       const nextCursor = data.nextCursor ?? null;
 
       // Stop if no new items or cursor hasn't advanced
-      if (nextCursor === prevCursor || (pageItems.length > 0 && newItems.length === 0)) {
+      if (
+        nextCursor === prevCursor ||
+        (pageItems.length > 0 && newItems.length === 0)
+      ) {
         setHasNext(false);
       } else {
         setHasNext(Boolean(data.hasNextPage));
@@ -97,7 +102,9 @@ export default function InfiniteBrowse({
       ))}
 
       {items.length === 0 && !loading && (
-        <p className="col-span-full text-center text-gray-500">No items available.</p>
+        <p className="col-span-full text-center text-gray-500">
+          No items available.
+        </p>
       )}
 
       <div ref={sentinelRef} className="col-span-full h-6" />

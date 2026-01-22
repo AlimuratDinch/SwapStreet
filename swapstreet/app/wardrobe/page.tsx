@@ -26,7 +26,7 @@ export default function WardrobePage() {
         const response = await fetch(`${API_URL}/api/search/search`);
         if (response.ok) {
           const data = await response.json();
-          const items = Array.isArray(data) ? data : data?.items ?? [];
+          const items = Array.isArray(data) ? data : (data?.items ?? []);
           if (items && items.length > 0) {
             setFirstListingId(items[0].id);
           }

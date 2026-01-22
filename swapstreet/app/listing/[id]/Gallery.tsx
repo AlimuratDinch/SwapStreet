@@ -19,11 +19,18 @@ function normalizeImageUrl(raw?: string) {
   }
 }
 
-export default function Gallery({ images }: { images: { imageUrl?: string }[] }) {
+export default function Gallery({
+  images,
+}: {
+  images: { imageUrl?: string }[];
+}) {
   const [index, setIndex] = useState(0);
   const total = images?.length ?? 0;
 
-  const safeUrls = useMemo(() => images?.map((i) => normalizeImageUrl(i?.imageUrl)) ?? [], [images]);
+  const safeUrls = useMemo(
+    () => images?.map((i) => normalizeImageUrl(i?.imageUrl)) ?? [],
+    [images],
+  );
 
   useEffect(() => {
     if (index >= safeUrls.length) setIndex(0);
@@ -53,7 +60,7 @@ export default function Gallery({ images }: { images: { imageUrl?: string }[] })
         <div className="h-full w-full flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={safeUrls[index] ?? images[index]?.imageUrl ?? ''}
+            src={safeUrls[index] ?? images[index]?.imageUrl ?? ""}
             alt={`image-${index}`}
             className="max-h-[78vh] max-w-full mx-auto object-contain"
           />
@@ -65,8 +72,6 @@ export default function Gallery({ images }: { images: { imageUrl?: string }[] })
         >
           ▶
         </button>
-
-        
       </div>
 
       <div className="mt-2 flex gap-2 overflow-x-auto py-1">
@@ -78,7 +83,11 @@ export default function Gallery({ images }: { images: { imageUrl?: string }[] })
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {src || images[i]?.imageUrl ? (
-              <img src={src ?? images[i]?.imageUrl} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+              <img
+                src={src ?? images[i]?.imageUrl}
+                alt={`thumb-${i}`}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full bg-gray-200" />
             )}

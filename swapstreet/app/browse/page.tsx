@@ -55,10 +55,14 @@ export async function fetchSearchPage(
   try {
     const params = new URLSearchParams();
     const resolvedParams = await searchParams;
-    if (resolvedParams.minPrice) params.set("minPrice", resolvedParams.minPrice);
-    if (resolvedParams.maxPrice) params.set("maxPrice", resolvedParams.maxPrice);
-    if (resolvedParams.categoryId) params.set("categoryId", resolvedParams.categoryId);
-    if (resolvedParams.conditions) params.set("conditions", resolvedParams.conditions);
+    if (resolvedParams.minPrice)
+      params.set("minPrice", resolvedParams.minPrice);
+    if (resolvedParams.maxPrice)
+      params.set("maxPrice", resolvedParams.maxPrice);
+    if (resolvedParams.categoryId)
+      params.set("categoryId", resolvedParams.categoryId);
+    if (resolvedParams.conditions)
+      params.set("conditions", resolvedParams.conditions);
     params.set("limit", "18");
     const apiUrl =
       process.env.API_URL ||
@@ -68,7 +72,7 @@ export async function fetchSearchPage(
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
-    const items = Array.isArray(data) ? data : data.items ?? [];
+    const items = Array.isArray(data) ? data : (data.items ?? []);
     return {
       items,
       nextCursor: data?.nextCursor ?? null,
@@ -91,9 +95,11 @@ export default async function BrowsePage({
   }>;
 }) {
   // Fetch first page of items
-  const { items: initialItems, nextCursor, hasNextPage } = await fetchSearchPage(
-    searchParams,
-  );
+  const {
+    items: initialItems,
+    nextCursor,
+    hasNextPage,
+  } = await fetchSearchPage(searchParams);
 
   return (
     <div className="flex flex-col h-screen">
