@@ -20,10 +20,13 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    const API_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
     try {
       logger.info("Attempting sign in", { email });
 
-      const response = await fetch("http://localhost:8080/api/auth/signin", {
+      const response = await fetch(`${API_URL}/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

@@ -6,7 +6,7 @@ import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/components/common/logger";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
 const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
@@ -57,7 +57,7 @@ export default function SellerOnboardingPage() {
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
-        const provincesRes = await fetch(`${API_URL}/api/location/provinces`);
+        const provincesRes = await fetch(`${API_URL}/location/provinces`);
 
         if (provincesRes.ok) {
           const provincesData = await provincesRes.json();
@@ -80,7 +80,7 @@ export default function SellerOnboardingPage() {
       const fetchCities = async () => {
         try {
           const citiesRes = await fetch(
-            `${API_URL}/api/location/cities?provinceId=${selectedProvinceId}`,
+            `${API_URL}/location/cities?provinceId=${selectedProvinceId}`,
           );
 
           if (citiesRes.ok) {

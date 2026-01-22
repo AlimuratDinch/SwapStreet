@@ -7,7 +7,8 @@ import { logger } from "@/components/common/logger";
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
   const token = searchParams.get("token");
   const email = searchParams.get("email");
 
@@ -34,20 +35,17 @@ export default function VerifyEmailPage() {
     verificationEmail: string,
   ) => {
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/auth/verify-email",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            token: verificationToken,
-            email: verificationEmail,
-          }),
+      const response = await fetch(`${API_URL}/auth/verify-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+        body: JSON.stringify({
+          token: verificationToken,
+          email: verificationEmail,
+        }),
+      });
 
       if (response.ok) {
         setStatus("success");
@@ -82,17 +80,14 @@ export default function VerifyEmailPage() {
     setResendSuccess(false);
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/auth/resend-verification",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ email }),
+      const response = await fetch(`${API_URL}/auth/resend-verification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
 
       if (response.ok) {
         setResendSuccess(true);

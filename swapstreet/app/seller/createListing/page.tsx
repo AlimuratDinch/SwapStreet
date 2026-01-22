@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 export default function SellerListingPage() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function SellerListingPage() {
       imageFormData.append("Type", "Listing");
       imageFormData.append("ListingId", listingId);
 
-      const res = await fetch(`${API_URL}/api/images/upload`, {
+      const res = await fetch(`${API_URL}/images/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -48,7 +48,7 @@ export default function SellerListingPage() {
       if (!accessToken) return;
       setProfileLoading(true);
       try {
-        const res = await fetch(`${API_URL}/api/profile/me`, {
+        const res = await fetch(`${API_URL}/profile/me`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`,

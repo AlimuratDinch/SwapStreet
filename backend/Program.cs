@@ -197,10 +197,10 @@ static void ConfigureAuthentication(WebApplicationBuilder builder)
     {
         if (builder.Environment.IsProduction())
             throw new InvalidOperationException("JWT_SECRET is missing. Cannot start in Production.");
-            
-        jwtSecret = GenerateRandomKey(32); 
+
+        jwtSecret = GenerateRandomKey(32);
     }
-    
+
     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
     var accessTokenMinutes = int.TryParse(

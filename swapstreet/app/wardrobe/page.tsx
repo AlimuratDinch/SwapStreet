@@ -16,14 +16,13 @@ export default function WardrobePage() {
   const [recentResults, setRecentResults] = useState<string[]>([]);
   const [firstListingId, setFirstListingId] = useState<string | null>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
-
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"; // DECLARE IT ONCe thx
   // Fetch a valid listing ID
   useEffect(() => {
     const fetchListingId = async () => {
       try {
-        const API_URL =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-        const response = await fetch(`${API_URL}/api/catalog/items`);
+        const response = await fetch(`${API_URL}/catalog/items`);
         if (response.ok) {
           const items = await response.json();
           if (items && items.length > 0) {
@@ -66,8 +65,6 @@ export default function WardrobePage() {
     setError(null);
 
     try {
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const token = sessionStorage.getItem("accessToken");
 
       if (!token) {
@@ -79,7 +76,7 @@ export default function WardrobePage() {
       formData.append("file", file);
       formData.append("type", "TryOn"); // Upload type for try-on images
 
-      const response = await fetch(`${API_URL}/api/images/upload`, {
+      const response = await fetch(`${API_URL}/images/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -118,8 +115,6 @@ export default function WardrobePage() {
     setGeneratedImage(null);
 
     try {
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const token = sessionStorage.getItem("accessToken");
 
       if (!token) {
@@ -136,7 +131,7 @@ export default function WardrobePage() {
         return;
       }
 
-      const response = await fetch(`${API_URL}/api/tryon/virtual-tryon`, {
+      const response = await fetch(`${API_URL}/tryon/virtual-tryon`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
