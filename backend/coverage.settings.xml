@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Configuration>
-  <CodeCoverage>
-    <Sources>
-      <Exclude>
-        <Source>.*[\/]Migrations[\/].*</Source>
-        <Source>.*[\/]Models[\/].*</Source>
-        <Source>.*[\/]DbContexts[\/].*</Source>
-        <Source>.*[\/]DTOs[\/].*</Source>
-        <Source>.*[\/]Data[\/].*</Source>
-      </Exclude>
-    </Sources>
-  </CodeCoverage>
-</Configuration>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <CodeCoverage>
+            <Sources>
+              <Exclude>
+                <Source>.*[\/]Migrations[\/].*</Source>
+                <Source>.*[\/]Models[\/].*</Source>
+                <Source>.*[\/]DbContexts[\/].*</Source>
+                <Source>.*[\/]DTOs[\/].*</Source>
+                <Source>.*[\/]Data[\/].*</Source>
+              </Exclude>
+            </Sources>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
