@@ -32,12 +32,12 @@ export default function InfiniteBrowse({
     if (loading || !hasNext) return;
     setLoading(true);
     try {
-      const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const q = new URLSearchParams();
       q.set("limit", "18");
       const prevCursor = cursor;
       if (cursor) q.set("cursor", cursor);
-      const res = await fetch(`${api}/api/search/search?${q.toString()}`);
+      const res = await fetch(`${API_URL}/search/search?${q.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const pageItems: Item[] = Array.isArray(data) ? data : (data.items ?? []);

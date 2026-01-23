@@ -245,7 +245,6 @@ export function Sidebar() {
     const newQueryString = params.toString();
     const currentQueryString = searchParams.toString();
 
-    // CRITICAL FIX: Only replace if the query actually changed
     if (newQueryString !== currentQueryString) {
       router.replace(newQueryString ? `/browse?${newQueryString}` : "/browse"); 
     }

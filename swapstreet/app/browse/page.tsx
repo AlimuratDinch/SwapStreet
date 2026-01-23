@@ -1,4 +1,4 @@
-"use client"
+
 export const dynamic = "force-dynamic";
 import { Suspense } from "react";
 import { Sidebar, CardItem, Header } from "./BrowseElements";
@@ -10,14 +10,8 @@ type SearchParams = {
   categoryId?: string;
   conditions?: string;
 };
-
-function getApiBase() {
-  return (
-    process.env.API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8080"
-  );
-}
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 function buildSearchUrl(
   resolvedParams: SearchParams,
@@ -33,8 +27,7 @@ function buildSearchUrl(
   if (extras) {
     Object.entries(extras).forEach(([k, v]) => params.set(k, v));
   }
-  const apiUrl = getApiBase();
-  return `${apiUrl}/api/search/search${params.toString() ? `?${params.toString()}` : ""}`;
+  return `${API_URL}/search/search${params.toString() ? `?${params.toString()}` : ""}`;
 }
 
 export async function fetchClothingItems(searchParams: Promise<SearchParams>) {
