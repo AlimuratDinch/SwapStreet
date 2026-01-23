@@ -318,16 +318,11 @@ static async Task InitializeDatabaseAsync(WebApplication app)
         {
             await authDb.Database.MigrateAsync();
         }
-
-        // Seed only in Test or Development environments
-        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
-        {
             await DatabaseSeeder.SeedAsync(
                 appDb,
                 services,
                 loggerFactory.CreateLogger("DatabaseSeeder")
             );
-        }
 
         app.Logger.LogInformation("Database migrations and seeding applied successfully.");
     }
