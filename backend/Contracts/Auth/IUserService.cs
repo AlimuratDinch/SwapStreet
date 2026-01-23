@@ -18,5 +18,6 @@ namespace backend.Contracts.Auth
         Task<bool> ConfirmEmailAsync(string email, string token);
         Task<User?> ResendConfirmationEmailAsync(string email);
         Task SendConfirmationEmail(User user);
+        Task<bool> DeductTokenAsync(Guid userId);
     }
 }
