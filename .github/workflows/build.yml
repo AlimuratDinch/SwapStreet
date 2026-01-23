@@ -165,7 +165,7 @@ jobs:
           exit 1
         }
 
-        $lineCoverage = [double]$backendModule.GetAttribute("line_coverage")
+        $lineCoverage = [double]$module.GetAttribute("line_coverage")
         Write-Host "Backend test coverage: $lineCoverage%"
 
         if ($lineCoverage -lt 65) {
