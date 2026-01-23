@@ -98,11 +98,7 @@ jobs:
         mkdir -p ${{ runner.temp }}/scanner
         dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}/scanner
     - name: Install dotnet-coverage
-      shell: bash
-      run: |
-        dotnet tool install --global dotnet-coverage || true
-        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-        sudo apt-get update && sudo apt-get install -y libxml2
+      run: dotnet tool install --global dotnet-coverage
 
     - name: Begin SonarQube analysis
       env:
