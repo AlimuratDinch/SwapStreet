@@ -81,7 +81,7 @@ export default function RegistrationPage() {
 
           <FormField
             id="name"
-            label="Name"
+            label="Username"
             type="text"
             value={username}
             onChange={(e) => setName(e.target.value)}

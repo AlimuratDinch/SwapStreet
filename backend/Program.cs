@@ -15,6 +15,8 @@ using Microsoft.Extensions.Options;
 using backend.Data.Seed;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.HttpOverrides;
+using backend.DTOs;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -396,6 +398,45 @@ static async Task InitializeMinio(WebApplication app)
 
 static void ConfigureMiddleware(WebApplication app)
 {
+    // Global Exception Handler - should be first in the middleware pipeline
+    app.UseExceptionHandler(exceptionHandlerApp =>
+    {
+        exceptionHandlerApp.Run(async context =>
+        {
+            var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+            var isDevelopment = context.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment();
+
+            var exception = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+
+            // Log the exception
+            if (exception != null)
+            {
+                logger.LogError(exception, "Unhandled exception occurred");
+            }
+
+            // Set response
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+            var errorResponse = new ErrorResponse
+            {
+                Message = "An unexpected error occurred while processing your request.",
+                StatusCode = StatusCodes.Status500InternalServerError,
+                Timestamp = DateTime.UtcNow,
+                Details = isDevelopment ? exception?.Message : null,
+                StackTrace = isDevelopment ? exception?.StackTrace : null
+            };
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                PropertyNameCaseInsensitive = true
+            };
+
+            await context.Response.WriteAsJsonAsync(errorResponse, options);
+        });
+    });
+
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {

@@ -11,7 +11,7 @@ import {
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Shirt, Star } from "lucide-react";
+import { Shirt } from "lucide-react";
 import Link from "next/link";
 import {
   NavigationMenu,
@@ -422,10 +422,11 @@ export function Sidebar() {
   );
 }
 
-export function CardItem({ title, imgSrc, price }: CardItemProps) {
-  return (
-    <div className="card-item group cursor-pointer">
-      <div className="card-item-image-container relative overflow-hidden rounded-md bg-gray-100">
+export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
+  const content = (
+    <div className="card-item">
+      {/* Square image container */}
+      <div className="card-item-image-container">
         {imgSrc ? (
           <Image
             src={imgSrc}
@@ -435,26 +436,33 @@ export function CardItem({ title, imgSrc, price }: CardItemProps) {
             className="card-item-image object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-gray-400">
-            <span className="text-sm">No Image</span>
-          </div>
+          <div className="card-item-image-fallback">Image</div>
         )}
       </div>
-      <div className="card-item-content mt-2">
-        <h4 className="card-item-title font-medium text-gray-900 truncate">{title}</h4>
-        <div className="card-item-price-container flex justify-between items-center mt-1">
-          <p className="card-item-price font-semibold text-teal-600">${price}</p>
-          <button className="card-item-wishlist-btn p-1 hover:text-teal-500 transition-colors" title="Add to wishlist">
-            <Star className="w-5 h-5 text-gray-400" />
-          </button>
+      {/* Bottom section with title and price */}
+      <div className="card-item-content">
+        <h4 className="card-item-title">{title}</h4>
+        <div className="card-item-price-container">
+          <p className="card-item-price">${price}</p>
         </div>
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }
 
 interface CardItemProps {
   title: string;
   imgSrc?: string;
   price: number;
+  href?: string;
 }

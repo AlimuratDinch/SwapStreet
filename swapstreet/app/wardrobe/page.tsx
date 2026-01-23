@@ -17,14 +17,15 @@ export default function WardrobePage() {
   const [firstListingId, setFirstListingId] = useState<string | null>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
   const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"; // DECLARE IT ONCe thx
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"; 
   // Fetch a valid listing ID
   useEffect(() => {
     const fetchListingId = async () => {
       try {
-        const response = await fetch(`${API_URL}/catalog/items`);
+        const response = await fetch(`${API_URL}/search/search`);
         if (response.ok) {
-          const items = await response.json();
+          const data = await response.json();
+          const items = Array.isArray(data) ? data : (data?.items ?? []);
           if (items && items.length > 0) {
             setFirstListingId(items[0].id);
           }
