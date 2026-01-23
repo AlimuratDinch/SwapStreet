@@ -65,7 +65,7 @@ services:
   swapstreet: # Frontend
       build:
         context: ./swapstreet
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile.prod
         args:
           NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       container_name: swapstreet-frontend-prod
