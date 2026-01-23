@@ -37,22 +37,6 @@ export default function SellerOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
-  // Redirect if not authenticated (with a small delay to allow AuthContext to load)
-  useEffect(() => {
-    // Check both AuthContext and sessionStorage as fallback
-    const checkAuth = () => {
-      const tokenInStorage = sessionStorage.getItem("accessToken");
-      if (!isAuthenticated && !tokenInStorage) {
-        router.push("/auth/sign-in");
-      }
-    };
-
-    // Give AuthContext a moment to load from sessionStorage
-    const timeoutId = setTimeout(checkAuth, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [isAuthenticated, router]);
-
   // Fetch provinces on mount
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -107,7 +91,8 @@ export default function SellerOnboardingPage() {
       const file = e.target.files?.[0] || null;
       if (!file) {
         setAvatarFile(null);
-        if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+        if (avatarPreview && typeof URL.revokeObjectURL === "function")
+          URL.revokeObjectURL(avatarPreview);
         setAvatarPreview("");
         return;
       }
@@ -118,7 +103,8 @@ export default function SellerOnboardingPage() {
       }
       setError("");
       setAvatarFile(file);
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+      if (avatarPreview && typeof URL.revokeObjectURL === "function")
+        URL.revokeObjectURL(avatarPreview);
       const nextUrl = URL.createObjectURL(file);
       setAvatarPreview(nextUrl);
     },
@@ -130,7 +116,8 @@ export default function SellerOnboardingPage() {
       const file = e.target.files?.[0] || null;
       if (!file) {
         setBannerFile(null);
-        if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+        if (bannerPreview && typeof URL.revokeObjectURL === "function")
+          URL.revokeObjectURL(bannerPreview);
         setBannerPreview("");
         return;
       }
@@ -140,7 +127,8 @@ export default function SellerOnboardingPage() {
       }
       setError("");
       setBannerFile(file);
-      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+      if (bannerPreview && typeof URL.revokeObjectURL === "function")
+        URL.revokeObjectURL(bannerPreview);
       const nextUrl = URL.createObjectURL(file);
       setBannerPreview(nextUrl);
     },
@@ -271,8 +259,10 @@ export default function SellerOnboardingPage() {
   // Cleanup any created object URLs when component unmounts
   useEffect(() => {
     return () => {
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+      if (avatarPreview && typeof URL.revokeObjectURL === "function")
+        URL.revokeObjectURL(avatarPreview);
+      if (bannerPreview && typeof URL.revokeObjectURL === "function")
+        URL.revokeObjectURL(bannerPreview);
     };
   }, [avatarPreview, bannerPreview]);
 
@@ -300,6 +290,13 @@ export default function SellerOnboardingPage() {
         onSubmit={handleSubmit}
         className="mt-8 space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
       >
+        {!accessToken && !isAuthenticated && (
+          <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
+            It looks like you're not signed in. If you're already signed, try
+            refreshing this page.
+          </div>
+        )}
+
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}

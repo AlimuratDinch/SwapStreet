@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace backend.Migrations.AuthDb
 {
     /// <inheritdoc />
-    public partial class InitialAuthMigration : Migration
+    public partial class initialAuth : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -34,7 +34,9 @@ namespace backend.Migrations.AuthDb
                     DeletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     ConfirmationToken = table.Column<string>(type: "text", nullable: true),
                     ConfirmationTokenExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    ConfirmationEmailSentAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    ConfirmationEmailSentAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TokenCount = table.Column<int>(type: "integer", nullable: false),
+                    TokenResetAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
