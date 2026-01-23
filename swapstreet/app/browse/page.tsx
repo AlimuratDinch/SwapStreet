@@ -88,6 +88,7 @@ export default async function BrowsePage({
   return (
     <div className="flex flex-col h-screen">
       <Header />
+      <Suspense>
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
@@ -98,6 +99,7 @@ export default async function BrowsePage({
           initialHasNext={hasNextPage}
         />
       </div>
+      </Suspense>
       <div className="fixed bottom-4 right-4">
         <a href="/seller/createListing">
           <button className="bg-teal-400 hover:bg-teal-500 text-white font-bold w-12 h-12 rounded-full shadow-lg transition duration-150 ease-in-out">
