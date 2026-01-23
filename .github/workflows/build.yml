@@ -128,17 +128,6 @@ jobs:
         # Run tests and collect coverage in XML format using settings from root
         # We use ../coverage.settings.xml because the working-directory is 'backend'
         dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
-    
-    - name: Check coverage.xml exists and preview contents
-      shell: bash
-      working-directory: backend
-      run: |
-        if [ -f coverage.xml ]; then
-          head -n 30 coverage.xml
-        else
-          echo "coverage.xml NOT FOUND"
-          exit 1
-        fi
 
     - name: Validate backend coverage (PowerShell)
       shell: pwsh
