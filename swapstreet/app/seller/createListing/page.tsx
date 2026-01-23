@@ -152,7 +152,7 @@ export default function SellerListingPage() {
       formData.append("ProfileId", profileId);
       formData.append("FSA", fsa);
 
-      const response = await fetch(`${API_URL}/api/listings`, {
+      const response = await fetch(`${API_URL}/listings`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
