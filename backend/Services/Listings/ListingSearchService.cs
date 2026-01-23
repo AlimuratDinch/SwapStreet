@@ -48,12 +48,24 @@ public class ListingSearchService : IListingSearchService
         // Blank query => "recent listings"
         if (string.IsNullOrWhiteSpace(query))
         {
-            // rows is the list of listings fetched from the database.
-            var rows = await _db.Listings.AsNoTracking()
-                .Include(l => l.Tag)
-                .Include(l => l.Profile)
+            // base query: most recent first
+            IQueryable<Listing> baseRecent = _db.Listings.AsNoTracking()
                 .OrderByDescending(l => l.CreatedAt)
-                .ThenByDescending(l => l.Id)
+                .ThenByDescending(l => l.Id);
+
+            // Cursor filter
+            if (ListingCursor.TryDecode(cursor, out var decoded) && decoded != null)
+            {
+                if (!decoded.Rank.HasValue)
+                {
+                    var ct = decoded.CreatedAt;
+                    var cid = decoded.Id;
+                    baseRecent = baseRecent.Where(l =>
+                        l.CreatedAt < ct || (l.CreatedAt == ct && l.Id.CompareTo(cid) < 0));
+                }
+            }
+
+            var rows = await baseRecent
                 .Take(pageSize + 1)
                 .ToListAsync();
 
