@@ -1,0 +1,73 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: swapstreet-db-stage
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=swapstreet_prod
+    volumes:
+      - postgres_data_stage:/var/lib/postgresql/data
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d swapstreet_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio-stage
+    command: server /data --console-address ":9001"
+    ports:
+      - "9001:9001" # Console remains on 9001
+    networks:
+      - app-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend-stage
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - JWT_SECRET=${JWT_SECRET}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
+      - MINIO_ENDPOINT=minio:9000
+      
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-net
+
+  swapstreet:
+    build:
+      context: ./swapstreet
+      dockerfile: Dockerfile.prod
+      args:
+      - NEXT_PUBLIC_API_URL=/api
+    container_name: swapstreet-frontend-stage
+    networks:
+      - app-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-stage
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.local.staging.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - swapstreet
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  postgres_data_stage:

@@ -4,6 +4,8 @@ import Gallery from "./Gallery";
 import PostedAt from "./PostedAt";
 import { Header } from "../../browse/BrowseElements";
 
+export const dynamic = 'force-dynamic';
+
 async function fetchListing(id: string) {
   const api =
     process.env.API_URL ||

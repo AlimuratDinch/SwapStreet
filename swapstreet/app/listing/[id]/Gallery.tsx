@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import React, { useEffect, useMemo, useState } from "react";
 
 function normalizeImageUrl(raw?: string) {
