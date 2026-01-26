@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using NetTopologySuite.Geometries;
 
 namespace backend.Tests.Services
 {
@@ -64,8 +65,8 @@ namespace backend.Tests.Services
             };
 
             // FSAs
-            var fsa1 = new Fsa { Id = 1, Code = "M5V", CityId = 1 }; // Toronto
-            var fsa2 = new Fsa { Id = 2, Code = "H2Y", CityId = 2 }; // Montreal
+            var fsa1 = new Fsa { Id = 1, Code = "M5V", CityId = 1, Centroid = new Point(-79.3, 43.7) }; // Toronto
+            var fsa2 = new Fsa { Id = 2, Code = "H2Y", CityId = 2, Centroid = new Point(-73.5, 45.5) }; // Montreal
 
             _context.Provinces.AddRange(ontario, quebec);
             _context.Cities.AddRange(toronto, montreal);

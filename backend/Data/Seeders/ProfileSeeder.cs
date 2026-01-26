@@ -27,7 +27,7 @@ namespace backend.Data.Seed
                 LastName = "Seller",
                 Rating = 5.0f,
                 CityId = cityId,
-                FSA = "ABC",
+                FSA = "M5V",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

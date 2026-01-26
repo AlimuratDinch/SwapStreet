@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import BrowsePage, { fetchClothingItems } from "@/app/browse/page";
 
 // Type definition for clothing items
@@ -6,21 +6,26 @@ type ClothingItem = {
   id: number;
   title: string;
   description: string;
-  imageUrl: string;
+  images?: Array<{ imageUrl: string }>;
   condition: string;
   price: number;
 };
+
+interface CardItemProps {
+  title: string;
+  imgSrc?: string;
+  price: number;
+}
 
 // Mock the BrowseElements components
 jest.mock("@/app/browse/BrowseElements", () => ({
   Header: () => <div data-testid="header">Header</div>,
   Sidebar: () => <div data-testid="sidebar">Sidebar</div>,
-  CardItem: ({ title, description, imgSrc, price }: any) => (
+  CardItem: ({ title, imgSrc, price }: CardItemProps) => (
     <div data-testid="card-item">
       <h4>{title}</h4>
-      <p>{description}</p>
       <span>{price}</span>
-      {imgSrc && <img src={imgSrc} alt={title} />}
+      {imgSrc && <span data-testid="img-src">{imgSrc}</span>}
     </div>
   ),
 }));
@@ -39,7 +44,7 @@ describe("fetchClothingItems", () => {
         id: 1,
         title: "Test Item",
         description: "Test Description",
-        imageUrl: "/test.jpg",
+        images: [{ imageUrl: "/test.jpg" }],
         condition: "New",
         price: 50,
       },
@@ -53,7 +58,7 @@ describe("fetchClothingItems", () => {
     const result = await fetchClothingItems(Promise.resolve({}));
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/catalog/items",
+      "http://backend:8080/api/search/search",
       {
         cache: "no-store",
       },
@@ -67,7 +72,7 @@ describe("fetchClothingItems", () => {
         id: 1,
         title: "Filtered Item",
         description: "Test Description",
-        imageUrl: "/test.jpg",
+        images: [{ imageUrl: "/test.jpg" }],
         condition: "Like New",
         price: 75,
       },
@@ -88,7 +93,7 @@ describe("fetchClothingItems", () => {
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/catalog/items?minPrice=50&maxPrice=100&categoryId=2&conditions=Like+New%2CNew",
+      "http://backend:8080/api/search/search?minPrice=50&maxPrice=100&categoryId=2&conditions=Like+New%2CNew",
       {
         cache: "no-store",
       },
@@ -112,7 +117,7 @@ describe("fetchClothingItems", () => {
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/catalog/items?minPrice=20&categoryId=3",
+      "http://backend:8080/api/search/search?minPrice=20&categoryId=3",
       {
         cache: "no-store",
       },
@@ -165,7 +170,7 @@ describe("fetchClothingItems", () => {
     await fetchClothingItems(Promise.resolve({}));
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://custom-api:3000/api/catalog/items",
+      "http://custom-api:3000/api/search/search",
       expect.any(Object),
     );
 
@@ -208,7 +213,7 @@ describe("BrowsePage", () => {
     expect(container.querySelector("main")).toBeInTheDocument();
   });
 
-  it("should display dummy item when no items returned", async () => {
+  it("should show 'No items available' when no items returned", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => [],
@@ -216,8 +221,8 @@ describe("BrowsePage", () => {
 
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
-    // When no items are returned, a dummy item is displayed
-    expect(screen.getByText("Vintage Blue Jeans")).toBeInTheDocument();
+    // When no items are returned, show no items message
+    expect(screen.getByText("No items available.")).toBeInTheDocument();
   });
 
   it("should render CardItem components for each item", async () => {
@@ -226,7 +231,7 @@ describe("BrowsePage", () => {
         id: 1,
         title: "Item 1",
         description: "Description 1",
-        imageUrl: "/img1.jpg",
+        images: [{ imageUrl: "/img1.jpg" }],
         condition: "New",
         price: 25,
       },
@@ -234,7 +239,7 @@ describe("BrowsePage", () => {
         id: 2,
         title: "Item 2",
         description: "Description 2",
-        imageUrl: "/img2.jpg",
+        images: [{ imageUrl: "/img2.jpg" }],
         condition: "Used",
         price: 15,
       },
@@ -242,7 +247,7 @@ describe("BrowsePage", () => {
         id: 3,
         title: "Item 3",
         description: "Description 3",
-        imageUrl: "/img3.jpg",
+        images: [{ imageUrl: "/img3.jpg" }],
         condition: "Like New",
         price: 35,
       },
@@ -263,10 +268,11 @@ describe("BrowsePage", () => {
     expect(screen.getByText("Item 2")).toBeInTheDocument();
     expect(screen.getByText("Item 3")).toBeInTheDocument();
 
-    // Check that the prices are rendered
-    expect(screen.getByAltText("Item 1")).toHaveAttribute("src", "/img1.jpg");
-    expect(screen.getByAltText("Item 2")).toHaveAttribute("src", "/img2.jpg");
-    expect(screen.getByAltText("Item 3")).toHaveAttribute("src", "/img3.jpg");
+    // Check that the img sources are rendered correctly
+    const imgSources = screen.getAllByTestId("img-src");
+    expect(imgSources[0]).toHaveTextContent("/img1.jpg");
+    expect(imgSources[1]).toHaveTextContent("/img2.jpg");
+    expect(imgSources[2]).toHaveTextContent("/img3.jpg");
   });
 
   it("should pass correct props to CardItem components", async () => {
@@ -275,7 +281,7 @@ describe("BrowsePage", () => {
         id: 1,
         title: "Test Item",
         description: "Test Description",
-        imageUrl: "/test.jpg",
+        images: [{ imageUrl: "/test.jpg" }],
         condition: "New",
         price: 50,
       },
@@ -289,10 +295,7 @@ describe("BrowsePage", () => {
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
     expect(screen.getByText("Test Item")).toBeInTheDocument();
-    expect(screen.getByAltText("Test Item")).toHaveAttribute(
-      "src",
-      "/test.jpg",
-    );
+    expect(screen.getByTestId("img-src")).toHaveTextContent("/test.jpg");
   });
 
   it("should handle items without images", async () => {
@@ -301,7 +304,7 @@ describe("BrowsePage", () => {
         id: 1,
         title: "No Image Item",
         description: "No image",
-        imageUrl: "",
+        images: [],
         condition: "New",
         price: 10,
       },
@@ -315,7 +318,7 @@ describe("BrowsePage", () => {
     render(await BrowsePage({ searchParams: Promise.resolve({}) }));
 
     expect(screen.getByText("No Image Item")).toBeInTheDocument();
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("img-src")).not.toBeInTheDocument();
   });
 
   it("should apply correct CSS classes for layout", async () => {

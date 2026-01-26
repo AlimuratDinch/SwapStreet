@@ -188,6 +188,10 @@ namespace backend.Services.Auth
 
             // 4. Success Logic
             user.EmailConfirmedAt = DateTimeOffset.UtcNow;
+            user.Status = "verified";
+            // 5. Add minimum number of virtual tryon tokens
+            user.TokenCount = 10;
+            user.TokenResetAt = DateTime.UtcNow.AddDays(1);
 
             // Clean up used token so it cannot be used a second time
             user.ConfirmationToken = null;
@@ -208,9 +212,39 @@ namespace backend.Services.Auth
             {
                 frontendUrl = "http://localhost:3000";
             }
-            var link = $"{frontendUrl}/verify-email?token={user.ConfirmationToken}&email={user.Email}";
+            var link = $"{frontendUrl}/auth/verify-email?token={user.ConfirmationToken}&email={user.Email}";
 
             await _emailService.SendWelcomeEmailAsync(user.Email, user.Username, link);
+        }
+
+        public async Task<bool> DeductTokenAsync(Guid userId)
+        {
+            var user = await _authDBContext.Users.FindAsync(userId);
+
+            // FAIL FAST: If they aren't verified, they get nothing
+            // This blocks them even if a bug elsewhere gave them tokens
+            if (!user.IsEmailConfirmed)
+            {
+                return false;
+            }
+
+            // 1. Check for Daily Reset
+            // Only refill if the time has passed AND they are verified
+            if (DateTime.UtcNow >= user.TokenResetAt)
+            {
+                user.TokenCount = 10; // Reset to daily limit
+                user.TokenResetAt = DateTime.UtcNow.AddDays(1);
+            }
+
+            // 2. Standard Deduction
+            if (user.TokenCount > 0)
+            {
+                user.TokenCount--;
+                await _authDBContext.SaveChangesAsync();
+                return true; // Success
+            }
+
+            return false; // Out of tokens
         }
     }
 }

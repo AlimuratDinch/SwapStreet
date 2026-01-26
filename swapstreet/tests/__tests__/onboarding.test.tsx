@@ -315,10 +315,10 @@ describe("SellerOnboardingPage", () => {
     // The postal code should be processed correctly and FSA validation should pass
     // This ensures the FSA extraction and validation code path is executed
     await waitFor(() => {
-      // If validation passes, we should navigate to /seller/me
+      // If validation passes, we should navigate to /profile
       // If FSA validation fails, we'd see "Invalid postal code format."
       // Since "M5V-1A1" is valid, FSA should be "M5V" which passes FSA_REGEX
-      expect(mockPush).toHaveBeenCalledWith("/seller/me");
+      expect(mockPush).toHaveBeenCalledWith("/profile");
     });
   });
 
@@ -483,7 +483,7 @@ describe("SellerOnboardingPage", () => {
         },
         mockRefreshToken,
       );
-      expect(mockPush).toHaveBeenCalledWith("/seller/me");
+      expect(mockPush).toHaveBeenCalledWith("/profile");
     });
   });
 
@@ -558,7 +558,7 @@ describe("SellerOnboardingPage", () => {
         },
         mockRefreshToken,
       );
-      expect(mockPush).toHaveBeenCalledWith("/seller/me");
+      expect(mockPush).toHaveBeenCalledWith("/profile");
     });
   });
 
@@ -931,10 +931,12 @@ describe("SellerOnboardingPage", () => {
 
     render(<SellerOnboardingPage />);
 
-    // Wait for the redirect to happen (the useEffect has a 100ms timeout)
     await waitFor(
       () => {
-        expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
+        expect(
+          screen.getByText(/it looks like you're not signed in/i),
+        ).toBeInTheDocument();
+        expect(mockPush).not.toHaveBeenCalled();
       },
       { timeout: 500 },
     );
@@ -962,6 +964,8 @@ describe("SellerOnboardingPage", () => {
 
     // Mock AuthContext to return unauthenticated state for this test
     const originalMock = mockUseAuth.getMockImplementation();
+    // Mock refreshToken to return null to test the error case
+    mockRefreshToken.mockResolvedValueOnce(null);
     mockUseAuth.mockReturnValue({
       accessToken: null,
       isAuthenticated: false,
@@ -1002,7 +1006,7 @@ describe("SellerOnboardingPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/you must be logged in/i)).toBeInTheDocument();
-      expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
+      expect(mockPush).not.toHaveBeenCalled();
     });
 
     // Restore original mock

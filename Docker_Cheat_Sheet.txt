@@ -12,6 +12,9 @@ docker compose up -d --build
 - For Development -
 docker-compose -f docker-compose.dev.yml up --build
 
+# Backend only (postgres)
+docker compose -f docker-compose.dev.yml up backend --build
+
 - For Production -
 docker-compose -f docker-compose.prod.yml up -d
 
@@ -69,6 +72,8 @@ PgAdmin         -> http://localhost:5050/
 
 9. Migrations
 --------------------
+# Must Delete AppDbContextModelSnapshot.cs so that new migrations are generated.
+ 
 dotnet ef migrations add <name> --context AppDbContext
 dotnet ef database update --context AppDbContext
 
@@ -91,3 +96,11 @@ reportgenerator -reports:./coverage/coverage.opencover.xml -targetdir:./coverage
 # Format Backend
 
 dotnet format backend.sln
+
+# For whitespace formatting
+dotnet format whitespace backend.sln
+
+12. Creating JWT secrets for Development
+
+# Create 32 byte key
+openssl rand -base64 32

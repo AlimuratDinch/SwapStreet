@@ -1,21 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { AuthInput } from "../AuthFormElements";
-import { ImageElement } from "../AuthFormElements";
-import { PromptElement } from "../AuthFormElements";
-import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/components/common/logger";
+import AuthLayout from "@/components/auth/AuthLayout";
+import FormField from "@/components/auth/FormField";
+import ErrorMessage from "@/components/auth/ErrorMessage";
+import AuthButton from "@/components/auth/AuthButton";
 
 export default function RegistrationPage() {
-  const router = useRouter();
-  const { login } = useAuth();
   const [username, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [showEmailSentModal, setShowEmailSentModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,24 +44,12 @@ export default function RegistrationPage() {
         throw new Error(errText || "Failed to create account");
       }
 
-      const data = await response.json();
+      await response.json();
 
-      // Store access token and update AuthContext
-      if (data.accessToken) {
-        // Update AuthContext (which also stores in sessionStorage)
-        login(data.accessToken);
-        logger.debug("Access token stored", {
-          tokenLength: data.accessToken.length,
-        });
-      } else {
-        throw new Error("Access token not returned from backend");
-      }
+      logger.info("Register successful - showing email sent message");
 
-      logger.info("Register successful");
-      // Small delay to ensure AuthContext is updated before navigation
-      setTimeout(() => {
-        router.push("/seller/onboarding");
-      }, 100);
+      // Show the email sent modal
+      setShowEmailSentModal(true);
     } catch (err: unknown) {
       logger.error("Registration error", err);
       const errorMessage =
@@ -75,112 +61,108 @@ export default function RegistrationPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen justify-center items-start bg-[var(--bg-color)] p-6 overflow-hidden">
-      {/* Background design: simple circles with hover grow */}
-      {/* Top-left circle: primary-dark with slight orange tint */}
-      <div
-        className="absolute -top-32 -left-32 w-96 h-96 rounded-full 
-                      bg-[rgba(1,108,93,0.15)]  
-                      transition-transform duration-500 ease-in-out hover:scale-110"
-      ></div>
-
-      {/* Bottom-right circle: primary-dark */}
-      <div
-        className="absolute bottom-[-100px] right-[-100px] w-72 h-72 rounded-full 
-                      bg-[rgba(1,108,93,0.15)]  
-                      transition-transform duration-500 ease-in-out hover:scale-110"
-      ></div>
-
-      {/* Gradient border wrapper */}
-      <div
-        className="mt-10 md:mt-16 w-full max-w-5xl rounded-2xl 
-                      bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] 
-                      p-[3px] shadow-lg flex flex-col md:flex-row overflow-hidden"
-      >
-        {/* Left: Login Form */}
-        <div
-          className="relative w-full md:w-1/2 bg-[var(--bg-color)] p-8 flex flex-col 
-                        justify-start md:justify-center rounded-2xl md:rounded-l-2xl md:rounded-r-none"
-        >
-          {/* Brand name in top-left corner */}
-          {/* <h2 className="absolute top-4 left-6 text-2xl font-extrabold tracking-wide">
-            <span className="text-[var(--accent-color)]">Swap</span>
-            <span className="text-[var(--primary-dark)] italic">Street!</span>
-          </h2> */}
-
-          {/* Login Heading */}
-          <h1 className="mt-12 mb-8 text-center text-3xl font-bold text-[var(--text-color)]">
-            Register
+    <AuthLayout>
+      <div className="w-full max-w-md">
+        {/* Heading */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Create Account
           </h1>
-
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-4 flex flex-col items-center"
-          >
-            {error && (
-              <div
-                role="alert"
-                className="w-4/5 text-red-500 text-sm text-center"
-              >
-                {error}
-              </div>
-            )}
-
-            <AuthInput
-              label="Name"
-              type="text"
-              value={username}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-
-            <AuthInput
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-
-            <AuthInput
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-            />
-
-            <AuthInput
-              label="Confirm Password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-            />
-
-            <button
-              type="submit"
-              className="mt-6 w-1/2 rounded-lg bg-[var(--primary-color)] px-3 py-2 
-                         text-sm font-semibold text-white transition 
-                         hover:bg-[var(--primary-dark)] hover:cursor-pointer"
-            >
-              Sign Up
-            </button>
-          </form>
-
-          {/* Sign Up prompt */}
-          <PromptElement
-            prompt="Already have an account?"
-            linkText="Sign In"
-            linkHref="/auth/sign-in"
-          />
+          <p className="text-teal-600">
+            Join the sustainable fashion community
+          </p>
         </div>
 
-        {/* Right: Cloth Image */}
-        <ImageElement />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <ErrorMessage message={error} />
+
+          <FormField
+            id="name"
+            label="Username"
+            type="text"
+            value={username}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+
+          <FormField
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <FormField
+            id="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+
+          <FormField
+            id="confirmPassword"
+            label="Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+
+          <AuthButton>Sign Up</AuthButton>
+        </form>
+
+        {/* Sign In Link */}
+        <p className="mt-8 text-center text-sm text-gray-700">
+          Already have an account?{" "}
+          <a
+            href="/auth/sign-in"
+            className="text-teal-600 hover:text-teal-700 font-medium"
+          >
+            Sign In
+          </a>
+        </p>
       </div>
-    </div>
+
+      {/* Email Sent Modal */}
+      {showEmailSentModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="text-center">
+              <div className="mb-6 flex justify-center">
+                <div className="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-10 h-10 text-teal-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  </svg>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Check Your Email
+              </h2>
+              <p className="text-gray-600 mb-2">
+                We've sent a verification link to:
+              </p>
+              <p className="text-teal-600 font-semibold mb-6 break-all">
+                {email}
+              </p>
+              <p className="text-sm text-gray-500 mb-8">
+                Click the link in the email to verify your account and get
+                started.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </AuthLayout>
   );
 }

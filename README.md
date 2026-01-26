@@ -36,6 +36,8 @@ git clone https://github.com/AlimuratDinch/SwapStreet
 # Frontend
 # ================================
 NODE_ENV=development
+NEXT_PUBLIC_API_URL=http://localhost:8080
+API_URL=http://backend:8080
 
 # ================================
 # PostgreSQL Database Configuration

@@ -1,8 +1,9 @@
 "use client";
 
 import { Header } from "../browse/BrowseElements";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Star, X, Download, Grid, List, Info } from "lucide-react";
+import Image from "next/image";
 
 export default function WardrobePage() {
   const [loading, setLoading] = useState(false);
@@ -13,7 +14,29 @@ export default function WardrobePage() {
   const [showOriginal, setShowOriginal] = useState(true);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [recentResults, setRecentResults] = useState<string[]>([]);
+  const [firstListingId, setFirstListingId] = useState<string | null>(null);
   const mainImageInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch a valid listing ID
+  useEffect(() => {
+    const fetchListingId = async () => {
+      try {
+        const API_URL =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        const response = await fetch(`${API_URL}/api/search/search`);
+        if (response.ok) {
+          const data = await response.json();
+          const items = Array.isArray(data) ? data : (data?.items ?? []);
+          if (items && items.length > 0) {
+            setFirstListingId(items[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch listing ID:", err);
+      }
+    };
+    fetchListingId();
+  }, []);
 
   const toggleFavorite = (itemId: number) => {
     setFavorites((prev) => {
@@ -36,14 +59,6 @@ export default function WardrobePage() {
       title: `Wardrobe Item ${i + 1}`,
       isFavorite: i === 0,
     }));
-
-  // Hardcoded test item with valid GUID
-  const testItem = {
-    id: "550e8400-e29b-41d4-a716-446655440000",
-    imageUrl: "/images/test.jpg",
-    title: "Vintage Blue Jeans",
-    price: 24.99,
-  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -114,6 +129,14 @@ export default function WardrobePage() {
         return;
       }
 
+      if (!firstListingId) {
+        setError(
+          "No listings available. Please wait or create a listing first.",
+        );
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`${API_URL}/api/tryon/virtual-tryon`, {
         method: "POST",
         headers: {
@@ -122,7 +145,7 @@ export default function WardrobePage() {
         },
         body: JSON.stringify({
           clothingImageUrl: uploadedImage, // Use the uploaded MinIO URL
-          listingId: testItem.id,
+          listingId: firstListingId, // Use the fetched valid listing ID
         }),
       });
 
@@ -190,14 +213,27 @@ export default function WardrobePage() {
               }`}
             >
               {uploadedImage || generatedImage ? (
-                <img
+                <Image
                   src={
                     (showOriginal
                       ? uploadedImage
                       : generatedImage || uploadedImage) ?? ""
                   }
                   alt={showOriginal ? "Uploaded photo" : "AI Result"}
-                  className="w-full h-full object-cover rounded"
+                  fill
+                  className="object-cover rounded"
+                  unoptimized={(() => {
+                    const url =
+                      (showOriginal
+                        ? uploadedImage
+                        : generatedImage || uploadedImage) ?? "";
+                    return (
+                      typeof url === "string" &&
+                      (url.startsWith("blob:") ||
+                        url.includes("localhost:9000") ||
+                        url.includes("minio:9000"))
+                    );
+                  })()}
                 />
               ) : (
                 <div className="text-center">
@@ -244,7 +280,11 @@ export default function WardrobePage() {
 
           {/* Error message display */}
           {error && (
-            <div className="mt-2 p-3 bg-red-100 border border-red-400 rounded text-red-700 text-sm">
+            <div
+              role="alert"
+              aria-live="polite"
+              className="mt-2 p-3 bg-red-100 border border-red-400 rounded text-red-700 text-sm"
+            >
               {error}
             </div>
           )}
@@ -273,13 +313,23 @@ export default function WardrobePage() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="flex-1 aspect-[2/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden"
+                className="relative flex-1 aspect-[2/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden"
               >
                 {recentResults[i] ? (
-                  <img
+                  <Image
                     src={recentResults[i]}
                     alt={`Try-on result ${i + 1}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    unoptimized={(() => {
+                      const url = recentResults[i] ?? "";
+                      return (
+                        typeof url === "string" &&
+                        (url.startsWith("blob:") ||
+                          url.includes("localhost:9000") ||
+                          url.includes("minio:9000"))
+                      );
+                    })()}
                   />
                 ) : null}
               </div>
