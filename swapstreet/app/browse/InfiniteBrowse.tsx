@@ -63,6 +63,7 @@ export default function InfiniteBrowse({
       setCursor(nextCursor);
     } catch (err) {
       console.error("Failed to load page", err);
+      setHasNext(false); // Stop infinite retries on error
     } finally {
       setLoading(false);
     }
