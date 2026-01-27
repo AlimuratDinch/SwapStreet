@@ -1,9 +1,9 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 export const dynamic = 'force-dynamic';
 
 import React, { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 function normalizeImageUrl(raw?: string) {
   if (!raw) return raw;
@@ -11,9 +11,6 @@ function normalizeImageUrl(raw?: string) {
     const url = new URL(raw, window.location.href);
     const host = url.hostname;
     if (host === "minio" || host.startsWith("minio")) {
-      const port = url.port || "9000";
-      url.hostname = window.location.hostname;
-      url.port = port;
       return url.toString();
     }
     return url.toString();
@@ -60,12 +57,18 @@ export default function Gallery({
         >
           ◀
         </button>
-        <div className="h-full w-full flex items-center justify-center">
-          <img
-            src={safeUrls[index] ?? images[index]?.imageUrl ?? ""}
-            alt={`image-${index}`}
-            className="max-h-[78vh] max-w-full mx-auto object-contain"
-          />
+        <div className="h-full w-full relative flex items-center justify-center">
+          {safeUrls[index] ? (
+            <Image
+              src={safeUrls[index] ?? images[index]?.imageUrl ?? ""}
+              alt={`image-${index}`}
+              fill
+              sizes="(max-width: 1024px) 100vw, 800px"
+              className="max-h-[78vh] max-w-full mx-auto object-contain"
+            />
+          ) : (
+            <div className="max-h-[78vh] max-w-full mx-auto object-contain" />
+          )}
         </div>
         <button
           onClick={next}
@@ -84,9 +87,11 @@ export default function Gallery({
             className={`min-w-[64px] h-16 rounded overflow-hidden ${i === index ? "ring-2 ring-teal-500" : ""}`}
           >
             {src || images[i]?.imageUrl ? (
-              <img
-                src={src ?? images[i]?.imageUrl}
+              <Image
+                src={src ?? images[i]?.imageUrl ?? ""}
                 alt={`thumb-${i}`}
+                width={64}
+                height={64}
                 className="w-full h-full object-cover"
               />
             ) : (

@@ -1,3 +1,4 @@
+"use client";
 
 export const dynamic = 'force-dynamic';
 import React, { useEffect, useRef, useState, useCallback } from "react";
@@ -26,13 +27,13 @@ export default function InfiniteBrowse({
     new Set(initialItems.map((i) => String(i.id))),
   );
   const [loading, setLoading] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const retryRef = useRef(0);
 
   const fetchPage = useCallback(async () => {
     if (loading || !hasNext) return;
     setLoading(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+      const API_URL = '/api';
       const q = new URLSearchParams();
       q.set("limit", "18");
       const prevCursor = cursor;
@@ -63,7 +64,18 @@ export default function InfiniteBrowse({
       setCursor(nextCursor);
     } catch (err) {
       console.error("Failed to load page", err);
-      setHasNext(false); // Stop infinite retries on error
+      retryRef.current = (retryRef.current ?? 0) + 1;
+      const tries = retryRef.current;
+      if (tries <= 3) {
+        const backoff = 1000 * tries;
+        setTimeout(() => {
+          setLoading(false);
+          fetchPage();
+        }, backoff);
+      } else {
+        setHasNext(false);
+        setLoading(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -75,23 +87,32 @@ export default function InfiniteBrowse({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    const el = sentinelRef.current;
+  const lastFetchRef = useRef(0);
+  const containerRef = useRef<HTMLElement | null>(null);
+
+  const handleScroll = useCallback(() => {
+    if (!hasNext || loading) return;
+    if (Date.now() - lastFetchRef.current < 500) return;
+    const el = containerRef.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) fetchPage();
-        }
-      },
-      { rootMargin: "400px" },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [fetchPage]);
+    const scrollTop = el.scrollTop;
+    const clientHeight = el.clientHeight;
+    const scrollHeight = el.scrollHeight;
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      lastFetchRef.current = Date.now();
+      fetchPage();
+    }
+  }, [hasNext, loading, fetchPage]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   return (
-    <main className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
+    <main ref={containerRef} className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
       {items.map((item) => (
         <CardItem
           key={item.id}
@@ -108,7 +129,6 @@ export default function InfiniteBrowse({
         </p>
       )}
 
-      <div ref={sentinelRef} className="col-span-full h-6" />
       {loading && <div className="col-span-full text-center">Loading...</div>}
     </main>
   );
