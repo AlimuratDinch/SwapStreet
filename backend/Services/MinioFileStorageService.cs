@@ -152,15 +152,15 @@ namespace backend.Services
 
             var frontendUrl = _config["FRONTEND_URL"];
             // replace it with localhost so the browser can access it
-            return url.Replace("http://minio:9000", frontendUrl);
+            return url.Replace("http://minio:9000", $"{frontendUrl}/minio-storage");
         }
 
 
         // Generate URL for public file (no expiry)
         public string GetPublicFileUrl(string objectName)
         {
-            var url = _config["FRONTEND_URL"];
-            return $"{url}/{_settings.PublicBucketName}/{objectName}";
+            var frontendUrl = _config["FRONTEND_URL"];
+             return $"{frontendUrl}/minio-storage/{_settings.PublicBucketName}/{objectName}";
         }
 
         // Regenerate URL for an existing private file
