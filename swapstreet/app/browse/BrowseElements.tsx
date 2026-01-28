@@ -9,7 +9,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Shirt } from "lucide-react";
 import Link from "next/link";
@@ -189,50 +189,44 @@ export function Sidebar() {
   const [showCategories, setShowCategories] = useState(false);
   const [showCondition, setShowCondition] = useState(false);
 
-  // 1. Sync State FROM URL (FIXED: Checks for equality to prevent loops)
+  // Use ref to track if we're initializing from URL
+  const isInitialized = useRef(false);
+
+  // Initialize state from URL params (runs once on mount)
   useEffect(() => {
     const cat = searchParams.get("categoryId");
-    if (cat !== categoryId) setCategoryId(cat);
-
     const q = searchParams.get("q") || "";
-    if (q !== searchQuery) setSearchQuery(q);
-
     const conditionsParam = searchParams.get("conditions");
-    if (conditionsParam) {
-      const newConditions = conditionsParam.split(",").map((c) => c.trim());
-      // Deep comparison hack to prevent array reference loop
-      setConditions((prev) => {
-        if (JSON.stringify(prev.sort()) === JSON.stringify(newConditions.sort())) {
-          return prev;
-        }
-        return newConditions;
-      });
-    } else {
-       setConditions((prev) => prev.length === 0 ? prev : []);
-    }
-    
     const sizeParam = searchParams.get("size");
-    if(sizeParam !== selectedSize) setSelectedSize(sizeParam);
-
     const minP = searchParams.get("minPrice");
-    if (minP) {
-       const v = Number(minP);
-       if (!isNaN(v) && v !== minPriceVal) setMinPriceVal(v);
+    const maxP = searchParams.get("maxPrice");
+
+    setCategoryId(cat);
+    setSearchQuery(q);
+    
+    if (conditionsParam) {
+      setConditions(conditionsParam.split(",").map((c) => c.trim()));
     }
     
-    const maxP = searchParams.get("maxPrice");
+    setSelectedSize(sizeParam);
+    
+    if (minP) {
+      const v = Number(minP);
+      if (!isNaN(v)) setMinPriceVal(v);
+    }
+    
     if (maxP) {
-       const v = Number(maxP);
-       if (!isNaN(v) && v !== maxPriceVal) setMaxPriceVal(v);
+      const v = Number(maxP);
+      if (!isNaN(v)) setMaxPriceVal(v);
     }
 
-  // We explicitly disable linting here because we only want this to run when URL changes,
-  // NOT when local state changes (which would cause a ping-pong loop).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+    isInitialized.current = true;
+  }, []); // Empty dependency array - only run once
 
-  // 2. Sync State TO URL (FIXED: Checks if URL actually changed)
+  // Update URL when filters change (but only after initialization)
   useEffect(() => {
+    if (!isInitialized.current) return;
+
     const params = new URLSearchParams();
     
     if (categoryId) params.set("categoryId", categoryId);
@@ -243,12 +237,10 @@ export function Sidebar() {
     if (conditions.length > 0) params.set("conditions", conditions.join(","));
     
     const newQueryString = params.toString();
-    const currentQueryString = searchParams.toString();
-
-    if (newQueryString !== currentQueryString) {
-      router.replace(newQueryString ? `/browse?${newQueryString}` : "/browse"); 
-    }
-  }, [categoryId, minPriceVal, maxPriceVal, selectedSize, conditions, searchQuery, router, searchParams]);
+    router.replace(newQueryString ? `/browse?${newQueryString}` : "/browse", {
+      scroll: false
+    });
+  }, [categoryId, minPriceVal, maxPriceVal, selectedSize, conditions, searchQuery, router]);
 
   const handleConditionToggle = (condition: string) => {
     setConditions((prev) =>
@@ -265,7 +257,6 @@ export function Sidebar() {
     setConditions([]);
     setCategoryId(null);
     setSearchQuery("");
-    router.push("/browse");
   };
 
   return (
