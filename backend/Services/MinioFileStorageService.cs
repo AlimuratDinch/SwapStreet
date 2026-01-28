@@ -152,9 +152,9 @@ namespace backend.Services
                 .WithContentType(file.ContentType));
 
             // ===== Return URL ===== TODO : TEMP FIX 
-            // if (type == UploadType.TryOn || type == UploadType.Generated)
-            //     return await GetPrivateFileUrlAsync(fileName); // pre-signed URL
-            // else
+            if (type == UploadType.TryOn || type == UploadType.Generated)
+                return await GetPrivateFileUrlAsync(fileName); // pre-signed URL
+            else
                 return GetPublicFileUrl(fileName);             // direct URL
         }
 
