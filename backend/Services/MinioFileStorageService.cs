@@ -142,7 +142,7 @@ namespace backend.Services
 
             var frontendUrl = _config["FRONTEND_URL"];
             // replace it with localhost so the browser can access it
-            return url.Replace("minio:9000", frontendUrl);
+            return url.Replace("http://minio:9000", frontendUrl);
         }
 
 
