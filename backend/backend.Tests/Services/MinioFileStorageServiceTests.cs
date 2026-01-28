@@ -18,6 +18,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using backend.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace backend.Tests.Services
 {
@@ -29,8 +30,11 @@ namespace backend.Tests.Services
         private readonly IConfiguration _config;
         private readonly AppDbContext _context; // Add Context for DB operations
 
+        
         public MinioFileStorageServiceTests()
         {
+
+            
             _minioMock = new Mock<IMinioClient>();
 
             _settings = new MinioSettings
@@ -58,7 +62,7 @@ namespace backend.Tests.Services
             _context = new AppDbContext(dbOptions);
 
             // --- 2. Inject Context into Service ---
-            _service = new MinioFileStorageService(_minioMock.Object, optionsWrapper, _context, _config);
+            _service = new MinioFileStorageService(_minioMock.Object, optionsWrapper, _context, _config, NullLogger<MinioFileStorageService>.Instance);
 
             // Mock PutObjectAsync to return successful response
             _minioMock

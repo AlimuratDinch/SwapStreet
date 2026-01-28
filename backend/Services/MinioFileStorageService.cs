@@ -15,6 +15,7 @@ using backend.DbContexts;
 using Microsoft.AspNetCore.Connections;
 using System.Reactive.Linq;
 using Minio.DataModel;
+using Microsoft.Extensions.Logging;
 
 namespace backend.Services
 {
@@ -22,17 +23,26 @@ namespace backend.Services
     {
         private readonly IMinioClient _minio;
         private readonly MinioSettings _settings;
-
         private readonly IConfiguration _config;
-
         private readonly AppDbContext _context;
+        private readonly ILogger<MinioFileStorageService> _logger;
 
-        public MinioFileStorageService(IMinioClient minio, IOptions<MinioSettings> settings, AppDbContext context,IConfiguration config)
+        public MinioFileStorageService(
+            IMinioClient minio, 
+            IOptions<MinioSettings> settings, 
+            AppDbContext context,
+            IConfiguration config,
+            ILogger<MinioFileStorageService> logger)
         {
-            _minio = minio;
-            _settings = settings.Value;
-            _context = context;
-            _config = config;
+            _minio = minio ?? throw new ArgumentNullException(nameof(minio));
+            _settings = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            
+            _logger.LogInformation("MinioFileStorageService initialized");
+            _logger.LogInformation("Public bucket: {PublicBucket}", _settings.PublicBucketName);
+            _logger.LogInformation("Private bucket: {PrivateBucket}", _settings.PrivateBucketName);
         }
 
         // Upload picture 
@@ -159,6 +169,7 @@ namespace backend.Services
             // Simply call the existing method
             return await GetPrivateFileUrlAsync(fileName, expiryInSeconds);
         }
+        
         public (long maxSize, int maxWidth, int maxHeight) GetConstraints(UploadType type)
         {
             return type switch
@@ -217,27 +228,64 @@ namespace backend.Services
 
         public async Task<bool> HasImagesInPublicBucketAsync()
         {
-            var found = await _minio.BucketExistsAsync(new BucketExistsArgs().WithBucket(_settings.PublicBucketName));
-            if (!found) return false;
-
-            // 2. Prepare arguments
-            var args = new ListObjectsArgs()
-                .WithBucket(_settings.PublicBucketName)
-                .WithRecursive(true);
-
-            // 3. Get the Async Enumerable (It does not fetch data yet)
-            var asyncEnumerable = _minio.ListObjectsEnumAsync(args);
-
-            // 4. Check if there is at least one item
-            // We start the loop; if we find 1 item, we return true immediately.
-            await foreach (var item in asyncEnumerable)
+            try
             {
-                return true;
+                _logger.LogInformation("Checking if public bucket '{Bucket}' has images...", _settings.PublicBucketName);
+                
+                // 1. Check if bucket exists with error handling
+                bool bucketExists;
+                try
+                {
+                    bucketExists = await _minio.BucketExistsAsync(
+                        new BucketExistsArgs().WithBucket(_settings.PublicBucketName)
+                    );
+                    _logger.LogInformation("Bucket exists check result: {Exists}", bucketExists);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to check if bucket exists. MinIO may not be accessible.");
+                    _logger.LogError("Exception type: {Type}", ex.GetType().Name);
+                    _logger.LogError("Exception message: {Message}", ex.Message);
+                    
+                    // Return false instead of throwing - bucket check failed, assume no images
+                    return false;
+                }
+                
+                if (!bucketExists)
+                {
+                    _logger.LogWarning("Bucket '{Bucket}' does not exist", _settings.PublicBucketName);
+                    return false;
+                }
+
+                // 2. Prepare arguments
+                var args = new ListObjectsArgs()
+                    .WithBucket(_settings.PublicBucketName)
+                    .WithRecursive(true);
+
+                // 3. Get the Async Enumerable (It does not fetch data yet)
+                var asyncEnumerable = _minio.ListObjectsEnumAsync(args);
+
+                // 4. Check if there is at least one item
+                // We start the loop; if we find 1 item, we return true immediately.
+                await foreach (var item in asyncEnumerable)
+                {
+                    _logger.LogInformation("Found at least one object in bucket: {Key}", item.Key);
+                    return true;
+                }
+
+                // 5. If the loop finishes without entering, the bucket is empty
+                _logger.LogInformation("Bucket '{Bucket}' exists but is empty", _settings.PublicBucketName);
+                return false;
             }
-
-            // 5. If the loop finishes without entering, the bucket is empty
-            return false;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in HasImagesInPublicBucketAsync");
+                _logger.LogError("Exception type: {Type}", ex.GetType().Name);
+                _logger.LogError("Exception message: {Message}", ex.Message);
+                
+                // Return false instead of throwing - assume no images if we can't check
+                return false;
+            }
         }
-
     }
 }
