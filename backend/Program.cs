@@ -176,20 +176,63 @@ static void ConfigureDatabase(WebApplicationBuilder builder)
 
 static void ConfigureMinio(WebApplicationBuilder builder)
 {
+    // Register MinIO settings
+    builder.Services.Configure<MinioSettings>(options =>
+    {
+        options.PublicBucketName = Environment.GetEnvironmentVariable("MINIO_PUBLIC_BUCKET") ?? "swapstreet-public";
+        options.PrivateBucketName = Environment.GetEnvironmentVariable("MINIO_PRIVATE_BUCKET") ?? "swapstreet-private";
+    });
+
+    // Register MinIO client
     builder.Services.AddSingleton<IMinioClient>(sp =>
     {
-        var endpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "minio:9000";
+        var logger = sp.GetRequiredService<ILogger<Program>>();
+        
+        var endpointWithPort = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "minio:9000";
         var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "minioadmin";
         var secretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "minioadmin";
         var useSsl = bool.TryParse(Environment.GetEnvironmentVariable("MINIO_USE_SSL"), out var ssl) && ssl;
 
-        return new MinioClient()
-            .WithEndpoint(endpoint)
-            .WithCredentials(accessKey, secretKey)
-            .WithSSL(useSsl)
-            .Build();
+        // Parse endpoint and port from "minio:9000" format
+        string endpoint;
+        int port = 9000; // default
+
+        if (endpointWithPort.Contains(":"))
+        {
+            var parts = endpointWithPort.Split(':');
+            endpoint = parts[0];
+            if (parts.Length > 1 && int.TryParse(parts[1], out var parsedPort))
+            {
+                port = parsedPort;
+            }
+        }
+        else
+        {
+            endpoint = endpointWithPort;
+        }
+
+        logger.LogInformation("Configuring MinIO client: Endpoint={Endpoint}, Port={Port}, SSL={UseSsl}", 
+            endpoint, port, useSsl);
+
+        try
+        {
+            var client = new MinioClient()
+                .WithEndpoint(endpoint, port)
+                .WithCredentials(accessKey, secretKey)
+                .WithSSL(useSsl)
+                .Build();
+
+            logger.LogInformation("MinIO client configured successfully");
+            return client;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to configure MinIO client");
+            throw;
+        }
     });
 }
+
 
 static void ConfigureAuthentication(WebApplicationBuilder builder)
 {
