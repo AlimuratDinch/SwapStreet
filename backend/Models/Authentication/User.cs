@@ -60,6 +60,10 @@ namespace backend.Models.Authentication
 
         public bool IsEmailConfirmed => EmailConfirmedAt.HasValue;
 
+        [Required]
+        public int TokenCount { get; set; } = 0;
+        public DateTime TokenResetAt { get; set; } = DateTime.UtcNow.AddDays(1);
+
         // public string RecoveryToken { get; set; }
         // public DateTimeOffset? RecoverySentAt { get; set; }
         // public string EmailChange { get; set; }
