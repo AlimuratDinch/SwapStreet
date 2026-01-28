@@ -45,6 +45,24 @@ namespace backend.Services
             _logger.LogInformation("Private bucket: {PrivateBucket}", _settings.PrivateBucketName);
         }
 
+
+
+        private IMinioClient CreatePresignedUrlClient()
+{
+    var frontendUrl = _config["FRONTEND_URL"] ?? "https://swapstreet.ca";
+    var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "minioadmin";
+    var secretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "minioadmin";
+    
+    // Parse the frontend URL
+    var uri = new Uri(frontendUrl);
+    
+    return new MinioClient()
+        .WithEndpoint(uri.Host)  // Use swapstreet.ca
+        .WithCredentials(accessKey, secretKey)
+        .WithSSL(uri.Scheme == "https")  // Use HTTPS
+        .Build();
+}
+
         // Upload picture 
         public async Task<string> UploadFileAsync(IFormFile file, UploadType type, Guid userId, Guid? listingId = null)
         {
@@ -141,19 +159,31 @@ namespace backend.Services
         }
 
 
-        // Generate pre-signed URL for private files
-        public async Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600)
+    public async Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600)
+    {
+        try
         {
-            // MinIO client generates a pre-signed URL
-            var url = await _minio.PresignedGetObjectAsync(new PresignedGetObjectArgs()
-                .WithBucket(_settings.PrivateBucketName)
-                .WithObject(fileName)
-                .WithExpiry(expiryInSeconds));
+            // Use special client that generates URLs for public domain
+            var publicClient = CreatePresignedUrlClient();
+            
+            // Generate presigned URL - it will use swapstreet.ca as the host
+            var presignedUrl = await publicClient.PresignedGetObjectAsync(
+                new PresignedGetObjectArgs()
+                    .WithBucket(_settings.PrivateBucketName)
+                    .WithObject(fileName)
+                    .WithExpiry(expiryInSeconds)
+            );
 
-            var frontendUrl = _config["FRONTEND_URL"];
-            // replace it with localhost so the browser can access it
-            return url.Replace("http://minio:9000", frontendUrl);
+            _logger.LogInformation("Generated presigned URL: {Url}", presignedUrl);
+            
+            return presignedUrl;
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to generate presigned URL for {FileName}", fileName);
+            throw;
+        }
+    }
 
 
         // Generate URL for public file (no expiry)
