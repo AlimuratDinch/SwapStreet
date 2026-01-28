@@ -212,6 +212,7 @@ namespace backend.Services.Auth
             {
                 frontendUrl = "http://localhost:3000";
             }
+            
             var link = $"{frontendUrl}/auth/verify-email?token={user.ConfirmationToken}&email={user.Email}";
 
             await _emailService.SendWelcomeEmailAsync(user.Email, user.Username, link);

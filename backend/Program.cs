@@ -131,7 +131,7 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
 {
     builder.Configuration.AddEnvironmentVariables();
 
-    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URLl") ?? "http://localhost:3000";
+    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:3000";
     builder.Configuration["FRONTEND_URL"] = frontendUrl;
 }
 
