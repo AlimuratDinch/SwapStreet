@@ -23,13 +23,16 @@ namespace backend.Services
         private readonly IMinioClient _minio;
         private readonly MinioSettings _settings;
 
+        private readonly IConfiguration _config;
+
         private readonly AppDbContext _context;
 
-        public MinioFileStorageService(IMinioClient minio, IOptions<MinioSettings> settings, AppDbContext context)
+        public MinioFileStorageService(IMinioClient minio, IOptions<MinioSettings> settings, AppDbContext context,IConfiguration config)
         {
             _minio = minio;
             _settings = settings.Value;
             _context = context;
+            _config = config;
         }
 
         // Upload picture 
@@ -137,15 +140,17 @@ namespace backend.Services
                 .WithObject(fileName)
                 .WithExpiry(expiryInSeconds));
 
+            var frontendUrl = _config["FRONTEND_URL"];
             // replace it with localhost so the browser can access it
-            return url.Replace("minio:9000", "localhost:9000");
+            return url.Replace("minio:9000", frontendUrl);
         }
 
 
         // Generate URL for public file (no expiry)
         public string GetPublicFileUrl(string objectName)
         {
-            return $"http://localhost:9000/{_settings.PublicBucketName}/{objectName}";
+            var url = _config["FRONTEND_URL"];
+            return $"{url}/{_settings.PublicBucketName}/{objectName}";
         }
 
         // Regenerate URL for an existing private file

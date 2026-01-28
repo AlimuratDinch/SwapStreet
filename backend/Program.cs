@@ -131,13 +131,13 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
 {
     builder.Configuration.AddEnvironmentVariables();
 
-    var frontendUrl = Environment.GetEnvironmentVariable("FrontendUrl") ?? "http://localhost:3000";
-    builder.Configuration["FrontendUrl"] = frontendUrl;
+    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URLl") ?? "http://localhost:3000";
+    builder.Configuration["FRONTEND_URL"] = frontendUrl;
 }
 
 static void ConfigureCors(WebApplicationBuilder builder)
 {
-    var frontendUrl = builder.Configuration["FrontendUrl"];
+    var frontendUrl = builder.Configuration["FRONTEND_URL"];
 
     builder.Services.AddCors(options =>
     {

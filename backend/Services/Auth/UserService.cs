@@ -205,8 +205,8 @@ namespace backend.Services.Auth
 
         public async Task SendConfirmationEmail(User user)
         {
-
-            var frontendUrl = _config["FrontendUrl"];
+                    
+            var frontendUrl = _config["FRONTEND_URL"];
 
             if (string.IsNullOrEmpty(frontendUrl))
             {
