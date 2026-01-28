@@ -18,25 +18,44 @@ namespace backend.Controllers
         private readonly IUserAccountService _userAccountService;
         private readonly ITokenService _tokenService;
         private readonly IConfiguration _config;
+        private readonly IWebHostEnvironment _env;
         private readonly int _refreshTokenExpirationDays;
 
-        public AuthController(IUserService userService, IUserAccountService userAccountService, ITokenService tokenService, IConfiguration config)
+        public AuthController(
+            IUserService userService, 
+            IUserAccountService userAccountService, 
+            ITokenService tokenService, 
+            IConfiguration config,
+            IWebHostEnvironment env)
         {
             _userService = userService;
             _userAccountService = userAccountService;
             _tokenService = tokenService;
             _config = config;
+            _env = env;
 
             _refreshTokenExpirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
+        }
 
+        // Helper method to get cookie options based on environment
+        private CookieOptions GetRefreshTokenCookieOptions()
+        {
+            var isProduction = _env.IsProduction();
+            
+            return new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isProduction,  // true in production (HTTPS), false in development (HTTP)
+                SameSite = isProduction ? SameSiteMode.None : SameSiteMode.Lax,  // None for production (cross-origin), Lax for dev
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays),
+                Path = "/"
+            };
         }
 
         // POST api/auth/register
-        //Nek
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] SignUpDto signUpDto)
         {
-
             // 1. Checks if required fields are present and valid
             if (!ModelState.IsValid)
             {
@@ -57,27 +76,18 @@ namespace backend.Controllers
             try
             {
                 user = await _userService.RegisterAsync(signUpDto.Email, signUpDto.Username, signUpDto.Password);
-
             }
             catch (Exception ex)
             {
                 return BadRequest(new { Error = ex.Message });
             }
 
-            // 3. Generate tokens ( httpOnly )
+            // 3. Generate tokens (httpOnly)
             var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
             var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
-
-            var refreshCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = false, // <- set false for localhost dev
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
-            };
-
-            Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
+            // Set cookie with environment-aware options
+            Response.Cookies.Append("refresh_token", refreshToken, GetRefreshTokenCookieOptions());
 
             return Ok(new
             {
@@ -105,7 +115,6 @@ namespace backend.Controllers
             if (IsValidEmail)
             {
                 user = await _userService.GetUserByEmailAsync(email);
-
             }
             else
             {
@@ -113,14 +122,12 @@ namespace backend.Controllers
             }
 
             // 3. If user not found, return error
-
             if (user == null)
             {
                 return BadRequest(new { Error = "User not found." });
             }
 
             // 4. Verify password
-
             var result = _userService.LoginWithPassword(user, password);
 
             if (result == null)
@@ -131,18 +138,10 @@ namespace backend.Controllers
             var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
             var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
 
-            var refreshCookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = false, // <- set false for localhost dev
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
-            };
-
-            Response.Cookies.Append("refresh_token", refreshToken, refreshCookieOptions);
+            // Set cookie with environment-aware options
+            Response.Cookies.Append("refresh_token", refreshToken, GetRefreshTokenCookieOptions());
 
             // 7. Return success response
-
             return Ok(new
             {
                 Message = "Login successful.",
@@ -176,7 +175,6 @@ namespace backend.Controllers
             // Generate a new access token
             var accessToken = await _tokenService.GenerateAccessTokenAsync(userID.Value);
 
-
             return Ok(new
             {
                 Message = "Token refreshed successfully",
@@ -204,7 +202,6 @@ namespace backend.Controllers
 
             return Ok(new { message = "Logout successful" });
         }
-
 
         // PATCH api/auth/updateUsername
         // call using {"newUsername": "newname" }
@@ -279,7 +276,6 @@ namespace backend.Controllers
         [HttpPost("verify-email")]
         public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequestDTO request)
         {
-
             var result = await _userService.ConfirmEmailAsync(request.Email, request.Token);
 
             if (result) return Ok(new { message = "Email confirmed successfully!" });
@@ -307,11 +303,10 @@ namespace backend.Controllers
 
             if (!hitCooldown && !user.EmailConfirmedAt.HasValue)
             {
-
+                // Email was sent
             }
 
             return Ok(new { message = "If an unverified account exists, a new email has been sent." });
         }
-
     }
 }
