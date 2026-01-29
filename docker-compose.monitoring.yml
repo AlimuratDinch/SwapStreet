@@ -24,3 +24,7 @@ services:
       - app-net
     ports:
       - "3000:3000"
+
+networks:
+  app-net:
+    driver: bridge

@@ -9,11 +9,11 @@ cd "$(dirname "$0")/.." || exit
 APP_COMPOSE="docker-compose.local.staging.yml"
 MONITOR_COMPOSE="docker-compose.monitoring.yml"
 TEST_SCRIPT="./performance-tests/tests/browse_test.js"
-NETWORK_NAME="app-net"
 
 # --- Colors ---
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo -e "${BLUE}1. Starting SwapStreet (Local Staging) + Monitoring...${NC}"
@@ -23,6 +23,13 @@ docker compose -f $APP_COMPOSE -f $MONITOR_COMPOSE up -d
 echo -e "${BLUE}2. Waiting for Backend to be healthy...${NC}"
 # Gives the C# containers time to finish internal migrations/startup
 sleep 5 
+
+# --- Dynamically find the network name ---
+# Docker Compose prefixes networks with the project name (usually directory name)
+PROJECT_NAME=$(basename "$(pwd)" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
+NETWORK_NAME="${PROJECT_NAME}_app-net"
+
+echo -e "${YELLOW}Using network: $NETWORK_NAME${NC}"
 
 echo -e "${GREEN}3. Launching k6 Load Test...${NC}"
 # We use $(pwd) to ensure the full absolute path is passed to Docker
