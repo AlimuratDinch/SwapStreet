@@ -5,12 +5,12 @@ services:
   postgres:
     image: postgis/postgis:16-3.4
     platform: linux/amd64
-    container_name: swapstreet-db-prod
+    container_name: swapstreet-db-staging
     restart: always
     env_file:
       - .env
     volumes:
-      - postgres_data_prod:/var/lib/postgresql/data
+      - postgres_data_staging:/var/lib/postgresql/data
     networks:
       - app-net
     healthcheck:
@@ -23,13 +23,13 @@ services:
   minio:
     image: minio/minio:latest
     platform: linux/amd64
-    container_name: minio-prod
+    container_name: minio-staging
     restart: always
     command: server /data --console-address ":9001"
     env_file:
       - .env
     volumes:
-      - minio_data_prod:/data
+      - minio_data_staging:/data
     networks:
       - app-net
     healthcheck:
@@ -43,12 +43,12 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend-prod
+    container_name: backend-staging
     restart: always
     env_file:
       - .env
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Staging
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
       - ConnectionStrings__AuthConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
       # Point MinIO to the internal container name
@@ -65,10 +65,10 @@ services:
   swapstreet: # Frontend
       build:
         context: ./swapstreet
-        dockerfile: Dockerfile.prod
+        dockerfile: Dockerfile.staging
         args:
           NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-      container_name: swapstreet-frontend-prod
+      container_name: swapstreet-frontend-staging
       restart: always
       env_file:
         - .env
@@ -80,10 +80,10 @@ services:
   # --- Reverse Proxy ---
   nginx:
     image: nginx:alpine
-    container_name: nginx-prod
+    container_name: nginx-staging
     restart: always
     volumes:
-      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.staging.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
       - swapstreet
