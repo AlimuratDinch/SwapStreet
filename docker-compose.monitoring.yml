@@ -24,8 +24,3 @@ services:
       - app-net
     ports:
       - "3000:3000"
-
-# Use the existing network from your main compose
-networks:
-  app-net:
-    external: true
