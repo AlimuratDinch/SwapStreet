@@ -1,6 +1,6 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { CardItem } from "./BrowseElements";
 
@@ -33,7 +33,8 @@ export default function InfiniteBrowse({
     if (loading || !hasNext) return;
     setLoading(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const q = new URLSearchParams();
       q.set("limit", "18");
       const prevCursor = cursor;
@@ -107,12 +108,15 @@ export default function InfiniteBrowse({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    el.addEventListener('scroll', handleScroll);
-    return () => el.removeEventListener('scroll', handleScroll);
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
   return (
-    <main ref={containerRef} className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
+    <main
+      ref={containerRef}
+      className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max"
+    >
       {items.map((item) => (
         <CardItem
           key={item.id}

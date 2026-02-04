@@ -16,19 +16,20 @@ export default function WardrobePage() {
   const [recentResults, setRecentResults] = useState<string[]>([]);
   const [firstListingId, setFirstListingId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(false);
-  
+
   const mainImageInputRef = useRef<HTMLInputElement>(null);
-  
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
   // Fetch a valid listing ID
   useEffect(() => {
     const fetchListingId = async () => {
       try {
         const response = await fetch(`${API_URL}/search/search`, {
-          credentials: 'include', // Include cookies
+          credentials: "include", // Include cookies
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           const items = Array.isArray(data) ? data : (data?.items ?? []);
@@ -82,7 +83,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       }
 
       // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         setError("Please upload an image file");
         setUploadProgress(false);
         return;
@@ -101,7 +102,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
       const response = await fetch(`${API_URL}/images/upload`, {
         method: "POST",
-        credentials: 'include', // Include cookies
+        credentials: "include", // Include cookies
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -109,12 +110,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
-        throw new Error(errorData.error || errorData.message || "Upload failed");
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Upload failed" }));
+        throw new Error(
+          errorData.error || errorData.message || "Upload failed",
+        );
       }
 
       const data = await response.json();
-      
+
       // The backend returns the URL with the presigned URL
       setUploadedImage(data.url);
       setShowOriginal(true);
@@ -125,7 +130,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
         mainImageInputRef.current.value = "";
       }
     } catch (err: unknown) {
-      console.error('Upload error:', err);
+      console.error("Upload error:", err);
       const errorMessage = err instanceof Error ? err.message : "Upload failed";
       setError(errorMessage);
     } finally {
@@ -153,14 +158,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       }
 
       if (!firstListingId) {
-        setError("No listings available. Please wait or create a listing first.");
+        setError(
+          "No listings available. Please wait or create a listing first.",
+        );
         setLoading(false);
         return;
       }
 
       const response = await fetch(`${API_URL}/tryon/virtual-tryon`, {
         method: "POST",
-        credentials: 'include', // Include cookies
+        credentials: "include", // Include cookies
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -172,8 +179,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Try-on failed' }));
-        throw new Error(errorData.error || errorData.message || "Try-on failed");
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Try-on failed" }));
+        throw new Error(
+          errorData.error || errorData.message || "Try-on failed",
+        );
       }
 
       const data = await response.json();
@@ -183,8 +194,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       // Add to recent results (keep only last 4)
       setRecentResults((prev) => [data.url, ...prev].slice(0, 4));
     } catch (err: unknown) {
-      console.error('Try-on error:', err);
-      const errorMessage = err instanceof Error ? err.message : "Something went wrong";
+      console.error("Try-on error:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Something went wrong";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -193,7 +205,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
   const handleDownload = async () => {
     const imageToDownload = showOriginal ? uploadedImage : generatedImage;
-    
+
     if (!imageToDownload) {
       setError("No image to download");
       return;
@@ -203,15 +215,15 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const response = await fetch(imageToDownload);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = showOriginal ? 'original.jpg' : 'tryon-result.jpg';
+      a.download = showOriginal ? "original.jpg" : "tryon-result.jpg";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err) {
-      console.error('Download error:', err);
+      console.error("Download error:", err);
       setError("Failed to download image");
     }
   };
@@ -241,7 +253,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
                 <Info className="w-4 h-4" />
                 <div className="absolute left-0 top-6 z-20 w-72 bg-white text-sm text-gray-700 text-left border border-gray-200 rounded shadow-lg p-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
                   <p className="mb-2 font-medium">How to use:</p>
-                  <p className="mb-1">1. Click the frame to upload your photo</p>
+                  <p className="mb-1">
+                    1. Click the frame to upload your photo
+                  </p>
                   <p className="mb-1">2. Pick an item and click Try On</p>
                   <p>3. Toggle Original/Result to compare</p>
                 </div>
@@ -252,7 +266,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
             <div
               role="button"
               tabIndex={!uploadedImage ? 0 : -1}
-              onClick={() => !uploadedImage && mainImageInputRef.current?.click()}
+              onClick={() =>
+                !uploadedImage && mainImageInputRef.current?.click()
+              }
               onKeyDown={(e) => {
                 if (!uploadedImage && (e.key === "Enter" || e.key === " ")) {
                   e.preventDefault();
@@ -273,7 +289,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
               ) : uploadedImage || generatedImage ? (
                 <>
                   <Image
-                    src={(showOriginal ? uploadedImage : generatedImage || uploadedImage) ?? ""}
+                    src={
+                      (showOriginal
+                        ? uploadedImage
+                        : generatedImage || uploadedImage) ?? ""
+                    }
                     alt={showOriginal ? "Uploaded photo" : "AI Result"}
                     fill
                     className="object-cover"
@@ -299,7 +319,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
                 </div>
               )}
             </div>
-            
+
             <input
               ref={mainImageInputRef}
               type="file"
@@ -366,7 +386,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
           {/* Download button */}
           <div className="flex justify-center mb-6 pb-6 border-b border-gray-200">
-            <button 
+            <button
               onClick={handleDownload}
               disabled={!uploadedImage && !generatedImage}
               className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -378,13 +398,15 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
           {/* Recent AI Results */}
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Recent Results</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+              Recent Results
+            </h3>
             <div className="flex gap-3">
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
                   className={`relative flex-1 aspect-[2/3] rounded-lg overflow-hidden ${
-                    recentResults[i] ? 'bg-gray-100' : 'bg-gray-200'
+                    recentResults[i] ? "bg-gray-100" : "bg-gray-200"
                   }`}
                 >
                   {recentResults[i] ? (
@@ -411,14 +433,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
           {/* Header with View Toggle */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Your Wardrobe</h2>
-            
+
             {/* View Mode Toggle */}
             <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
               <button
                 onClick={() => setViewMode("list")}
                 className={`p-2 rounded-md transition-colors ${
-                  viewMode === "list" 
-                    ? "bg-white shadow-sm" 
+                  viewMode === "list"
+                    ? "bg-white shadow-sm"
                     : "hover:bg-gray-200"
                 }`}
                 title="List view"
@@ -428,8 +450,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-2 rounded-md transition-colors ${
-                  viewMode === "grid" 
-                    ? "bg-white shadow-sm" 
+                  viewMode === "grid"
+                    ? "bg-white shadow-sm"
                     : "hover:bg-gray-200"
                 }`}
                 title="Grid view"
@@ -440,9 +462,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
           </div>
 
           {/* Wardrobe Items Grid */}
-          <div className={`grid gap-6 mb-12 ${
-            viewMode === "grid" ? "grid-cols-4" : "grid-cols-1"
-          }`}>
+          <div
+            className={`grid gap-6 mb-12 ${
+              viewMode === "grid" ? "grid-cols-4" : "grid-cols-1"
+            }`}
+          >
             {wardrobeItems.map((item) => (
               <div
                 key={item.id}
@@ -451,9 +475,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
                 }`}
               >
                 {/* Item Image */}
-                <div className={`relative bg-gray-100 flex items-center justify-center ${
-                  viewMode === "grid" ? "aspect-square" : "w-32 h-32"
-                }`}>
+                <div
+                  className={`relative bg-gray-100 flex items-center justify-center ${
+                    viewMode === "grid" ? "aspect-square" : "w-32 h-32"
+                  }`}
+                >
                   {/* Wishlist Star */}
                   <button
                     onClick={() => toggleFavorite(item.id)}

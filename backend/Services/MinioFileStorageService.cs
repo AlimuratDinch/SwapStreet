@@ -28,8 +28,8 @@ namespace backend.Services
         private readonly ILogger<MinioFileStorageService> _logger;
 
         public MinioFileStorageService(
-            IMinioClient minio, 
-            IOptions<MinioSettings> settings, 
+            IMinioClient minio,
+            IOptions<MinioSettings> settings,
             AppDbContext context,
             IConfiguration config,
             ILogger<MinioFileStorageService> logger)
@@ -39,7 +39,7 @@ namespace backend.Services
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+
             _logger.LogInformation("MinioFileStorageService initialized");
             _logger.LogInformation("Public bucket: {PublicBucket}", _settings.PublicBucketName);
             _logger.LogInformation("Private bucket: {PrivateBucket}", _settings.PrivateBucketName);
@@ -48,20 +48,20 @@ namespace backend.Services
 
 
         private IMinioClient CreatePresignedUrlClient()
-{
-    var frontendUrl = _config["FRONTEND_URL"] ?? "https://swapstreet.ca";
-    var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "minioadmin";
-    var secretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "minioadmin";
-    
-    // Parse the frontend URL
-    var uri = new Uri(frontendUrl);
-    
-    return new MinioClient()
-        .WithEndpoint(uri.Host)  // Use swapstreet.ca
-        .WithCredentials(accessKey, secretKey)
-        .WithSSL(uri.Scheme == "https")  // Use HTTPS
-        .Build();
-}
+        {
+            var frontendUrl = _config["FRONTEND_URL"] ?? "https://swapstreet.ca";
+            var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "minioadmin";
+            var secretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "minioadmin";
+
+            // Parse the frontend URL
+            var uri = new Uri(frontendUrl);
+
+            return new MinioClient()
+                .WithEndpoint(uri.Host)  // Use swapstreet.ca
+                .WithCredentials(accessKey, secretKey)
+                .WithSSL(uri.Scheme == "https")  // Use HTTPS
+                .Build();
+        }
 
         // Upload picture 
         public async Task<string> UploadFileAsync(IFormFile file, UploadType type, Guid userId, Guid? listingId = null)
@@ -159,38 +159,38 @@ namespace backend.Services
         }
 
 
-    public async Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600)
-    {
-        try
+        public async Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600)
         {
-            // Use special client that generates URLs for public domain
-            var publicClient = CreatePresignedUrlClient();
-            
-            // Generate presigned URL - it will use swapstreet.ca as the host
-            var presignedUrl = await publicClient.PresignedGetObjectAsync(
-                new PresignedGetObjectArgs()
-                    .WithBucket(_settings.PrivateBucketName)
-                    .WithObject(fileName)
-                    .WithExpiry(expiryInSeconds)
-            );
+            try
+            {
+                // Use special client that generates URLs for public domain
+                var publicClient = CreatePresignedUrlClient();
 
-            _logger.LogInformation("Generated presigned URL: {Url}", presignedUrl);
-            
-            return presignedUrl;
+                // Generate presigned URL - it will use swapstreet.ca as the host
+                var presignedUrl = await publicClient.PresignedGetObjectAsync(
+                    new PresignedGetObjectArgs()
+                        .WithBucket(_settings.PrivateBucketName)
+                        .WithObject(fileName)
+                        .WithExpiry(expiryInSeconds)
+                );
+
+                _logger.LogInformation("Generated presigned URL: {Url}", presignedUrl);
+
+                return presignedUrl;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate presigned URL for {FileName}", fileName);
+                throw;
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to generate presigned URL for {FileName}", fileName);
-            throw;
-        }
-    }
 
 
         // Generate URL for public file (no expiry)
         public string GetPublicFileUrl(string objectName)
         {
             var frontendUrl = _config["FRONTEND_URL"];
-             return $"{frontendUrl}/{_settings.PublicBucketName}/{objectName}";
+            return $"{frontendUrl}/{_settings.PublicBucketName}/{objectName}";
         }
 
         // Regenerate URL for an existing private file
@@ -199,7 +199,7 @@ namespace backend.Services
             // Simply call the existing method
             return await GetPrivateFileUrlAsync(fileName, expiryInSeconds);
         }
-        
+
         public (long maxSize, int maxWidth, int maxHeight) GetConstraints(UploadType type)
         {
             return type switch
@@ -261,7 +261,7 @@ namespace backend.Services
             try
             {
                 _logger.LogInformation("Checking if public bucket '{Bucket}' has images...", _settings.PublicBucketName);
-                
+
                 // 1. Check if bucket exists with error handling
                 bool bucketExists;
                 try
@@ -276,11 +276,11 @@ namespace backend.Services
                     _logger.LogError(ex, "Failed to check if bucket exists. MinIO may not be accessible.");
                     _logger.LogError("Exception type: {Type}", ex.GetType().Name);
                     _logger.LogError("Exception message: {Message}", ex.Message);
-                    
+
                     // Return false instead of throwing - bucket check failed, assume no images
                     return false;
                 }
-                
+
                 if (!bucketExists)
                 {
                     _logger.LogWarning("Bucket '{Bucket}' does not exist", _settings.PublicBucketName);
@@ -312,7 +312,7 @@ namespace backend.Services
                 _logger.LogError(ex, "Error in HasImagesInPublicBucketAsync");
                 _logger.LogError("Exception type: {Type}", ex.GetType().Name);
                 _logger.LogError("Exception message: {Message}", ex.Message);
-                
+
                 // Return false instead of throwing - assume no images if we can't check
                 return false;
             }

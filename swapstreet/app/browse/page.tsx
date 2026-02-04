@@ -8,7 +8,7 @@ export default function BrowsePage() {
     <div className="flex flex-col h-screen">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <Suspense fallback={<div className="w-64" /> }>
+        <Suspense fallback={<div className="w-64" />}>
           <Sidebar />
         </Suspense>
         <Suspense>

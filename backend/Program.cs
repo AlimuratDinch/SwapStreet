@@ -187,7 +187,7 @@ static void ConfigureMinio(WebApplicationBuilder builder)
     builder.Services.AddSingleton<IMinioClient>(sp =>
     {
         var logger = sp.GetRequiredService<ILogger<Program>>();
-        
+
         var endpointWithPort = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "minio:9000";
         var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "minioadmin";
         var secretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "minioadmin";
@@ -211,7 +211,7 @@ static void ConfigureMinio(WebApplicationBuilder builder)
             endpoint = endpointWithPort;
         }
 
-        logger.LogInformation("Configuring MinIO client: Endpoint={Endpoint}, Port={Port}, SSL={UseSsl}", 
+        logger.LogInformation("Configuring MinIO client: Endpoint={Endpoint}, Port={Port}, SSL={UseSsl}",
             endpoint, port, useSsl);
 
         try
@@ -361,11 +361,11 @@ static async Task InitializeDatabaseAsync(WebApplication app)
         {
             await authDb.Database.MigrateAsync();
         }
-            await DatabaseSeeder.SeedAsync(
-                appDb,
-                services,
-                loggerFactory.CreateLogger("DatabaseSeeder")
-            );
+        await DatabaseSeeder.SeedAsync(
+            appDb,
+            services,
+            loggerFactory.CreateLogger("DatabaseSeeder")
+        );
 
         app.Logger.LogInformation("Database migrations and seeding applied successfully.");
     }

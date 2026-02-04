@@ -1,5 +1,5 @@
 "use client";
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 import {
   Search,
   Leaf,
@@ -203,18 +203,18 @@ export function Sidebar() {
 
     setCategoryId(cat);
     setSearchQuery(q);
-    
+
     if (conditionsParam) {
       setConditions(conditionsParam.split(",").map((c) => c.trim()));
     }
-    
+
     setSelectedSize(sizeParam);
-    
+
     if (minP) {
       const v = Number(minP);
       if (!isNaN(v)) setMinPriceVal(v);
     }
-    
+
     if (maxP) {
       const v = Number(maxP);
       if (!isNaN(v)) setMaxPriceVal(v);
@@ -228,19 +228,27 @@ export function Sidebar() {
     if (!isInitialized.current) return;
 
     const params = new URLSearchParams();
-    
+
     if (categoryId) params.set("categoryId", categoryId);
     if (minPriceVal > 0) params.set("minPrice", minPriceVal.toString());
     if (maxPriceVal < 999999) params.set("maxPrice", maxPriceVal.toString());
     if (selectedSize) params.set("size", selectedSize);
     if (searchQuery) params.set("q", searchQuery);
     if (conditions.length > 0) params.set("conditions", conditions.join(","));
-    
+
     const newQueryString = params.toString();
     router.replace(newQueryString ? `/browse?${newQueryString}` : "/browse", {
-      scroll: false
+      scroll: false,
     });
-  }, [categoryId, minPriceVal, maxPriceVal, selectedSize, conditions, searchQuery, router]);
+  }, [
+    categoryId,
+    minPriceVal,
+    maxPriceVal,
+    selectedSize,
+    conditions,
+    searchQuery,
+    router,
+  ]);
 
   const handleConditionToggle = (condition: string) => {
     setConditions((prev) =>
@@ -262,7 +270,7 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-[#d9d9d9] border-r p-4 flex flex-col gap-6 pt-24 h-screen overflow-y-auto sticky top-0">
       <SearchBar onSearch={setSearchQuery} initialValue={searchQuery} />
-      
+
       <section>
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold">Filters</h3>
@@ -273,7 +281,7 @@ export function Sidebar() {
             Clear
           </button>
         </div>
-        
+
         {/* Size selector */}
         <div className="mb-4">
           <h4 className="text-sm font-medium mb-2">Size</h4>
@@ -360,7 +368,11 @@ export function Sidebar() {
                 <button
                   key={category.id}
                   onClick={() => {
-                    setCategoryId(prev => prev === category.id.toString() ? null : category.id.toString());
+                    setCategoryId((prev) =>
+                      prev === category.id.toString()
+                        ? null
+                        : category.id.toString(),
+                    );
                   }}
                   className={`rounded p-2 text-xs text-center transition hover:bg-teal-500 hover:text-white ${
                     categoryId === category.id.toString()

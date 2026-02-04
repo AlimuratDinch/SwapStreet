@@ -22,9 +22,9 @@ namespace backend.Controllers
         private readonly int _refreshTokenExpirationDays;
 
         public AuthController(
-            IUserService userService, 
-            IUserAccountService userAccountService, 
-            ITokenService tokenService, 
+            IUserService userService,
+            IUserAccountService userAccountService,
+            ITokenService tokenService,
             IConfiguration config,
             IWebHostEnvironment env)
         {
@@ -41,7 +41,7 @@ namespace backend.Controllers
         private CookieOptions GetRefreshTokenCookieOptions()
         {
             var isProduction = _env.IsProduction();
-            
+
             return new CookieOptions
             {
                 HttpOnly = true,

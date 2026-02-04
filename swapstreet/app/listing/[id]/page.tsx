@@ -4,10 +4,10 @@ import Gallery from "./Gallery";
 import PostedAt from "./PostedAt";
 import { Header } from "../../browse/BrowseElements";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 async function fetchListing(id: string) {
-  const api = 'http://backend:8080';
+  const api = "http://backend:8080";
   const res = await fetch(`${api}/api/search/listing/${id}`, {
     cache: "no-store",
   });
