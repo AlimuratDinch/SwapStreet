@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
 using backend.Contracts;
 using backend.DTOs;
+using backend.DTOs.Search;
 
 namespace backend.Services;
 
@@ -9,13 +10,35 @@ public class ListingSearchService : IListingSearchService
 
 {
     private readonly AppDbContext _db;
+    private readonly IFileStorageService _imageService;
 
-    public ListingSearchService(AppDbContext db)
+    public ListingSearchService(AppDbContext db, IFileStorageService imageService)
     {
         _db = db;
+        _imageService = imageService;
     }
 
-    public async Task<(IReadOnlyList<Listing> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
+    private async Task<ListingWithImagesDto> MapListingWithImagesAsync(Listing listing)
+    {
+        List<ListingImageDto>? images = await _db.ListingImages
+            .AsNoTracking()
+            .Where(li => li.ListingId == listing.Id)
+            .OrderBy(li => li.DisplayOrder)
+            .Select(li => new ListingImageDto
+            {
+                ImageUrl = _imageService.GetPublicFileUrl(li.ImagePath),
+                DisplayOrder = li.DisplayOrder
+            })
+            .ToListAsync();
+
+        return new ListingWithImagesDto
+        {
+            Listing = listing,
+            Images = images
+        };
+    }
+
+    public async Task<(IReadOnlyList<ListingWithImagesDto> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
         string? query,
         int pageSize,
         string? cursor)
@@ -25,9 +48,24 @@ public class ListingSearchService : IListingSearchService
         // Blank query => "recent listings"
         if (string.IsNullOrWhiteSpace(query))
         {
-            var rows = await _db.Listings.AsNoTracking()
+            // base query: most recent first
+            IQueryable<Listing> baseRecent = _db.Listings.AsNoTracking()
                 .OrderByDescending(l => l.CreatedAt)
-                .ThenByDescending(l => l.Id)
+                .ThenByDescending(l => l.Id);
+
+            // Cursor filter
+            if (ListingCursor.TryDecode(cursor, out var decoded) && decoded != null)
+            {
+                if (!decoded.Rank.HasValue)
+                {
+                    var ct = decoded.CreatedAt;
+                    var cid = decoded.Id;
+                    baseRecent = baseRecent.Where(l =>
+                        l.CreatedAt < ct || (l.CreatedAt == ct && l.Id.CompareTo(cid) < 0));
+                }
+            }
+
+            var rows = await baseRecent
                 .Take(pageSize + 1)
                 .ToListAsync();
 
@@ -46,15 +84,27 @@ public class ListingSearchService : IListingSearchService
                 }.Encode();
             }
 
-            return (items, next, hasNext);
+            // Map listings to DTOs with images
+            var dtos = new List<ListingWithImagesDto>();
+            foreach (var item in items)
+            {
+                dtos.Add(await MapListingWithImagesAsync(item));
+            }
+
+            return (dtos, next, hasNext);
         }
 
         query = query.Trim();
 
         const double threshold = 0.1; // minimum similarity to consider a match
 
+
+        // baseQuery:
+        // the object containing the results of the database search.
         // Project Rank from pg_trgm similarity(SearchText, query) [0..1]
         var baseQuery = _db.Listings.AsNoTracking()
+            .Include(l => l.Tag)
+            .Include(l => l.Profile)
             .Select(l => new
             {
                 Listing = l,
@@ -113,6 +163,13 @@ public class ListingSearchService : IListingSearchService
             }.Encode();
         }
 
-        return (page.Select(x => x.Listing).ToList(), nextCursor, hasNextPage);
+        // Map listings to DTOs with images
+        var resultDtos = new List<ListingWithImagesDto>();
+        foreach (var p in page)
+        {
+            resultDtos.Add(await MapListingWithImagesAsync(p.Listing));
+        }
+
+        return (resultDtos, nextCursor, hasNextPage);
     }
 }

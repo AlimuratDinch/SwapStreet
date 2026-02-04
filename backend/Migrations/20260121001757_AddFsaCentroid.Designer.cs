@@ -13,7 +13,7 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260119034640_AddFsaCentroid")]
+    [Migration("20260121001757_AddFsaCentroid")]
     partial class AddFsaCentroid
     {
         /// <inheritdoc />
