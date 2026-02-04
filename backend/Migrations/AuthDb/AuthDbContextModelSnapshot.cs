@@ -151,6 +151,12 @@ namespace backend.Migrations.AuthDb
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<int>("TokenCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("TokenResetAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 

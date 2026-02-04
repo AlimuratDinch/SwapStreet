@@ -6,7 +6,7 @@ type ClothingItem = {
   id: number;
   title: string;
   description: string;
-  imageUrl: string;
+  images?: Array<{ imageUrl: string }>;
   condition: string;
   price: number;
 };
@@ -44,7 +44,7 @@ describe("fetchClothingItems", () => {
         id: 1,
         title: "Test Item",
         description: "Test Description",
-        imageUrl: "/test.jpg",
+        images: [{ imageUrl: "/test.jpg" }],
         condition: "New",
         price: 50,
       },
@@ -58,7 +58,7 @@ describe("fetchClothingItems", () => {
     const result = await fetchClothingItems(Promise.resolve({}));
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/catalog/items",
+      "http://backend:8080/api/search/search",
       {
         cache: "no-store",
       },
@@ -72,7 +72,7 @@ describe("fetchClothingItems", () => {
         id: 1,
         title: "Filtered Item",
         description: "Test Description",
-        imageUrl: "/test.jpg",
+        images: [{ imageUrl: "/test.jpg" }],
         condition: "Like New",
         price: 75,
       },
@@ -93,7 +93,7 @@ describe("fetchClothingItems", () => {
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/catalog/items?minPrice=50&maxPrice=100&categoryId=2&conditions=Like+New%2CNew",
+      "http://backend:8080/api/search/search?minPrice=50&maxPrice=100&categoryId=2&conditions=Like+New%2CNew",
       {
         cache: "no-store",
       },
@@ -117,7 +117,7 @@ describe("fetchClothingItems", () => {
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/catalog/items?minPrice=20&categoryId=3",
+      "http://backend:8080/api/search/search?minPrice=20&categoryId=3",
       {
         cache: "no-store",
       },
@@ -170,7 +170,7 @@ describe("fetchClothingItems", () => {
     await fetchClothingItems(Promise.resolve({}));
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://custom-api:3000/api/catalog/items",
+      "http://custom-api:3000/api/search/search",
       expect.any(Object),
     );
 
@@ -231,7 +231,7 @@ describe("BrowsePage", () => {
         id: 1,
         title: "Item 1",
         description: "Description 1",
-        imageUrl: "/img1.jpg",
+        images: [{ imageUrl: "/img1.jpg" }],
         condition: "New",
         price: 25,
       },
@@ -239,7 +239,7 @@ describe("BrowsePage", () => {
         id: 2,
         title: "Item 2",
         description: "Description 2",
-        imageUrl: "/img2.jpg",
+        images: [{ imageUrl: "/img2.jpg" }],
         condition: "Used",
         price: 15,
       },
@@ -247,7 +247,7 @@ describe("BrowsePage", () => {
         id: 3,
         title: "Item 3",
         description: "Description 3",
-        imageUrl: "/img3.jpg",
+        images: [{ imageUrl: "/img3.jpg" }],
         condition: "Like New",
         price: 35,
       },
@@ -281,7 +281,7 @@ describe("BrowsePage", () => {
         id: 1,
         title: "Test Item",
         description: "Test Description",
-        imageUrl: "/test.jpg",
+        images: [{ imageUrl: "/test.jpg" }],
         condition: "New",
         price: 50,
       },
@@ -304,7 +304,7 @@ describe("BrowsePage", () => {
         id: 1,
         title: "No Image Item",
         description: "No image",
-        imageUrl: "",
+        images: [],
         condition: "New",
         price: 10,
       },

@@ -11,7 +11,7 @@ import {
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Shirt, Star } from "lucide-react";
+import { Shirt } from "lucide-react";
 import Link from "next/link";
 import {
   NavigationMenu,
@@ -359,8 +359,8 @@ export function Sidebar() {
   );
 }
 
-export function CardItem({ title, imgSrc, price }: CardItemProps) {
-  return (
+export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
+  const content = (
     <div className="card-item">
       {/* Square image container */}
       <div className="card-item-image-container">
@@ -373,7 +373,7 @@ export function CardItem({ title, imgSrc, price }: CardItemProps) {
             className="card-item-image"
           />
         ) : (
-          <span className="card-item-placeholder">Image</span>
+          <div className="card-item-image-fallback">Image</div>
         )}
       </div>
       {/* Bottom section with title and price */}
@@ -381,13 +381,20 @@ export function CardItem({ title, imgSrc, price }: CardItemProps) {
         <h4 className="card-item-title">{title}</h4>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
-          <button className="card-item-wishlist-btn" title="Add to wishlist">
-            <Star className="w-6 h-6" />
-          </button>
         </div>
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }
 
 // ---------- Card ----------
@@ -395,4 +402,5 @@ interface CardItemProps {
   title: string;
   imgSrc?: string;
   price: number;
+  href?: string;
 }
