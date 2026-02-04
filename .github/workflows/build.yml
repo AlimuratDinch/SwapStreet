@@ -64,6 +64,24 @@ jobs:
     name: Backend SonarQube
     runs-on: ubuntu-latest
     needs: frontend-sonarqube
+
+    # Start Postgres for backend tests
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: swapstreet_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+        - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    # Connection string for CI
+    env:
+      ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=swapstreet_test;Username=postgres;Password=postgres
+
     steps:
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -97,8 +115,13 @@ jobs:
       run: |
         mkdir -p ${{ runner.temp }}/scanner
         dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}/scanner
+
     - name: Install dotnet-coverage
       run: dotnet tool install --global dotnet-coverage
+
+    # Install EF Core CLI
+    - name: Install dotnet-ef
+      run: dotnet tool install --global dotnet-ef
 
     - name: Begin SonarQube analysis
       env:
@@ -118,17 +141,20 @@ jobs:
       working-directory: backend
       run: dotnet build --no-incremental
 
-    - name: Pull Postgres image (optional, speeds up / makes failures obvious)
-      run: docker pull postgres:16
+    # 🔹 FIX 4: Apply migrations BEFORE tests
+    - name: Apply EF Core migrations
+      working-directory: backend
+      run: dotnet ef database update
 
     - name: Run tests and collect coverage with threshold
       shell: bash
       working-directory: backend
       run: |
-        # Run tests and collect coverage in XML format using settings from root
-        # We use ../coverage.settings.xml because the working-directory is 'backend'
-        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
-    
+        dotnet-coverage collect "dotnet test --no-build" \
+          -f xml \
+          -o "coverage.xml" \
+          -s "coverage.settings.xml"
+
     - name: Validate backend coverage (PowerShell)
       shell: pwsh
       working-directory: backend
@@ -138,27 +164,13 @@ jobs:
           exit 1
         }
 
-        # Load XML (fail with a useful message if the file isn't valid XML)
-        $content = Get-Content "coverage.xml" -Raw
-        try {
-          [xml]$cov = $content
-        } catch {
-          Write-Error "coverage.xml is not valid XML. First 300 chars:`n$($content.Substring(0, [Math]::Min(300, $content.Length)))"
-          exit 1
-        }
-
-        # Get first <module> and read the line_coverage attribute
+        [xml]$cov = Get-Content "coverage.xml"
         $module = $cov.SelectSingleNode("//module")
-        if (-not $module) {
-          Write-Error "No <module> found in coverage.xml"
-          exit 1
-        }
-
         $lineCoverage = [double]$module.GetAttribute("line_coverage")
         Write-Host "Backend test coverage: $lineCoverage%"
 
         if ($lineCoverage -lt 65) {
-          Write-Error "Coverage below 65% ($lineCoverage%)"
+          Write-Error "Coverage below 65%"
           exit 1
         }
 
@@ -168,4 +180,5 @@ jobs:
       shell: bash
       working-directory: backend
       run: |
-        ${{ runner.temp }}/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+        ${{ runner.temp }}/scanner/dotnet-sonarscanner end \
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
