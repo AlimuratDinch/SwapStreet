@@ -28,6 +28,7 @@ export default function InfiniteBrowse({
   );
   const [loading, setLoading] = useState(false);
   const retryRef = useRef(0);
+  const mountedRef = useRef(true);
 
   const fetchPage = useCallback(async () => {
     if (loading || !hasNext) return;
@@ -50,41 +51,52 @@ export default function InfiniteBrowse({
         seenIdsRef.current.add(idStr);
         return true;
       });
-      setItems((prev) => [...prev, ...newItems]);
+      if (mountedRef.current) setItems((prev) => [...prev, ...newItems]);
       const nextCursor = data.nextCursor ?? null;
 
       // Stop if no new items or cursor hasn't advanced
-      if (
-        nextCursor === prevCursor ||
-        (pageItems.length > 0 && newItems.length === 0)
-      ) {
-        setHasNext(false);
-      } else {
-        setHasNext(Boolean(data.hasNextPage));
+      if (mountedRef.current) {
+        if (
+          nextCursor === prevCursor ||
+          (pageItems.length > 0 && newItems.length === 0)
+        ) {
+          setHasNext(false);
+        } else {
+          setHasNext(Boolean(data.hasNextPage));
+        }
+        setCursor(nextCursor);
       }
-      setCursor(nextCursor);
     } catch (err) {
       console.error("Failed to load page", err);
       retryRef.current = (retryRef.current ?? 0) + 1;
       const tries = retryRef.current;
       if (tries <= 3) {
         const backoff = 1000 * tries;
-        setTimeout(() => {
-          setLoading(false);
+        const t = setTimeout(() => {
+          if (!mountedRef.current) return;
+          if (mountedRef.current) setLoading(false);
           fetchPage();
         }, backoff);
+        // clear timeout on unmount
+        if (!mountedRef.current) clearTimeout(t);
       } else {
-        setHasNext(false);
-        setLoading(false);
+        if (mountedRef.current) {
+          setHasNext(false);
+          setLoading(false);
+        }
       }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [cursor, hasNext, loading]);
 
   useEffect(() => {
     // initial load only if no initial items
     if (items.length === 0) fetchPage();
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

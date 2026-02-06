@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { act } from "react";
 import BrowsePage, { fetchClothingItems } from "@/app/browse/page";
 import { JSX } from "react";
 
@@ -190,11 +191,15 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    const { container } = render((<BrowsePage />) as unknown as JSX.Element);
+    let container: HTMLElement | null = null;
+    await act(async () => {
+      const res = render((<BrowsePage />) as unknown as JSX.Element);
+      container = res.container;
+    });
 
     expect(await screen.findByTestId("header")).toBeInTheDocument();
     expect(await screen.findByTestId("sidebar")).toBeInTheDocument();
-    expect(container.querySelector("main")).toBeInTheDocument();
+    expect(container!.querySelector("main")).toBeInTheDocument();
   });
 
   it("should render add button", async () => {
@@ -203,9 +208,13 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    const { container } = render((<BrowsePage />) as unknown as JSX.Element);
+    let container2: HTMLElement | null = null;
+    await act(async () => {
+      const res = render((<BrowsePage />) as unknown as JSX.Element);
+      container2 = res.container;
+    });
 
-    expect(container.querySelector("main")).toBeInTheDocument();
+    expect(container2!.querySelector("main")).toBeInTheDocument();
   });
 
   it("should show 'No items available' when no items returned", async () => {
@@ -214,7 +223,9 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    render((<BrowsePage />) as unknown as JSX.Element);
+    await act(async () => {
+      render((<BrowsePage />) as unknown as JSX.Element);
+    });
 
     expect(await screen.findByText("No items available.")).toBeInTheDocument();
   });
@@ -252,7 +263,9 @@ describe("BrowsePage", () => {
       json: async () => mockItems,
     });
 
-    render((<BrowsePage />) as unknown as JSX.Element);
+    await act(async () => {
+      render((<BrowsePage />) as unknown as JSX.Element);
+    });
 
     const cardItems = await screen.findAllByTestId("card-item");
     expect(cardItems).toHaveLength(3);
@@ -286,7 +299,9 @@ describe("BrowsePage", () => {
       json: async () => mockItems,
     });
 
-    render((<BrowsePage />) as unknown as JSX.Element);
+    await act(async () => {
+      render((<BrowsePage />) as unknown as JSX.Element);
+    });
 
     expect(await screen.findByText("Test Item")).toBeInTheDocument();
     expect(await screen.findByTestId("img-src")).toHaveTextContent("/test.jpg");
@@ -309,7 +324,9 @@ describe("BrowsePage", () => {
       json: async () => mockItems,
     });
 
-    render((<BrowsePage />) as unknown as JSX.Element);
+    await act(async () => {
+      render((<BrowsePage />) as unknown as JSX.Element);
+    });
 
     expect(await screen.findByText("No Image Item")).toBeInTheDocument();
     expect(screen.queryByTestId("img-src")).not.toBeInTheDocument();
@@ -321,12 +338,16 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    const { container } = render((<BrowsePage />) as unknown as JSX.Element);
+    let container3: HTMLElement | null = null;
+    await act(async () => {
+      const res = render((<BrowsePage />) as unknown as JSX.Element);
+      container3 = res.container;
+    });
 
-    const mainContainer = container.querySelector(".flex.flex-col.h-screen");
+    const mainContainer = container3!.querySelector(".flex.flex-col.h-screen");
     expect(mainContainer).toBeInTheDocument();
 
-    const main = container.querySelector("main");
+    const main = container3!.querySelector("main");
     expect(main).toHaveClass(
       "pt-24",
       "flex-1",

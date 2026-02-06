@@ -47,6 +47,7 @@ if (
 }
 
 // IntersectionObserver mock
+
 if (
   typeof (globalThis as unknown as { IntersectionObserver?: unknown })
     .IntersectionObserver === "undefined"
