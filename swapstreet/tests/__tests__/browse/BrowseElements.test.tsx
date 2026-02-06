@@ -58,11 +58,7 @@ describe("Header", () => {
 // ---------------- SearchBar ----------------
 describe("SearchBar", () => {
   it("renders input with placeholder", () => {
-    render(
-      <SearchBar
-        onSearch={() => {}}
-      />,
-    );
+    render(<SearchBar onSearch={() => {}} />);
     expect(screen.getByPlaceholderText(/Search.../i)).toBeInTheDocument();
   });
 
