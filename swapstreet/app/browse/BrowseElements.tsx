@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/navigation-menu";
 import "./CardItemStyle.css";
 
-
 type HeaderProps = {
   showCenterNav?: boolean;
 };

@@ -29,7 +29,9 @@ export default function BrowsePage() {
 // Helper to fetch clothing items (used for tests)
 type SearchParams = { [key: string]: string | undefined } | undefined;
 
-export async function fetchClothingItems(searchParamsPromise: Promise<SearchParams>) {
+export async function fetchClothingItems(
+  searchParamsPromise: Promise<SearchParams>,
+) {
   const params = await searchParamsPromise;
   try {
     const q = new URLSearchParams();
@@ -50,7 +52,9 @@ export async function fetchClothingItems(searchParamsPromise: Promise<SearchPara
   }
 }
 
-export async function fetchSearchPage(searchParamsPromise: Promise<SearchParams>) {
+export async function fetchSearchPage(
+  searchParamsPromise: Promise<SearchParams>,
+) {
   const params = await searchParamsPromise;
   try {
     const q = new URLSearchParams();
