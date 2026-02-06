@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import BrowsePage, { fetchClothingItems } from "@/app/browse/page";
+import { JSX } from "react";
 
 // Type definition for clothing items
 type ClothingItem = {
@@ -189,12 +190,10 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    const { container } = render(
-      await BrowsePage({ searchParams: Promise.resolve({}) }),
-    );
+    const { container } = render(<BrowsePage /> as unknown as JSX.Element);
 
-    expect(screen.getByTestId("header")).toBeInTheDocument();
-    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    expect(await screen.findByTestId("header")).toBeInTheDocument();
+    expect(await screen.findByTestId("sidebar")).toBeInTheDocument();
     expect(container.querySelector("main")).toBeInTheDocument();
   });
 
@@ -204,12 +203,8 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    const { container } = render(
-      await BrowsePage({ searchParams: Promise.resolve({}) }),
-    );
+    const { container } = render(<BrowsePage /> as unknown as JSX.Element);
 
-    // The add button is not rendered in the current implementation
-    // This test should be updated once the add button is implemented
     expect(container.querySelector("main")).toBeInTheDocument();
   });
 
@@ -219,10 +214,9 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    render(await BrowsePage({ searchParams: Promise.resolve({}) }));
+    render(<BrowsePage /> as unknown as JSX.Element);
 
-    // When no items are returned, show no items message
-    expect(screen.getByText("No items available.")).toBeInTheDocument();
+    expect(await screen.findByText("No items available.")).toBeInTheDocument();
   });
 
   it("should render CardItem components for each item", async () => {
@@ -258,18 +252,18 @@ describe("BrowsePage", () => {
       json: async () => mockItems,
     });
 
-    render(await BrowsePage({ searchParams: Promise.resolve({}) }));
+    render(<BrowsePage /> as unknown as JSX.Element);
 
-    const cardItems = screen.getAllByTestId("card-item");
+    const cardItems = await screen.findAllByTestId("card-item");
     expect(cardItems).toHaveLength(3);
 
     // Check that items are rendered
-    expect(screen.getByText("Item 1")).toBeInTheDocument();
-    expect(screen.getByText("Item 2")).toBeInTheDocument();
-    expect(screen.getByText("Item 3")).toBeInTheDocument();
+    expect(await screen.findByText("Item 1")).toBeInTheDocument();
+    expect(await screen.findByText("Item 2")).toBeInTheDocument();
+    expect(await screen.findByText("Item 3")).toBeInTheDocument();
 
     // Check that the img sources are rendered correctly
-    const imgSources = screen.getAllByTestId("img-src");
+    const imgSources = await screen.findAllByTestId("img-src");
     expect(imgSources[0]).toHaveTextContent("/img1.jpg");
     expect(imgSources[1]).toHaveTextContent("/img2.jpg");
     expect(imgSources[2]).toHaveTextContent("/img3.jpg");
@@ -292,10 +286,10 @@ describe("BrowsePage", () => {
       json: async () => mockItems,
     });
 
-    render(await BrowsePage({ searchParams: Promise.resolve({}) }));
+    render(<BrowsePage /> as unknown as JSX.Element);
 
-    expect(screen.getByText("Test Item")).toBeInTheDocument();
-    expect(screen.getByTestId("img-src")).toHaveTextContent("/test.jpg");
+    expect(await screen.findByText("Test Item")).toBeInTheDocument();
+    expect(await screen.findByTestId("img-src")).toHaveTextContent("/test.jpg");
   });
 
   it("should handle items without images", async () => {
@@ -315,9 +309,9 @@ describe("BrowsePage", () => {
       json: async () => mockItems,
     });
 
-    render(await BrowsePage({ searchParams: Promise.resolve({}) }));
+    render(<BrowsePage /> as unknown as JSX.Element);
 
-    expect(screen.getByText("No Image Item")).toBeInTheDocument();
+    expect(await screen.findByText("No Image Item")).toBeInTheDocument();
     expect(screen.queryByTestId("img-src")).not.toBeInTheDocument();
   });
 
@@ -327,9 +321,7 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    const { container } = render(
-      await BrowsePage({ searchParams: Promise.resolve({}) }),
-    );
+    const { container } = render(<BrowsePage /> as unknown as JSX.Element);
 
     const mainContainer = container.querySelector(".flex.flex-col.h-screen");
     expect(mainContainer).toBeInTheDocument();

@@ -25,3 +25,52 @@ export default function BrowsePage() {
     </div>
   );
 }
+
+// Helper to fetch clothing items (used for tests)
+export async function fetchClothingItems(searchParamsPromise: Promise<any>) {
+  const params = await searchParamsPromise;
+  try {
+    const q = new URLSearchParams();
+    if (params?.minPrice) q.set("minPrice", params.minPrice);
+    if (params?.maxPrice) q.set("maxPrice", params.maxPrice);
+    if (params?.categoryId) q.set("categoryId", params.categoryId);
+    if (params?.conditions) q.set("conditions", params.conditions);
+
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://backend:8080";
+    const url = `${base}/api/search/search${q.toString() ? `?${q.toString()}` : ""}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : data.items ?? [];
+  } catch (err) {
+    console.error("Failed to fetch clothing items:", err);
+    return [];
+  }
+}
+
+export async function fetchSearchPage(searchParamsPromise: Promise<any>) {
+  const params = await searchParamsPromise;
+  try {
+    const q = new URLSearchParams();
+    q.set("limit", "18");
+    if (params?.cursor) q.set("cursor", params.cursor);
+    if (params?.minPrice) q.set("minPrice", params.minPrice);
+    if (params?.categoryId) q.set("categoryId", params.categoryId);
+
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://backend:8080";
+    const url = `${base}/api/search/search?${q.toString()}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      return { items: data, nextCursor: null, hasNextPage: false };
+    }
+    return {
+      items: data.items ?? [],
+      nextCursor: data.nextCursor ?? null,
+      hasNextPage: !!data.hasNextPage,
+    };
+  } catch (err) {
+    return { items: [], nextCursor: null, hasNextPage: false };
+  }
+}
