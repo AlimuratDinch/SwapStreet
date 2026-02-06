@@ -78,14 +78,14 @@ MINIO_USE_SSL=false
 ```
 - Create a `.env` file in the swapstreet directory
 ```
-NEXT_PUBLIC_API_URL=http://backend:8080
+NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
-Depending on your OS, you may need to change "backend" to "localhost". 
+Depending on your OS, you may need to change "localhost" to "backend". 
 we have found Mac/unix users need "backend" and others need "localhost"
 
 - Make sure `Docker Desktop` is running, then:
 ```
-docker compose up --build
+docker compose -f docker-compose.local.staging.yml up --build
 ```
 
 ## Wiki Table of Contents
