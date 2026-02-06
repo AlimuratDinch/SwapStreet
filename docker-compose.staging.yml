@@ -109,5 +109,5 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data_prod:
-  minio_data_prod:
+  postgres_data_staging:  
+  minio_data_staging:     
