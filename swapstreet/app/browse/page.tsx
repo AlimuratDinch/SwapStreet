@@ -27,7 +27,9 @@ export default function BrowsePage() {
 }
 
 // Helper to fetch clothing items (used for tests)
-export async function fetchClothingItems(searchParamsPromise: Promise<any>) {
+type SearchParams = { [key: string]: string | undefined } | undefined;
+
+export async function fetchClothingItems(searchParamsPromise: Promise<SearchParams>) {
   const params = await searchParamsPromise;
   try {
     const q = new URLSearchParams();
@@ -48,7 +50,7 @@ export async function fetchClothingItems(searchParamsPromise: Promise<any>) {
   }
 }
 
-export async function fetchSearchPage(searchParamsPromise: Promise<any>) {
+export async function fetchSearchPage(searchParamsPromise: Promise<SearchParams>) {
   const params = await searchParamsPromise;
   try {
     const q = new URLSearchParams();
@@ -70,7 +72,7 @@ export async function fetchSearchPage(searchParamsPromise: Promise<any>) {
       nextCursor: data.nextCursor ?? null,
       hasNextPage: !!data.hasNextPage,
     };
-  } catch (err) {
+  } catch {
     return { items: [], nextCursor: null, hasNextPage: false };
   }
 }

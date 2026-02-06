@@ -60,9 +60,7 @@ describe("SearchBar", () => {
   it("renders input with placeholder", () => {
     render(
       <SearchBar
-        onSearch={function (val: string): void {
-          throw new Error("Function not implemented.");
-        }}
+        onSearch={() => {}}
       />,
     );
     expect(screen.getByPlaceholderText(/Search.../i)).toBeInTheDocument();

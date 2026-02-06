@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/navigation-menu";
 import "./CardItemStyle.css";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 type HeaderProps = {
   showCenterNav?: boolean;
@@ -221,7 +220,7 @@ export function Sidebar() {
     }
 
     isInitialized.current = true;
-  }, []); // Empty dependency array - only run once
+  }, [searchParams]);
 
   // Update URL when filters change (but only after initialization)
   useEffect(() => {
