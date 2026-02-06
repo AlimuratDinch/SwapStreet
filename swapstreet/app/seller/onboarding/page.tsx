@@ -1,12 +1,12 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/components/common/logger";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
 const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
@@ -41,10 +41,13 @@ export default function SellerOnboardingPage() {
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
-        const provincesRes = await fetch(`${API_URL}/api/location/provinces`);
+        const provincesUrl = `${API_URL}/location/provinces`;
+
+        const provincesRes = await fetch(provincesUrl);
 
         if (provincesRes.ok) {
           const provincesData = await provincesRes.json();
+
           setProvinces(provincesData);
         }
       } catch (err) {
@@ -63,12 +66,13 @@ export default function SellerOnboardingPage() {
     if (selectedProvinceId) {
       const fetchCities = async () => {
         try {
-          const citiesRes = await fetch(
-            `${API_URL}/api/location/cities?provinceId=${selectedProvinceId}`,
-          );
+          const citiesUrl = `${API_URL}/location/cities?provinceId=${selectedProvinceId}`;
+
+          const citiesRes = await fetch(citiesUrl);
 
           if (citiesRes.ok) {
             const citiesData = await citiesRes.json();
+
             setFilteredCities(citiesData);
           }
         } catch (err) {

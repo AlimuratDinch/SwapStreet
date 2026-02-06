@@ -1,99 +1,19 @@
+"use client";
+import { Suspense } from "react";
 import { Sidebar, Header } from "./BrowseElements";
 import InfiniteBrowse from "./InfiniteBrowse";
 
-type SearchParams = {
-  minPrice?: string;
-  maxPrice?: string;
-  categoryId?: string;
-  conditions?: string;
-};
-
-function getApiBase() {
-  return (
-    process.env.API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8080"
-  );
-}
-
-function buildSearchUrl(
-  resolvedParams: SearchParams,
-  extras?: Record<string, string>,
-) {
-  const params = new URLSearchParams();
-  if (resolvedParams.minPrice) params.set("minPrice", resolvedParams.minPrice);
-  if (resolvedParams.maxPrice) params.set("maxPrice", resolvedParams.maxPrice);
-  if (resolvedParams.categoryId)
-    params.set("categoryId", resolvedParams.categoryId);
-  if (resolvedParams.conditions)
-    params.set("conditions", resolvedParams.conditions);
-  if (extras) {
-    Object.entries(extras).forEach(([k, v]) => params.set(k, v));
-  }
-  const apiUrl = getApiBase();
-  return `${apiUrl}/api/search/search${params.toString() ? `?${params.toString()}` : ""}`;
-}
-
-export async function fetchClothingItems(searchParams: Promise<SearchParams>) {
-  try {
-    const resolvedParams = await searchParams;
-    const url = buildSearchUrl(resolvedParams);
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    const data = await res.json();
-    if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data.items)) return data.items;
-    return [];
-  } catch (error) {
-    console.error("Failed to fetch clothing items:", error);
-    return [];
-  }
-}
-
-// helper: fetches raw search response (items + cursor)
-export async function fetchSearchPage(searchParams: Promise<SearchParams>) {
-  try {
-    const resolvedParams = await searchParams;
-    const url = buildSearchUrl(resolvedParams, { limit: "18" });
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    const data = await res.json();
-    const items = Array.isArray(data) ? data : (data.items ?? []);
-    return {
-      items,
-      nextCursor: data?.nextCursor ?? null,
-      hasNextPage: Boolean(data?.hasNextPage),
-    };
-  } catch (error) {
-    console.error("Failed to fetch search page:", error);
-    return { items: [], nextCursor: null, hasNextPage: false };
-  }
-}
-
-export default async function BrowsePage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
-  // Fetch first page of items
-  const {
-    items: initialItems,
-    nextCursor,
-    hasNextPage,
-  } = await fetchSearchPage(searchParams);
-
+export default function BrowsePage() {
   return (
     <div className="flex flex-col h-screen">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
-        {/* @ts-ignore - dynamic client component props */}
-        <InfiniteBrowse
-          initialItems={initialItems}
-          initialCursor={nextCursor}
-          initialHasNext={hasNextPage}
-        />
+        <Suspense fallback={<div className="w-64" />}>
+          <Sidebar />
+        </Suspense>
+        <Suspense>
+          <InfiniteBrowse />
+        </Suspense>
       </div>
       <div className="fixed bottom-4 right-4">
         <a href="/seller/createListing">
@@ -104,4 +24,61 @@ export default async function BrowsePage({
       </div>
     </div>
   );
+}
+
+// Helper to fetch clothing items (used for tests)
+type SearchParams = { [key: string]: string | undefined } | undefined;
+
+export async function fetchClothingItems(
+  searchParamsPromise: Promise<SearchParams>,
+) {
+  const params = await searchParamsPromise;
+  try {
+    const q = new URLSearchParams();
+    if (params?.minPrice) q.set("minPrice", params.minPrice);
+    if (params?.maxPrice) q.set("maxPrice", params.maxPrice);
+    if (params?.categoryId) q.set("categoryId", params.categoryId);
+    if (params?.conditions) q.set("conditions", params.conditions);
+
+    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+    const base = envBase || "";
+    const url = `${base}/api/search/search${q.toString() ? `?${q.toString()}` : ""}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.items ?? []);
+  } catch (err) {
+    console.error("Failed to fetch clothing items:", err);
+    return [];
+  }
+}
+
+export async function fetchSearchPage(
+  searchParamsPromise: Promise<SearchParams>,
+) {
+  const params = await searchParamsPromise;
+  try {
+    const q = new URLSearchParams();
+    q.set("limit", "18");
+    if (params?.cursor) q.set("cursor", params.cursor);
+    if (params?.minPrice) q.set("minPrice", params.minPrice);
+    if (params?.categoryId) q.set("categoryId", params.categoryId);
+
+    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+    const base = envBase || "";
+    const url = `${base}/api/search/search?${q.toString()}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      return { items: data, nextCursor: null, hasNextPage: false };
+    }
+    return {
+      items: data.items ?? [],
+      nextCursor: data.nextCursor ?? null,
+      hasNextPage: !!data.hasNextPage,
+    };
+  } catch {
+    return { items: [], nextCursor: null, hasNextPage: false };
+  }
 }

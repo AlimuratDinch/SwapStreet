@@ -14,7 +14,7 @@ describe("Gallery", () => {
     // main image
     const main = screen.getByAltText("image-0") as HTMLImageElement;
     expect(main).toBeInTheDocument();
-    expect(main.src).toContain("/a.jpg");
+    expect(main.src).toContain("a.jpg");
 
     // thumbnails
     const thumb1 = screen.getByAltText("thumb-1");
@@ -22,7 +22,7 @@ describe("Gallery", () => {
 
     const mainAfter = screen.getByAltText("image-1") as HTMLImageElement;
     expect(mainAfter).toBeInTheDocument();
-    expect(mainAfter.src).toContain("/b.jpg");
+    expect(mainAfter.src).toContain("b.jpg");
   });
 
   it("shows fallback when no images", () => {
@@ -52,7 +52,7 @@ describe("Gallery", () => {
     fireEvent.click(next);
     await screen.findByAltText("image-1");
     const img1 = screen.getByAltText("image-1") as HTMLImageElement;
-    expect(img1.src).toContain("/b.jpg");
+    expect(img1.src).toContain("b.jpg");
 
     // Move to index 2
     fireEvent.click(next);

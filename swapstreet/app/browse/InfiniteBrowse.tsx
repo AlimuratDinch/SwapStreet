@@ -1,5 +1,6 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { CardItem } from "./BrowseElements";
 
@@ -26,18 +27,20 @@ export default function InfiniteBrowse({
     new Set(initialItems.map((i) => String(i.id))),
   );
   const [loading, setLoading] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const retryRef = useRef(0);
+  const mountedRef = useRef(true);
 
   const fetchPage = useCallback(async () => {
     if (loading || !hasNext) return;
     setLoading(true);
     try {
-      const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const q = new URLSearchParams();
       q.set("limit", "18");
       const prevCursor = cursor;
       if (cursor) q.set("cursor", cursor);
-      const res = await fetch(`${api}/api/search/search?${q.toString()}`);
+      const res = await fetch(`${API_URL}/search/search?${q.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const pageItems: Item[] = Array.isArray(data) ? data : (data.items ?? []);
@@ -48,49 +51,83 @@ export default function InfiniteBrowse({
         seenIdsRef.current.add(idStr);
         return true;
       });
-      setItems((prev) => [...prev, ...newItems]);
+      if (mountedRef.current) setItems((prev) => [...prev, ...newItems]);
       const nextCursor = data.nextCursor ?? null;
 
       // Stop if no new items or cursor hasn't advanced
-      if (
-        nextCursor === prevCursor ||
-        (pageItems.length > 0 && newItems.length === 0)
-      ) {
-        setHasNext(false);
-      } else {
-        setHasNext(Boolean(data.hasNextPage));
+      if (mountedRef.current) {
+        if (
+          nextCursor === prevCursor ||
+          (pageItems.length > 0 && newItems.length === 0)
+        ) {
+          setHasNext(false);
+        } else {
+          setHasNext(Boolean(data.hasNextPage));
+        }
+        setCursor(nextCursor);
       }
-      setCursor(nextCursor);
     } catch (err) {
       console.error("Failed to load page", err);
+      retryRef.current = (retryRef.current ?? 0) + 1;
+      const tries = retryRef.current;
+      if (tries <= 3) {
+        const backoff = 1000 * tries;
+        const t = setTimeout(() => {
+          if (!mountedRef.current) return;
+          if (mountedRef.current) setLoading(false);
+          fetchPage();
+        }, backoff);
+        if (!mountedRef.current) clearTimeout(t);
+      } else {
+        if (mountedRef.current) {
+          setHasNext(false);
+          setLoading(false);
+        }
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [cursor, hasNext, loading]);
 
   useEffect(() => {
     // initial load only if no initial items
     if (items.length === 0) fetchPage();
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    const el = sentinelRef.current;
+  const lastFetchRef = useRef(0);
+  const containerRef = useRef<HTMLElement | null>(null);
+
+  const handleScroll = useCallback(() => {
+    if (!hasNext || loading) return;
+    if (Date.now() - lastFetchRef.current < 500) return;
+    const el = containerRef.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) fetchPage();
-        }
-      },
-      { rootMargin: "400px" },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [fetchPage]);
+    const scrollTop = el.scrollTop;
+    const clientHeight = el.clientHeight;
+    const scrollHeight = el.scrollHeight;
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      lastFetchRef.current = Date.now();
+      fetchPage();
+    }
+  }, [hasNext, loading, fetchPage]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
   return (
-    <main className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
+    <main
+      ref={containerRef}
+      className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max"
+    >
       {items.map((item) => (
         <CardItem
           key={item.id}
@@ -107,7 +144,6 @@ export default function InfiniteBrowse({
         </p>
       )}
 
-      <div ref={sentinelRef} className="col-span-full h-6" />
       {loading && <div className="col-span-full text-center">Loading...</div>}
     </main>
   );

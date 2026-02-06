@@ -4,11 +4,15 @@ import Gallery from "./Gallery";
 import PostedAt from "./PostedAt";
 import { Header } from "../../browse/BrowseElements";
 
+export const dynamic = "force-dynamic";
+
 async function fetchListing(id: string) {
-  const api =
-    process.env.API_URL ||
+  const envBase = (
     process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8080";
+    process.env.BACKEND_URL ||
+    ""
+  ).replace(/\/$/, "");
+  const api = envBase || "";
   const res = await fetch(`${api}/api/search/listing/${id}`, {
     cache: "no-store",
   });

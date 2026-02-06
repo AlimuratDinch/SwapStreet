@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { logger } from "@/components/common/logger";
 import AuthLayout from "@/components/auth/AuthLayout";
@@ -29,8 +29,11 @@ export default function RegistrationPage() {
       return;
     }
 
+    const API_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
     try {
-      const response = await fetch("http://localhost:8080/api/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
