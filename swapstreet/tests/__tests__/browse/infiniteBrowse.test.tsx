@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
+import { act } from "react-dom/test-utils";
 import InfiniteBrowse from "@/app/browse/InfiniteBrowse";
 
 describe("InfiniteBrowse", () => {
@@ -57,7 +58,9 @@ describe("InfiniteBrowse", () => {
     Object.defineProperty(container, "clientHeight", { value: 600 });
     Object.defineProperty(container, "scrollHeight", { value: 700 });
     Object.defineProperty(container, "scrollTop", { value: 100 });
-    container.dispatchEvent(new Event("scroll"));
+    await act(async () => {
+      container.dispatchEvent(new Event("scroll"));
+    });
 
     // load next page
     await waitFor(() => expect(screen.getByText("B")).toBeInTheDocument());
