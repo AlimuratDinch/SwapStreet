@@ -220,12 +220,10 @@ describe("InfiniteBrowse", () => {
 
   it("handles API returning array directly", async () => {
     const pageArr = [{ id: "arr1", title: "Arr", price: 2, images: [] }];
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => pageArr,
-      }) as unknown as typeof global.fetch;
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => pageArr,
+    }) as unknown as typeof global.fetch;
 
     render(
       <InfiniteBrowse

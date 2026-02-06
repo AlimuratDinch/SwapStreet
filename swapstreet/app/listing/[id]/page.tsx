@@ -7,7 +7,12 @@ import { Header } from "../../browse/BrowseElements";
 export const dynamic = "force-dynamic";
 
 async function fetchListing(id: string) {
-  const api = "http://backend:8080";
+  const envBase = (
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.BACKEND_URL ||
+    ""
+  ).replace(/\/$/, "");
+  const api = envBase || "";
   const res = await fetch(`${api}/api/search/listing/${id}`, {
     cache: "no-store",
   });
