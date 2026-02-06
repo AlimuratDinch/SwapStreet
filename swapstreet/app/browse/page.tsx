@@ -41,7 +41,7 @@ export async function fetchClothingItems(searchParamsPromise: Promise<any>) {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    return Array.isArray(data) ? data : data.items ?? [];
+    return Array.isArray(data) ? data : (data.items ?? []);
   } catch (err) {
     console.error("Failed to fetch clothing items:", err);
     return [];

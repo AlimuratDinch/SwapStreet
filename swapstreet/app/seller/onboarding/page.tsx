@@ -13,9 +13,6 @@ const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 export default function SellerOnboardingPage() {
   const router = useRouter();
   const { accessToken, isAuthenticated, refreshToken } = useAuth();
-  
-
-  
 
   // Form fields
   const [firstName, setFirstName] = useState("");
@@ -45,12 +42,12 @@ export default function SellerOnboardingPage() {
     const fetchProvinces = async () => {
       try {
         const provincesUrl = `${API_URL}/location/provinces`;
-        
+
         const provincesRes = await fetch(provincesUrl);
 
         if (provincesRes.ok) {
           const provincesData = await provincesRes.json();
-          
+
           setProvinces(provincesData);
         }
       } catch (err) {
@@ -70,12 +67,12 @@ export default function SellerOnboardingPage() {
       const fetchCities = async () => {
         try {
           const citiesUrl = `${API_URL}/location/cities?provinceId=${selectedProvinceId}`;
-          
+
           const citiesRes = await fetch(citiesUrl);
 
           if (citiesRes.ok) {
             const citiesData = await citiesRes.json();
-            
+
             setFilteredCities(citiesData);
           }
         } catch (err) {

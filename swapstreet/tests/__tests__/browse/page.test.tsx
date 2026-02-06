@@ -190,7 +190,7 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    const { container } = render(<BrowsePage /> as unknown as JSX.Element);
+    const { container } = render((<BrowsePage />) as unknown as JSX.Element);
 
     expect(await screen.findByTestId("header")).toBeInTheDocument();
     expect(await screen.findByTestId("sidebar")).toBeInTheDocument();
@@ -203,7 +203,7 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    const { container } = render(<BrowsePage /> as unknown as JSX.Element);
+    const { container } = render((<BrowsePage />) as unknown as JSX.Element);
 
     expect(container.querySelector("main")).toBeInTheDocument();
   });
@@ -214,7 +214,7 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    render(<BrowsePage /> as unknown as JSX.Element);
+    render((<BrowsePage />) as unknown as JSX.Element);
 
     expect(await screen.findByText("No items available.")).toBeInTheDocument();
   });
@@ -252,7 +252,7 @@ describe("BrowsePage", () => {
       json: async () => mockItems,
     });
 
-    render(<BrowsePage /> as unknown as JSX.Element);
+    render((<BrowsePage />) as unknown as JSX.Element);
 
     const cardItems = await screen.findAllByTestId("card-item");
     expect(cardItems).toHaveLength(3);
@@ -286,7 +286,7 @@ describe("BrowsePage", () => {
       json: async () => mockItems,
     });
 
-    render(<BrowsePage /> as unknown as JSX.Element);
+    render((<BrowsePage />) as unknown as JSX.Element);
 
     expect(await screen.findByText("Test Item")).toBeInTheDocument();
     expect(await screen.findByTestId("img-src")).toHaveTextContent("/test.jpg");
@@ -309,7 +309,7 @@ describe("BrowsePage", () => {
       json: async () => mockItems,
     });
 
-    render(<BrowsePage /> as unknown as JSX.Element);
+    render((<BrowsePage />) as unknown as JSX.Element);
 
     expect(await screen.findByText("No Image Item")).toBeInTheDocument();
     expect(screen.queryByTestId("img-src")).not.toBeInTheDocument();
@@ -321,7 +321,7 @@ describe("BrowsePage", () => {
       json: async () => [],
     });
 
-    const { container } = render(<BrowsePage /> as unknown as JSX.Element);
+    const { container } = render((<BrowsePage />) as unknown as JSX.Element);
 
     const mainContainer = container.querySelector(".flex.flex-col.h-screen");
     expect(mainContainer).toBeInTheDocument();

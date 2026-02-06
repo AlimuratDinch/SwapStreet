@@ -120,8 +120,11 @@ const mockCities = [
 
 global.fetch = jest.fn((url) => {
   const u = typeof url === "string" ? url : (url as Request).url;
-  
-  if (u.includes("/api/location/provinces") || u.includes("location/provinces")) {
+
+  if (
+    u.includes("/api/location/provinces") ||
+    u.includes("location/provinces")
+  ) {
     return Promise.resolve({
       ok: true,
       json: async () => mockProvinces,
@@ -150,9 +153,6 @@ describe("SellerOnboardingPage", () => {
     // Reset sessionStorage to default state
     mockSessionStorage.clear();
     mockSessionStorage.setItem("accessToken", "mock-token");
-    
-
-
 
     // Reset API mocks
     const createProfile = profileApi.createProfile as jest.Mock;
@@ -165,8 +165,11 @@ describe("SellerOnboardingPage", () => {
     // Reset fetch mock to default behavior
     (global.fetch as jest.Mock).mockImplementation((url) => {
       const u = typeof url === "string" ? url : (url as Request).url;
-      
-      if (u.includes("/api/location/provinces") || u.includes("location/provinces")) {
+
+      if (
+        u.includes("/api/location/provinces") ||
+        u.includes("location/provinces")
+      ) {
         return Promise.resolve({
           ok: true,
           json: async () => mockProvinces,
@@ -718,7 +721,10 @@ describe("SellerOnboardingPage", () => {
   it("shows error when location API returns non-ok response", async () => {
     // Mock fetch to return non-ok response
     (global.fetch as jest.Mock).mockImplementation((url) => {
-      if (url.includes("/api/location/provinces") || url.includes("location/provinces")) {
+      if (
+        url.includes("/api/location/provinces") ||
+        url.includes("location/provinces")
+      ) {
         return Promise.resolve({
           ok: false,
           json: async () => ({ error: "Server error" }),
@@ -1071,13 +1077,19 @@ describe("SellerOnboardingPage", () => {
   it("shows error when cities fail to load after province selection", async () => {
     // Mock fetch to fail for cities endpoint
     (global.fetch as jest.Mock).mockImplementation((url) => {
-      if (url.includes("/api/location/provinces") || url.includes("location/provinces")) {
+      if (
+        url.includes("/api/location/provinces") ||
+        url.includes("location/provinces")
+      ) {
         return Promise.resolve({
           ok: true,
           json: async () => mockProvinces,
         });
       }
-      if (url.includes("/api/location/cities") || url.includes("location/cities")) {
+      if (
+        url.includes("/api/location/cities") ||
+        url.includes("location/cities")
+      ) {
         return Promise.reject(new Error("Network error"));
       }
       return Promise.resolve({

@@ -29,7 +29,11 @@ jest.mock("next/image", () => {
     const { src, alt, ...rest } = props;
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={typeof src === "string" ? src : "/default.png"} alt={alt ?? "image"} {...rest} />
+      <img
+        src={typeof src === "string" ? src : "/default.png"}
+        alt={alt ?? "image"}
+        {...rest}
+      />
     );
   };
   MockNextImage.displayName = "MockNextImage";
@@ -127,7 +131,9 @@ describe("WardrobePage", () => {
         fireEvent.change(input, { target: { files: [file] } });
 
         await waitFor(() => {
-          expect(screen.getByText(/Please upload an image file/i)).toBeInTheDocument();
+          expect(
+            screen.getByText(/Please upload an image file/i),
+          ).toBeInTheDocument();
         });
       }
     });
@@ -143,7 +149,9 @@ describe("WardrobePage", () => {
         await userEvent.upload(input as HTMLElement, file);
 
         await waitFor(() => {
-          expect(screen.getByText(/Image must be smaller than 5MB/i)).toBeInTheDocument();
+          expect(
+            screen.getByText(/Image must be smaller than 5MB/i),
+          ).toBeInTheDocument();
         });
       }
     });
@@ -271,7 +279,9 @@ describe("WardrobePage", () => {
         fireEvent.click(tryOnButton);
 
         await waitFor(() => {
-          expect(screen.getByText(/No listings available/i)).toBeInTheDocument();
+          expect(
+            screen.getByText(/No listings available/i),
+          ).toBeInTheDocument();
         });
       }
     });
@@ -584,7 +594,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -599,7 +611,9 @@ describe("WardrobePage", () => {
         fireEvent.click(downloadButton);
 
         await waitFor(() => {
-          expect(screen.getByText(/Failed to download image/i)).toBeInTheDocument();
+          expect(
+            screen.getByText(/Failed to download image/i),
+          ).toBeInTheDocument();
         });
       }
     });
@@ -614,7 +628,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -638,7 +654,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -681,7 +699,9 @@ describe("WardrobePage", () => {
 
       render(<WardrobePage />);
 
-      const file = new File(["dummy content"], "test.png", { type: "image/png" });
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
       const input = document.querySelector('input[type="file"]');
 
       if (input) {
@@ -711,7 +731,9 @@ describe("WardrobePage", () => {
       if (input) {
         (input as HTMLInputElement).click = jest.fn();
 
-        const frame = document.querySelector('div[role="button"][tabindex="0"]') as HTMLElement;
+        const frame = document.querySelector(
+          'div[role="button"][tabindex="0"]',
+        ) as HTMLElement;
         expect(frame).toBeTruthy();
         fireEvent.keyDown(frame, { key: "Enter" });
 
@@ -811,7 +833,9 @@ describe("WardrobePage", () => {
       if (input) {
         (input as HTMLInputElement).click = jest.fn();
 
-        const frame = document.querySelector('div[role="button"][tabindex="0"]') as HTMLElement;
+        const frame = document.querySelector(
+          'div[role="button"][tabindex="0"]',
+        ) as HTMLElement;
         expect(frame).toBeTruthy();
         fireEvent.keyDown(frame, { key: " " });
 

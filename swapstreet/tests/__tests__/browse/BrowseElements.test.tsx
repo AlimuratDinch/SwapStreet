@@ -33,7 +33,10 @@ const mockSearchParams = new URLSearchParams();
 
 beforeEach(() => {
   jest.clearAllMocks();
-  (useRouter as jest.Mock).mockReturnValue({ push: mockPush, replace: mockPush });
+  (useRouter as jest.Mock).mockReturnValue({
+    push: mockPush,
+    replace: mockPush,
+  });
   (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
 });
 
@@ -55,9 +58,13 @@ describe("Header", () => {
 // ---------------- SearchBar ----------------
 describe("SearchBar", () => {
   it("renders input with placeholder", () => {
-    render(<SearchBar onSearch={function (val: string): void {
-      throw new Error("Function not implemented.");
-    } } />);
+    render(
+      <SearchBar
+        onSearch={function (val: string): void {
+          throw new Error("Function not implemented.");
+        }}
+      />,
+    );
     expect(screen.getByPlaceholderText(/Search.../i)).toBeInTheDocument();
   });
 
@@ -127,9 +134,10 @@ describe("Sidebar", () => {
     fireEvent.change(maxInput, { target: { value: "100" } });
     await waitFor(() => {
       const calls = mockPush.mock.calls;
-      const matched = calls.some((call) =>
-        (call[0] as string).includes("minPrice=10") &&
-        (call[0] as string).includes("maxPrice=100"),
+      const matched = calls.some(
+        (call) =>
+          (call[0] as string).includes("minPrice=10") &&
+          (call[0] as string).includes("maxPrice=100"),
       );
       expect(matched).toBe(true);
     });
@@ -342,7 +350,9 @@ describe("Sidebar", () => {
     fireEvent.click(mediumButton!);
     await waitFor(() => {
       const calls = mockPush.mock.calls;
-      const anyHasMax = calls.some((c) => (c[0] as string).includes("maxPrice=999999"));
+      const anyHasMax = calls.some((c) =>
+        (c[0] as string).includes("maxPrice=999999"),
+      );
       const anyIsBrowse = calls.some((c) => (c[0] as string) === "/browse");
       expect(anyHasMax || anyIsBrowse).toBe(true);
     });
@@ -416,7 +426,9 @@ describe("Sidebar", () => {
     fireEvent.click(checkbox);
     await waitFor(() => {
       const calls = mockPush.mock.calls;
-      const anyHasMax = calls.some((c) => (c[0] as string).includes("maxPrice=999999"));
+      const anyHasMax = calls.some((c) =>
+        (c[0] as string).includes("maxPrice=999999"),
+      );
       const anyIsBrowse = calls.some((c) => (c[0] as string) === "/browse");
       expect(anyHasMax || anyIsBrowse).toBe(true);
     });
@@ -471,7 +483,9 @@ describe("Sidebar", () => {
     });
 
     // Show price inputs & verify values
-    const priceRangeButton = screen.getByRole("button", { name: /Price Range/i });
+    const priceRangeButton = screen.getByRole("button", {
+      name: /Price Range/i,
+    });
     fireEvent.click(priceRangeButton);
     await waitFor(() => {
       const inputs = screen.getAllByRole("spinbutton");
