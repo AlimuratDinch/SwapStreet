@@ -23,7 +23,7 @@ jest.mock("lucide-react", () => ({
   Upload: () => <div data-testid="upload-icon">Upload</div>,
 }));
 
-// Mock next/image to render a simple img for tests
+// Mock next/image (renders img for tests)
 jest.mock("next/image", () => {
   const MockNextImage = (props: any) => {
     const { src, alt, ...rest } = props;
@@ -135,7 +135,6 @@ describe("WardrobePage", () => {
     it("should reject files larger than 5MB", async () => {
       render(<WardrobePage />);
 
-      // create a 6MB file
       const largeBuffer = new Uint8Array(6 * 1024 * 1024);
       const file = new File([largeBuffer], "big.png", { type: "image/png" });
       const input = document.querySelector('input[type="file"]');
@@ -607,10 +606,8 @@ describe("WardrobePage", () => {
 
     it("shows uploading indicator while upload is in progress", async () => {
       mockSessionStorage.setItem("accessToken", "test-token");
-      // make listing id available
       mockCatalogFetch();
 
-      // mock upload to a pending promise so uploadProgress stays true
       (global.fetch as jest.Mock).mockImplementationOnce(
         () => new Promise(() => {}),
       );
@@ -647,7 +644,7 @@ describe("WardrobePage", () => {
       if (input) {
         await userEvent.upload(input as HTMLElement, file);
 
-        // wait until uploaded image is shown (Upload new photo button present)
+        // wait until uploaded image shown (Upload new photo button)
         await waitFor(() => {
           expect(screen.getByTitle("Upload new photo")).toBeInTheDocument();
         });
@@ -664,20 +661,17 @@ describe("WardrobePage", () => {
     it("downloads image successfully", async () => {
       mockCatalogFetch();
 
-      // Mock successful upload
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ url: "http://test.com/uploaded.jpg" }),
           text: async () => "success",
         })
-        // Mock fetch for image blob
         .mockResolvedValueOnce({
           ok: true,
           blob: async () => new Blob(["a"], { type: "image/png" }),
         });
 
-      // mock URL.createObjectURL / revokeObjectURL (may not exist in test env)
       const originalCreate = (window.URL as any).createObjectURL;
       const originalRevoke = (window.URL as any).revokeObjectURL;
       (window.URL as any).createObjectURL = jest.fn(() => "blob:url");
@@ -705,7 +699,6 @@ describe("WardrobePage", () => {
           expect((window.URL as any).createObjectURL).toHaveBeenCalled();
         });
 
-        // restore originals
         (window.URL as any).createObjectURL = originalCreate;
         (window.URL as any).revokeObjectURL = originalRevoke;
       }
@@ -716,7 +709,6 @@ describe("WardrobePage", () => {
 
       const input = document.querySelector('input[type="file"]');
       if (input) {
-        // spy on click
         (input as HTMLInputElement).click = jest.fn();
 
         const frame = document.querySelector('div[role="button"][tabindex="0"]') as HTMLElement;
@@ -804,12 +796,11 @@ describe("WardrobePage", () => {
     });
 
     it("handles listing fetch returning non-ok without throwing", async () => {
-      // initial fetch for listing id returns not ok
       (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false });
 
       render(<WardrobePage />);
 
-      // page should render without crashing
+      // page renders without crashing
       expect(screen.getByTestId("header")).toBeInTheDocument();
     });
 
