@@ -20,29 +20,7 @@ describe("InfiniteBrowse", () => {
   });
 
   it("renders initial items and loads more on intersection", async () => {
-    let ioCb: IntersectionObserverCallback | null = null;
-    class IO {
-      constructor(cb: IntersectionObserverCallback) {
-        ioCb = cb;
-      }
-      observe(): void {
-        if (ioCb)
-          ioCb(
-            [{ isIntersecting: true } as unknown as IntersectionObserverEntry],
-            this as unknown as IntersectionObserver,
-          );
-      }
-      disconnect(): void {}
-      unobserve(): void {}
-      takeRecords(): IntersectionObserverEntry[] {
-        return [];
-      }
-    }
-    (
-      globalThis as unknown as { IntersectionObserver?: unknown }
-    ).IntersectionObserver = IO as unknown as typeof IntersectionObserver;
-
-    // First fetch returns two items
+    // First fetch returns two pages (first then next)
     const page1 = {
       items: [{ id: "a", title: "A", price: 1, images: [] }],
       nextCursor: "c1",
@@ -73,6 +51,13 @@ describe("InfiniteBrowse", () => {
 
     // After initial load, first item should be visible
     await waitFor(() => expect(screen.getByText("A")).toBeInTheDocument());
+
+    // Scrolling to bottom to trigger load (next page)
+    const container = screen.getByRole("main");
+    Object.defineProperty(container, "clientHeight", { value: 600 });
+    Object.defineProperty(container, "scrollHeight", { value: 700 });
+    Object.defineProperty(container, "scrollTop", { value: 100 });
+    container.dispatchEvent(new Event("scroll"));
 
     // load next page
     await waitFor(() => expect(screen.getByText("B")).toBeInTheDocument());
