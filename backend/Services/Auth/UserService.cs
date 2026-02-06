@@ -210,7 +210,7 @@ namespace backend.Services.Auth
 
             if (string.IsNullOrEmpty(frontendUrl))
             {
-                frontendUrl = "http://localhost:3000";
+                frontendUrl = "http://localhost";
             }
 
             var link = $"{frontendUrl}/auth/verify-email?token={user.ConfirmationToken}&email={user.Email}";

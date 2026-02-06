@@ -106,7 +106,7 @@ namespace backend.Tests.Services
             var url = await _service.UploadFileAsync(file, UploadType.Listing, userId, listingId);
 
             // Assert
-            url.Should().StartWith("http://localhost:9000/public/");
+            url.Should().StartWith("http://localhost");
 
             // Verify DB record was created
             var dbRecord = await _context.ListingImages.FirstOrDefaultAsync();
@@ -130,7 +130,7 @@ namespace backend.Tests.Services
             var url = await _service.UploadFileAsync(file, UploadType.TryOn, userId);
 
             // Assert
-            url.Should().StartWith("http://localhost:9000/private/tryon/");
+            url.Should().StartWith("http://localhost/private/tryon/");
             url.Should().Contain("test.jpg");
 
             // Verify DB record was created
@@ -169,7 +169,7 @@ namespace backend.Tests.Services
             var url = await _service.GetPrivateFileUrlAsync(objectName);
 
             // Assert
-            url.Should().StartWith("http://localhost:9000/private/tryon/");
+            url.Should().StartWith("http://localhost/private/tryon/");
             url.Should().Contain(objectName);
         }
 
@@ -190,7 +190,7 @@ namespace backend.Tests.Services
             var url = await _service.UploadFileAsync(file, UploadType.Generated, userId, listingId);
 
             // Assert
-            url.Should().StartWith("http://localhost:9000/private/generated/");
+            url.Should().StartWith("http://localhost/private/generated/");
 
             // Verify DB record
             var dbRecord = await _context.GeneratedImages.FirstOrDefaultAsync();

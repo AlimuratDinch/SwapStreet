@@ -131,7 +131,7 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
 {
     builder.Configuration.AddEnvironmentVariables();
 
-    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:3000";
+    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost";
     builder.Configuration["FRONTEND_URL"] = frontendUrl;
 }
 
@@ -143,7 +143,7 @@ static void ConfigureCors(WebApplicationBuilder builder)
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost:3000")
+            policy.WithOrigins("http://localhost")
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
