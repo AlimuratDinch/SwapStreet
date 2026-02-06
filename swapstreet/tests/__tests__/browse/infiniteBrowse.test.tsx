@@ -146,4 +146,90 @@ describe("InfiniteBrowse", () => {
     const dups = screen.getAllByText(/Dup/);
     expect(dups.length).toBe(1);
   });
+
+  it("stops when nextCursor equals previous cursor (no further loads)", async () => {
+    const page = {
+      items: [{ id: "x", title: "X", price: 1, images: [] }],
+      nextCursor: "same",
+      hasNextPage: true,
+    };
+
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => page });
+    global.fetch = fetchMock as unknown as typeof global.fetch;
+
+    render(
+      <InfiniteBrowse
+        initialItems={[]}
+        initialCursor={"same"}
+        initialHasNext={true}
+      />,
+    );
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    // Scrolling should NOT trigger fetch
+    const container = screen.getByRole("main");
+    Object.defineProperty(container, "clientHeight", { value: 600 });
+    Object.defineProperty(container, "scrollHeight", { value: 700 });
+    Object.defineProperty(container, "scrollTop", { value: 100 });
+
+    await act(async () => {
+      container.dispatchEvent(new Event("scroll"));
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries on failure with backoff and succeeds on retry", async () => {
+    jest.useFakeTimers();
+    const page = {
+      items: [{ id: "r1", title: "Retry", price: 5, images: [] }],
+      nextCursor: null,
+      hasNextPage: false,
+    };
+
+    const fetchMock = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce({ ok: true, json: async () => page });
+
+    global.fetch = fetchMock as unknown as typeof global.fetch;
+
+    render(
+      <InfiniteBrowse
+        initialItems={[]}
+        initialCursor={null}
+        initialHasNext={true}
+      />,
+    );
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("Retry")).toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
+  it("handles API returning array directly", async () => {
+    const pageArr = [{ id: "arr1", title: "Arr", price: 2, images: [] }];
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => pageArr }) as unknown as typeof global.fetch;
+
+    render(
+      <InfiniteBrowse
+        initialItems={[]}
+        initialCursor={null}
+        initialHasNext={true}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText("Arr")).toBeInTheDocument());
+  });
 });
