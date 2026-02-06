@@ -40,7 +40,8 @@ export async function fetchClothingItems(
     if (params?.categoryId) q.set("categoryId", params.categoryId);
     if (params?.conditions) q.set("conditions", params.conditions);
 
-    const base = process.env.NEXT_PUBLIC_API_URL || "http://backend:8080";
+    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+    const base = envBase || "";
     const url = `${base}/api/search/search${q.toString() ? `?${q.toString()}` : ""}`;
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -63,7 +64,8 @@ export async function fetchSearchPage(
     if (params?.minPrice) q.set("minPrice", params.minPrice);
     if (params?.categoryId) q.set("categoryId", params.categoryId);
 
-    const base = process.env.NEXT_PUBLIC_API_URL || "http://backend:8080";
+    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+    const base = envBase || "";
     const url = `${base}/api/search/search?${q.toString()}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
