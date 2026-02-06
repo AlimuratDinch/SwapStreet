@@ -77,7 +77,6 @@ export default function InfiniteBrowse({
           if (mountedRef.current) setLoading(false);
           fetchPage();
         }, backoff);
-        // clear timeout on unmount
         if (!mountedRef.current) clearTimeout(t);
       } else {
         if (mountedRef.current) {
