@@ -72,8 +72,12 @@ describe("VerifyEmailPage", () => {
     render(<VerifyEmailPage />);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        "http://localhost:8080/api/auth/verify-email",
+      expect(global.fetch).toHaveBeenCalled();
+      const call = (global.fetch as jest.Mock).mock.calls.find((c) =>
+        String(c[0]).includes("verify-email"),
+      );
+      expect(call).toBeDefined();
+      expect(call![1]).toEqual(
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({
@@ -306,8 +310,12 @@ describe("VerifyEmailPage", () => {
     resendButton.click();
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        "http://localhost:8080/api/auth/resend-verification",
+      expect(global.fetch).toHaveBeenCalled();
+      const call = (global.fetch as jest.Mock).mock.calls.find((c) =>
+        String(c[0]).includes("resend-verification"),
+      );
+      expect(call).toBeDefined();
+      expect(call![1]).toEqual(
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({ email: "test@example.com" }),

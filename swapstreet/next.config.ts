@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 import webpack from "webpack";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
+    // This is the key for Local Staging
     remotePatterns: [
       {
         protocol: "https",
@@ -15,8 +17,13 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "http",
-        hostname: "minio",
+        hostname: "minio", // Internal Docker name for server-side optimization
         port: "9000",
+      },
+      // If your staging Nginx uses a domain via hosts file
+      {
+        protocol: "http",
+        hostname: "minio.swapstreet.ca",
       },
     ],
   },
@@ -32,14 +39,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
-
   serverComponentsExternalPackages: ["tslog"],
   webpack: (config, { isServer }) => {
-    // Prevent tslog from being bundled in client-side code
     if (!isServer) {
-      // Use IgnorePlugin to completely ignore tslog in client bundles
       config.plugins.push(
         new webpack.IgnorePlugin({
           resourceRegExp: /^tslog$/,

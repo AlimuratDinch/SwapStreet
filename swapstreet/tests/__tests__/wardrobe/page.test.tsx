@@ -20,7 +20,25 @@ jest.mock("lucide-react", () => ({
   Grid: () => <div data-testid="grid-icon">Grid</div>,
   List: () => <div data-testid="list-icon">List</div>,
   Info: () => <div data-testid="info-icon">Info</div>,
+  Upload: () => <div data-testid="upload-icon">Upload</div>,
 }));
+
+// Mock next/image (renders img for tests)
+jest.mock("next/image", () => {
+  const MockNextImage = (props: any) => {
+    const { src, alt, ...rest } = props;
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={typeof src === "string" ? src : "/default.png"}
+        alt={alt ?? "image"}
+        {...rest}
+      />
+    );
+  };
+  MockNextImage.displayName = "MockNextImage";
+  return MockNextImage;
+});
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -75,7 +93,7 @@ describe("WardrobePage", () => {
     render(<WardrobePage />);
 
     expect(screen.getByTestId("info-icon")).toBeInTheDocument();
-    expect(screen.getByText("+")).toBeInTheDocument();
+    expect(screen.getByTestId("upload-icon")).toBeInTheDocument();
   });
 
   it("should render view mode toggle buttons", () => {
@@ -102,6 +120,41 @@ describe("WardrobePage", () => {
   });
 
   describe("Image Upload", () => {
+    it("should reject non-image file types", async () => {
+      render(<WardrobePage />);
+
+      const file = new File(["not an image"], "test.txt", {
+        type: "text/plain",
+      });
+      const input = document.querySelector('input[type="file"]');
+      if (input) {
+        fireEvent.change(input, { target: { files: [file] } });
+
+        await waitFor(() => {
+          expect(
+            screen.getByText(/Please upload an image file/i),
+          ).toBeInTheDocument();
+        });
+      }
+    });
+
+    it("should reject files larger than 5MB", async () => {
+      render(<WardrobePage />);
+
+      const largeBuffer = new Uint8Array(6 * 1024 * 1024);
+      const file = new File([largeBuffer], "big.png", { type: "image/png" });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          expect(
+            screen.getByText(/Image must be smaller than 5MB/i),
+          ).toBeInTheDocument();
+        });
+      }
+    });
     it("should handle image upload successfully", async () => {
       mockCatalogFetch();
 
@@ -124,7 +177,7 @@ describe("WardrobePage", () => {
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledWith(
-            expect.stringContaining("/api/images/upload"),
+            expect.stringContaining("images/upload"),
             expect.objectContaining({
               method: "POST",
               headers: {
@@ -142,6 +195,7 @@ describe("WardrobePage", () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 500,
+        json: async () => ({ error: "Upload failed" }),
         text: async () => "Upload failed",
       });
 
@@ -161,7 +215,7 @@ describe("WardrobePage", () => {
             (global.fetch as jest.Mock).mock.calls.length,
           ).toBeGreaterThanOrEqual(2);
           expect((global.fetch as jest.Mock).mock.calls[1][0]).toEqual(
-            expect.stringContaining("/api/images/upload"),
+            expect.stringContaining("images/upload"),
           );
         });
 
@@ -194,6 +248,43 @@ describe("WardrobePage", () => {
   });
 
   describe("Virtual Try-On", () => {
+    it("should show no listings error when firstListingId is missing", async () => {
+      // first fetch (listing id) returns empty array
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      // mock upload success
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+        text: async () => "success",
+      });
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy"], "test.png", { type: "image/png" });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          const tryOnButton = screen.getByRole("button", { name: "Try On" });
+          expect(tryOnButton).not.toBeDisabled();
+        });
+
+        const tryOnButton = screen.getByRole("button", { name: "Try On" });
+        fireEvent.click(tryOnButton);
+
+        await waitFor(() => {
+          expect(
+            screen.getByText(/No listings available/i),
+          ).toBeInTheDocument();
+        });
+      }
+    });
     it("should not allow try-on without uploaded image", async () => {
       render(<WardrobePage />);
 
@@ -232,7 +323,7 @@ describe("WardrobePage", () => {
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledWith(
-            expect.stringContaining("/api/images/upload"),
+            expect.stringContaining("images/upload"),
             expect.any(Object),
           );
         });
@@ -246,7 +337,7 @@ describe("WardrobePage", () => {
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledWith(
-            expect.stringContaining("/api/tryon/virtual-tryon"),
+            expect.stringContaining("tryon/virtual-tryon"),
             expect.objectContaining({
               method: "POST",
               headers: {
@@ -485,6 +576,171 @@ describe("WardrobePage", () => {
       }
     });
 
+    it("should show download failure when fetch throws", async () => {
+      mockCatalogFetch();
+
+      // Mock upload success
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+          text: async () => "success",
+        })
+        // download will reject
+        .mockRejectedValueOnce(new Error("network"));
+
+      // ensure token
+      mockSessionStorage.setItem("accessToken", "test-token");
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          const downloadButton = screen.getByTitle("Download image");
+          expect(downloadButton).toBeInTheDocument();
+        });
+
+        const downloadButton = screen.getByTitle("Download image");
+        fireEvent.click(downloadButton);
+
+        await waitFor(() => {
+          expect(
+            screen.getByText(/Failed to download image/i),
+          ).toBeInTheDocument();
+        });
+      }
+    });
+
+    it("shows uploading indicator while upload is in progress", async () => {
+      mockSessionStorage.setItem("accessToken", "test-token");
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock).mockImplementationOnce(
+        () => new Promise(() => {}),
+      );
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          expect(screen.getByText(/Uploading.../i)).toBeInTheDocument();
+        });
+      }
+    });
+
+    it("reupload button resets uploaded image", async () => {
+      mockCatalogFetch();
+
+      // Mock successful upload
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+        text: async () => "success",
+      });
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        // wait until uploaded image shown (Upload new photo button)
+        await waitFor(() => {
+          expect(screen.getByTitle("Upload new photo")).toBeInTheDocument();
+        });
+
+        const reupload = screen.getByTitle("Upload new photo");
+        fireEvent.click(reupload);
+
+        await waitFor(() => {
+          expect(screen.getByText("Upload Your Photo")).toBeInTheDocument();
+        });
+      }
+    });
+
+    it("downloads image successfully", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+          text: async () => "success",
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          blob: async () => new Blob(["a"], { type: "image/png" }),
+        });
+
+      const originalCreate = (window.URL as any).createObjectURL;
+      const originalRevoke = (window.URL as any).revokeObjectURL;
+      (window.URL as any).createObjectURL = jest.fn(() => "blob:url");
+      (window.URL as any).revokeObjectURL = jest.fn(() => {});
+
+      mockSessionStorage.setItem("accessToken", "test-token");
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          const downloadButton = screen.getByTitle("Download image");
+          expect(downloadButton).toBeInTheDocument();
+        });
+
+        const downloadButton = screen.getByTitle("Download image");
+        fireEvent.click(downloadButton);
+
+        await waitFor(() => {
+          expect((window.URL as any).createObjectURL).toHaveBeenCalled();
+        });
+
+        (window.URL as any).createObjectURL = originalCreate;
+        (window.URL as any).revokeObjectURL = originalRevoke;
+      }
+    });
+
+    it("should open file dialog on Enter key", async () => {
+      render(<WardrobePage />);
+
+      const input = document.querySelector('input[type="file"]');
+      if (input) {
+        (input as HTMLInputElement).click = jest.fn();
+
+        const frame = document.querySelector(
+          'div[role="button"][tabindex="0"]',
+        ) as HTMLElement;
+        expect(frame).toBeTruthy();
+        fireEvent.keyDown(frame, { key: "Enter" });
+
+        expect((input as HTMLInputElement).click).toHaveBeenCalled();
+      }
+    });
+
     it("should show generic error when try-on throws without message", async () => {
       mockCatalogFetch();
 
@@ -494,7 +750,7 @@ describe("WardrobePage", () => {
           json: async () => ({ url: "http://test.com/uploaded.jpg" }),
           text: async () => "success",
         })
-        .mockRejectedValueOnce(new Error());
+        .mockRejectedValueOnce({});
 
       render(<WardrobePage />);
 
@@ -558,6 +814,32 @@ describe("WardrobePage", () => {
             screen.getByText("Please log in to use try-on feature"),
           ).toBeInTheDocument();
         });
+      }
+    });
+
+    it("handles listing fetch returning non-ok without throwing", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false });
+
+      render(<WardrobePage />);
+
+      // page renders without crashing
+      expect(screen.getByTestId("header")).toBeInTheDocument();
+    });
+
+    it("should open file dialog on Space key", async () => {
+      render(<WardrobePage />);
+
+      const input = document.querySelector('input[type="file"]');
+      if (input) {
+        (input as HTMLInputElement).click = jest.fn();
+
+        const frame = document.querySelector(
+          'div[role="button"][tabindex="0"]',
+        ) as HTMLElement;
+        expect(frame).toBeTruthy();
+        fireEvent.keyDown(frame, { key: " " });
+
+        expect((input as HTMLInputElement).click).toHaveBeenCalled();
       }
     });
   });

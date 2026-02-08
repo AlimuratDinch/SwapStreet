@@ -84,7 +84,7 @@ export default function ProfilePage() {
     ? `${profile.cityName}, ${profile.provinceCode || ""}`
     : "Location not set";
 
-  // Generate MinIO URL for images
+  // Generate MinIO URL for images // WHAT IS THIS?
   const minioUrl =
     process.env.NEXT_PUBLIC_MINIO_URL || "http://localhost:9000/public";
   const profileImageUrl = profile.profileImagePath

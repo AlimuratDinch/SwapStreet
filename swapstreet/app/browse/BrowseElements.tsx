@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = "force-dynamic";
 import {
   Search,
   Leaf,
@@ -9,7 +9,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Shirt } from "lucide-react";
 import Link from "next/link";
@@ -129,21 +129,45 @@ export function Header({ showCenterNav = true }: HeaderProps) {
   );
 }
 
-export function SearchBar() {
+export function SearchBar({
+  onSearch,
+  initialValue = "",
+}: {
+  onSearch: (val: string) => void;
+  initialValue?: string;
+}) {
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      onSearch(value);
+    }
+  };
+
   return (
     <div className="flex items-center border border-black rounded px-2 py-1 bg-white">
       <Search className="w-4 h-4 text-gray-500" />
       <input
         type="text"
         placeholder="Search..."
-        className="ml-2 outline-none w-full"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={() => onSearch(value)}
+        className="ml-2 outline-none w-full bg-transparent text-sm"
       />
     </div>
   );
 }
 
 export function Sidebar() {
-  // Fixed category options per design request
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [categories] = useState<{ id: number; name: string }[]>([
     { id: 1, name: "Tops" },
     { id: 2, name: "Bottoms" },
@@ -152,41 +176,77 @@ export function Sidebar() {
     { id: 5, name: "Accessories" },
   ]);
 
-  // Numeric price values used by the slider UI
   const [minPriceVal, setMinPriceVal] = useState<number>(0);
   const [maxPriceVal, setMaxPriceVal] = useState<number>(999999);
   const [conditions, setConditions] = useState<string[]>([]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
   const [showPrice, setShowPrice] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showCondition, setShowCondition] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
+  // Use ref to track if we're initializing from URL
+  const isInitialized = useRef(false);
+
+  // Initialize state from URL params (runs once on mount)
   useEffect(() => {
     const cat = searchParams.get("categoryId");
-    if (cat) setCategoryId(cat);
-  }, [searchParams]);
-
-  useEffect(() => {
-    // Sync initial conditions from URL
+    const q = searchParams.get("q") || "";
     const conditionsParam = searchParams.get("conditions");
+    const sizeParam = searchParams.get("size");
+    const minP = searchParams.get("minPrice");
+    const maxP = searchParams.get("maxPrice");
+
+    setCategoryId(cat);
+    setSearchQuery(q);
+
     if (conditionsParam) {
       setConditions(conditionsParam.split(",").map((c) => c.trim()));
     }
+
+    setSelectedSize(sizeParam);
+
+    if (minP) {
+      const v = Number(minP);
+      if (!isNaN(v)) setMinPriceVal(v);
+    }
+
+    if (maxP) {
+      const v = Number(maxP);
+      if (!isNaN(v)) setMaxPriceVal(v);
+    }
+
+    isInitialized.current = true;
   }, [searchParams]);
 
+  // Update URL when filters change (but only after initialization)
   useEffect(() => {
+    if (!isInitialized.current) return;
+
     const params = new URLSearchParams();
+
     if (categoryId) params.set("categoryId", categoryId);
-    if (minPriceVal) params.set("minPrice", minPriceVal.toString());
-    if (maxPriceVal) params.set("maxPrice", maxPriceVal.toString());
+    if (minPriceVal > 0) params.set("minPrice", minPriceVal.toString());
+    if (maxPriceVal < 999999) params.set("maxPrice", maxPriceVal.toString());
     if (selectedSize) params.set("size", selectedSize);
+    if (searchQuery) params.set("q", searchQuery);
     if (conditions.length > 0) params.set("conditions", conditions.join(","));
-    const query = params.toString();
-    router.push(query ? `/browse?${query}` : "/browse");
-  }, [categoryId, minPriceVal, maxPriceVal, selectedSize, conditions, router]);
+
+    const newQueryString = params.toString();
+    router.replace(newQueryString ? `/browse?${newQueryString}` : "/browse", {
+      scroll: false,
+    });
+  }, [
+    categoryId,
+    minPriceVal,
+    maxPriceVal,
+    selectedSize,
+    conditions,
+    searchQuery,
+    router,
+  ]);
 
   const handleConditionToggle = (condition: string) => {
     setConditions((prev) =>
@@ -202,12 +262,13 @@ export function Sidebar() {
     setSelectedSize(null);
     setConditions([]);
     setCategoryId(null);
-    router.push("/browse");
+    setSearchQuery("");
   };
 
   return (
-    <aside className="w-64 bg-[#d9d9d9] border-r p-4 flex flex-col gap-6 pt-24">
-      <SearchBar />
+    <aside className="w-64 bg-[#d9d9d9] border-r p-4 flex flex-col gap-6 pt-24 h-screen overflow-y-auto sticky top-0">
+      <SearchBar onSearch={setSearchQuery} initialValue={searchQuery} />
+
       <section>
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold">Filters</h3>
@@ -218,7 +279,8 @@ export function Sidebar() {
             Clear
           </button>
         </div>
-        {/* Size selector (always visible) */}
+
+        {/* Size selector */}
         <div className="mb-4">
           <h4 className="text-sm font-medium mb-2">Size</h4>
           <div className="grid grid-cols-3 gap-2">
@@ -240,7 +302,7 @@ export function Sidebar() {
 
         <div className="h-px bg-black my-3" />
 
-        {/* Price inputs (collapsed by default) */}
+        {/* Price inputs */}
         <div className="mb-4">
           <button
             className="w-full flex items-center justify-between"
@@ -262,10 +324,7 @@ export function Sidebar() {
                     value={minPriceVal}
                     onChange={(e) => {
                       const v = Number(e.target.value);
-                      const clamped = Number.isNaN(v)
-                        ? 0
-                        : Math.max(0, Math.min(v, maxPriceVal));
-                      setMinPriceVal(clamped);
+                      setMinPriceVal(Number.isNaN(v) ? 0 : v);
                     }}
                     className="w-full bg-[#d9d9d9] border-0 py-1 text-sm focus:outline-none"
                   />
@@ -278,10 +337,7 @@ export function Sidebar() {
                     value={maxPriceVal}
                     onChange={(e) => {
                       const v = Number(e.target.value);
-                      const clamped = Number.isNaN(v)
-                        ? maxPriceVal
-                        : Math.max(0, Math.max(v, minPriceVal));
-                      setMaxPriceVal(clamped);
+                      setMaxPriceVal(Number.isNaN(v) ? 999999 : v);
                     }}
                     className="w-full bg-[#d9d9d9] border-0 py-1 text-sm focus:outline-none"
                   />
@@ -290,7 +346,10 @@ export function Sidebar() {
             </div>
           )}
         </div>
+
         <div className="h-px bg-black my-3" />
+
+        {/* Categories */}
         <div className="mb-4">
           <button
             className="w-full flex items-center justify-between"
@@ -307,7 +366,11 @@ export function Sidebar() {
                 <button
                   key={category.id}
                   onClick={() => {
-                    setCategoryId(category.id.toString());
+                    setCategoryId((prev) =>
+                      prev === category.id.toString()
+                        ? null
+                        : category.id.toString(),
+                    );
                   }}
                   className={`rounded p-2 text-xs text-center transition hover:bg-teal-500 hover:text-white ${
                     categoryId === category.id.toString()
@@ -323,6 +386,8 @@ export function Sidebar() {
         </div>
 
         <div className="h-px bg-black my-3" />
+
+        {/* Condition */}
         <div>
           <button
             className="w-full flex items-center justify-between mb-2"
@@ -338,15 +403,13 @@ export function Sidebar() {
               {["New", "Like New", "Used", "Good"].map((condition) => (
                 <label
                   key={condition}
-                  className={`flex items-center gap-2 rounded p-2 text-xs transition ease-in-out bg-[#d9d9d9]`}
+                  className={`flex items-center gap-2 rounded p-2 text-xs transition ease-in-out bg-[#d9d9d9] cursor-pointer hover:bg-gray-300`}
                 >
                   <input
                     type="checkbox"
                     className="accent-teal-500 ml-2 w-4 h-4"
                     checked={conditions.includes(condition)}
-                    onChange={() => {
-                      handleConditionToggle(condition);
-                    }}
+                    onChange={() => handleConditionToggle(condition)}
                   />
                   <span>{condition}</span>
                 </label>
@@ -368,9 +431,9 @@ export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
           <Image
             src={imgSrc}
             alt={title}
-            width={200}
-            height={200}
-            className="card-item-image"
+            width={300}
+            height={300}
+            className="card-item-image object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="card-item-image-fallback">Image</div>
@@ -397,7 +460,6 @@ export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
   return content;
 }
 
-// ---------- Card ----------
 interface CardItemProps {
   title: string;
   imgSrc?: string;

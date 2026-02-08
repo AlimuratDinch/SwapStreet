@@ -29,6 +29,7 @@ jest.mock("@/app/browse/BrowseElements", () => ({
 
 const mockUseAuth = jest.fn();
 jest.mock("@/contexts/AuthContext", () => ({
+  __esModule: true,
   useAuth: () => mockUseAuth(),
 }));
 

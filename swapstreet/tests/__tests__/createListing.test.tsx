@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 // Mock AuthContext
 jest.mock("@/contexts/AuthContext", () => ({
+  __esModule: true,
   useAuth: () => ({ accessToken: "test-token" }),
 }));
 
@@ -12,7 +13,7 @@ import SellerListingPage from "@/app/seller/createListing/page";
 // Mock fetch for profile API
 beforeAll(() => {
   global.fetch = jest.fn((url) => {
-    if (typeof url === "string" && url.includes("/api/profile/me")) {
+    if (typeof url === "string" && url.includes("profile/me")) {
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
@@ -64,6 +65,20 @@ describe("SellerListingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      if (typeof url === "string" && url.includes("profile/me")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+        } as unknown as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+        text: () => Promise.resolve(""),
+      } as unknown as Response);
+    });
+
     (useRouter as jest.Mock).mockReturnValue({
       push: mockPush,
       back: mockBack,
@@ -217,6 +232,7 @@ describe("SellerListingPage", () => {
       fireEvent.change(priceInput, { target: { value: "29.99" } });
       const imagesInput = await screen.findByLabelText(/^Images/i);
       fireEvent.change(imagesInput, { target: { files: [createFile()] } });
+      await waitFor(() => {});
     };
 
     it("submits form successfully with valid data", async () => {
@@ -323,13 +339,13 @@ describe("SellerListingPage", () => {
     it("shows error when backend submission fails", async () => {
       // Mock fetch for listing creation to fail
       (global.fetch as jest.Mock).mockImplementation((url) => {
-        if (typeof url === "string" && url.includes("/api/profile/me")) {
+        if (typeof url === "string" && url.includes("profile/me")) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
           } as unknown as Response);
         }
-        if (typeof url === "string" && url.includes("/api/listings")) {
+        if (typeof url === "string" && url.includes("listings")) {
           return Promise.resolve({
             ok: false,
             text: () => Promise.resolve("Failed to create listing"),
@@ -353,7 +369,7 @@ describe("SellerListingPage", () => {
 
     it("shows error when profile fetch fails", async () => {
       (global.fetch as jest.Mock).mockImplementation((url) => {
-        if (typeof url === "string" && url.includes("/api/profile/me")) {
+        if (typeof url === "string" && url.includes("profile/me")) {
           return Promise.resolve({
             ok: false,
             text: () => Promise.resolve("fail"),
@@ -374,13 +390,13 @@ describe("SellerListingPage", () => {
 
     it("shows error when profileId is missing", async () => {
       (global.fetch as jest.Mock).mockImplementation((url) => {
-        if (typeof url === "string" && url.includes("/api/profile/me")) {
+        if (typeof url === "string" && url.includes("profile/me")) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ fsa: "A1A" }),
           } as unknown as Response);
         }
-        if (typeof url === "string" && url.includes("/api/listings")) {
+        if (typeof url === "string" && url.includes("listings")) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ id: "new-id" }),
@@ -403,19 +419,19 @@ describe("SellerListingPage", () => {
 
     it("shows error when fsa is missing", async () => {
       (global.fetch as jest.Mock).mockImplementation((url) => {
-        if (typeof url === "string" && url.includes("/api/profile/me")) {
+        if (typeof url === "string" && url.includes("profile/me")) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ id: "test-profile-id" }),
           } as unknown as Response);
         }
-        if (typeof url === "string" && url.includes("/api/listings")) {
+        if (typeof url === "string" && url.includes("listings")) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ id: "new-id" }),
           } as unknown as Response);
         }
-        if (typeof url === "string" && url.includes("/api/images/upload")) {
+        if (typeof url === "string" && url.includes("images/upload")) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({}),
@@ -437,19 +453,19 @@ describe("SellerListingPage", () => {
 
     it("shows error when image upload fails after listing creation", async () => {
       (global.fetch as jest.Mock).mockImplementation((url) => {
-        if (typeof url === "string" && url.includes("/api/profile/me")) {
+        if (typeof url === "string" && url.includes("profile/me")) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
           } as unknown as Response);
         }
-        if (typeof url === "string" && url.includes("/api/listings")) {
+        if (typeof url === "string" && url.includes("listings")) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ id: "new-listing" }),
           } as unknown as Response);
         }
-        if (typeof url === "string" && url.includes("/api/images/upload")) {
+        if (typeof url === "string" && url.includes("images/upload")) {
           return Promise.resolve({
             ok: false,
             text: () => Promise.resolve("Image upload failed"),
