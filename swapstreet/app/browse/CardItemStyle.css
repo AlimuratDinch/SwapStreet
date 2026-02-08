@@ -80,7 +80,7 @@
   color: #111;
 }
 
-.card-item-wishlist-btn {
+.card-item-wardrobe-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -92,6 +92,6 @@
   transition: transform 0.2s ease;
 }
 
-.card-item-wishlist-btn:hover {
+.card-item-wardrobe-btn:hover {
   transform: scale(1.1);
 }
