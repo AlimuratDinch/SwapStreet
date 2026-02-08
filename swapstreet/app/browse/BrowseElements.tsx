@@ -14,6 +14,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Shirt } from "lucide-react";
 import Link from "next/link";
 import {
+  addWardrobeItem,
+  hasWardrobeItem,
+  removeWardrobeItem,
+} from "../wardrobe/wardrobeStorage";
+import {
   NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
@@ -422,7 +427,68 @@ export function Sidebar() {
   );
 }
 
-export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
+export function CardItem({
+  id,
+  title,
+  imgSrc,
+  price,
+  href,
+}: CardItemProps) {
+  const [inWardrobe, setInWardrobe] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setInWardrobe(hasWardrobeItem(id));
+  }, [id]);
+
+  const handleAddToWardrobe = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const token = sessionStorage.getItem("accessToken");
+      if (!token) {
+        console.error("Missing access token for wishlist request.");
+        return;
+      }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+      const method = inWardrobe ? "DELETE" : "POST";
+      const res = await fetch(`${apiUrl}/wishlist/${id}`, {
+        method,
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const errBody = await res
+          .json()
+          .catch(() => ({ error: "Unknown error" }));
+        console.error("Failed to add to wishlist:", res.status, errBody);
+        return;
+      }
+      if (inWardrobe) {
+        removeWardrobeItem(id);
+        setInWardrobe(false);
+      } else {
+        addWardrobeItem({
+          id,
+          title,
+          price,
+          imageUrl: imgSrc ?? null,
+        });
+        setInWardrobe(true);
+      }
+    } catch (err) {
+      console.error("Failed to add to wishlist:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const content = (
     <div className="card-item">
       {/* Square image container */}
@@ -444,6 +510,19 @@ export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
         <h4 className="card-item-title">{title}</h4>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
+          <button
+            type="button"
+            className="card-item-wardrobe-btn"
+            title={inWardrobe ? "In wardrobe" : "Add to wardrobe"}
+            aria-pressed={inWardrobe}
+            onClick={handleAddToWardrobe}
+            disabled={isSaving}
+          >
+            <ShoppingBag
+              className="w-5 h-5"
+              fill={inWardrobe ? "#14b8a6" : "none"}
+            />
+          </button>
         </div>
       </div>
     </div>
@@ -461,6 +540,7 @@ export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
 }
 
 interface CardItemProps {
+  id: string;
   title: string;
   imgSrc?: string;
   price: number;

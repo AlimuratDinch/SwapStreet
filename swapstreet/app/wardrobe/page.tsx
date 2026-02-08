@@ -4,6 +4,12 @@ import { Header } from "../browse/BrowseElements";
 import { useState, useRef, useEffect } from "react";
 import { Star, X, Download, Grid, List, Info, Upload } from "lucide-react";
 import Image from "next/image";
+import {
+  readWardrobeItems,
+  removeWardrobeItem,
+  WARDROBE_STORAGE_KEY,
+  type WardrobeItem,
+} from "./wardrobeStorage";
 
 export default function WardrobePage() {
   const [loading, setLoading] = useState(false);
@@ -12,10 +18,12 @@ export default function WardrobePage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showOriginal, setShowOriginal] = useState(true);
-  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [recentResults, setRecentResults] = useState<string[]>([]);
   const [firstListingId, setFirstListingId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(false);
+  const [isRemoving, setIsRemoving] = useState<Set<string>>(new Set());
+  const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
 
   const mainImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,7 +52,18 @@ export default function WardrobePage() {
     fetchListingId();
   }, [API_URL]);
 
-  const toggleFavorite = (itemId: number) => {
+  useEffect(() => {
+    setWardrobeItems(readWardrobeItems());
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === WARDROBE_STORAGE_KEY) {
+        setWardrobeItems(readWardrobeItems());
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const toggleFavorite = (itemId: string) => {
     setFavorites((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
@@ -56,15 +75,41 @@ export default function WardrobePage() {
     });
   };
 
-  // Mock wardrobe items
-  const wardrobeItems = Array(12)
-    .fill(null)
-    .map((_, i) => ({
-      id: i + 1,
-      imageUrl: "/images/placeholder.jpg",
-      title: `Wardrobe Item ${i + 1}`,
-      isFavorite: i === 0,
-    }));
+  const handleRemoveFromWardrobe = async (itemId: string) => {
+    if (isRemoving.has(itemId)) return;
+    setIsRemoving((prev) => new Set(prev).add(itemId));
+    try {
+      const token = sessionStorage.getItem("accessToken");
+      if (!token) {
+        console.error("Missing access token for wishlist request.");
+        return;
+      }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+      const res = await fetch(`${apiUrl}/wishlist/${itemId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok && res.status !== 404) {
+        const errBody = await res
+          .json()
+          .catch(() => ({ error: "Unknown error" }));
+        console.error("Failed to remove from wishlist:", res.status, errBody);
+        return;
+      }
+      setWardrobeItems(removeWardrobeItem(itemId));
+    } catch (err) {
+      console.error("Failed to remove from wishlist:", err);
+    } finally {
+      setIsRemoving((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -467,50 +512,71 @@ export default function WardrobePage() {
               viewMode === "grid" ? "grid-cols-4" : "grid-cols-1"
             }`}
           >
-            {wardrobeItems.map((item) => (
-              <div
-                key={item.id}
-                className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden group ${
-                  viewMode === "list" ? "flex" : ""
-                }`}
-              >
-                {/* Item Image */}
+            {wardrobeItems.length === 0 && (
+              <div className="col-span-full text-center text-gray-500">
+                Your wardrobe is empty. Add items from Browse.
+              </div>
+            )}
+            {wardrobeItems.map((item) => {
+              const safePrice = Number.isFinite(item.price) ? item.price : 0;
+              return (
                 <div
-                  className={`relative bg-gray-100 flex items-center justify-center ${
-                    viewMode === "grid" ? "aspect-square" : "w-32 h-32"
+                  key={item.id}
+                  className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden group ${
+                    viewMode === "list" ? "flex" : ""
                   }`}
                 >
-                  {/* Wishlist Star */}
-                  <button
-                    onClick={() => toggleFavorite(item.id)}
-                    className={`absolute top-3 left-3 p-1.5 bg-white/80 rounded-full transition-all ${
-                      favorites.has(item.id)
-                        ? "opacity-100"
-                        : "opacity-0 group-hover:opacity-100"
+                  <div
+                    className={`relative bg-gray-100 flex items-center justify-center ${
+                      viewMode === "grid" ? "aspect-square" : "w-32 h-32"
                     }`}
                   >
-                    <Star
-                      className={`w-5 h-5 ${
+                    {item.imageUrl ? (
+                      <Image
+                        src={item.imageUrl}
+                        alt={item.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">No image</span>
+                    )}
+                    <button
+                      onClick={() => toggleFavorite(item.id)}
+                      className={`absolute top-3 left-3 p-1.5 bg-white/80 rounded-full transition-all ${
                         favorites.has(item.id)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-400"
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100"
                       }`}
-                    />
-                  </button>
-
-                  {/* Remove Button */}
-                  <button className="absolute top-3 right-3 p-1.5 bg-white/80 hover:bg-white rounded-full shadow-sm transition-colors opacity-0 group-hover:opacity-100">
-                    <X className="w-5 h-5 text-gray-600" />
-                  </button>
+                    >
+                      <Star
+                        className={`w-5 h-5 ${
+                          favorites.has(item.id)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-400"
+                        }`}
+                      />
+                    </button>
+                    <button
+                      onClick={() => handleRemoveFromWardrobe(item.id)}
+                      className="absolute top-3 right-3 p-1.5 bg-white/80 hover:bg-white rounded-full shadow-sm transition-colors opacity-0 group-hover:opacity-100"
+                      title="Remove from wardrobe"
+                      disabled={isRemoving.has(item.id)}
+                    >
+                      <X className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+                  <div className="p-4 flex-1">
+                    <div className="font-medium text-gray-900 mb-1 line-clamp-2">
+                      {item.title}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      ${safePrice.toFixed(2)}
+                    </div>
+                  </div>
                 </div>
-
-                {/* Item Info */}
-                <div className="p-4 flex-1">
-                  <div className="h-4 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
-                  <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </main>
       </div>
