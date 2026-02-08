@@ -14,12 +14,9 @@ using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
 using backend.Data.Seed;
 using System.Security.Cryptography;
-<<<<<<< HEAD
 using backend.Hubs;
 using backend.Services.Chat;
-=======
 using Microsoft.AspNetCore.HttpOverrides;
->>>>>>> main
 using backend.DTOs;
 using System.Text.Json;
 
