@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using backend.Configuration;
 namespace backend.Extensions;
 public static class HostEnvironmentExtensions
+
 {
     public static bool IsTest(this IHostEnvironment env)
         => env.IsEnvironment(EnvironmentConstants.Test);
