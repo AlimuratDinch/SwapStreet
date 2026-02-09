@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using backend.Configuration;
+
 namespace backend.Extensions;
+
 public static class HostEnvironmentExtensions
 
 {
