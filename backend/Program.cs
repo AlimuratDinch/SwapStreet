@@ -159,7 +159,7 @@ static void ConfigureCors(WebApplicationBuilder builder)
             policy.WithOrigins(frontendUrl)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
-                  .AllowCredentials(); 
+                  .AllowCredentials();
         });
     });
 }

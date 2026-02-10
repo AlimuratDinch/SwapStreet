@@ -36,7 +36,7 @@ namespace backend.Controllers
 
             _refreshTokenExpirationDays = _config.GetValue<int>("REFRESH_TOKEN_EXPIRATION_DAYS");
 
-            
+
         }
 
         // Helper method to get cookie options based on environment
