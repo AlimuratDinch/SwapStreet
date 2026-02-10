@@ -91,7 +91,8 @@ var app = builder.Build();
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    KnownNetworks = { new Microsoft.AspNetCore.HttpOverrides.IPNetwork(System.Net.IPAddress.Any, 0) }
 });
 
 if (builder.Environment.IsTest() || builder.Environment.IsDevelopment())
@@ -141,23 +142,24 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
     var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost";
     builder.Configuration["FRONTEND_URL"] = frontendUrl;
 }
-
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Add this to trust the Nginx proxy container
+    KnownNetworks = { new Microsoft.AspNetCore.HttpOverrides.IPNetwork(System.Net.IPAddress.Any, 0) }
+});
 static void ConfigureCors(WebApplicationBuilder builder)
 {
-    // Get URLs from environment/config for flexibility
-    var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost";
+    var frontendUrl = builder.Configuration["FRONTEND_URL"] ?? "http://localhost";
 
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins(
-                    "http://localhost",
-                    "http://localhost:3000"
-                  )
+            policy.WithOrigins(frontendUrl)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
-                  .AllowCredentials();
+                  .AllowCredentials(); 
         });
     });
 }
