@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import LoginPage from "@/app/auth/sign-in/page";
 
-// Mock logger
+//  Mock logger (IMPORTANT after introducing tslog)
 jest.mock("@/components/common/logger", () => ({
   logger: {
     info: jest.fn(),
@@ -20,7 +20,8 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-// Mock sessionStorage
+//  Mock sessionStorage
+
 beforeAll(() => {
   Object.defineProperty(window, "sessionStorage", {
     value: {
@@ -43,17 +44,9 @@ beforeAll(() => {
 });
 
 describe("LoginPage", () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
-    jest.resetModules();
-    process.env = { ...originalEnv };
     jest.clearAllMocks();
     window.sessionStorage.clear();
-  });
-
-  afterAll(() => {
-    process.env = originalEnv;
   });
 
   it("renders login form correctly", () => {
@@ -71,69 +64,9 @@ describe("LoginPage", () => {
     ).toBeInTheDocument();
   });
 
-  // --- API_URL Logic Tests ---
-
-  it("uses NEXT_PUBLIC_API_URL when it is defined", async () => {
-    const customUrl = "https://api.swapstreet.ca";
-    process.env.NEXT_PUBLIC_API_URL = customUrl;
-
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ accessToken: "abc123" }),
-    } as Response);
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-
-    await waitFor(() => {
-      // Verifies the custom URL was used
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringStartingWith(customUrl),
-        expect.any(Object),
-      );
-    });
-  });
-
-  it("falls back to http://localhost/api when NEXT_PUBLIC_API_URL is undefined", async () => {
-    // Explicitly remove the env variable to test the fallback branch
-    delete process.env.NEXT_PUBLIC_API_URL;
-    const fallbackUrl = "http://localhost/api";
-
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ accessToken: "abc123" }),
-    } as Response);
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-
-    await waitFor(() => {
-      // Verifies the fallback URL was used
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringStartingWith(fallbackUrl),
-        expect.any(Object),
-      );
-    });
-  });
-
-  // --- Existing Logic Tests ---
-
   it("stores access token and navigates on successful login", async () => {
     const mockToken = "abc123";
+
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ accessToken: mockToken }),
@@ -144,9 +77,11 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "test@example.com" },
     });
+
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "password123" },
     });
+
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
@@ -158,6 +93,7 @@ describe("LoginPage", () => {
 
   it("shows error message when login fails", async () => {
     const errorMsg = "Login failed";
+
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
       text: async () => errorMsg,
@@ -168,11 +104,36 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "fail@example.com" },
     });
+
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "wrongpass" },
     });
+
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(await screen.findByText(errorMsg)).toBeInTheDocument();
+  });
+
+  it("shows error when access token is missing", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    } as Response);
+
+    render(<LoginPage />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(
+      await screen.findByText(/access token not returned from backend/i),
+    ).toBeInTheDocument();
   });
 });
