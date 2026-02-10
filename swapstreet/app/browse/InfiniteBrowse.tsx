@@ -34,8 +34,7 @@ export default function InfiniteBrowse({
     if (loading || !hasNext) return;
     setLoading(true);
     try {
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api";
       const q = new URLSearchParams();
       q.set("limit", "18");
       const prevCursor = cursor;

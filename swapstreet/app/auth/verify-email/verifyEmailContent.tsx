@@ -7,8 +7,7 @@ import { logger } from "@/components/common/logger";
 export default function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api";
   const token = searchParams.get("token");
   const email = searchParams.get("email");
 

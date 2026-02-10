@@ -6,7 +6,7 @@ import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/components/common/logger";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api";
 const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
 const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
