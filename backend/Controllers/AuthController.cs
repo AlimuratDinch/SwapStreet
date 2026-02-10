@@ -34,13 +34,15 @@ namespace backend.Controllers
             _config = config;
             _env = env;
 
-            _refreshTokenExpirationDays = _config.GetValue<int>("Jwt:RefreshTokenExpirationDays");
+            _refreshTokenExpirationDays = _config.GetValue<int>("REFRESH_TOKEN_EXPIRATION_DAYS");
+
+
         }
 
         // Helper method to get cookie options based on environment
         private CookieOptions GetRefreshTokenCookieOptions()
         {
-            var isProduction = _env.IsProduction();
+            var isProduction = _env.IsStaging();
 
             return new CookieOptions
             {

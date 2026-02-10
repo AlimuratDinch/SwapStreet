@@ -17,10 +17,19 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.HttpOverrides;
 using backend.DTOs;
 using System.Text.Json;
+using backend.Configuration;
+using backend.Extensions;
+
+// BUILD ENVIRONTMENTS
+// TEST
+// DEVELOPMENT
+// LOCAL STAGING
+// STAGING
+// PRODUCTION TBA
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o => o.UseNetTopologySuite()));
@@ -68,12 +77,12 @@ RegisterServices(builder);
 // BUILD & INITIALIZE
 // ===============================================================================
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     ConfigureDatabase(builder);
 }
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 }
@@ -82,10 +91,11 @@ var app = builder.Build();
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    KnownNetworks = { new Microsoft.AspNetCore.HttpOverrides.IPNetwork(System.Net.IPAddress.Any, 0) }
 });
 
-if (!app.Environment.IsProduction())
+if (builder.Environment.IsTest() || builder.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -95,13 +105,11 @@ if (!app.Environment.IsProduction())
     });
 }
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
-
     await InitializeMinio(app);
-
-
     await InitializeDatabaseAsync(app);
+
 }
 
 // ===============================================================================
@@ -134,16 +142,21 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
     var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost";
     builder.Configuration["FRONTEND_URL"] = frontendUrl;
 }
-
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Add this to trust the Nginx proxy container
+    KnownNetworks = { new Microsoft.AspNetCore.HttpOverrides.IPNetwork(System.Net.IPAddress.Any, 0) }
+});
 static void ConfigureCors(WebApplicationBuilder builder)
 {
-    var frontendUrl = builder.Configuration["FRONTEND_URL"];
+    var frontendUrl = builder.Configuration["FRONTEND_URL"] ?? "http://localhost";
 
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost")
+            policy.WithOrigins(frontendUrl)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -313,7 +326,7 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<IListingCommandService, ListingCommandService>();
 
     // Email Service (environment-dependent)
-    if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Test"))
+    if (builder.Environment.IsDevelopment() || builder.Environment.IsTest())
     {
         builder.Services.AddTransient<IEmailService, MockEmailService>();
     }
@@ -475,14 +488,7 @@ static void ConfigureMiddleware(WebApplication app)
         });
     });
 
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Backend API V1");
-        c.RoutePrefix = string.Empty;
-    });
-
-    // app.UseHttpsRedirection(); // Uncomment for production
+    //app.UseHttpsRedirection(); // Uncomment for production
     app.UseCors("AllowFrontend");
     app.UseAuthentication();
     app.UseAuthorization();
