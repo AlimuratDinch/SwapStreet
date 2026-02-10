@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace backend.Migrations
 {
     /// <inheritdoc />
-    public partial class AddFsaCentroid : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -207,6 +207,32 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "chatrooms",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreationTime = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    SellerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    BuyerId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_chatrooms", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_chatrooms_profiles_BuyerId",
+                        column: x => x.BuyerId,
+                        principalTable: "profiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_chatrooms_profiles_SellerId",
+                        column: x => x.SellerId,
+                        principalTable: "profiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "listings",
                 columns: table => new
                 {
@@ -253,6 +279,33 @@ namespace backend.Migrations
                     table.ForeignKey(
                         name: "FK_tryon_images_profiles_ProfileId",
                         column: x => x.ProfileId,
+                        principalTable: "profiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "messages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SendDate = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    Content = table.Column<string>(type: "text", nullable: false),
+                    ChatroomId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AuthorId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_messages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_messages_chatrooms_ChatroomId",
+                        column: x => x.ChatroomId,
+                        principalTable: "chatrooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_messages_profiles_AuthorId",
+                        column: x => x.AuthorId,
                         principalTable: "profiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -334,6 +387,16 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_chatrooms_BuyerId",
+                table: "chatrooms",
+                column: "BuyerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_chatrooms_SellerId",
+                table: "chatrooms",
+                column: "SellerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_cities_ProvinceId",
                 table: "cities",
                 column: "ProvinceId");
@@ -385,6 +448,16 @@ namespace backend.Migrations
                 name: "IX_listings_TagId",
                 table: "listings",
                 column: "TagId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_messages_AuthorId",
+                table: "messages",
+                column: "AuthorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_messages_ChatroomId",
+                table: "messages",
+                column: "ChatroomId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_profiles_CityId",
@@ -445,10 +518,16 @@ namespace backend.Migrations
                 name: "listing_images");
 
             migrationBuilder.DropTable(
+                name: "messages");
+
+            migrationBuilder.DropTable(
                 name: "tryon_images");
 
             migrationBuilder.DropTable(
                 name: "wishlists");
+
+            migrationBuilder.DropTable(
+                name: "chatrooms");
 
             migrationBuilder.DropTable(
                 name: "listings");
