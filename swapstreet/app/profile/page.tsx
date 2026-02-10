@@ -3,15 +3,28 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, ProfileResponse } from "@/lib/api/profile";
 import { Header } from "@/app/browse/BrowseElements";
-import { Phone, Mail, MapPin, Star } from "lucide-react";
+import { Phone, Mail, MapPin, Star, Trash2 } from "lucide-react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
+type MyListing = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  createdAt: string;
+  images: { imageUrl: string | null; displayOrder: number }[];
+};
 
 export default function ProfilePage() {
   const router = useRouter();
   const { accessToken } = useAuth();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [listings, setListings] = useState<MyListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +55,24 @@ export default function ProfilePage() {
       setLoading(false);
     }
   }, [accessToken]);
+
+  useEffect(() => {
+    const fetchMyListings = async () => {
+      if (!accessToken) return;
+      try {
+        const res = await fetch(`${API_URL}/listings/me`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setListings(data.items ?? []);
+        }
+      } catch {
+        setListings([]);
+      }
+    };
+    if (accessToken && profile) fetchMyListings();
+  }, [accessToken, profile]);
 
   if (loading) {
     return (
@@ -194,15 +225,68 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Listings Section - Placeholder */}
+        {/* Listings Section */}
         <div className="mt-6 rounded-xl bg-white shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            My Listings
-          </h2>
-          <div className="text-center py-12 text-gray-500">
-            <p>Your listings will appear here</p>
-            <p className="text-sm mt-2">Listing functionality coming soon</p>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              My Listings
+            </h2>
+            <Link
+              href="/seller/deleteListing"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete a listing
+            </Link>
           </div>
+          {listings.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <p>You have no listings yet.</p>
+              <p className="text-sm mt-2">
+                <Link
+                  href="/seller/createListing"
+                  className="text-teal-500 hover:underline"
+                >
+                  Create your first listing
+                </Link>
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {listings.map((listing) => {
+                const img =
+                  listing.images?.[0]?.imageUrl ||
+                  "/images/default-seller-banner.png";
+                return (
+                  <Link
+                    key={listing.id}
+                    href={`/listing/${listing.id}`}
+                    className="group block rounded-lg border border-gray-200 overflow-hidden hover:ring-2 hover:ring-teal-500"
+                  >
+                    <div className="relative aspect-square bg-gray-100">
+                      <Image
+                        src={img}
+                        alt={listing.title}
+                        fill
+                        className="object-cover"
+                        unoptimized={
+                          img.startsWith("http") && img.includes("minio")
+                        }
+                      />
+                    </div>
+                    <div className="p-3">
+                      <p className="font-medium text-gray-900 truncate group-hover:text-teal-600">
+                        {listing.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        ${Number(listing.price).toFixed(2)} CAD
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
