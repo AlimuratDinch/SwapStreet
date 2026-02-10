@@ -20,7 +20,8 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+    const API_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
     try {
       logger.info("Attempting sign in", { email });
