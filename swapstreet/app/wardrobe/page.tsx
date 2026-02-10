@@ -19,7 +19,7 @@ export default function WardrobePage() {
 
   const mainImageInputRef = useRef<HTMLInputElement>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
   // Fetch a valid listing ID
   useEffect(() => {
