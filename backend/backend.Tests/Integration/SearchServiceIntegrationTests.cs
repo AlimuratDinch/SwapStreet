@@ -3,11 +3,15 @@ using backend.Services;
 using backend.Tests.Fixtures;
 using backend.Models;
 using backend.Models.Authentication;
+using backend.DTOs.Search;
+using backend.Contracts;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace backend.Tests.Integration;
 
@@ -15,11 +19,11 @@ namespace backend.Tests.Integration;
 public class PostgresCollection : ICollectionFixture<PostgresFixture> { }
 
 [Collection(nameof(PostgresCollection))]
-public class ListingSearchServicePgTrgmTests
+public class SearchServiceIntegrationTests
 {
     private readonly PostgresFixture _fx;
 
-    public ListingSearchServicePgTrgmTests(PostgresFixture fx)
+    public SearchServiceIntegrationTests(PostgresFixture fx)
     {
         _fx = fx;
     }
@@ -153,6 +157,53 @@ public class ListingSearchServicePgTrgmTests
             await pgDb.SaveChangesAsync();
         }
 
+        // Create tags for listings
+        var articleType = pgDb.ArticleTypes.FirstOrDefault();
+        if (articleType == null)
+        {
+            articleType = new ArticleType { Name = "Footwear" };
+            pgDb.ArticleTypes.Add(articleType);
+            await pgDb.SaveChangesAsync();
+        }
+
+        var style = pgDb.Styles.FirstOrDefault();
+        if (style == null)
+        {
+            style = new Style { Name = "Casual" };
+            pgDb.Styles.Add(style);
+            await pgDb.SaveChangesAsync();
+        }
+
+        var size = pgDb.Sizes.FirstOrDefault();
+        if (size == null)
+        {
+            size = new Size { Value = "10", ArticleTypeId = articleType.Id };
+            pgDb.Sizes.Add(size);
+            await pgDb.SaveChangesAsync();
+        }
+
+        var brand = pgDb.Brands.FirstOrDefault();
+        if (brand == null)
+        {
+            brand = new Brand { Name = "Nike" };
+            pgDb.Brands.Add(brand);
+            await pgDb.SaveChangesAsync();
+        }
+
+        var tag = new Tag
+        {
+            ArticleTypeId = articleType.Id,
+            StyleId = style.Id,
+            SizeId = size.Id,
+            BrandId = brand.Id,
+            Color = ColorEnum.White,
+            Sex = SexEnum.Unisex,
+            Condition = ConditionEnum.ExcellentUsedCondition,
+            Material = (int)MaterialEnum.Leather
+        };
+        pgDb.Tags.Add(tag);
+        await pgDb.SaveChangesAsync();
+
         // Add test listings
         var now = DateTime.UtcNow;
         pgDb.Listings.AddRange(
@@ -164,6 +215,7 @@ public class ListingSearchServicePgTrgmTests
                 Price = 80m,
                 FSA = "M5H",
                 ProfileId = profileId,
+                TagId = tag.Id,
                 CreatedAt = now.AddMinutes(-3),
                 UpdatedAt = now.AddMinutes(-3)
             },
@@ -198,14 +250,16 @@ public class ListingSearchServicePgTrgmTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         // "sneakrs" typo should match listings containing "sneakers"
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("sneakrs", pageSize: 20, cursor: null);
 
         Assert.NotEmpty(items);
-        Assert.Contains(items, l => l.Title.Contains("Converse", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(items, l => l.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(items, l => l.Listing.Title.Contains("Converse", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(items, l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
         Assert.False(hasNext);
         Assert.Null(nextCursor);
     }
@@ -215,7 +269,9 @@ public class ListingSearchServicePgTrgmTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         // page 1
         var (items1, cursor1, hasNext1) = await svc.SearchListingsAsync("shoes", pageSize: 1, cursor: null);
@@ -230,7 +286,7 @@ public class ListingSearchServicePgTrgmTests
         Assert.Single(items2);
 
         // no duplicates across pages
-        Assert.NotEqual(items1[0].Id, items2[0].Id);
+        Assert.NotEqual(items1[0].Listing.Id, items2[0].Listing.Id);
 
         // cursor2 may be null depending on remaining matches
         _ = cursor2;
@@ -242,12 +298,14 @@ public class ListingSearchServicePgTrgmTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("", pageSize: 2, cursor: null);
 
         Assert.Equal(2, items.Count);
-        Assert.True(items[0].CreatedAt >= items[1].CreatedAt); // ordered by recency
+        Assert.True(items[0].Listing.CreatedAt >= items[1].Listing.CreatedAt); // ordered by recency
 
         Assert.True(hasNext);          // we seeded 3
         Assert.NotNull(nextCursor);
@@ -258,14 +316,86 @@ public class ListingSearchServicePgTrgmTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_fx.DbOptions);
-        var svc = new ListingSearchService(db);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
 
         // Search for "Nike" (exact match, no typo)
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("Nike shoes", pageSize: 20, cursor: null);
 
         Assert.NotEmpty(items);
-        Assert.Contains(items, l => l.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(items, l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
         Assert.False(hasNext);
         Assert.Null(nextCursor);
+    }
+
+    [Fact]
+    public async Task Search_ReturnsListingsWithImages()
+    {
+        await SeedAsync();
+        await using var db = new AppDbContext(_fx.DbOptions);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
+
+        var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
+
+        Assert.NotEmpty(items);
+
+        // Verify all items have Images collection (even if empty)
+        foreach (var item in items)
+        {
+            Assert.NotNull(item.Images);
+            Assert.IsType<List<ListingImageDto>>(item.Images);
+        }
+    }
+
+    [Fact]
+    public async Task ProfileAccessibleThroughListing_SearchListingsAsync_ReturnsProfileInfo()
+    {
+        await SeedAsync();
+        await using var db = new AppDbContext(_fx.DbOptions);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
+
+        var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
+
+        Assert.NotEmpty(items);
+
+        // Verify all items have associated Profile info
+        foreach (var item in items)
+        {
+            var profile = await db.Profiles.FindAsync(item.Listing.ProfileId);
+            Assert.NotNull(profile);
+            Assert.False(string.IsNullOrWhiteSpace(profile.FirstName));
+            Assert.False(string.IsNullOrWhiteSpace(profile.LastName));
+        }
+    }
+
+
+    [Fact]
+    public async Task SearchListingsAsync_WithTag_ReturnsCompleteTagInfo()
+    {
+        await SeedAsync();
+        await using var db = new AppDbContext(_fx.DbOptions);
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        var svc = new ListingSearchService(db, mockFileService.Object);
+
+        var (items, _, _) = await svc.SearchListingsAsync("Nike", pageSize: 20, cursor: null);
+
+        Assert.NotEmpty(items);
+
+        // Find the Nike listing which should have a complete tag
+        var nikeListing = items.FirstOrDefault(l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(nikeListing); // Ensure we found the Nike listing
+        Assert.NotNull(nikeListing.Listing.Tag); // Ensure Tag is not null
+
+        // Verify enums
+        Assert.Equal(ColorEnum.White, nikeListing.Listing.Tag.Color);
+        Assert.Equal(SexEnum.Unisex, nikeListing.Listing.Tag.Sex);
+        Assert.Equal(ConditionEnum.ExcellentUsedCondition, nikeListing.Listing.Tag.Condition);
+        Assert.Equal((int)MaterialEnum.Leather, nikeListing.Listing.Tag.Material);
     }
 }

@@ -75,6 +75,9 @@ PgAdmin         -> http://localhost:5050/
 dotnet ef migrations add <name> --context AppDbContext
 dotnet ef database update --context AppDbContext
 
+dotnet ef migrations add <name> --context AuthDbContext
+dotnet ef database update --context AuthDbContext
+
 10. Testing
 --------------------
 # unit test only

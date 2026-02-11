@@ -2,7 +2,7 @@
 
 import { logger } from "@/components/common/logger";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 export interface CreateProfileRequest {
   firstName: string;
@@ -63,7 +63,7 @@ export interface Province {
 export async function getMyProfile(
   accessToken: string,
 ): Promise<ProfileResponse> {
-  const response = await fetch(`${API_URL}/api/profile/me`, {
+  const response = await fetch(`${API_URL}/profile/me`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -86,7 +86,7 @@ export async function getMyProfile(
  * Get a user's profile by their ID (public)
  */
 export async function getProfileById(userId: string): Promise<ProfileResponse> {
-  const response = await fetch(`${API_URL}/api/profile/${userId}`, {
+  const response = await fetch(`${API_URL}/profile/${userId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -145,7 +145,7 @@ export async function createProfile(
   const requestBody = JSON.stringify(data);
 
   logger.debug("Creating profile", {
-    url: `${API_URL}/api/profile`,
+    url: `${API_URL}/profile`,
     method: "POST",
     hasAccessToken: !!accessToken,
     data,
@@ -153,7 +153,7 @@ export async function createProfile(
 
   try {
     const response = await authenticatedFetch(
-      `${API_URL}/api/profile`,
+      `${API_URL}/profile`,
       {
         method: "POST",
         headers: {
@@ -300,7 +300,7 @@ export async function updateProfile(
   accessToken: string,
   data: UpdateProfileRequest,
 ): Promise<ProfileResponse> {
-  const response = await fetch(`${API_URL}/api/profile`, {
+  const response = await fetch(`${API_URL}/profile`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -326,7 +326,7 @@ export async function updateProfile(
 export async function checkProfileExists(
   accessToken: string,
 ): Promise<boolean> {
-  const response = await fetch(`${API_URL}/api/profile/exists`, {
+  const response = await fetch(`${API_URL}/profile/exists`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -357,7 +357,7 @@ export async function uploadImage(
   formData.append("type", type);
 
   const response = await authenticatedFetch(
-    `${API_URL}/api/images/upload`,
+    `${API_URL}/images/upload`,
     {
       method: "POST",
       headers: {

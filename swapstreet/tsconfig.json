@@ -29,5 +29,10 @@
     ".next/types/**/*.ts",
     "api/.gitkeep"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "jest-dom.setup.ts",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }

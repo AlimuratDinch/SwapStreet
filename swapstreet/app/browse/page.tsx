@@ -1,78 +1,19 @@
-import { Sidebar, CardItem, Header } from "./BrowseElements";
+"use client";
+import { Suspense } from "react";
+import { Sidebar, Header } from "./BrowseElements";
+import InfiniteBrowse from "./InfiniteBrowse";
 
-export async function fetchClothingItems(
-  searchParams: Promise<{
-    minPrice?: string;
-    maxPrice?: string;
-  }>,
-) {
-  try {
-    const params = new URLSearchParams();
-    const resolvedParams = await searchParams;
-    if (resolvedParams.minPrice)
-      params.set("minPrice", resolvedParams.minPrice);
-    if (resolvedParams.maxPrice)
-      params.set("maxPrice", resolvedParams.maxPrice);
-    const apiUrl =
-      process.env.API_URL ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:8080";
-    const url = `${apiUrl}/api/catalog/items${params.toString() ? `?${params.toString()}` : ""}`;
-    const res = await fetch(url, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    return res.json();
-  } catch (error) {
-    console.error("Failed to fetch clothing items:", error);
-    return [];
-  }
-}
-
-export default async function BrowsePage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    minPrice?: string;
-    maxPrice?: string;
-  }>;
-}) {
-  const items = await fetchClothingItems(searchParams);
-
+export default function BrowsePage() {
   return (
     <div className="flex flex-col h-screen">
       <Header />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <main className="pt-24 flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
-          {items.length > 0 ? (
-            items.map(
-              (item: {
-                id: number;
-                title: string;
-                description: string;
-                imageUrl: string;       
-                price: number;
-                fsa: string;
-              }) => (
-                <CardItem
-                  key={item.id}
-                  title={item.title}
-                  imgSrc={item.imageUrl}
-                  price={item.price ?? 0}
-                  fsa={item.fsa ?? "Err"}
-                />
-              ),
-            )
-          ) : (
-            <p className="col-span-full text-center text-gray-500">
-              No items available.
-            </p>
-          )}
-        </main>
+        <Suspense fallback={<div className="w-64" />}>
+          <Sidebar />
+        </Suspense>
+        <Suspense>
+          <InfiniteBrowse />
+        </Suspense>
       </div>
       <div className="fixed bottom-4 right-4">
         <a href="/seller/createListing">
@@ -83,4 +24,61 @@ export default async function BrowsePage({
       </div>
     </div>
   );
+}
+
+// Helper to fetch clothing items (used for tests)
+type SearchParams = { [key: string]: string | undefined } | undefined;
+
+export async function fetchClothingItems(
+  searchParamsPromise: Promise<SearchParams>,
+) {
+  const params = await searchParamsPromise;
+  try {
+    const q = new URLSearchParams();
+    if (params?.minPrice) q.set("minPrice", params.minPrice);
+    if (params?.maxPrice) q.set("maxPrice", params.maxPrice);
+    if (params?.categoryId) q.set("categoryId", params.categoryId);
+    if (params?.conditions) q.set("conditions", params.conditions);
+
+    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+    const base = envBase || "";
+    const url = `${base}/api/search/search${q.toString() ? `?${q.toString()}` : ""}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.items ?? []);
+  } catch (err) {
+    console.error("Failed to fetch clothing items:", err);
+    return [];
+  }
+}
+
+export async function fetchSearchPage(
+  searchParamsPromise: Promise<SearchParams>,
+) {
+  const params = await searchParamsPromise;
+  try {
+    const q = new URLSearchParams();
+    q.set("limit", "18");
+    if (params?.cursor) q.set("cursor", params.cursor);
+    if (params?.minPrice) q.set("minPrice", params.minPrice);
+    if (params?.categoryId) q.set("categoryId", params.categoryId);
+
+    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+    const base = envBase || "";
+    const url = `${base}/api/search/search?${q.toString()}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      return { items: data, nextCursor: null, hasNextPage: false };
+    }
+    return {
+      items: data.items ?? [],
+      nextCursor: data.nextCursor ?? null,
+      hasNextPage: !!data.hasNextPage,
+    };
+  } catch {
+    return { items: [], nextCursor: null, hasNextPage: false };
+  }
 }

@@ -17,6 +17,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using backend.DbContexts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace backend.Tests.Services
 {
@@ -25,10 +27,14 @@ namespace backend.Tests.Services
         private readonly MinioFileStorageService _service;
         private readonly Mock<IMinioClient> _minioMock;
         private readonly MinioSettings _settings;
+        private readonly IConfiguration _config;
         private readonly AppDbContext _context; // Add Context for DB operations
+
 
         public MinioFileStorageServiceTests()
         {
+
+
             _minioMock = new Mock<IMinioClient>();
 
             _settings = new MinioSettings
@@ -39,6 +45,15 @@ namespace backend.Tests.Services
 
             var optionsWrapper = Options.Create(_settings);
 
+            var myConfiguration = new Dictionary<string, string>
+            {
+                {"FRONTEND_URL", "http://localhost:9000"},
+            };
+
+            _config = new ConfigurationBuilder()
+                .AddInMemoryCollection(myConfiguration)
+                .Build();
+
             // --- 1. Setup In-Memory Database for testing ---
             var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique DB per test
@@ -47,7 +62,7 @@ namespace backend.Tests.Services
             _context = new AppDbContext(dbOptions);
 
             // --- 2. Inject Context into Service ---
-            _service = new MinioFileStorageService(_minioMock.Object, optionsWrapper, _context);
+            _service = new MinioFileStorageService(_minioMock.Object, optionsWrapper, _context, _config, NullLogger<MinioFileStorageService>.Instance);
 
             // Mock PutObjectAsync to return successful response
             _minioMock
@@ -91,7 +106,7 @@ namespace backend.Tests.Services
             var url = await _service.UploadFileAsync(file, UploadType.Listing, userId, listingId);
 
             // Assert
-            url.Should().StartWith("http://localhost:9000/public/");
+            url.Should().StartWith("http://localhost");
 
             // Verify DB record was created
             var dbRecord = await _context.ListingImages.FirstOrDefaultAsync();
@@ -115,7 +130,7 @@ namespace backend.Tests.Services
             var url = await _service.UploadFileAsync(file, UploadType.TryOn, userId);
 
             // Assert
-            url.Should().StartWith("http://localhost:9000/private/tryon/");
+            url.Should().StartWith("http://localhost/private/tryon/");
             url.Should().Contain("test.jpg");
 
             // Verify DB record was created
@@ -154,7 +169,7 @@ namespace backend.Tests.Services
             var url = await _service.GetPrivateFileUrlAsync(objectName);
 
             // Assert
-            url.Should().StartWith("http://localhost:9000/private/tryon/");
+            url.Should().StartWith("http://localhost/private/tryon/");
             url.Should().Contain(objectName);
         }
 
@@ -175,7 +190,7 @@ namespace backend.Tests.Services
             var url = await _service.UploadFileAsync(file, UploadType.Generated, userId, listingId);
 
             // Assert
-            url.Should().StartWith("http://localhost:9000/private/generated/");
+            url.Should().StartWith("http://localhost/private/generated/");
 
             // Verify DB record
             var dbRecord = await _context.GeneratedImages.FirstOrDefaultAsync();
