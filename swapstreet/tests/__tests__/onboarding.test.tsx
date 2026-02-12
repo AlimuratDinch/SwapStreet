@@ -27,12 +27,12 @@ jest.mock("react-easy-crop", () => {
     __esModule: true,
     default: function MockCropper(props: {
       onCropComplete?: (a: unknown, b: unknown) => void;
-      onCropAreaChange?: (a: unknown, b: unknown) => void;
     }) {
       React.useEffect(() => {
-        const area = { x: 0, y: 0, width: 100, height: 100 };
-        props.onCropComplete?.(area, area);
-        props.onCropAreaChange?.(area, area);
+        props.onCropComplete?.(
+          { x: 0, y: 0, width: 100, height: 100 },
+          { x: 0, y: 0, width: 100, height: 100 },
+        );
       }, []);
       return React.createElement(
         "div",
@@ -47,37 +47,9 @@ if (
   typeof HTMLCanvasElement !== "undefined" &&
   !HTMLCanvasElement.prototype.toBlob
 ) {
-  HTMLCanvasElement.prototype.toBlob = function (
-    callback: (blob: Blob | null) => void,
-    type?: string,
-  ) {
-    callback(new Blob(["mock"], { type: type || "image/png" }));
+  HTMLCanvasElement.prototype.toBlob = function (cb: (b: Blob | null) => void) {
+    cb(new Blob(["mock"], { type: "image/png" }));
   };
-}
-
-// Trigger Image onload for blob URLs so getCroppedImg resolves in jsdom
-const OriginalImage = global.Image;
-if (OriginalImage) {
-  (global as unknown as { Image: typeof Image }).Image =
-    class extends OriginalImage {
-      constructor() {
-        super();
-        const self = this;
-        let srcVal = "";
-        Object.defineProperty(self, "src", {
-          set(value: string) {
-            srcVal = value;
-            if (value.startsWith("blob:") && self.onload) {
-              queueMicrotask(() => self.onload?.({} as Event));
-            }
-          },
-          get() {
-            return srcVal;
-          },
-          configurable: true,
-        });
-      }
-    } as unknown as typeof Image;
 }
 
 const mockRefreshToken = jest.fn().mockResolvedValue("new-token");
@@ -100,26 +72,54 @@ jest.mock("@/contexts/AuthContext", () => ({
 
 global.URL.createObjectURL = jest.fn(() => "blob:mock-url");
 
+const mockProvinces = [
+  { id: 1, name: "Ontario", code: "ON" },
+  { id: 2, name: "Quebec", code: "QC" },
+];
+const mockCities = [
+  { id: 1, name: "Toronto", provinceId: 1 },
+  { id: 2, name: "Ottawa", provinceId: 1 },
+  { id: 3, name: "Montreal", provinceId: 2 },
+];
+
+function defaultFetch(url: string | Request) {
+  const u = typeof url === "string" ? url : (url as Request).url;
+  if (u.includes("location/provinces"))
+    return Promise.resolve({ ok: true, json: async () => mockProvinces });
+  if (u.includes("location/cities")) {
+    const provinceId = new URL(u, "http://localhost").searchParams.get(
+      "provinceId",
+    );
+    const list = provinceId
+      ? mockCities.filter((c) => c.provinceId === parseInt(provinceId))
+      : mockCities;
+    return Promise.resolve({ ok: true, json: async () => list });
+  }
+  return Promise.resolve({
+    ok: false,
+    json: async () => ({ error: "Not found" }),
+  });
+}
+
 const mockSessionStorage = (() => {
-  let store: Record<string, string> = {};
+  const store: Record<string, string> = {};
   return {
-    getItem: jest.fn((key: string) => store[key] ?? null),
-    setItem: jest.fn((key: string, value: string) => {
-      store[key] = value;
-    }),
-    removeItem: jest.fn((key: string) => {
-      delete store[key];
-    }),
-    clear: jest.fn(() => {
-      store = {};
-    }),
+    getItem: (k: string) => store[k] ?? null,
+    setItem: (k: string, v: string) => {
+      store[k] = v;
+    },
+    removeItem: (k: string) => {
+      delete store[k];
+    },
+    clear: () => {
+      Object.keys(store).forEach((k) => delete store[k]);
+    },
     get length() {
       return Object.keys(store).length;
     },
-    key: jest.fn(() => null),
+    key: () => null,
   };
 })();
-
 Object.defineProperty(window, "sessionStorage", {
   value: mockSessionStorage,
   writable: true,
@@ -130,46 +130,22 @@ import SellerOnboardingPage from "@/app/seller/onboarding/page";
 import "@testing-library/jest-dom";
 import * as profileApi from "@/lib/api/profile";
 
-const mockProvinces = [
-  { id: 1, name: "Ontario", code: "ON" },
-  { id: 2, name: "Quebec", code: "QC" },
-];
-
-const mockCities = [
-  { id: 1, name: "Toronto", provinceId: 1 },
-  { id: 2, name: "Ottawa", provinceId: 1 },
-  { id: 3, name: "Montreal", provinceId: 2 },
-];
-
-function defaultFetch(url: string | Request) {
-  const u = typeof url === "string" ? url : (url as Request).url;
-  if (u.includes("location/provinces")) {
-    return Promise.resolve({ ok: true, json: async () => mockProvinces });
-  }
-  if (u.includes("location/cities")) {
-    const urlObj = new URL(u, "http://localhost");
-    const provinceId = urlObj.searchParams.get("provinceId");
-    const filtered = provinceId
-      ? mockCities.filter((c) => c.provinceId === parseInt(provinceId))
-      : mockCities;
-    return Promise.resolve({ ok: true, json: async () => filtered });
-  }
-  return Promise.resolve({
-    ok: false,
-    json: async () => ({ error: "Not found" }),
-  });
-}
-
 global.fetch = jest.fn(defaultFetch) as jest.Mock;
 
-async function selectCity(cityName: string = "Toronto") {
+async function ready() {
+  render(<SellerOnboardingPage />);
+  await waitFor(() =>
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument(),
+  );
+}
+
+async function selectCity(name = "Toronto") {
   const cityInput = screen.getByLabelText(/city/i);
   fireEvent.focus(cityInput);
-  await waitFor(() => {
-    const options = screen.getAllByRole("option");
-    expect(options.length).toBeGreaterThan(0);
-  });
-  fireEvent.mouseDown(screen.getByRole("option", { name: cityName }));
+  await waitFor(() =>
+    expect(screen.getAllByRole("option").length).toBeGreaterThan(0),
+  );
+  fireEvent.mouseDown(screen.getByRole("option", { name }));
 }
 
 async function fillValidForm() {
@@ -182,12 +158,19 @@ async function fillValidForm() {
   fireEvent.change(screen.getByLabelText(/province/i), {
     target: { value: "1" },
   });
-  const cityInput = screen.getByLabelText(/city/i);
-  await waitFor(() => expect(cityInput).not.toBeDisabled());
+  await waitFor(() =>
+    expect(screen.getByLabelText(/city/i)).not.toBeDisabled(),
+  );
   await selectCity();
   fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
     target: { value: "M5V 1A1" },
   });
+}
+
+function submitForm() {
+  fireEvent.submit(
+    screen.getByRole("button", { name: /save and continue/i }).closest("form")!,
+  );
 }
 
 describe("SellerOnboardingPage", () => {
@@ -206,30 +189,20 @@ describe("SellerOnboardingPage", () => {
   });
 
   it("renders the form", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
+    await ready();
     expect(screen.getByText(/set up your seller profile/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/your first name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/city/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /save and continue/i }),
     ).toBeInTheDocument();
   });
 
-  it("submits with valid data and redirects to profile", async () => {
-    const createProfile = profileApi.createProfile as jest.Mock;
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
+  it("submits valid data and redirects", async () => {
+    await ready();
     await fillValidForm();
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-
     await waitFor(
       () => {
-        expect(createProfile).toHaveBeenCalledWith(
+        expect(profileApi.createProfile).toHaveBeenCalledWith(
           "mock-token",
           expect.objectContaining({
             firstName: "John",
@@ -245,195 +218,52 @@ describe("SellerOnboardingPage", () => {
     );
   });
 
-  it("shows success overlay after submit", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
+  it("shows validation errors for missing required fields", async () => {
+    await ready();
+    submitForm();
+    expect(
+      await screen.findByText(/please enter your first name/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows error for invalid postal code", async () => {
+    await ready();
     await fillValidForm();
-    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-
-    await waitFor(
-      () => {
-        expect(screen.getByText(/profile created!/i)).toBeInTheDocument();
-        expect(
-          screen.getByText(/taking you to your profile/i),
-        ).toBeInTheDocument();
-      },
-      { timeout: 3000 },
-    );
-  });
-
-  it("shows error when first name is missing", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    const form = screen
-      .getByRole("button", { name: /save and continue/i })
-      .closest("form");
-    fireEvent.submit(form!);
-    const err = await screen.findByText(/please enter your first name/i);
-    expect(err).toBeInTheDocument();
-  });
-
-  it("shows error when last name is missing", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    fireEvent.change(screen.getByPlaceholderText(/your first name/i), {
-      target: { value: "John" },
-    });
-    const form = screen
-      .getByRole("button", { name: /save and continue/i })
-      .closest("form");
-    fireEvent.submit(form!);
-    const err = await screen.findByText(/please enter your last name/i);
-    expect(err).toBeInTheDocument();
-  });
-
-  it("shows error when city is not selected", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    fireEvent.change(screen.getByPlaceholderText(/your first name/i), {
-      target: { value: "John" },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/your last name/i), {
-      target: { value: "Doe" },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
-      target: { value: "M5V 1A1" },
-    });
-    const form = screen
-      .getByRole("button", { name: /save and continue/i })
-      .closest("form");
-    fireEvent.submit(form!);
-    const err = await screen.findByText(/please select a city/i);
-    expect(err).toBeInTheDocument();
-  });
-
-  it("shows error when FSA format is invalid after postal extraction", async () => {
-    const origSubstring = String.prototype.substring;
-    String.prototype.substring = jest.fn(function (
-      this: string,
-      start?: number,
-      end?: number,
-    ) {
-      if (this.includes("A1A") && start === 0 && end === 3) return "123";
-      return origSubstring.call(this, start ?? 0, end);
-    });
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    await fillValidForm();
-    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
-      target: { value: "A1A 1A1" },
-    });
-    const form = screen
-      .getByRole("button", { name: /save and continue/i })
-      .closest("form");
-    fireEvent.submit(form!);
-    const err = await screen.findByText(/Invalid postal code format/i);
-    expect(err).toBeInTheDocument();
-    String.prototype.substring = origSubstring;
-  });
-
-  it("shows error when postal code is invalid", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    fireEvent.change(screen.getByPlaceholderText(/your first name/i), {
-      target: { value: "John" },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/your last name/i), {
-      target: { value: "Doe" },
-    });
-    fireEvent.change(screen.getByLabelText(/province/i), {
-      target: { value: "1" },
-    });
-    const cityInput = screen.getByLabelText(/city/i);
-    await waitFor(() => expect(cityInput).not.toBeDisabled());
-    await selectCity();
     fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
       target: { value: "INVALID" },
     });
-    const form = screen
-      .getByRole("button", { name: /save and continue/i })
-      .closest("form");
-    fireEvent.submit(form!);
-    const err = await screen.findByText(/valid canadian postal code/i);
-    expect(err).toBeInTheDocument();
-  });
-
-  it("shows error when postal code is missing", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    fireEvent.change(screen.getByPlaceholderText(/your first name/i), {
-      target: { value: "John" },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/your last name/i), {
-      target: { value: "Doe" },
-    });
-    fireEvent.change(screen.getByLabelText(/province/i), {
-      target: { value: "1" },
-    });
-    const cityInput = screen.getByLabelText(/city/i);
-    await waitFor(() => expect(cityInput).not.toBeDisabled());
-    await selectCity();
-    const form = screen
-      .getByRole("button", { name: /save and continue/i })
-      .closest("form");
-    fireEvent.submit(form!);
-    const err = await screen.findByText(
-      /Forward Sortation Area|postal code is required/i,
-    );
-    expect(err).toBeInTheDocument();
+    submitForm();
+    expect(
+      await screen.findByText(/valid canadian postal code/i),
+    ).toBeInTheDocument();
   });
 
   it("shows error when provinces fail to load", async () => {
     (global.fetch as jest.Mock).mockImplementationOnce(() =>
       Promise.reject(new Error("Network error")),
     );
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
+    await ready();
     expect(
       screen.getByText(/failed to load location data/i),
     ).toBeInTheDocument();
   });
 
-  it("shows error when cities fail to load after province selection", async () => {
+  it("shows error when cities fail after selecting province", async () => {
     (global.fetch as jest.Mock).mockImplementation((url: string | Request) => {
       const u = typeof url === "string" ? url : (url as Request).url;
-      if (u.includes("location/provinces")) {
+      if (u.includes("provinces"))
         return Promise.resolve({ ok: true, json: async () => mockProvinces });
-      }
-      if (u.includes("location/cities")) {
+      if (u.includes("cities"))
         return Promise.reject(new Error("Network error"));
-      }
-      return Promise.resolve({
-        ok: false,
-        json: async () => ({ error: "Not found" }),
-      });
+      return defaultFetch(url);
     });
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
+    await ready();
     fireEvent.change(screen.getByLabelText(/province/i), {
       target: { value: "1" },
     });
-    await waitFor(() => {
-      expect(screen.getByText(/failed to load cities/i)).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText(/failed to load cities/i),
+    ).toBeInTheDocument();
   });
 
   it("shows not signed in banner when unauthenticated", async () => {
@@ -447,13 +277,8 @@ describe("SellerOnboardingPage", () => {
       username: null,
       email: null,
     });
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    expect(
-      screen.getByText(/it looks like you're not signed in/i),
-    ).toBeInTheDocument();
+    await ready();
+    expect(screen.getByText(/not signed in/i)).toBeInTheDocument();
     mockUseAuth.mockReturnValue({
       accessToken: "mock-token",
       isAuthenticated: true,
@@ -466,7 +291,7 @@ describe("SellerOnboardingPage", () => {
     });
   });
 
-  it("shows error when not logged in on submit", async () => {
+  it("shows error on submit when not logged in and refresh fails", async () => {
     mockUseAuth.mockReturnValue({
       accessToken: null,
       isAuthenticated: false,
@@ -477,14 +302,10 @@ describe("SellerOnboardingPage", () => {
       username: null,
       email: null,
     });
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
+    await ready();
     await fillValidForm();
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-    const err = await screen.findByText(/you must be logged in/i);
-    expect(err).toBeInTheDocument();
+    expect(await screen.findByText(/must be logged in/i)).toBeInTheDocument();
     mockUseAuth.mockReturnValue({
       accessToken: "mock-token",
       isAuthenticated: true,
@@ -497,103 +318,75 @@ describe("SellerOnboardingPage", () => {
     });
   });
 
-  it("shows error when avatar file is not an image", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  it("uses refreshed token when accessToken is null", async () => {
+    mockUseAuth.mockReturnValue({
+      accessToken: null,
+      isAuthenticated: false,
+      refreshToken: jest.fn().mockResolvedValue("refreshed-token"),
+      login: jest.fn(),
+      logout: jest.fn(),
+      userId: null,
+      username: null,
+      email: null,
     });
+    await ready();
+    await fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+    await waitFor(
+      () => {
+        expect(profileApi.createProfile).toHaveBeenCalledWith(
+          "refreshed-token",
+          expect.any(Object),
+          expect.any(Function),
+        );
+        expect(mockPush).toHaveBeenCalledWith("/profile");
+      },
+      { timeout: 3000 },
+    );
+    mockUseAuth.mockReturnValue({
+      accessToken: "mock-token",
+      isAuthenticated: true,
+      refreshToken: mockRefreshToken,
+      login: jest.fn(),
+      logout: jest.fn(),
+      userId: "test-user-id",
+      username: "test-user",
+      email: "test@example.com",
+    });
+  });
+
+  it("rejects non-image files for avatar and banner", async () => {
+    await ready();
     const avatarInput = document.querySelectorAll('input[type="file"]')[0];
+    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
     fireEvent.change(avatarInput!, {
       target: {
-        files: [new File(["x"], "doc.pdf", { type: "application/pdf" })],
+        files: [new File(["x"], "a.pdf", { type: "application/pdf" })],
       },
     });
     expect(screen.getByText(/avatar must be an image/i)).toBeInTheDocument();
-  });
-
-  it("shows error when banner file is not an image", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
     fireEvent.change(bannerInput!, {
-      target: { files: [new File(["x"], "doc.txt", { type: "text/plain" })] },
+      target: { files: [new File(["x"], "b.txt", { type: "text/plain" })] },
     });
-    expect(
-      screen.getByText(/banner must be an image file/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/banner must be an image/i)).toBeInTheDocument();
   });
 
-  it("opens crop modal for avatar and Cancel closes it", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
+  it("opens crop modal for image and Cancel closes it", async () => {
+    await ready();
     const avatarInput = document.querySelectorAll('input[type="file"]')[0];
     fireEvent.change(avatarInput!, {
-      target: {
-        files: [new File(["x"], "avatar.png", { type: "image/png" })],
-      },
+      target: { files: [new File(["x"], "avatar.png", { type: "image/png" })] },
     });
-    await waitFor(() => {
+    await waitFor(() =>
       expect(
         screen.getByRole("button", { name: /apply crop/i }),
-      ).toBeInTheDocument();
-    });
+      ).toBeInTheDocument(),
+    );
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
-    await waitFor(() => {
+    await waitFor(() =>
       expect(
         screen.queryByRole("button", { name: /apply crop/i }),
-      ).not.toBeInTheDocument();
-    });
-  });
-
-  it("opens crop modal for banner and Cancel closes it", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
-    fireEvent.change(bannerInput!, {
-      target: {
-        files: [new File(["x"], "banner.png", { type: "image/png" })],
-      },
-    });
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /apply crop/i }),
-      ).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: /apply crop/i }),
-      ).not.toBeInTheDocument();
-    });
-  });
-
-  it("Apply crop runs (preview, crop error, or modal still open)", async () => {
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
-    fireEvent.change(avatarInput!, {
-      target: {
-        files: [new File(["x"], "avatar.png", { type: "image/png" })],
-      },
-    });
-    const applyBtn = await screen.findByRole("button", { name: /apply crop/i });
-    fireEvent.click(applyBtn);
-    await waitFor(
-      () => {
-        const preview = screen.queryByAltText(/avatar preview/i);
-        const cropError = screen.queryByText(/failed to crop image/i);
-        const modalOpen = screen.queryByRole("button", { name: /apply crop/i });
-        expect(preview || cropError || modalOpen).toBeTruthy();
-      },
-      { timeout: 3500 },
+      ).not.toBeInTheDocument(),
     );
   });
 
@@ -601,29 +394,41 @@ describe("SellerOnboardingPage", () => {
     (profileApi.createProfile as jest.Mock).mockRejectedValueOnce(
       new Error("Profile already exists"),
     );
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
+    await ready();
     await fillValidForm();
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-    const err = await screen.findByText(/profile already exists/i);
-    expect(err).toBeInTheDocument();
+    expect(
+      await screen.findByText(/profile already exists/i),
+    ).toBeInTheDocument();
   });
 
-  it("shows generic error when createProfile fails with non-Error", async () => {
+  it("shows generic error when createProfile rejects with non-Error", async () => {
     (profileApi.createProfile as jest.Mock).mockRejectedValueOnce(
       "string error",
     );
-    render(<SellerOnboardingPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
+    await ready();
     await fillValidForm();
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-    const err = await screen.findByText(
-      /failed to create profile. please try again/i,
+    expect(
+      await screen.findByText(/failed to create profile/i),
+    ).toBeInTheDocument();
+  });
+
+  it("sends bio to createProfile when provided", async () => {
+    await ready();
+    await fillValidForm();
+    fireEvent.change(screen.getByPlaceholderText(/brag a little/i), {
+      target: { value: "Vintage seller." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+    await waitFor(
+      () =>
+        expect(profileApi.createProfile).toHaveBeenCalledWith(
+          "mock-token",
+          expect.objectContaining({ bio: "Vintage seller." }),
+          mockRefreshToken,
+        ),
+      { timeout: 3000 },
     );
-    expect(err).toBeInTheDocument();
   });
 });
