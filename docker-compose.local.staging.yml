@@ -53,7 +53,7 @@ services:
     env_file:
       - .env
     environment:
-      - ASPNETCORE_ENVIRONMENT=Staging
+      - ASPNETCORE_ENVIRONMENT=LocalStaging
       - JWT_SECRET=${JWT_SECRET}
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
       - ConnectionStrings__AuthConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
@@ -75,7 +75,8 @@ services:
       context: ./swapstreet
       dockerfile: Dockerfile.staging
       args:
-        NEXT_PUBLIC_API_URL: /api
+        NEXT_PUBLIC_API_URL: ${FRONTEND_URL}/api
+        NEXT_PUBLIC_FRONTEND_URL: ${FRONTEND_URL}
     container_name: swapstreet-frontend-local-staging
     restart: always
     env_file:
@@ -93,7 +94,7 @@ services:
     ports:
       - "80:80" # Expose port 80 for local access
     volumes:
-      - ./nginx.local.staging.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
       - swapstreet

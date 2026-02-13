@@ -67,7 +67,8 @@ services:
         context: ./swapstreet
         dockerfile: Dockerfile.staging
         args:
-          NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+          NEXT_PUBLIC_API_URL: ${FRONTEND_URL}/api
+          NEXT_PUBLIC_FRONTEND_URL: http://localhost:3000
       container_name: swapstreet-frontend-staging
       restart: always
       env_file:
