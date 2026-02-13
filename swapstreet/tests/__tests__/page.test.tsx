@@ -1,5 +1,11 @@
 // tests/__tests__/page.test.tsx
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import Home from "@/app/page";
 import "@testing-library/jest-dom";
 
@@ -54,9 +60,18 @@ describe("Home Page", () => {
 
   it("navigation links have correct anchor hrefs", () => {
     render(<Home />);
-    expect(screen.getByRole("link", { name: "Features" })).toHaveAttribute("href", "#features");
-    expect(screen.getByRole("link", { name: "Impact" })).toHaveAttribute("href", "#impact");
-    expect(screen.getByRole("link", { name: "Guide" })).toHaveAttribute("href", "#guide");
+    expect(screen.getByRole("link", { name: "Features" })).toHaveAttribute(
+      "href",
+      "#features",
+    );
+    expect(screen.getByRole("link", { name: "Impact" })).toHaveAttribute(
+      "href",
+      "#impact",
+    );
+    expect(screen.getByRole("link", { name: "Guide" })).toHaveAttribute(
+      "href",
+      "#guide",
+    );
   });
 
   it("renders hero section and rotating text container", () => {
@@ -151,16 +166,25 @@ describe("Home Page", () => {
   it("renders CTA buttons with correct signup links", () => {
     render(<Home />);
     const links = screen.getAllByRole("link", { name: /get started/i });
-    links.forEach(link => {
+    links.forEach((link) => {
       expect(link).toHaveAttribute("href", "/auth/sign-up");
     });
   });
 
   it("renders footer links", () => {
     render(<Home />);
-    expect(screen.getByRole("link", { name: /Privacy/i })).toHaveAttribute("href", "/privacy");
-    expect(screen.getByRole("link", { name: /Terms/i })).toHaveAttribute("href", "/terms");
-    expect(screen.getByRole("link", { name: /Contact/i })).toHaveAttribute("href", "/contact");
+    expect(screen.getByRole("link", { name: /Privacy/i })).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
+    expect(screen.getByRole("link", { name: /Terms/i })).toHaveAttribute(
+      "href",
+      "/terms",
+    );
+    expect(screen.getByRole("link", { name: /Contact/i })).toHaveAttribute(
+      "href",
+      "/contact",
+    );
   });
 
   it("contains accessible headings", () => {
