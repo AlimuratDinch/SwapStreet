@@ -13,8 +13,8 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260121001757_AddFsaCentroid")]
-    partial class AddFsaCentroid
+    [Migration("20260208205914_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -62,6 +62,30 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("brands", (string)null);
+                });
+
+            modelBuilder.Entity("Chatroom", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BuyerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CreationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuyerId");
+
+                    b.HasIndex("SellerId");
+
+                    b.ToTable("chatrooms", (string)null);
                 });
 
             modelBuilder.Entity("City", b =>
@@ -241,6 +265,34 @@ namespace backend.Migrations
                     b.HasIndex("ListingId");
 
                     b.ToTable("listing_images", (string)null);
+                });
+
+            modelBuilder.Entity("Message", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChatroomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("SendDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("ChatroomId");
+
+                    b.ToTable("messages", (string)null);
                 });
 
             modelBuilder.Entity("Profile", b =>
@@ -471,6 +523,25 @@ namespace backend.Migrations
                     b.ToTable("wishlists", (string)null);
                 });
 
+            modelBuilder.Entity("Chatroom", b =>
+                {
+                    b.HasOne("Profile", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Profile", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Buyer");
+
+                    b.Navigation("Seller");
+                });
+
             modelBuilder.Entity("City", b =>
                 {
                     b.HasOne("Province", "Province")
@@ -538,6 +609,25 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Listing");
+                });
+
+            modelBuilder.Entity("Message", b =>
+                {
+                    b.HasOne("Profile", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Chatroom", "Chatroom")
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatroomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Chatroom");
                 });
 
             modelBuilder.Entity("Profile", b =>
@@ -625,6 +715,11 @@ namespace backend.Migrations
                     b.Navigation("Listing");
 
                     b.Navigation("Profile");
+                });
+
+            modelBuilder.Entity("Chatroom", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("City", b =>

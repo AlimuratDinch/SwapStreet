@@ -14,13 +14,24 @@ using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
 using backend.Data.Seed;
 using System.Security.Cryptography;
+using backend.Hubs;
+using backend.Services.Chat;
 using Microsoft.AspNetCore.HttpOverrides;
 using backend.DTOs;
 using System.Text.Json;
+using backend.Configuration;
+using backend.Extensions;
+
+// BUILD ENVIRONTMENTS
+// TEST
+// DEVELOPMENT
+// LOCAL STAGING
+// STAGING
+// PRODUCTION TBA
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o => o.UseNetTopologySuite()));
@@ -42,7 +53,6 @@ ConfigureCors(builder);
 // ===============================================================================
 
 ConfigureGemini(builder);
-
 ConfigureMinio(builder);
 
 // ===============================================================================
@@ -68,12 +78,12 @@ RegisterServices(builder);
 // BUILD & INITIALIZE
 // ===============================================================================
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     ConfigureDatabase(builder);
 }
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 }
@@ -85,7 +95,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-if (!app.Environment.IsProduction())
+if (builder.Environment.IsTest() || builder.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -95,13 +105,11 @@ if (!app.Environment.IsProduction())
     });
 }
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
-
     await InitializeMinio(app);
-
-
     await InitializeDatabaseAsync(app);
+
 }
 
 // ===============================================================================
@@ -137,13 +145,17 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
 
 static void ConfigureCors(WebApplicationBuilder builder)
 {
-    var frontendUrl = builder.Configuration["FRONTEND_URL"];
+    // Get URLs from environment/config for flexibility
+    var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost";
 
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost")
+            policy.WithOrigins(
+                    "http://localhost",
+                    "http://localhost:3000"
+                  )
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -248,14 +260,6 @@ static void ConfigureAuthentication(WebApplicationBuilder builder)
 
     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
-    var accessTokenMinutes = int.TryParse(
-        builder.Configuration["JWT_ACCESS_TOKEN_EXPIRATION_MINUTES"],
-        out var minutes) ? minutes : 60;
-
-    var refreshTokenDays = int.TryParse(
-        builder.Configuration["REFRESH_TOKEN_EXPIRATION_DAYS"],
-        out var days) ? days : 30;
-
     builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -265,6 +269,7 @@ static void ConfigureAuthentication(WebApplicationBuilder builder)
     {
         options.RequireHttpsMetadata = false;
         options.SaveToken = true;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
@@ -272,6 +277,24 @@ static void ConfigureAuthentication(WebApplicationBuilder builder)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = key
+        };
+
+        // Configure SignalR to use JWT token from query string or header
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                // If the request is for the SignalR hub, get token from query string
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -286,6 +309,9 @@ static void ConfigureControllers(WebApplicationBuilder builder)
             options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
             options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
         });
+
+    // Add SignalR
+    builder.Services.AddSignalR();
 }
 
 static void ConfigureSwagger(WebApplicationBuilder builder)
@@ -303,7 +329,6 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<IUserAccountService, UserAccountService>();
     builder.Services.AddScoped<IGenerativeService, GenerativeService>();
     builder.Services.AddScoped<ITryOnService, backend.Services.VirtualTryOn.TryOnService>();
-    builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
     builder.Services.AddScoped<IProfileService, ProfileService>();
     builder.Services.AddScoped<ILocationService, LocationService>();
     builder.Services.AddScoped<MinioFileStorageService>();
@@ -312,8 +337,12 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<IListingSearchService, ListingSearchService>();
     builder.Services.AddScoped<IListingCommandService, ListingCommandService>();
 
+    // Chat Services
+    builder.Services.AddScoped<IChatroomService, ChatroomService>();
+    builder.Services.AddScoped<IChatService, ChatService>();
+
     // Email Service (environment-dependent)
-    if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Test"))
+    if (builder.Environment.IsDevelopment() || builder.Environment.IsTest())
     {
         builder.Services.AddTransient<IEmailService, MockEmailService>();
     }
@@ -332,10 +361,6 @@ static void RegisterServices(WebApplicationBuilder builder)
 
     // HTTP Client
     builder.Services.AddHttpClient();
-
-    // TODO: Refactor these services
-    // builder.Services.AddScoped<IWishlistService, WishlistService>();
-    // builder.Services.AddScoped<ICatalogService, CatalogService>();
 }
 
 static async Task InitializeDatabaseAsync(WebApplication app)
@@ -345,8 +370,6 @@ static async Task InitializeDatabaseAsync(WebApplication app)
 
     try
     {
-        var env = app.Environment.EnvironmentName;
-
         var appDb = services.GetRequiredService<AppDbContext>();
         var authDb = services.GetRequiredService<AuthDbContext>();
         var loggerFactory = services.GetRequiredService<ILoggerFactory>();
@@ -482,23 +505,20 @@ static void ConfigureMiddleware(WebApplication app)
         c.RoutePrefix = string.Empty;
     });
 
-    // app.UseHttpsRedirection(); // Uncomment for production
     app.UseCors("AllowFrontend");
+    app.UseStaticFiles(); // Enable serving static files from wwwroot (e.g., chat-test.html)
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
+    app.MapHub<ChatHub>("/chathub");
 }
 
-// ===============================================================================
-// HELPER METHODS
-// ===============================================================================
-
-static string GenerateRandomKey(int length = 32)
+static string GenerateRandomKey(int length)
 {
+    using var rng = RandomNumberGenerator.Create();
     var bytes = new byte[length];
-    RandomNumberGenerator.Fill(bytes);
+    rng.GetBytes(bytes);
     return Convert.ToBase64String(bytes);
 }
 
-// Required for integration tests
 public partial class Program { }
