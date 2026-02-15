@@ -589,6 +589,34 @@ describe("SellerOnboardingPage", () => {
     );
   });
 
+  it("crop fails when toBlob returns null", async () => {
+    const origToBlob = HTMLCanvasElement.prototype.toBlob;
+    HTMLCanvasElement.prototype.toBlob = function (
+      cb: (b: Blob | null) => void,
+    ) {
+      cb(null);
+    };
+    await ready();
+    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
+    fireEvent.change(avatarInput!, {
+      target: {
+        files: [new File(["x"], "avatar.png", { type: "image/png" })],
+      },
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /apply crop/i }),
+      ).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /apply crop/i }));
+    await waitFor(
+      () =>
+        expect(screen.getByText(/failed to crop image/i)).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+    HTMLCanvasElement.prototype.toBlob = origToBlob;
+  });
+
   it("crop modal zoom slider updates", async () => {
     await ready();
     const avatarInput = document.querySelectorAll('input[type="file"]')[0];

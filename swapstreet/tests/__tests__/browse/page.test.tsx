@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
-import BrowsePage, { fetchClothingItems } from "@/app/browse/page";
+import BrowsePage, {
+  fetchClothingItems,
+  fetchSearchPage,
+} from "@/app/browse/page";
 import { JSX } from "react";
 
 // Type definition for clothing items
@@ -66,6 +69,17 @@ describe("fetchClothingItems", () => {
       },
     );
     expect(result).toEqual(mockItems);
+  });
+
+  it("should return data.items when response is object with items", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: [{ id: 2, title: "From object" }] }),
+    });
+
+    const result = await fetchClothingItems(Promise.resolve({}));
+
+    expect(result).toEqual([{ id: 2, title: "From object" }]);
   });
 
   it("should fetch items with all filters applied", async () => {
@@ -177,6 +191,60 @@ describe("fetchClothingItems", () => {
     );
 
     process.env.NEXT_PUBLIC_API_URL = originalEnv;
+  });
+});
+
+describe("fetchSearchPage", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns items and cursor when response is object", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [{ id: "1", title: "Item" }],
+        nextCursor: "c1",
+        hasNextPage: true,
+      }),
+    });
+
+    const result = await fetchSearchPage(
+      Promise.resolve({ cursor: "c0", minPrice: "10" }),
+    );
+
+    expect(result).toEqual({
+      items: [{ id: "1", title: "Item" }],
+      nextCursor: "c1",
+      hasNextPage: true,
+    });
+  });
+
+  it("returns items when response is array", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: "1", title: "A" }],
+    });
+
+    const result = await fetchSearchPage(Promise.resolve({}));
+
+    expect(result).toEqual({
+      items: [{ id: "1", title: "A" }],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+  });
+
+  it("returns empty result on fetch error", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false });
+
+    const result = await fetchSearchPage(Promise.resolve({}));
+
+    expect(result).toEqual({
+      items: [],
+      nextCursor: null,
+      hasNextPage: false,
+    });
   });
 });
 

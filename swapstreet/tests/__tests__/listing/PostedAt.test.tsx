@@ -49,6 +49,14 @@ describe("PostedAt", () => {
     expect(screen.getByText(/just now/)).toBeInTheDocument();
   });
 
+  it("renders 'X seconds ago' for 10–59 seconds ago", () => {
+    const now = new Date("2025-01-01T12:00:00Z");
+    jest.spyOn(Date, "now").mockImplementation(() => now.getTime());
+    const tenSecAgo = new Date(now.getTime() - 10 * 1000).toISOString();
+    render(<PostedAt iso={tenSecAgo} />);
+    expect(screen.getByText(/10 seconds ago/)).toBeInTheDocument();
+  });
+
   it("renders singular vs plural minute/hour/day correctly", () => {
     const now = Date.now();
     const oneMinAgo = new Date(now - 61 * 1000).toISOString();
