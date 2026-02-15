@@ -467,7 +467,7 @@ static async Task InitializeMeilisearchIndex(WebApplication app)
     using var scope = app.Services.CreateScope();
     var client = scope.ServiceProvider.GetRequiredService<MeilisearchClient>();
     var index = client.Index("listings");
-    
+
     await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa" });
     await index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
     await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa" });
@@ -475,9 +475,9 @@ static async Task InitializeMeilisearchIndex(WebApplication app)
     await index.UpdateRankingRulesAsync(new[] {
         "words",
         "typo",
-        "proximity", 
+        "proximity",
         "attribute",
-        "sort",      
+        "sort",
         "exactness"
     });
 }

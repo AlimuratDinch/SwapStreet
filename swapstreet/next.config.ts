@@ -4,6 +4,7 @@ import webpack from "webpack";
 const nextConfig: NextConfig = {
   output: "standalone",
   images: {
+    unoptimized: true,
     // This is the key for Local Staging
     remotePatterns: [
       {
@@ -16,10 +17,10 @@ const nextConfig: NextConfig = {
         port: "9000",
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3000', // Adjust this to match your backend port if different
-        pathname: '/public/**',
+        protocol: "http",
+        hostname: "localhost",
+        port: "", // Adjust this to match your backend port if different
+        pathname: "/public/**",
       },
       {
         protocol: "http",
@@ -30,6 +31,16 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "minio.swapstreet.ca",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "", // Empty means any port
+        pathname: "/public/**",
       },
     ],
   },

@@ -16,7 +16,7 @@ namespace backend.Services
         private readonly ILocationService _locationService;
         private readonly MeilisearchClient _meiliClient;
 
-        public ListingCommandService(AppDbContext context,MeilisearchClient client)
+        public ListingCommandService(AppDbContext context, MeilisearchClient client)
         {
             _context = context;
             _meiliClient = client;
@@ -82,11 +82,11 @@ namespace backend.Services
 
             var latlong = await _locationService.getLatLongFromFSAAsync(request.FSA);
 
-           // 4. Sync to Meilisearch
-            try 
+            // 4. Sync to Meilisearch
+            try
             {
                 var index = _meiliClient.Index("listings");
-                
+
                 var searchDoc = new ListingSearchDto
                 {
                     Id = listing.Id.ToString(),
@@ -99,7 +99,7 @@ namespace backend.Services
 
 
                 await index.AddDocumentsAsync(new[] { searchDoc }, cancellationToken: cancellationToken);
-                
+
                 _logger.LogInformation("Synced listing {ListingId} to Meilisearch", listing.Id);
             }
             catch (Exception ex)

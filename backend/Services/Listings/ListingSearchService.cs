@@ -39,21 +39,21 @@ public class ListingSearchService : IListingSearchService
             Limit = pageSize + 1,
             Offset = offset,
             // If query is null/empty, Meilisearch returns all documents based on Ranking Rules (Recent first)
-            Sort = string.IsNullOrWhiteSpace(query) 
-                ? new[] { "createdAtTimestamp:desc" } 
+            Sort = string.IsNullOrWhiteSpace(query)
+                ? new[] { "createdAtTimestamp:desc" }
                 : null
         };
 
         // 2. Execute Search in Meilisearch
         var searchResponse = await index.SearchAsync<ListingSearchDto>(query ?? "", searchOptions);
-        
+
         var hits = searchResponse.Hits.ToList();
         var hasNextPage = hits.Count > pageSize;
         var pageHits = hits.Take(pageSize).ToList();
 
         // 3. Fetch Full Data from Postgres based on Search IDs
         var listingIds = pageHits.Select(h => Guid.Parse(h.Id)).ToList();
-        
+
         // Use ToDictionary to preserve the order returned by Meilisearch
         var listingsMap = await _db.Listings
             .AsNoTracking()

@@ -142,9 +142,15 @@ export function SearchBar({
     setValue(initialValue);
   }, [initialValue]);
 
+  const handleSearch = () => {
+    const trimmed = value.trim();
+    onSearch(trimmed);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      onSearch(value);
+      e.preventDefault();
+      handleSearch();
     }
   };
 
@@ -157,7 +163,6 @@ export function SearchBar({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        onBlur={() => onSearch(value)}
         className="ml-2 outline-none w-full bg-transparent text-sm"
       />
     </div>
@@ -193,7 +198,7 @@ export function Sidebar() {
   // Initialize state from URL params (runs once on mount)
   useEffect(() => {
     const cat = searchParams.get("categoryId");
-    const q = searchParams.get("q") || "";
+    const q = searchParams.get("Query") || "";
     const conditionsParam = searchParams.get("conditions");
     const sizeParam = searchParams.get("size");
     const minP = searchParams.get("minPrice");
@@ -231,7 +236,7 @@ export function Sidebar() {
     if (minPriceVal > 0) params.set("minPrice", minPriceVal.toString());
     if (maxPriceVal < 999999) params.set("maxPrice", maxPriceVal.toString());
     if (selectedSize) params.set("size", selectedSize);
-    if (searchQuery) params.set("q", searchQuery);
+    if (searchQuery.trim()) params.set("Query", searchQuery.trim());
     if (conditions.length > 0) params.set("conditions", conditions.join(","));
 
     const newQueryString = params.toString();
@@ -428,11 +433,9 @@ export function CardItem({ title, imgSrc, price, href }: CardItemProps) {
       {/* Square image container */}
       <div className="card-item-image-container">
         {imgSrc ? (
-          <Image
+          <img
             src={imgSrc}
             alt={title}
-            width={300}
-            height={300}
             className="card-item-image object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
           />
         ) : (

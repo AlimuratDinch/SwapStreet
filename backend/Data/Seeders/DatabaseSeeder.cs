@@ -17,7 +17,7 @@ namespace backend.Data.Seed
             await ProfileSeeder.SeedAsync(context, logger);
 
             var listingService = serviceProvider.GetRequiredService<IListingCommandService>();
-             await ListingSeeder.SeedAsync(context, listingService, logger);
+            await ListingSeeder.SeedAsync(context, listingService, logger);
 
             // --- Service-Based Seeds (Complex dependencies) ---
             try

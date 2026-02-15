@@ -9,9 +9,9 @@ namespace backend.Tests.Fixtures;
 public sealed class MeilisearchFixture : IAsyncLifetime
 {
     private IContainer _container = default!;
-    
+
     public MeilisearchClient Client { get; private set; } = default!;
-    
+
     public Meilisearch.Index Index { get; private set; } = default!;
 
     public async Task InitializeAsync()
@@ -28,12 +28,12 @@ public sealed class MeilisearchFixture : IAsyncLifetime
 
         var host = _container.Hostname;
         var port = _container.GetMappedPublicPort(7700);
-        
+
         Client = new MeilisearchClient($"http://{host}:{port}", "masterKey");
 
         await Client.CreateIndexAsync("listings", "id");
         Index = Client.Index("listings");
-        
+
         await Index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
     }
 

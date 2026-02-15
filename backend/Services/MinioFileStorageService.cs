@@ -188,7 +188,7 @@ namespace backend.Services
 
         public string? GetPublicFileUrl(string? objectName)
         {
-            if (string.IsNullOrWhiteSpace(objectName)) 
+            if (string.IsNullOrWhiteSpace(objectName))
             {
                 return null; // Or return a default "placeholder.png" path
             }

@@ -823,8 +823,8 @@ public class ListingCommandServiceTests
 
         // Assert - 2. REAL Meilisearch
         // Give Meilisearch a moment to process the async task
-        await Task.Delay(500); 
-        
+        await Task.Delay(500);
+
         var meiliDoc = await _meiliFixture.Index.GetDocumentAsync<ListingSearchDto>(listingId.ToString());
         meiliDoc.Should().NotBeNull();
         meiliDoc.Title.Should().Be(request.Title);
@@ -866,7 +866,7 @@ public class ListingCommandServiceTests
         // Arrange
         await SeedTestDataAsync();
         using var context = new AppDbContext(_pgFixture.DbOptions);
-        
+
         // We use a "broken" client to simulate Meilisearch being unreachable
         var brokenClient = new MeilisearchClient("http://localhost:1234", "wrongKey");
         var service = new ListingCommandService(context, CreateMockLogger(), _locationMock.Object, brokenClient);
@@ -896,52 +896,52 @@ public class ListingCommandServiceTests
         return new Mock<ILogger<ListingCommandService>>().Object;
     }
 
-private async Task SeedTestDataAsync()
-{
-    // 1. Reset Postgres
-    using var context = new AppDbContext(_pgFixture.DbOptions);
-    await context.Database.EnsureDeletedAsync();
-    await context.Database.EnsureCreatedAsync();
+    private async Task SeedTestDataAsync()
+    {
+        // 1. Reset Postgres
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        await context.Database.EnsureDeletedAsync();
+        await context.Database.EnsureCreatedAsync();
 
-    // Seed in correct order: Province -> City -> FSA -> Profile
-    var province = new Province 
-    { 
-        Id = 1, 
-        Code = "QC", 
-        Name = "Quebec" 
-    };
-    context.Provinces.Add(province);
-    await context.SaveChangesAsync(); // Save province first
-    
-    var city = new City 
-    { 
-        Id = 1, 
-        Name = "Montreal", 
-        ProvinceId = 1 
-    };
-    context.Cities.Add(city);
-    await context.SaveChangesAsync(); // Save city before FSA and Profile
-    
-    context.Fsas.Add(new Fsa 
-    { 
-        Code = "H2X", 
-        CityId = 1,
-        Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
-    });
-    
-    context.Profiles.Add(new Profile 
-    { 
-        Id = TestData.TestProfileId, 
-        FirstName = "John", 
-        FSA = "H2X",
-        CityId = 1 // Add the required CityId
-    });
-    
-    await context.SaveChangesAsync();
+        // Seed in correct order: Province -> City -> FSA -> Profile
+        var province = new Province
+        {
+            Id = 1,
+            Code = "QC",
+            Name = "Quebec"
+        };
+        context.Provinces.Add(province);
+        await context.SaveChangesAsync(); // Save province first
 
-    // 2. Reset Meilisearch Index for a clean test state
-    await _meiliFixture.InitializeAsync();
-}
+        var city = new City
+        {
+            Id = 1,
+            Name = "Montreal",
+            ProvinceId = 1
+        };
+        context.Cities.Add(city);
+        await context.SaveChangesAsync(); // Save city before FSA and Profile
+
+        context.Fsas.Add(new Fsa
+        {
+            Code = "H2X",
+            CityId = 1,
+            Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
+        });
+
+        context.Profiles.Add(new Profile
+        {
+            Id = TestData.TestProfileId,
+            FirstName = "John",
+            FSA = "H2X",
+            CityId = 1 // Add the required CityId
+        });
+
+        await context.SaveChangesAsync();
+
+        // 2. Reset Meilisearch Index for a clean test state
+        await _meiliFixture.InitializeAsync();
+    }
 
     #endregion
 }

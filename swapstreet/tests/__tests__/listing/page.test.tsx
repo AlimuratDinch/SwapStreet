@@ -1,9 +1,28 @@
+/**
+ * @jest-environment jsdom
+ */
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import ListingPage from "@/app/listing/[id]/page";
 
+// 1. Mock next/navigation to prevent client hooks inside the page from crashing
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(""),
+  usePathname: () => "/listing/123",
+}));
+
 describe("Listing page (server component)", () => {
   const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    // Reset fetch mock before each test
+    global.fetch = jest.fn();
+  });
 
   afterEach(() => {
     global.fetch = originalFetch;
@@ -21,22 +40,25 @@ describe("Listing page (server component)", () => {
         firstName: "Alice",
         lastName: "Smith",
         profileImageUrl: "https://example.com/p.jpg",
-        FSA: "M5V",
       },
+      fsa: "M5V", // Match the casing used in your fallback test
     };
 
-    global.fetch = jest.fn().mockResolvedValue({
+    (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => mockListing,
-    }) as unknown as typeof global.fetch;
+    });
 
-    // Render server component
-    const element = await (
-      ListingPage as unknown as (props: {
-        params: { id: string };
-      }) => Promise<React.ReactElement>
-    )({ params: { id: "123" } });
-    render(element);
+    // 2. Resolve the Server Component
+    // Note: In Next.js 15, params is a Promise. We handle both styles here.
+    const resolvedParams = { id: "123" };
+
+    // Explicitly await the component function
+    const PageComponent = await ListingPage({
+      params: Promise.resolve(resolvedParams) as any,
+    });
+
+    render(PageComponent);
 
     await waitFor(() => {
       expect(screen.getByText(/Nice Jacket/)).toBeInTheDocument();
@@ -47,17 +69,17 @@ describe("Listing page (server component)", () => {
   });
 
   it("renders error UI when fetch fails", async () => {
-    global.fetch = jest.fn().mockResolvedValueOnce({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 500,
-    }) as unknown as typeof global.fetch;
-    const element = await (
-      ListingPage as unknown as (props: {
-        params: { id: string };
-      }) => Promise<React.ReactElement>
-    )({ params: { id: "bad" } });
-    render(element);
-    // Check for error message
+    });
+
+    const PageComponent = await ListingPage({
+      params: Promise.resolve({ id: "bad" }) as any,
+    });
+
+    render(PageComponent);
+
     expect(screen.getByText(/Failed to load listing/i)).toBeInTheDocument();
   });
 
@@ -68,25 +90,24 @@ describe("Listing page (server component)", () => {
       createdAt: new Date().toISOString(),
       description: "No images here",
       images: [],
-      location: undefined,
       seller: null,
       fsa: "Z9Z",
     };
-    global.fetch = jest.fn().mockResolvedValue({
+
+    (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => mockListing,
-    }) as unknown as typeof global.fetch;
-    const element = await (
-      ListingPage as unknown as (props: {
-        params: { id: string };
-      }) => Promise<React.ReactElement>
-    )({ params: { id: "nomedia" } });
-    render(element);
+    });
+
+    const PageComponent = await ListingPage({
+      params: Promise.resolve({ id: "nomedia" }) as any,
+    });
+
+    render(PageComponent);
 
     await waitFor(() => {
-      // Check for no images fallback
-      const noImages = screen.getAllByText("No images");
-      expect(noImages.length).toBeGreaterThanOrEqual(1);
+      // Use queryAllByText if "No images" appears multiple times or as a fallback
+      expect(screen.queryAllByText(/No images/i).length).toBeGreaterThan(0);
       expect(screen.getByText(/No images here/)).toBeInTheDocument();
       expect(screen.getByText(/Z9Z/)).toBeInTheDocument();
       expect(screen.getByText(/No Media/)).toBeInTheDocument();

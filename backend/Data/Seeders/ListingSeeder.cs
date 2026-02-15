@@ -67,7 +67,7 @@ namespace backend.Data.Seed
                     FSA = validFsas[random.Next(validFsas.Count)]
                 };
 
-                try 
+                try
                 {
                     await listingService.CreateListingAsync(request);
                 }

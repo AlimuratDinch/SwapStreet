@@ -438,7 +438,7 @@ public class SearchServiceIntegrationTests
     {
         var mockFileService = new Mock<IFileStorageService>();
         mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
-        
+
         // Pass the real Meilisearch Client from our fixture
         return new ListingSearchService(db, mockFileService.Object, _meiliFx.Client);
     }
@@ -457,7 +457,7 @@ public class SearchServiceIntegrationTests
         pgDb.Provinces.Add(province);
         var city = new City { Id = 1, Name = "Montreal", ProvinceId = 1 };
         pgDb.Cities.Add(city);
-        
+
         var profileId = Guid.NewGuid();
         pgDb.Profiles.Add(new Profile
         {
@@ -491,7 +491,7 @@ public class SearchServiceIntegrationTests
         }).ToList();
 
         var task = await _meiliFx.Index.AddDocumentsAsync(searchDocs);
-        
+
         // CRITICAL: Wait for Meilisearch to finish indexing so tests don't flake
         await _meiliFx.Client.WaitForTaskAsync(task.TaskUid);
     }
@@ -551,7 +551,7 @@ public class SearchServiceIntegrationTests
     {
         await SeedAsync();
         await using var db = new AppDbContext(_pgFx.DbOptions);
-        
+
         // Add a test image to the DB
         var listing = await db.Listings.FirstAsync();
         db.ListingImages.Add(new ListingImage { ListingId = listing.Id, ImagePath = "test.jpg", DisplayOrder = 0 });

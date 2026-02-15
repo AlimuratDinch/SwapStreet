@@ -15,8 +15,8 @@ public class ListingSearchController : ControllerBase
     private readonly AppDbContext _db;
 
     public ListingSearchController(
-        IListingSearchService listingSearchService, 
-        AppDbContext db, 
+        IListingSearchService listingSearchService,
+        AppDbContext db,
         IFileStorageService minio)
     {
         _listingSearchService = listingSearchService;
@@ -25,17 +25,24 @@ public class ListingSearchController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> SearchListings(
-        [FromQuery] string? q,
-        [FromQuery] string? cursor = null,
-        [FromQuery] int limit = 18)
+    public async Task<IActionResult> SearchListings([FromQuery] SearchRequestDto request)
     {
-        var cappedLimit = Math.Min(limit, 50);
-        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q ?? string.Empty, cappedLimit, cursor);
+        // 1. Sanitize input and cap the limit
+        var cappedLimit = Math.Min(request.PageSize > 0 ? request.PageSize : 18, 50);
+        var searchTerms = request.Query ?? string.Empty;
 
+        // 2. Call the search service once
+        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(
+            searchTerms,
+            cappedLimit,
+            request.Cursor
+        );
+
+        // 3. Extract IDs for batch hydration
         var listingIds = items.Select(i => i.Listing.Id).ToList();
         var profileIds = items.Select(i => i.Listing.ProfileId).Distinct().ToList();
 
+        // 4. Batch Query Profiles and Images
         var profiles = await _db.Profiles.AsNoTracking()
             .Where(p => profileIds.Contains(p.Id))
             .ToListAsync();
@@ -45,20 +52,22 @@ public class ListingSearchController : ControllerBase
             .OrderBy(li => li.DisplayOrder)
             .ToListAsync();
 
-        // Group images and use _minio service for URLs
-        var imagesByListing = images.GroupBy(i => i.ListingId)
-            .ToDictionary(g => g.Key, g => g.Select(img => new
+        // 5. Group images by ListingId for O(1) lookup in the loop
+        var imagesByListing = images.ToLookup(img => img.ListingId);
+
+        // 6. Map to the final result
+        var mapped = items.Select(l =>
+        {
+            var seller = profiles.FirstOrDefault(p => p.Id == l.Listing.ProfileId);
+
+            // Use the Lookup to get images safely
+            var listingImages = imagesByListing[l.Listing.Id].Select(img => new
             {
                 img.Id,
                 imageUrl = _minio.GetPublicFileUrl(img.ImagePath),
                 img.DisplayOrder,
                 img.ForTryon
-            }).ToList());
-
-        var mapped = items.Select(l =>
-        {
-            var seller = profiles.FirstOrDefault(p => p.Id == l.Listing.ProfileId);
-            imagesByListing.TryGetValue(l.Listing.Id, out var imgs);
+            }).ToList();
 
             return new
             {
@@ -66,6 +75,7 @@ public class ListingSearchController : ControllerBase
                 l.Listing.Title,
                 l.Listing.Description,
                 l.Listing.Price,
+                l.Listing.FSA,
                 createdAt = l.Listing.CreatedAt,
                 seller = seller == null ? null : new
                 {
@@ -79,11 +89,17 @@ public class ListingSearchController : ControllerBase
                     bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath),
                     seller.CreatedAt
                 },
-                images = imgs?.Cast<object>().ToList() ?? new List<object>()
+                images = listingImages
             };
         }).ToList();
 
-        return Ok(new { items = mapped, limit, nextCursor, hasNextPage });
+        return Ok(new
+        {
+            items = mapped,
+            limit = cappedLimit,
+            nextCursor,
+            hasNextPage
+        });
     }
 
     [HttpGet("listing/{id:guid}")]
@@ -113,7 +129,7 @@ public class ListingSearchController : ControllerBase
                 profileImageUrl = _minio.GetPublicFileUrl(seller.ProfileImagePath),
                 bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath)
             },
-            images = images.Select(img => new 
+            images = images.Select(img => new
             {
                 img.Id,
                 imageUrl = _minio.GetPublicFileUrl(img.ImagePath),
