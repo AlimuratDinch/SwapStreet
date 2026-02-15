@@ -84,7 +84,8 @@ export default function WardrobePage() {
         console.error("Missing access token for wishlist request.");
         return;
       }
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const res = await fetch(`${apiUrl}/wishlist/${itemId}`, {
         method: "DELETE",
         credentials: "include",

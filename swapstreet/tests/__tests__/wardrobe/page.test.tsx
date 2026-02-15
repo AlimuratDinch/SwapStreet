@@ -444,6 +444,17 @@ describe("WardrobePage", () => {
 
   describe("Favorites", () => {
     it("should toggle favorite on item click", () => {
+      window.localStorage.setItem(
+        "wardrobeItems",
+        JSON.stringify([
+          {
+            id: "item-1",
+            title: "Test Item",
+            price: 10,
+            imageUrl: "http://test.com/item-1.jpg",
+          },
+        ]),
+      );
       render(<WardrobePage />);
 
       const starButtons = screen.getAllByTestId("star-icon");
@@ -455,6 +466,17 @@ describe("WardrobePage", () => {
     });
 
     it("should remove favorite when clicking favorited item", () => {
+      window.localStorage.setItem(
+        "wardrobeItems",
+        JSON.stringify([
+          {
+            id: "item-1",
+            title: "Test Item",
+            price: 10,
+            imageUrl: "http://test.com/item-1.jpg",
+          },
+        ]),
+      );
       render(<WardrobePage />);
 
       const starButtons = screen.getAllByTestId("star-icon");

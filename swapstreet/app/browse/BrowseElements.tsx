@@ -427,13 +427,7 @@ export function Sidebar() {
   );
 }
 
-export function CardItem({
-  id,
-  title,
-  imgSrc,
-  price,
-  href,
-}: CardItemProps) {
+export function CardItem({ id, title, imgSrc, price, href }: CardItemProps) {
   const [inWardrobe, setInWardrobe] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -454,7 +448,8 @@ export function CardItem({
         console.error("Missing access token for wishlist request.");
         return;
       }
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const method = inWardrobe ? "DELETE" : "POST";
       const res = await fetch(`${apiUrl}/wishlist/${id}`, {
         method,
