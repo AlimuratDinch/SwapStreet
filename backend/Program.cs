@@ -21,13 +21,7 @@ using backend.DTOs;
 using System.Text.Json;
 using backend.Configuration;
 using backend.Extensions;
-
-// BUILD ENVIRONTMENTS
-// TEST
-// DEVELOPMENT
-// LOCAL STAGING
-// STAGING
-// PRODUCTION TBA
+using Meilisearch;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +48,7 @@ ConfigureCors(builder);
 
 ConfigureGemini(builder);
 ConfigureMinio(builder);
+ConfigureMeilisearch(builder);
 
 // ===============================================================================
 // AUTHENTICATION & AUTHORIZATION
@@ -109,6 +104,7 @@ if (!builder.Environment.IsTest())
 {
     await InitializeMinio(app);
     await InitializeDatabaseAsync(app);
+    await InitializeMeilisearchIndex(app);
 
 }
 
@@ -243,6 +239,15 @@ static void ConfigureMinio(WebApplicationBuilder builder)
             throw;
         }
     });
+}
+
+static void ConfigureMeilisearch(WebApplicationBuilder builder)
+{
+    var meiliHost = builder.Configuration["MEILISEARCH_HOST"] ?? "http://localhost:7700";
+    var meiliKey = builder.Configuration["MEILISEARCH_API_KEY"] ?? GenerateRandomKey(16);
+
+    builder.Services.AddSingleton<MeilisearchClient>(new MeilisearchClient(meiliHost, meiliKey));
+
 }
 
 
@@ -455,6 +460,26 @@ static async Task InitializeMinio(WebApplication app)
     {
         app.Logger.LogError(ex, "MinIO initialization failed");
     }
+}
+
+static async Task InitializeMeilisearchIndex(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var client = scope.ServiceProvider.GetRequiredService<MeilisearchClient>();
+    var index = client.Index("listings");
+    
+    await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa" });
+    await index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
+    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa" });
+
+    await index.UpdateRankingRulesAsync(new[] {
+        "words",
+        "typo",
+        "proximity", 
+        "attribute",
+        "sort",      
+        "exactness"
+    });
 }
 
 static void ConfigureMiddleware(WebApplication app)

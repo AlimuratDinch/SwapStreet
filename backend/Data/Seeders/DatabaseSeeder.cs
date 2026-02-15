@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using backend.DbContexts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
+using backend.Contracts;
 
 namespace backend.Data.Seed
 {
@@ -14,7 +15,9 @@ namespace backend.Data.Seed
             await ProvinceSeeder.SeedAsync(context, logger);
             await CitySeeder.SeedAsync(context, logger);
             await ProfileSeeder.SeedAsync(context, logger);
-            await ListingSeeder.SeedAsync(context, logger);
+
+            var listingService = serviceProvider.GetRequiredService<IListingCommandService>();
+             await ListingSeeder.SeedAsync(context, listingService, logger);
 
             // --- Service-Based Seeds (Complex dependencies) ---
             try

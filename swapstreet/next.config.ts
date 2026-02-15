@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
         port: "9000",
       },
       {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000', // Adjust this to match your backend port if different
+        pathname: '/public/**',
+      },
+      {
         protocol: "http",
         hostname: "minio", // Internal Docker name for server-side optimization
         port: "9000",

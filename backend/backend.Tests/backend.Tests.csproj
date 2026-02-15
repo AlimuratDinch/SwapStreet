@@ -8,5 +8,9 @@
     <ProjectReference Include="..\backend.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Testcontainers" Version="4.10.0" />
+  </ItemGroup>
+
 
 </Project>

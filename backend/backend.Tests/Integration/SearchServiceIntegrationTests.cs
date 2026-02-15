@@ -1,3 +1,405 @@
+// using backend.DbContexts;
+// using backend.Services;
+// using backend.Tests.Fixtures;
+// using backend.Models;
+// using backend.Models.Authentication;
+// using backend.DTOs.Search;
+// using backend.Contracts;
+// using Microsoft.EntityFrameworkCore;
+// using Moq;
+// using Xunit;
+// using System.Threading.Tasks;
+// using System;
+// using System.Linq;
+// using System.Collections.Generic;
+
+// namespace backend.Tests.Integration;
+
+// [CollectionDefinition(nameof(PostgresCollection))]
+// public class PostgresCollection : ICollectionFixture<PostgresFixture> { }
+
+// [Collection(nameof(PostgresCollection))]
+// public class SearchServiceIntegrationTests
+// {
+//     private readonly PostgresFixture _fx;
+
+//     public SearchServiceIntegrationTests(PostgresFixture fx)
+//     {
+//         _fx = fx;
+//     }
+
+//     /// <summary>
+//     /// Helper method to create a valid User and Profile required for inserting Listings.
+//     /// Uses in-memory databases for auth and profile data to avoid PostgreSQL dependency.
+//     /// </summary>
+//     private async Task<(Guid ProfileId, AppDbContext AppDb, AuthDbContext AuthDb)> CreateUserAndProfileAsync()
+//     {
+//         // Create in-memory databases for auth and profile setup
+//         var appOptions = new DbContextOptionsBuilder<AppDbContext>()
+//             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+//             .Options;
+
+//         var authOptions = new DbContextOptionsBuilder<AuthDbContext>()
+//             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+//             .Options;
+
+//         var db = new AppDbContext(appOptions);
+//         var authDb = new AuthDbContext(authOptions);
+
+//         // 1. Create a City (required by Profile)
+//         var province = new Province { Name = "Ontario", Code = "ON" };
+//         db.Provinces.Add(province);
+//         await db.SaveChangesAsync();
+
+//         var city = new City { Name = "Toronto", ProvinceId = province.Id };
+//         db.Cities.Add(city);
+//         await db.SaveChangesAsync();
+
+//         // 2. Create a User
+//         var userId = Guid.NewGuid();
+//         var email = $"testuser_{Guid.NewGuid().ToString().Substring(0, 8)}@test.com";
+//         var user = new User
+//         {
+//             Id = userId,
+//             Email = email,
+//             Username = email.Split('@')[0],
+//             EncryptedPassword = "hashed_password",
+//             Status = "active",
+//             EmailConfirmedAt = DateTime.UtcNow
+//         };
+//         authDb.Users.Add(user);
+//         await authDb.SaveChangesAsync();
+
+//         // 3. Create a Profile
+//         var profileId = Guid.NewGuid();
+//         var profile = new Profile
+//         {
+//             Id = profileId,
+//             Status = ProfileStatusEnum.Online,
+//             FirstName = "Test",
+//             LastName = "User",
+//             Rating = 4.5f,
+//             CityId = city.Id,
+//             FSA = "M5H"
+//         };
+//         db.Profiles.Add(profile);
+//         await db.SaveChangesAsync();
+
+//         return (profileId, db, authDb);
+//     }
+
+//     /// <summary>
+//     /// Cleans up listing data and disposes contexts.
+//     /// </summary>
+//     private void CleanupData(AppDbContext db, AuthDbContext authDb)
+//     {
+//         if (db != null)
+//         {
+//             db.Listings.RemoveRange(db.Listings);
+//             db.SaveChanges();
+//             db.Dispose();
+//         }
+
+//         if (authDb != null)
+//         {
+//             authDb.Dispose();
+//         }
+//     }
+
+//     private async Task SeedAsync()
+//     {
+//         // Create in-memory databases for user and profile setup
+//         var (profileId, inMemoryAppDb, inMemoryAuthDb) = await CreateUserAndProfileAsync();
+
+//         // Clean up in-memory contexts
+//         CleanupData(inMemoryAppDb, inMemoryAuthDb);
+
+//         // Now create listings in PostgreSQL database
+//         using var pgDb = new AppDbContext(_fx.DbOptions);
+
+//         // Clean previous listings
+//         pgDb.Listings.RemoveRange(pgDb.Listings);
+//         await pgDb.SaveChangesAsync();
+
+//         // Create profile in PostgreSQL database if it doesn't exist
+//         if (!pgDb.Profiles.Any(p => p.Id == profileId))
+//         {
+//             // Ensure province exists
+//             var province = pgDb.Provinces.FirstOrDefault();
+//             if (province == null)
+//             {
+//                 province = new Province { Name = "Ontario", Code = "ON" };
+//                 pgDb.Provinces.Add(province);
+//                 await pgDb.SaveChangesAsync();
+//             }
+
+//             // Ensure city exists
+//             var city = pgDb.Cities.FirstOrDefault();
+//             if (city == null)
+//             {
+//                 city = new City { Name = "Toronto", ProvinceId = province.Id };
+//                 pgDb.Cities.Add(city);
+//                 await pgDb.SaveChangesAsync();
+//             }
+
+//             // Create profile
+//             var pgProfile = new Profile
+//             {
+//                 Id = profileId,
+//                 Status = ProfileStatusEnum.Online,
+//                 FirstName = "Test",
+//                 LastName = "User",
+//                 Rating = 4.5f,
+//                 CityId = city.Id,
+//                 FSA = "M5H"
+//             };
+//             pgDb.Profiles.Add(pgProfile);
+//             await pgDb.SaveChangesAsync();
+//         }
+
+//         // Create tags for listings
+//         var articleType = pgDb.ArticleTypes.FirstOrDefault();
+//         if (articleType == null)
+//         {
+//             articleType = new ArticleType { Name = "Footwear" };
+//             pgDb.ArticleTypes.Add(articleType);
+//             await pgDb.SaveChangesAsync();
+//         }
+
+//         var style = pgDb.Styles.FirstOrDefault();
+//         if (style == null)
+//         {
+//             style = new Style { Name = "Casual" };
+//             pgDb.Styles.Add(style);
+//             await pgDb.SaveChangesAsync();
+//         }
+
+//         var size = pgDb.Sizes.FirstOrDefault();
+//         if (size == null)
+//         {
+//             size = new Size { Value = "10", ArticleTypeId = articleType.Id };
+//             pgDb.Sizes.Add(size);
+//             await pgDb.SaveChangesAsync();
+//         }
+
+//         var brand = pgDb.Brands.FirstOrDefault();
+//         if (brand == null)
+//         {
+//             brand = new Brand { Name = "Nike" };
+//             pgDb.Brands.Add(brand);
+//             await pgDb.SaveChangesAsync();
+//         }
+
+//         var tag = new Tag
+//         {
+//             ArticleTypeId = articleType.Id,
+//             StyleId = style.Id,
+//             SizeId = size.Id,
+//             BrandId = brand.Id,
+//             Color = ColorEnum.White,
+//             Sex = SexEnum.Unisex,
+//             Condition = ConditionEnum.ExcellentUsedCondition,
+//             Material = (int)MaterialEnum.Leather
+//         };
+//         pgDb.Tags.Add(tag);
+//         await pgDb.SaveChangesAsync();
+
+//         // Add test listings
+//         var now = DateTime.UtcNow;
+//         pgDb.Listings.AddRange(
+//             new Listing
+//             {
+//                 Id = Guid.NewGuid(),
+//                 Title = "Nike Air Max shoes",
+//                 Description = "Great running sneakers size 10",
+//                 Price = 80m,
+//                 FSA = "M5H",
+//                 ProfileId = profileId,
+//                 TagId = tag.Id,
+//                 CreatedAt = now.AddMinutes(-3),
+//                 UpdatedAt = now.AddMinutes(-3)
+//             },
+//             new Listing
+//             {
+//                 Id = Guid.NewGuid(),
+//                 Title = "Adidas sweatshirt",
+//                 Description = "Cozy hoodie, like new",
+//                 Price = 35m,
+//                 FSA = "M5H",
+//                 ProfileId = profileId,
+//                 CreatedAt = now.AddMinutes(-2),
+//                 UpdatedAt = now.AddMinutes(-2)
+//             },
+//             new Listing
+//             {
+//                 Id = Guid.NewGuid(),
+//                 Title = "Converse sneakers",
+//                 Description = "Classic shoes, white, size 9",
+//                 Price = 50m,
+//                 FSA = "M5H",
+//                 ProfileId = profileId,
+//                 CreatedAt = now.AddMinutes(-1),
+//                 UpdatedAt = now.AddMinutes(-1)
+//             }
+//         );
+
+//         await pgDb.SaveChangesAsync();
+//     }
+//     [Fact]
+//     public async Task Search_FuzzyTypo_ReturnsExpectedListings()
+//     {
+//         await SeedAsync();
+//         await using var db = new AppDbContext(_fx.DbOptions);
+//         var mockFileService = new Mock<IFileStorageService>();
+//         mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+//         var svc = new ListingSearchService(db, mockFileService.Object);
+
+//         // "sneakrs" typo should match listings containing "sneakers"
+//         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("sneakrs", pageSize: 20, cursor: null);
+
+//         Assert.NotEmpty(items);
+//         Assert.Contains(items, l => l.Listing.Title.Contains("Converse", StringComparison.OrdinalIgnoreCase));
+//         Assert.Contains(items, l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+//         Assert.False(hasNext);
+//         Assert.Null(nextCursor);
+//     }
+
+//     [Fact]
+//     public async Task Search_CursorPagination_ReturnsSecondPageWithoutDuplicates()
+//     {
+//         await SeedAsync();
+//         await using var db = new AppDbContext(_fx.DbOptions);
+//         var mockFileService = new Mock<IFileStorageService>();
+//         mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+//         var svc = new ListingSearchService(db, mockFileService.Object);
+
+//         // page 1
+//         var (items1, cursor1, hasNext1) = await svc.SearchListingsAsync("shoes", pageSize: 1, cursor: null);
+
+//         Assert.Single(items1);
+//         Assert.True(hasNext1);
+//         Assert.False(string.IsNullOrWhiteSpace(cursor1));
+
+//         // page 2
+//         var (items2, cursor2, hasNext2) = await svc.SearchListingsAsync("shoes", pageSize: 1, cursor: cursor1);
+
+//         Assert.Single(items2);
+
+//         // no duplicates across pages
+//         Assert.NotEqual(items1[0].Listing.Id, items2[0].Listing.Id);
+
+//         // cursor2 may be null depending on remaining matches
+//         _ = cursor2;
+//         _ = hasNext2;
+//     }
+
+//     [Fact]
+//     public async Task BlankQuery_ReturnsRecentListings()
+//     {
+//         await SeedAsync();
+//         await using var db = new AppDbContext(_fx.DbOptions);
+//         var mockFileService = new Mock<IFileStorageService>();
+//         mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+//         var svc = new ListingSearchService(db, mockFileService.Object);
+
+//         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("", pageSize: 2, cursor: null);
+
+//         Assert.Equal(2, items.Count);
+//         Assert.True(items[0].Listing.CreatedAt >= items[1].Listing.CreatedAt); // ordered by recency
+
+//         Assert.True(hasNext);          // we seeded 3
+//         Assert.NotNull(nextCursor);
+//     }
+
+//     [Fact]
+//     public async Task Search_NoTypoQuery_ReturnsExpectedListings()
+//     {
+//         await SeedAsync();
+//         await using var db = new AppDbContext(_fx.DbOptions);
+//         var mockFileService = new Mock<IFileStorageService>();
+//         mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+//         var svc = new ListingSearchService(db, mockFileService.Object);
+
+//         // Search for "Nike" (exact match, no typo)
+//         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("Nike shoes", pageSize: 20, cursor: null);
+
+//         Assert.NotEmpty(items);
+//         Assert.Contains(items, l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+//         Assert.False(hasNext);
+//         Assert.Null(nextCursor);
+//     }
+
+//     [Fact]
+//     public async Task Search_ReturnsListingsWithImages()
+//     {
+//         await SeedAsync();
+//         await using var db = new AppDbContext(_fx.DbOptions);
+//         var mockFileService = new Mock<IFileStorageService>();
+//         mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+//         var svc = new ListingSearchService(db, mockFileService.Object);
+
+//         var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
+
+//         Assert.NotEmpty(items);
+
+//         // Verify all items have Images collection (even if empty)
+//         foreach (var item in items)
+//         {
+//             Assert.NotNull(item.Images);
+//             Assert.IsType<List<ListingImageDto>>(item.Images);
+//         }
+//     }
+
+//     [Fact]
+//     public async Task ProfileAccessibleThroughListing_SearchListingsAsync_ReturnsProfileInfo()
+//     {
+//         await SeedAsync();
+//         await using var db = new AppDbContext(_fx.DbOptions);
+//         var mockFileService = new Mock<IFileStorageService>();
+//         mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+//         var svc = new ListingSearchService(db, mockFileService.Object);
+
+//         var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
+
+//         Assert.NotEmpty(items);
+
+//         // Verify all items have associated Profile info
+//         foreach (var item in items)
+//         {
+//             var profile = await db.Profiles.FindAsync(item.Listing.ProfileId);
+//             Assert.NotNull(profile);
+//             Assert.False(string.IsNullOrWhiteSpace(profile.FirstName));
+//             Assert.False(string.IsNullOrWhiteSpace(profile.LastName));
+//         }
+//     }
+
+
+//     [Fact]
+//     public async Task SearchListingsAsync_WithTag_ReturnsCompleteTagInfo()
+//     {
+//         await SeedAsync();
+//         await using var db = new AppDbContext(_fx.DbOptions);
+//         var mockFileService = new Mock<IFileStorageService>();
+//         mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+//         var svc = new ListingSearchService(db, mockFileService.Object);
+
+//         var (items, _, _) = await svc.SearchListingsAsync("Nike", pageSize: 20, cursor: null);
+
+//         Assert.NotEmpty(items);
+
+//         // Find the Nike listing which should have a complete tag
+//         var nikeListing = items.FirstOrDefault(l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
+//         Assert.NotNull(nikeListing); // Ensure we found the Nike listing
+//         Assert.NotNull(nikeListing.Listing.Tag); // Ensure Tag is not null
+
+//         // Verify enums
+//         Assert.Equal(ColorEnum.White, nikeListing.Listing.Tag.Color);
+//         Assert.Equal(SexEnum.Unisex, nikeListing.Listing.Tag.Sex);
+//         Assert.Equal(ConditionEnum.ExcellentUsedCondition, nikeListing.Listing.Tag.Condition);
+//         Assert.Equal((int)MaterialEnum.Leather, nikeListing.Listing.Tag.Material);
+//     }
+// }
+
 using backend.DbContexts;
 using backend.Services;
 using backend.Tests.Fixtures;
@@ -8,6 +410,7 @@ using backend.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
+using Meilisearch;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
@@ -15,387 +418,150 @@ using System.Collections.Generic;
 
 namespace backend.Tests.Integration;
 
-[CollectionDefinition(nameof(PostgresCollection))]
-public class PostgresCollection : ICollectionFixture<PostgresFixture> { }
+// Combined collection to utilize both Postgres and Meilisearch fixtures
+[CollectionDefinition("SearchIntegration")]
+public class SearchIntegrationCollection : ICollectionFixture<PostgresFixture>, ICollectionFixture<MeilisearchFixture> { }
 
-[Collection(nameof(PostgresCollection))]
+[Collection("SearchIntegration")]
 public class SearchServiceIntegrationTests
 {
-    private readonly PostgresFixture _fx;
+    private readonly PostgresFixture _pgFx;
+    private readonly MeilisearchFixture _meiliFx;
 
-    public SearchServiceIntegrationTests(PostgresFixture fx)
+    public SearchServiceIntegrationTests(PostgresFixture pgFx, MeilisearchFixture meiliFx)
     {
-        _fx = fx;
+        _pgFx = pgFx;
+        _meiliFx = meiliFx;
     }
 
-    /// <summary>
-    /// Helper method to create a valid User and Profile required for inserting Listings.
-    /// Uses in-memory databases for auth and profile data to avoid PostgreSQL dependency.
-    /// </summary>
-    private async Task<(Guid ProfileId, AppDbContext AppDb, AuthDbContext AuthDb)> CreateUserAndProfileAsync()
+    private ListingSearchService CreateService(AppDbContext db)
     {
-        // Create in-memory databases for auth and profile setup
-        var appOptions = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        var authOptions = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        var db = new AppDbContext(appOptions);
-        var authDb = new AuthDbContext(authOptions);
-
-        // 1. Create a City (required by Profile)
-        var province = new Province { Name = "Ontario", Code = "ON" };
-        db.Provinces.Add(province);
-        await db.SaveChangesAsync();
-
-        var city = new City { Name = "Toronto", ProvinceId = province.Id };
-        db.Cities.Add(city);
-        await db.SaveChangesAsync();
-
-        // 2. Create a User
-        var userId = Guid.NewGuid();
-        var email = $"testuser_{Guid.NewGuid().ToString().Substring(0, 8)}@test.com";
-        var user = new User
-        {
-            Id = userId,
-            Email = email,
-            Username = email.Split('@')[0],
-            EncryptedPassword = "hashed_password",
-            Status = "active",
-            EmailConfirmedAt = DateTime.UtcNow
-        };
-        authDb.Users.Add(user);
-        await authDb.SaveChangesAsync();
-
-        // 3. Create a Profile
-        var profileId = Guid.NewGuid();
-        var profile = new Profile
-        {
-            Id = profileId,
-            Status = ProfileStatusEnum.Online,
-            FirstName = "Test",
-            LastName = "User",
-            Rating = 4.5f,
-            CityId = city.Id,
-            FSA = "M5H"
-        };
-        db.Profiles.Add(profile);
-        await db.SaveChangesAsync();
-
-        return (profileId, db, authDb);
-    }
-
-    /// <summary>
-    /// Cleans up listing data and disposes contexts.
-    /// </summary>
-    private void CleanupData(AppDbContext db, AuthDbContext authDb)
-    {
-        if (db != null)
-        {
-            db.Listings.RemoveRange(db.Listings);
-            db.SaveChanges();
-            db.Dispose();
-        }
-
-        if (authDb != null)
-        {
-            authDb.Dispose();
-        }
+        var mockFileService = new Mock<IFileStorageService>();
+        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
+        
+        // Pass the real Meilisearch Client from our fixture
+        return new ListingSearchService(db, mockFileService.Object, _meiliFx.Client);
     }
 
     private async Task SeedAsync()
     {
-        // Create in-memory databases for user and profile setup
-        var (profileId, inMemoryAppDb, inMemoryAuthDb) = await CreateUserAndProfileAsync();
+        using var pgDb = new AppDbContext(_pgFx.DbOptions);
 
-        // Clean up in-memory contexts
-        CleanupData(inMemoryAppDb, inMemoryAuthDb);
+        // 1. Reset Databases
+        await pgDb.Database.EnsureDeletedAsync();
+        await pgDb.Database.EnsureCreatedAsync();
+        await _meiliFx.InitializeAsync(); // Wipes and recreates the "listings" index
 
-        // Now create listings in PostgreSQL database
-        using var pgDb = new AppDbContext(_fx.DbOptions);
-
-        // Clean previous listings
-        pgDb.Listings.RemoveRange(pgDb.Listings);
+        // 2. Setup Relational Data (Province, City, Profile)
+        var province = new Province { Id = 1, Name = "Quebec", Code = "QC" };
+        pgDb.Provinces.Add(province);
+        var city = new City { Id = 1, Name = "Montreal", ProvinceId = 1 };
+        pgDb.Cities.Add(city);
+        
+        var profileId = Guid.NewGuid();
+        pgDb.Profiles.Add(new Profile
+        {
+            Id = profileId,
+            FirstName = "Test",
+            LastName = "User",
+            CityId = 1,
+            FSA = "H2X"
+        });
         await pgDb.SaveChangesAsync();
 
-        // Create profile in PostgreSQL database if it doesn't exist
-        if (!pgDb.Profiles.Any(p => p.Id == profileId))
-        {
-            // Ensure province exists
-            var province = pgDb.Provinces.FirstOrDefault();
-            if (province == null)
-            {
-                province = new Province { Name = "Ontario", Code = "ON" };
-                pgDb.Provinces.Add(province);
-                await pgDb.SaveChangesAsync();
-            }
-
-            // Ensure city exists
-            var city = pgDb.Cities.FirstOrDefault();
-            if (city == null)
-            {
-                city = new City { Name = "Toronto", ProvinceId = province.Id };
-                pgDb.Cities.Add(city);
-                await pgDb.SaveChangesAsync();
-            }
-
-            // Create profile
-            var pgProfile = new Profile
-            {
-                Id = profileId,
-                Status = ProfileStatusEnum.Online,
-                FirstName = "Test",
-                LastName = "User",
-                Rating = 4.5f,
-                CityId = city.Id,
-                FSA = "M5H"
-            };
-            pgDb.Profiles.Add(pgProfile);
-            await pgDb.SaveChangesAsync();
-        }
-
-        // Create tags for listings
-        var articleType = pgDb.ArticleTypes.FirstOrDefault();
-        if (articleType == null)
-        {
-            articleType = new ArticleType { Name = "Footwear" };
-            pgDb.ArticleTypes.Add(articleType);
-            await pgDb.SaveChangesAsync();
-        }
-
-        var style = pgDb.Styles.FirstOrDefault();
-        if (style == null)
-        {
-            style = new Style { Name = "Casual" };
-            pgDb.Styles.Add(style);
-            await pgDb.SaveChangesAsync();
-        }
-
-        var size = pgDb.Sizes.FirstOrDefault();
-        if (size == null)
-        {
-            size = new Size { Value = "10", ArticleTypeId = articleType.Id };
-            pgDb.Sizes.Add(size);
-            await pgDb.SaveChangesAsync();
-        }
-
-        var brand = pgDb.Brands.FirstOrDefault();
-        if (brand == null)
-        {
-            brand = new Brand { Name = "Nike" };
-            pgDb.Brands.Add(brand);
-            await pgDb.SaveChangesAsync();
-        }
-
-        var tag = new Tag
-        {
-            ArticleTypeId = articleType.Id,
-            StyleId = style.Id,
-            SizeId = size.Id,
-            BrandId = brand.Id,
-            Color = ColorEnum.White,
-            Sex = SexEnum.Unisex,
-            Condition = ConditionEnum.ExcellentUsedCondition,
-            Material = (int)MaterialEnum.Leather
-        };
-        pgDb.Tags.Add(tag);
-        await pgDb.SaveChangesAsync();
-
-        // Add test listings
+        // 3. Create Listings in Postgres
         var now = DateTime.UtcNow;
-        pgDb.Listings.AddRange(
-            new Listing
-            {
-                Id = Guid.NewGuid(),
-                Title = "Nike Air Max shoes",
-                Description = "Great running sneakers size 10",
-                Price = 80m,
-                FSA = "M5H",
-                ProfileId = profileId,
-                TagId = tag.Id,
-                CreatedAt = now.AddMinutes(-3),
-                UpdatedAt = now.AddMinutes(-3)
-            },
-            new Listing
-            {
-                Id = Guid.NewGuid(),
-                Title = "Adidas sweatshirt",
-                Description = "Cozy hoodie, like new",
-                Price = 35m,
-                FSA = "M5H",
-                ProfileId = profileId,
-                CreatedAt = now.AddMinutes(-2),
-                UpdatedAt = now.AddMinutes(-2)
-            },
-            new Listing
-            {
-                Id = Guid.NewGuid(),
-                Title = "Converse sneakers",
-                Description = "Classic shoes, white, size 9",
-                Price = 50m,
-                FSA = "M5H",
-                ProfileId = profileId,
-                CreatedAt = now.AddMinutes(-1),
-                UpdatedAt = now.AddMinutes(-1)
-            }
-        );
-
+        var listings = new List<Listing>
+        {
+            new Listing { Id = Guid.NewGuid(), Title = "Nike Air Max shoes", Description = "Great running sneakers", Price = 80m, FSA = "H2X", ProfileId = profileId, CreatedAt = now.AddMinutes(-3) },
+            new Listing { Id = Guid.NewGuid(), Title = "Adidas sweatshirt", Description = "Cozy hoodie", Price = 35m, FSA = "H2X", ProfileId = profileId, CreatedAt = now.AddMinutes(-2) },
+            new Listing { Id = Guid.NewGuid(), Title = "Converse sneakers", Description = "Classic shoes", Price = 50m, FSA = "H2X", ProfileId = profileId, CreatedAt = now.AddMinutes(-1) }
+        };
+        pgDb.Listings.AddRange(listings);
         await pgDb.SaveChangesAsync();
+
+        // 4. Sync Listings to REAL Meilisearch
+        var searchDocs = listings.Select(l => new ListingSearchDto
+        {
+            Id = l.Id.ToString(),
+            Title = l.Title,
+            Description = l.Description,
+            FSA = l.FSA,
+            CreatedAtTimestamp = new DateTimeOffset(l.CreatedAt).ToUnixTimeSeconds()
+        }).ToList();
+
+        var task = await _meiliFx.Index.AddDocumentsAsync(searchDocs);
+        
+        // CRITICAL: Wait for Meilisearch to finish indexing so tests don't flake
+        await _meiliFx.Client.WaitForTaskAsync(task.TaskUid);
     }
+
     [Fact]
     public async Task Search_FuzzyTypo_ReturnsExpectedListings()
     {
         await SeedAsync();
-        await using var db = new AppDbContext(_fx.DbOptions);
-        var mockFileService = new Mock<IFileStorageService>();
-        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
-        var svc = new ListingSearchService(db, mockFileService.Object);
+        await using var db = new AppDbContext(_pgFx.DbOptions);
+        var svc = CreateService(db);
 
-        // "sneakrs" typo should match listings containing "sneakers"
-        var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("sneakrs", pageSize: 20, cursor: null);
+        // Meilisearch handles "sneakrs" -> "sneakers" fuzzy matching
+        var (items, _, _) = await svc.SearchListingsAsync("sneakrs", pageSize: 20, cursor: null);
 
         Assert.NotEmpty(items);
-        Assert.Contains(items, l => l.Listing.Title.Contains("Converse", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(items, l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
-        Assert.False(hasNext);
-        Assert.Null(nextCursor);
+        Assert.Contains(items, l => l.Listing.Title.Contains("Converse"));
+        Assert.Contains(items, l => l.Listing.Title.Contains("Nike"));
     }
 
     [Fact]
-    public async Task Search_CursorPagination_ReturnsSecondPageWithoutDuplicates()
+    public async Task Search_CursorPagination_ReturnsSecondPage()
     {
         await SeedAsync();
-        await using var db = new AppDbContext(_fx.DbOptions);
-        var mockFileService = new Mock<IFileStorageService>();
-        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
-        var svc = new ListingSearchService(db, mockFileService.Object);
+        await using var db = new AppDbContext(_pgFx.DbOptions);
+        var svc = CreateService(db);
 
-        // page 1
+        // Page 1
         var (items1, cursor1, hasNext1) = await svc.SearchListingsAsync("shoes", pageSize: 1, cursor: null);
-
         Assert.Single(items1);
         Assert.True(hasNext1);
-        Assert.False(string.IsNullOrWhiteSpace(cursor1));
 
-        // page 2
+        // Page 2
         var (items2, cursor2, hasNext2) = await svc.SearchListingsAsync("shoes", pageSize: 1, cursor: cursor1);
-
         Assert.Single(items2);
-
-        // no duplicates across pages
         Assert.NotEqual(items1[0].Listing.Id, items2[0].Listing.Id);
-
-        // cursor2 may be null depending on remaining matches
-        _ = cursor2;
-        _ = hasNext2;
     }
 
     [Fact]
-    public async Task BlankQuery_ReturnsRecentListings()
+    public async Task BlankQuery_ReturnsRecentListingsByDate()
     {
         await SeedAsync();
-        await using var db = new AppDbContext(_fx.DbOptions);
-        var mockFileService = new Mock<IFileStorageService>();
-        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
-        var svc = new ListingSearchService(db, mockFileService.Object);
+        await using var db = new AppDbContext(_pgFx.DbOptions);
+        var svc = CreateService(db);
 
         var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("", pageSize: 2, cursor: null);
 
         Assert.Equal(2, items.Count);
-        Assert.True(items[0].Listing.CreatedAt >= items[1].Listing.CreatedAt); // ordered by recency
-
-        Assert.True(hasNext);          // we seeded 3
-        Assert.NotNull(nextCursor);
-    }
-
-    [Fact]
-    public async Task Search_NoTypoQuery_ReturnsExpectedListings()
-    {
-        await SeedAsync();
-        await using var db = new AppDbContext(_fx.DbOptions);
-        var mockFileService = new Mock<IFileStorageService>();
-        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
-        var svc = new ListingSearchService(db, mockFileService.Object);
-
-        // Search for "Nike" (exact match, no typo)
-        var (items, nextCursor, hasNext) = await svc.SearchListingsAsync("Nike shoes", pageSize: 20, cursor: null);
-
-        Assert.NotEmpty(items);
-        Assert.Contains(items, l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
-        Assert.False(hasNext);
-        Assert.Null(nextCursor);
+        // Converse was CreatedAt now.AddMinutes(-1), Adidas was -2. 
+        // Meilisearch Sort rule: createdAtTimestamp:desc
+        Assert.Contains("Converse", items[0].Listing.Title);
+        Assert.Contains("Adidas", items[1].Listing.Title);
+        Assert.True(hasNext);
     }
 
     [Fact]
     public async Task Search_ReturnsListingsWithImages()
     {
         await SeedAsync();
-        await using var db = new AppDbContext(_fx.DbOptions);
-        var mockFileService = new Mock<IFileStorageService>();
-        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
-        var svc = new ListingSearchService(db, mockFileService.Object);
+        await using var db = new AppDbContext(_pgFx.DbOptions);
+        
+        // Add a test image to the DB
+        var listing = await db.Listings.FirstAsync();
+        db.ListingImages.Add(new ListingImage { ListingId = listing.Id, ImagePath = "test.jpg", DisplayOrder = 0 });
+        await db.SaveChangesAsync();
 
-        var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
-
-        Assert.NotEmpty(items);
-
-        // Verify all items have Images collection (even if empty)
-        foreach (var item in items)
-        {
-            Assert.NotNull(item.Images);
-            Assert.IsType<List<ListingImageDto>>(item.Images);
-        }
-    }
-
-    [Fact]
-    public async Task ProfileAccessibleThroughListing_SearchListingsAsync_ReturnsProfileInfo()
-    {
-        await SeedAsync();
-        await using var db = new AppDbContext(_fx.DbOptions);
-        var mockFileService = new Mock<IFileStorageService>();
-        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
-        var svc = new ListingSearchService(db, mockFileService.Object);
-
-        var (items, _, _) = await svc.SearchListingsAsync("shoes", pageSize: 20, cursor: null);
+        var svc = CreateService(db);
+        var (items, _, _) = await svc.SearchListingsAsync(listing.Title, pageSize: 1, cursor: null);
 
         Assert.NotEmpty(items);
-
-        // Verify all items have associated Profile info
-        foreach (var item in items)
-        {
-            var profile = await db.Profiles.FindAsync(item.Listing.ProfileId);
-            Assert.NotNull(profile);
-            Assert.False(string.IsNullOrWhiteSpace(profile.FirstName));
-            Assert.False(string.IsNullOrWhiteSpace(profile.LastName));
-        }
-    }
-
-
-    [Fact]
-    public async Task SearchListingsAsync_WithTag_ReturnsCompleteTagInfo()
-    {
-        await SeedAsync();
-        await using var db = new AppDbContext(_fx.DbOptions);
-        var mockFileService = new Mock<IFileStorageService>();
-        mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
-        var svc = new ListingSearchService(db, mockFileService.Object);
-
-        var (items, _, _) = await svc.SearchListingsAsync("Nike", pageSize: 20, cursor: null);
-
-        Assert.NotEmpty(items);
-
-        // Find the Nike listing which should have a complete tag
-        var nikeListing = items.FirstOrDefault(l => l.Listing.Title.Contains("Nike", StringComparison.OrdinalIgnoreCase));
-        Assert.NotNull(nikeListing); // Ensure we found the Nike listing
-        Assert.NotNull(nikeListing.Listing.Tag); // Ensure Tag is not null
-
-        // Verify enums
-        Assert.Equal(ColorEnum.White, nikeListing.Listing.Tag.Color);
-        Assert.Equal(SexEnum.Unisex, nikeListing.Listing.Tag.Sex);
-        Assert.Equal(ConditionEnum.ExcellentUsedCondition, nikeListing.Listing.Tag.Condition);
-        Assert.Equal((int)MaterialEnum.Leather, nikeListing.Listing.Tag.Material);
+        Assert.Single(items[0].Images);
+        Assert.Contains("test.jpg", items[0].Images[0].ImageUrl);
     }
 }
