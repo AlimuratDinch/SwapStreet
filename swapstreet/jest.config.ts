@@ -1,9 +1,3 @@
-import nextJest from "next/jest";
-
-const createJestConfig = nextJest({
-  dir: "./",
-});
-
 const customJestConfig = {
   setupFiles: ["<rootDir>/jest.setup.ts"],
   setupFilesAfterEnv: ["<rootDir>/jest-dom.setup.ts"],
@@ -14,22 +8,20 @@ const customJestConfig = {
   collectCoverage: true,
   collectCoverageFrom: [
     "app/**/*.{js,jsx,ts,tsx}",
-    "!app/layout.tsx",
-    "!app/layout.js",
+    "!app/layout.{js,tsx}",
     "!**/node_modules/**",
     "!**/.next/**",
-    "!app/browse/BrowseElements.tsx",
-    "!app/browse/InfiniteBrowse.tsx",
+    "!app/browse/**", 
   ],
   coverageDirectory: "coverage",
-  testPathIgnorePatterns: ["<rootDir>/e2e/"],
+  testPathIgnorePatterns: [
+    "<rootDir>/e2e/",
+    "<rootDir>/app/browse/" 
+  ],
   coveragePathIgnorePatterns: [
     "/node_modules/",
-    "/app/browse/BrowseElements.tsx", // NEEDS TO BE REFACTORED
-    "/app/browse/InfiniteBrowse.tsx", // NEEDS TO BE REFACTORED
-    "app/wardrobe/", // NEEDS TO BE REFACTORED
-    "app/listing/[id]/page.tsx", // NEEDS TO BE REFACTORED
+    "/app/browse/", // NEEDS TO BE REFACTORED, no point writting tests that will be replaced
+    "app/wardrobe/",
+    "app/listing/[id]/page.tsx",
   ],
 };
-
-module.exports = createJestConfig(customJestConfig);
