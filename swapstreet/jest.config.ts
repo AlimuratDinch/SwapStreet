@@ -1,6 +1,8 @@
-const nextJest = require("next/jest");
+import nextJest from "next/jest";
 
-const createJestConfig = nextJest({ dir: "./" });
+const createJestConfig = nextJest({
+  dir: "./",
+});
 
 const customJestConfig = {
   setupFiles: ["<rootDir>/jest.setup.ts"],
