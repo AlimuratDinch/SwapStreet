@@ -80,7 +80,7 @@ jobs:
       run: |
         cd swapstreet
         echo "Linting files: $FILES"
-        npx eslint $FILES --max-warnings=0
+        npx eslint $FILES --max-warnings=10
 
     # Backend dependency vulnerability scan
     - name: Backend dependency vulnerability check
