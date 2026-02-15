@@ -22,10 +22,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# CRITICAL: We must pass these args so Next.js bakes them into the HTML
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_FRONTEND_URL
+
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV NEXT_PUBLIC_FRONTEND_URL=https://swapstreet.ca
+ENV NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL}
 
 # Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED=1

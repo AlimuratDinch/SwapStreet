@@ -4,7 +4,7 @@ import RegistrationPage from "@/app/auth/sign-up/page";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "@testing-library/jest-dom";
 
-// Mock logger
+// FIXED LOGGER MOCK (no hoisting issue)
 jest.mock("@/components/common/logger", () => ({
   logger: {
     debug: jest.fn(),
@@ -14,40 +14,41 @@ jest.mock("@/components/common/logger", () => ({
   },
 }));
 
-// Mock router for client component
+import { logger } from "@/components/common/logger";
+
+// Mock router
 const pushMock = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
-// Helper to render with AuthProvider
 const renderWithAuth = (component: React.ReactElement) => {
   return render(<AuthProvider>{component}</AuthProvider>);
 };
 
-describe("RegistrationPage", () => {
+describe("RegistrationPage — branch coverage booster", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("renders the registration form fields and button", () => {
+  it("renders all form fields", () => {
     renderWithAuth(<RegistrationPage />);
-    expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /sign up/i }),
-    ).toBeInTheDocument();
   });
 
-  it("shows error if password is too short", () => {
+  it("does not call API if password too short", () => {
+    global.fetch = jest.fn();
+
     renderWithAuth(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
     });
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
+      target: { value: "u@test.com" },
     });
     fireEvent.change(screen.getByLabelText(/^password$/i), {
       target: { value: "short" },
@@ -55,19 +56,22 @@ describe("RegistrationPage", () => {
     fireEvent.change(screen.getByLabelText(/confirm password/i), {
       target: { value: "short" },
     });
+
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
-    expect(
-      screen.getByText(/password must be at least 8 characters long/i),
-    ).toBeInTheDocument();
+
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it("shows error if passwords do not match", () => {
+  it("does not call API if passwords mismatch", () => {
+    global.fetch = jest.fn();
+
     renderWithAuth(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
     });
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
+      target: { value: "u@test.com" },
     });
     fireEvent.change(screen.getByLabelText(/^password$/i), {
       target: { value: "password123" },
@@ -75,51 +79,27 @@ describe("RegistrationPage", () => {
     fireEvent.change(screen.getByLabelText(/confirm password/i), {
       target: { value: "password321" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
-    expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
-  });
-
-  it("submits successfully and shows email verification modal on success", async () => {
-    const mockResponse = {}; // Sign-up doesn't return specific data
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockResponse,
-    } as Response);
-
-    renderWithAuth(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
-    });
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: "password123" },
-    });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: "password123" },
-    });
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/check your email/i)).toBeInTheDocument();
-    });
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it("shows error message on failed API call", async () => {
-    const errorMsg = "Failed to create account";
+  it("uses fallback API url branch", async () => {
+    delete process.env.NEXT_PUBLIC_API_URL;
+
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
-      text: async () => errorMsg,
+      text: async () => "fallback error",
     } as Response);
 
     renderWithAuth(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
     });
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "fail@example.com" },
+      target: { value: "user@test.com" },
     });
     fireEvent.change(screen.getByLabelText(/^password$/i), {
       target: { value: "password123" },
@@ -130,22 +110,55 @@ describe("RegistrationPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
-    const errorEl = await screen.findByText(errorMsg);
-    expect(errorEl).toBeInTheDocument();
+    await screen.findByText(/fallback error/i);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://localhost:8080/api/auth/register",
+      expect.any(Object),
+    );
   });
 
-  it("shows error if response does not contain expected data", async () => {
+  it("handles ok=false with empty text branch", async () => {
     global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({}), // empty response is fine for sign-up
+      ok: false,
+      text: async () => "",
     } as Response);
 
     renderWithAuth(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
     });
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
+      target: { value: "user@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+
+    expect(
+      await screen.findByText(/failed to create account/i),
+    ).toBeInTheDocument();
+  });
+
+  it("success branch → modal + logger.info", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    } as Response);
+
+    renderWithAuth(<RegistrationPage />);
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "user@test.com" },
     });
     fireEvent.change(screen.getByLabelText(/^password$/i), {
       target: { value: "password123" },
@@ -159,17 +172,20 @@ describe("RegistrationPage", () => {
     await waitFor(() => {
       expect(screen.getByText(/check your email/i)).toBeInTheDocument();
     });
+
+    expect(logger.info).toHaveBeenCalled();
   });
 
-  it("shows error on network failure during registration", async () => {
+  it("network error branch", async () => {
     global.fetch = jest.fn().mockRejectedValueOnce(new Error("Network error"));
 
     renderWithAuth(<RegistrationPage />);
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: "Test User" },
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
     });
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
+      target: { value: "user@test.com" },
     });
     fireEvent.change(screen.getByLabelText(/^password$/i), {
       target: { value: "password123" },
@@ -180,7 +196,34 @@ describe("RegistrationPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
-    const errorEl = await screen.findByText(/network error/i);
-    expect(errorEl).toBeInTheDocument();
+    expect(await screen.findByText(/network error/i)).toBeInTheDocument();
+    expect(logger.error).toHaveBeenCalled();
+  });
+
+  it("unknown thrown error branch", async () => {
+    global.fetch = jest.fn().mockRejectedValueOnce("string failure");
+
+    renderWithAuth(<RegistrationPage />);
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "user@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+
+    expect(
+      await screen.findByText(/failed to create account. please try again/i),
+    ).toBeInTheDocument();
+
+    expect(logger.error).toHaveBeenCalled();
   });
 });

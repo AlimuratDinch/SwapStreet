@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Hub Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        input, button { padding: 8px 12px; margin: 5px; }
+        input[type="text"] { width: 300px; }
+        button { cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; }
+        .message { padding: 5px; margin: 5px 0; background: white; border-radius: 4px; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>SignalR Chat Hub Test</h1>
+
+    <div class="section">
+        <h3>1. Authentication</h3>
+        <p>First, get a JWT token by logging in via the API:</p>
+        <input type="text" id="token" placeholder="Paste JWT token here" style="width: 500px;">
+    </div>
+
+    <div class="section">
+        <h3>2. Connection</h3>
+        <button id="connectBtn" onclick="connect()">Connect to Hub</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+        <span id="connectionStatus"></span>
+    </div>
+
+    <div class="section">
+        <h3>3. Join Chatroom</h3>
+        <input type="text" id="chatroomId" placeholder="Chatroom ID (GUID)">
+        <button onclick="joinChatroom()">Join Chatroom</button>
+        <button onclick="leaveChatroom()">Leave Chatroom</button>
+    </div>
+
+    <div class="section">
+        <h3>4. Send Message</h3>
+        <input type="text" id="messageContent" placeholder="Message content">
+        <button onclick="sendMessage()">Send Message</button>
+    </div>
+
+    <div class="section">
+        <h3>5. Messages & Events</h3>
+        <button onclick="clearMessages()">Clear</button>
+        <div id="messages"></div>
+    </div>
+
+    <div class="section">
+        <h3>REST API Helpers</h3>
+        <p>Create a chatroom first via REST API:</p>
+        <pre>
+POST /api/chat/chatrooms
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "sellerId": "seller-guid-here",
+  "buyerId": "buyer-guid-here"
+}
+        </pre>
+        <p>Or get/create:</p>
+        <pre>
+POST /api/chat/chatrooms/get-or-create
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "sellerId": "seller-guid-here",
+  "buyerId": "buyer-guid-here"
+}
+        </pre>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        let connection = null;
+
+        function log(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function logObject(label, obj) {
+            log(`${label}: ${JSON.stringify(obj, null, 2)}`, 'info');
+        }
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                log('Please enter a JWT token first', 'error');
+                return;
+            }
+
+            const hubUrl = `/chathub?access_token=${encodeURIComponent(token)}`;
+            
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl(hubUrl)
+                .withAutomaticReconnect()
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+
+            // Event handlers
+            connection.on('ReceiveMessage', (message) => {
+                logObject('ReceiveMessage', message);
+            });
+
+            connection.on('JoinedChatroom', (chatroomId) => {
+                log(`Joined chatroom: ${chatroomId}`, 'success');
+            });
+
+            connection.on('LeftChatroom', (chatroomId) => {
+                log(`Left chatroom: ${chatroomId}`, 'info');
+            });
+
+            connection.on('Error', (error) => {
+                log(`Error: ${error}`, 'error');
+            });
+
+            connection.onclose((error) => {
+                log('Connection closed' + (error ? `: ${error}` : ''), 'error');
+                updateConnectionUI(false);
+            });
+
+            connection.onreconnecting((error) => {
+                log('Reconnecting...' + (error ? `: ${error}` : ''), 'info');
+            });
+
+            connection.onreconnected((connectionId) => {
+                log(`Reconnected with ID: ${connectionId}`, 'success');
+            });
+
+            // Start connection
+            connection.start()
+                .then(() => {
+                    log('Connected to SignalR hub!', 'success');
+                    updateConnectionUI(true);
+                })
+                .catch((err) => {
+                    log(`Connection failed: ${err}`, 'error');
+                });
+        }
+
+        function disconnect() {
+            if (connection) {
+                connection.stop()
+                    .then(() => {
+                        log('Disconnected', 'info');
+                        updateConnectionUI(false);
+                    });
+            }
+        }
+
+        function updateConnectionUI(connected) {
+            document.getElementById('connectBtn').disabled = connected;
+            document.getElementById('disconnectBtn').disabled = !connected;
+            document.getElementById('connectionStatus').textContent = connected ? ' ✅ Connected' : ' ❌ Disconnected';
+        }
+
+        function joinChatroom() {
+            const chatroomId = document.getElementById('chatroomId').value;
+            if (!chatroomId) {
+                log('Please enter a chatroom ID', 'error');
+                return;
+            }
+            if (!connection) {
+                log('Please connect first', 'error');
+                return;
+            }
+
+            log(`Joining chatroom: ${chatroomId}...`);
+            connection.invoke('JoinChatroom', chatroomId)
+                .catch(err => log(`Failed to join: ${err}`, 'error'));
+        }
+
+        function leaveChatroom() {
+            const chatroomId = document.getElementById('chatroomId').value;
+            if (!chatroomId || !connection) return;
+
+            log(`Leaving chatroom: ${chatroomId}...`);
+            connection.invoke('LeaveChatroom', chatroomId)
+                .catch(err => log(`Failed to leave: ${err}`, 'error'));
+        }
+
+        function sendMessage() {
+            const chatroomId = document.getElementById('chatroomId').value;
+            const content = document.getElementById('messageContent').value;
+            
+            if (!chatroomId || !content) {
+                log('Please enter chatroom ID and message', 'error');
+                return;
+            }
+            if (!connection) {
+                log('Please connect first', 'error');
+                return;
+            }
+
+            log(`Sending message to ${chatroomId}: "${content}"...`);
+            connection.invoke('SendMessage', chatroomId, content)
+                .then(() => {
+                    document.getElementById('messageContent').value = '';
+                })
+                .catch(err => log(`Failed to send: ${err}`, 'error'));
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
