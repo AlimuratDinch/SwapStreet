@@ -35,6 +35,33 @@ namespace backend.Services
             _fileStorageService = fileStorageService;
         }
 
+        public async Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Deleting listing {ListingId} for ProfileId {ProfileId}", listingId, profileId);
+
+            // 1. Validate listing exists and belongs to profile
+
+            var listing = await _context.Listings
+                .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId, cancellationToken);
+            if (listing == null)
+            {
+                _logger.LogWarning("Listing {ListingId} not found for deletion", listingId);
+                throw new ArgumentException($"Listing {listingId} not found");
+            }
+
+            // 2. Get images associated with listing
+            var listingImages = await _context.ListingImages
+                .Where(li => li.ListingId == listingId)
+                .ToListAsync(cancellationToken);
+
+
+            _context.ListingImages.RemoveRange(listingImages);
+            _context.Listings.Remove(listing);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Deleted listing {ListingId} successfully", listingId);
+        }
+
         public async Task<Guid> CreateListingAsync(CreateListingRequestDto request, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Creating listing for ProfileId {ProfileId}", request.ProfileId);
