@@ -475,6 +475,64 @@ describe("SellerOnboardingPage", () => {
     await waitFor(() => expect(screen.getByLabelText(/city/i)).toHaveValue(""));
   });
 
+  it("city dropdown closes on blur after delay", async () => {
+    await ready();
+    fireEvent.change(screen.getByLabelText(/province/i), {
+      target: { value: "1" },
+    });
+    await waitFor(() =>
+      expect(screen.getByLabelText(/city/i)).not.toBeDisabled(),
+    );
+    const cityInput = screen.getByLabelText(/city/i);
+    fireEvent.focus(cityInput);
+    await waitFor(() =>
+      expect(screen.getByRole("listbox")).toBeInTheDocument(),
+    );
+    fireEvent.blur(cityInput);
+    await waitFor(
+      () => expect(screen.queryByRole("listbox")).not.toBeInTheDocument(),
+      { timeout: 300 },
+    );
+  });
+
+  it("submits with postal code containing hyphen", async () => {
+    await ready();
+    await fillValidForm();
+    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
+      target: { value: "M5V-1A1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+    await waitFor(
+      () =>
+        expect(profileApi.createProfile).toHaveBeenCalledWith(
+          "mock-token",
+          expect.objectContaining({ fsa: "M5V" }),
+          mockRefreshToken,
+        ),
+      { timeout: 3000 },
+    );
+  });
+
+  it("shows Failed to load cities when cities fetch throws", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string | Request) => {
+      const u = typeof url === "string" ? url : (url as Request).url;
+      if (u.includes("provinces"))
+        return Promise.resolve({ ok: true, json: async () => mockProvinces });
+      if (u.includes("cities"))
+        return Promise.reject(new Error("Network error"));
+      return Promise.resolve({ ok: false });
+    });
+    await ready();
+    fireEvent.change(screen.getByLabelText(/province/i), {
+      target: { value: "1" },
+    });
+    await waitFor(
+      () =>
+        expect(screen.getByText(/failed to load cities/i)).toBeInTheDocument(),
+      { timeout: 2000 },
+    );
+  });
+
   it("city shows Select province first when no province", async () => {
     await ready();
     const cityInput = screen.getByLabelText(/city/i);
