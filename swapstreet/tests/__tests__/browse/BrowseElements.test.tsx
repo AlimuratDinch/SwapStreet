@@ -79,15 +79,12 @@ const mockSearchParams = new URLSearchParams();
 let consoleErrorSpy: jest.SpyInstance;
 
 beforeEach(() => {
-  consoleErrorSpy = jest
-    .spyOn(console, "error")
-    .mockImplementation(() => {});
+  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
   consoleErrorSpy.mockRestore();
 });
-
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -109,7 +106,7 @@ beforeEach(() => {
     Promise.resolve({
       ok: true,
       json: async () => ({}),
-    })
+    }),
   );
 });
 
@@ -292,7 +289,7 @@ describe("Sidebar", () => {
     );
     expect(anyHasBrowseAndDefaultPrices).toBe(true);
   });
-    
+
   it("handles fetch error gracefully", async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,

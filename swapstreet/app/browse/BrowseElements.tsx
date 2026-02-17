@@ -171,7 +171,7 @@ export function SearchBar({
 
 export function Sidebar() {
   const router = useRouter();
-  const searchParams = useSearchParams(); 
+  const searchParams = useSearchParams();
 
   const [minPriceVal, setMinPriceVal] = useState<number>(0);
   const [maxPriceVal, setMaxPriceVal] = useState<number>(999999);
@@ -217,12 +217,7 @@ export function Sidebar() {
     router.replace(`/browse?${params.toString()}`, {
       scroll: false,
     });
-  }, [
-    minPriceVal,
-    maxPriceVal,
-    searchQuery,
-    router,
-  ]);
+  }, [minPriceVal, maxPriceVal, searchQuery, router]);
 
   const clearFilters = () => {
     setMinPriceVal(0);
