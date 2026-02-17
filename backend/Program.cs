@@ -158,10 +158,7 @@ static void ConfigureCors(WebApplicationBuilder builder)
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins(
-                    "http://localhost",
-                    "http://localhost:3000"
-                  )
+            policy.WithOrigins(frontendUrl)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -342,6 +339,7 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<ImageSeeder>();
     builder.Services.AddScoped<IListingSearchService, ListingSearchService>();
     builder.Services.AddScoped<IListingCommandService, ListingCommandService>();
+    builder.Services.AddScoped<IWishlistService, WishlistService>();
 
     // Chat Services
     builder.Services.AddScoped<IChatroomService, ChatroomService>();
