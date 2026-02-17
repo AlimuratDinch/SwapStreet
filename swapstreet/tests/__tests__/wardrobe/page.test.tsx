@@ -27,7 +27,7 @@ jest.mock("lucide-react", () => ({
 // Mock wardrobeStorage module
 jest.mock("@/app/wardrobe/wardrobeStorage", () => ({
   readWardrobeItems: jest.fn(() => []),
-  removeWardrobeItem: jest.fn((id: string) => []),
+  removeWardrobeItem: jest.fn(() => []),
   WARDROBE_STORAGE_KEY: "wardrobeItems",
 }));
 
@@ -111,7 +111,7 @@ describe("WardrobePage", () => {
     mockSessionStorage.setItem("accessToken", "test-token");
     (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([]);
     (wardrobeStorage.removeWardrobeItem as jest.Mock).mockImplementation(
-      (id: string) => [],
+      () => [],
     );
   });
 
