@@ -89,13 +89,12 @@ describe("fetchClothingItems", () => {
       Promise.resolve({
         minPrice: "50",
         maxPrice: "100",
-        categoryId: "2",
-        conditions: "Like New,New",
+        q: "shirt",
       }),
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/search/search?minPrice=50&maxPrice=100&categoryId=2&conditions=Like+New%2CNew",
+      "http://backend:8080/api/search/search?minPrice=50&maxPrice=100&q=shirt",
       {
         cache: "no-store",
       },
@@ -114,12 +113,11 @@ describe("fetchClothingItems", () => {
     const result = await fetchClothingItems(
       Promise.resolve({
         minPrice: "20",
-        categoryId: "3",
       }),
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/search/search?minPrice=20&categoryId=3",
+      "http://backend:8080/api/search/search?minPrice=20",
       {
         cache: "no-store",
       },

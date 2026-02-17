@@ -128,8 +128,13 @@ describe("Sidebar", () => {
 
     fireEvent.click(screen.getByText("Clear"));
     const clearCalls = mockPush.mock.calls;
-    const anyIsBrowse = clearCalls.some((c) => c[0] === "/browse");
-    expect(anyIsBrowse).toBe(true);
+    const anyHasBrowseAndDefaultPrices = clearCalls.some(
+      (c) =>
+        (c[0] as string).startsWith("/browse") &&
+        (c[0] as string).includes("minPrice=0") &&
+        (c[0] as string).includes("maxPrice=999999"),
+    );
+    expect(anyHasBrowseAndDefaultPrices).toBe(true);
   });
 
   it("handles fetch error gracefully", async () => {
