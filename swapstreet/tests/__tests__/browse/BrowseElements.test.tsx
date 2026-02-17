@@ -233,12 +233,8 @@ describe("Sidebar", () => {
     });
   });
 
-
-
   it("initializes state from URL params including min/max and search query", async () => {
-    const params = new URLSearchParams(
-      "q=test&minPrice=25&maxPrice=50",
-    );
+    const params = new URLSearchParams("q=test&minPrice=25&maxPrice=50");
     (useSearchParams as jest.Mock).mockReturnValue(params);
 
     await act(async () => {
