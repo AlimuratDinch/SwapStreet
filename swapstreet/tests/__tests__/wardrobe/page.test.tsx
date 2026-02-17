@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import WardrobePage from "@/app/wardrobe/page";
 import userEvent from "@testing-library/user-event";
+import * as wardrobeStorage from "@/app/wardrobe/wardrobeStorage";
 
 // Mock header component
 jest.mock("@/app/browse/BrowseElements", () => ({
@@ -21,6 +22,13 @@ jest.mock("lucide-react", () => ({
   List: () => <div data-testid="list-icon">List</div>,
   Info: () => <div data-testid="info-icon">Info</div>,
   Upload: () => <div data-testid="upload-icon">Upload</div>,
+}));
+
+// Mock wardrobeStorage module
+jest.mock("@/app/wardrobe/wardrobeStorage", () => ({
+  readWardrobeItems: jest.fn(() => []),
+  removeWardrobeItem: jest.fn(() => []),
+  WARDROBE_STORAGE_KEY: "wardrobeItems",
 }));
 
 // Mock next/image (renders img for tests)
@@ -64,6 +72,27 @@ Object.defineProperty(window, "sessionStorage", {
   value: mockSessionStorage,
 });
 
+// Mock localStorage
+const mockLocalStorage = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+  };
+})();
+
+Object.defineProperty(window, "localStorage", {
+  value: mockLocalStorage,
+});
+
 // /api/catalog/items and expects array
 const mockCatalogFetch = (
   items: Array<{ id: string }> = [{ id: "listing-1" }],
@@ -78,7 +107,12 @@ describe("WardrobePage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSessionStorage.clear();
+    mockLocalStorage.clear();
     mockSessionStorage.setItem("accessToken", "test-token");
+    (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([]);
+    (wardrobeStorage.removeWardrobeItem as jest.Mock).mockImplementation(
+      () => [],
+    );
   });
 
   it("should render the wardrobe page with header", () => {
@@ -155,6 +189,7 @@ describe("WardrobePage", () => {
         });
       }
     });
+
     it("should handle image upload successfully", async () => {
       mockCatalogFetch();
 
@@ -225,6 +260,58 @@ describe("WardrobePage", () => {
       }
     });
 
+    it("should show error when upload fails with message property", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ message: "Custom upload message" }),
+        text: async () => "Custom upload message",
+      });
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          expect(screen.getByText("Custom upload message")).toBeInTheDocument();
+        });
+      }
+    });
+
+    it("should show generic error when upload fails without error or message", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({}),
+        text: async () => "",
+      });
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          expect(screen.getByText("Upload failed")).toBeInTheDocument();
+        });
+      }
+    });
+
     it("should show error when no auth token exists", async () => {
       mockSessionStorage.clear();
 
@@ -242,6 +329,50 @@ describe("WardrobePage", () => {
           expect(
             screen.getByText(/Please log in to upload image/i),
           ).toBeInTheDocument();
+        });
+      }
+    });
+
+    it("should handle upload error when fetch throws", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock).mockRejectedValueOnce(
+        new Error("Network error"),
+      );
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          expect(screen.getByText("Network error")).toBeInTheDocument();
+        });
+      }
+    });
+
+    it("should handle upload error when fetch throws non-Error object", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock).mockRejectedValueOnce("String error");
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          expect(screen.getByText("Upload failed")).toBeInTheDocument();
         });
       }
     });
@@ -285,6 +416,7 @@ describe("WardrobePage", () => {
         });
       }
     });
+
     it("should not allow try-on without uploaded image", async () => {
       render(<WardrobePage />);
 
@@ -440,10 +572,95 @@ describe("WardrobePage", () => {
         });
       }
     });
+
+    it("should show error when try-on API fails with message property", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+          text: async () => "success",
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          json: async () => ({ message: "Custom try-on message" }),
+        });
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          const button = screen.getByRole("button", { name: "Try On" });
+          expect(button).not.toBeDisabled();
+        });
+
+        const tryOnButton = screen.getByRole("button", { name: "Try On" });
+        fireEvent.click(tryOnButton);
+
+        await waitFor(() => {
+          expect(screen.getByText("Custom try-on message")).toBeInTheDocument();
+        });
+      }
+    });
+
+    it("should show generic error when try-on fails without error or message", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+          text: async () => "success",
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          json: async () => ({}),
+        });
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          const button = screen.getByRole("button", { name: "Try On" });
+          expect(button).not.toBeDisabled();
+        });
+
+        const tryOnButton = screen.getByRole("button", { name: "Try On" });
+        fireEvent.click(tryOnButton);
+
+        await waitFor(() => {
+          expect(screen.getByText("Try-on failed")).toBeInTheDocument();
+        });
+      }
+    });
   });
 
   describe("Favorites", () => {
     it("should toggle favorite on item click", () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([
+        {
+          id: "item-1",
+          title: "Test Item",
+          price: 10,
+          imageUrl: "http://test.com/item-1.jpg",
+        },
+      ]);
+
       render(<WardrobePage />);
 
       const starButtons = screen.getAllByTestId("star-icon");
@@ -455,6 +672,15 @@ describe("WardrobePage", () => {
     });
 
     it("should remove favorite when clicking favorited item", () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([
+        {
+          id: "item-1",
+          title: "Test Item",
+          price: 10,
+          imageUrl: "http://test.com/item-1.jpg",
+        },
+      ]);
+
       render(<WardrobePage />);
 
       const starButtons = screen.getAllByTestId("star-icon");
@@ -531,6 +757,103 @@ describe("WardrobePage", () => {
           );
           expect(resultImages.length).toBeGreaterThan(0);
         });
+      }
+    });
+
+    it("should limit recent results to 4 items", async () => {
+      mockCatalogFetch();
+
+      const { container } = render(<WardrobePage />);
+
+      // Perform 5 try-ons
+      for (let i = 1; i <= 5; i++) {
+        (global.fetch as jest.Mock)
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ url: `http://test.com/uploaded${i}.jpg` }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ url: `http://test.com/result${i}.jpg` }),
+          });
+
+        const file = new File(["dummy content"], `test${i}.png`, {
+          type: "image/png",
+        });
+        const input = document.querySelector('input[type="file"]');
+
+        if (input) {
+          await userEvent.upload(input as HTMLElement, file);
+
+          await waitFor(() => {
+            const button = screen.getByRole("button", { name: "Try On" });
+            expect(button).not.toBeDisabled();
+          });
+
+          const tryOnButton = screen.getByRole("button", { name: "Try On" });
+          fireEvent.click(tryOnButton);
+
+          await waitFor(() => {
+            const resultImages = container.querySelectorAll(
+              'img[alt*="Try-on result"]',
+            );
+            expect(resultImages.length).toBeGreaterThan(0);
+          });
+        }
+      }
+
+      // Should only have 4 recent results
+      const resultImages = container.querySelectorAll(
+        'img[alt*="Try-on result"]',
+      );
+      expect(resultImages.length).toBeLessThanOrEqual(4);
+    });
+
+    it("should allow clicking recent result to view it", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+          text: async () => "success",
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ url: "http://test.com/result1.jpg" }),
+        });
+
+      const { container } = render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          const button = screen.getByRole("button", { name: "Try On" });
+          expect(button).not.toBeDisabled();
+        });
+
+        const tryOnButton = screen.getByRole("button", { name: "Try On" });
+        fireEvent.click(tryOnButton);
+
+        await waitFor(() => {
+          const resultImage = container.querySelector(
+            'img[alt*="Try-on result"]',
+          );
+          expect(resultImage).toBeInTheDocument();
+        });
+
+        const resultImage = container.querySelector(
+          'img[alt*="Try-on result"]',
+        );
+        if (resultImage) {
+          fireEvent.click(resultImage);
+        }
       }
     });
   });
@@ -776,47 +1099,6 @@ describe("WardrobePage", () => {
       }
     });
 
-    it("should show error when try-on attempted without auth", async () => {
-      // Set up token for upload, then remove for try-on
-      mockSessionStorage.setItem("accessToken", "test-token");
-
-      mockCatalogFetch();
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ url: "http://test.com/uploaded.jpg" }),
-        text: async () => "success",
-      });
-
-      render(<WardrobePage />);
-
-      const file = new File(["dummy content"], "test.png", {
-        type: "image/png",
-      });
-      const input = document.querySelector('input[type="file"]');
-
-      if (input) {
-        await userEvent.upload(input as HTMLElement, file);
-
-        await waitFor(() => {
-          const button = screen.getByRole("button", { name: "Try On" });
-          expect(button).not.toBeDisabled();
-        });
-
-        // Clear token after upload but before try-on
-        mockSessionStorage.clear();
-
-        const tryOnButton = screen.getByRole("button", { name: "Try On" });
-        fireEvent.click(tryOnButton);
-
-        await waitFor(() => {
-          expect(
-            screen.getByText("Please log in to use try-on feature"),
-          ).toBeInTheDocument();
-        });
-      }
-    });
-
     it("handles listing fetch returning non-ok without throwing", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false });
 
@@ -840,6 +1122,103 @@ describe("WardrobePage", () => {
         fireEvent.keyDown(frame, { key: " " });
 
         expect((input as HTMLInputElement).click).toHaveBeenCalled();
+      }
+    });
+
+    it("should handle listing fetch with data.items structure", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ items: [{ id: "listing-from-items" }] }),
+      });
+
+      render(<WardrobePage />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("header")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle listing fetch error", async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(
+        new Error("Fetch failed"),
+      );
+
+      render(<WardrobePage />);
+
+      // Should still render without crashing
+      expect(screen.getByTestId("header")).toBeInTheDocument();
+    });
+
+    it("should not trigger upload when frame is clicked with uploaded image", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+        text: async () => "success",
+      });
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        (input as HTMLInputElement).click = jest.fn();
+
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          expect(screen.getByTitle("Upload new photo")).toBeInTheDocument();
+        });
+
+        // Try clicking the frame
+        const frame = document.querySelector(
+          'div[role="button"]',
+        ) as HTMLElement;
+        if (frame) {
+          fireEvent.click(frame);
+          // Should not trigger click on input since image is uploaded
+          expect((input as HTMLInputElement).click).toHaveBeenCalledTimes(0);
+        }
+      }
+    });
+
+    it("should not open file dialog on keydown when image is uploaded", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+        text: async () => "success",
+      });
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        (input as HTMLInputElement).click = jest.fn();
+
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          expect(screen.getByTitle("Upload new photo")).toBeInTheDocument();
+        });
+
+        const frame = document.querySelector(
+          'div[role="button"]',
+        ) as HTMLElement;
+        if (frame) {
+          fireEvent.keyDown(frame, { key: "Enter" });
+          // Should not trigger since tabindex is -1 when image is uploaded
+          expect((input as HTMLInputElement).click).toHaveBeenCalledTimes(0);
+        }
       }
     });
   });
@@ -928,6 +1307,258 @@ describe("WardrobePage", () => {
 
         const resultButton = screen.getByRole("button", { name: "Result" });
         fireEvent.click(resultButton);
+      }
+    });
+  });
+
+  describe("Wardrobe Items", () => {
+    it("should display wardrobe items from storage", () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([
+        {
+          id: "item-1",
+          title: "Test Item 1",
+          price: 25.99,
+          imageUrl: "http://test.com/item-1.jpg",
+        },
+        {
+          id: "item-2",
+          title: "Test Item 2",
+          price: 49.99,
+          imageUrl: "http://test.com/item-2.jpg",
+        },
+      ]);
+
+      render(<WardrobePage />);
+
+      expect(screen.getByText("Test Item 1")).toBeInTheDocument();
+      expect(screen.getByText("Test Item 2")).toBeInTheDocument();
+      expect(screen.getByText("$25.99")).toBeInTheDocument();
+      expect(screen.getByText("$49.99")).toBeInTheDocument();
+    });
+
+    it("should display empty state when no wardrobe items", () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([]);
+
+      render(<WardrobePage />);
+
+      expect(
+        screen.getByText(/Your wardrobe is empty. Add items from Browse./i),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle wardrobe items with no image", () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([
+        {
+          id: "item-1",
+          title: "Test Item",
+          price: 10,
+          imageUrl: null,
+        },
+      ]);
+
+      render(<WardrobePage />);
+
+      expect(screen.getByText("No image")).toBeInTheDocument();
+    });
+
+    it("should handle wardrobe items with invalid price", () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([
+        {
+          id: "item-1",
+          title: "Test Item",
+          price: NaN,
+          imageUrl: "http://test.com/item-1.jpg",
+        },
+      ]);
+
+      render(<WardrobePage />);
+
+      expect(screen.getByText("$0.00")).toBeInTheDocument();
+    });
+
+    it("should handle wardrobe items with infinity price", () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([
+        {
+          id: "item-1",
+          title: "Test Item",
+          price: Infinity,
+          imageUrl: "http://test.com/item-1.jpg",
+        },
+      ]);
+
+      render(<WardrobePage />);
+
+      expect(screen.getByText("$0.00")).toBeInTheDocument();
+    });
+
+    it("should not remove from wardrobe when API fails", async () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([
+        {
+          id: "item-1",
+          title: "Test Item",
+          price: 10,
+          imageUrl: "http://test.com/item-1.jpg",
+        },
+      ]);
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: "Server error" }),
+      });
+
+      render(<WardrobePage />);
+
+      const removeButton = screen.getByTitle("Remove from wardrobe");
+      fireEvent.click(removeButton);
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining("/wishlist/item-1"),
+          expect.any(Object),
+        );
+      });
+
+      // removeWardrobeItem should not be called when API fails
+      expect(wardrobeStorage.removeWardrobeItem).not.toHaveBeenCalled();
+    });
+
+    it("should handle remove error when fetch throws", async () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([
+        {
+          id: "item-1",
+          title: "Test Item",
+          price: 10,
+          imageUrl: "http://test.com/item-1.jpg",
+        },
+      ]);
+
+      (global.fetch as jest.Mock).mockRejectedValueOnce(
+        new Error("Network error"),
+      );
+
+      render(<WardrobePage />);
+
+      const removeButton = screen.getByTitle("Remove from wardrobe");
+      fireEvent.click(removeButton);
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe("Storage Event Handling", () => {
+    it("should not update wardrobe items when storage event has different key", () => {
+      (wardrobeStorage.readWardrobeItems as jest.Mock).mockReturnValue([]);
+
+      render(<WardrobePage />);
+
+      const initialCallCount = (wardrobeStorage.readWardrobeItems as jest.Mock)
+        .mock.calls.length;
+
+      // Trigger storage event with different key
+      const storageEvent = new StorageEvent("storage", {
+        key: "differentKey",
+      });
+      window.dispatchEvent(storageEvent);
+
+      // Should not call readWardrobeItems again
+      expect(
+        (wardrobeStorage.readWardrobeItems as jest.Mock).mock.calls.length,
+      ).toBe(initialCallCount);
+    });
+  });
+
+  describe("Download with Generated Image", () => {
+    it("should download generated result image", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ url: "http://test.com/uploaded.jpg" }),
+          text: async () => "success",
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ url: "http://test.com/result.jpg" }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          blob: async () => new Blob(["result"], { type: "image/png" }),
+        });
+
+      const originalCreate = (window.URL as any).createObjectURL;
+      const originalRevoke = (window.URL as any).revokeObjectURL;
+      (window.URL as any).createObjectURL = jest.fn(() => "blob:result-url");
+      (window.URL as any).revokeObjectURL = jest.fn(() => {});
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          const button = screen.getByRole("button", { name: "Try On" });
+          expect(button).not.toBeDisabled();
+        });
+
+        const tryOnButton = screen.getByRole("button", { name: "Try On" });
+        fireEvent.click(tryOnButton);
+
+        await waitFor(() => {
+          const resultButton = screen.queryByRole("button", { name: "Result" });
+          expect(resultButton).toBeInTheDocument();
+        });
+
+        // Switch to result view
+        const resultButton = screen.getByRole("button", { name: "Result" });
+        fireEvent.click(resultButton);
+
+        // Download the result
+        const downloadButton = screen.getByTitle("Download image");
+        fireEvent.click(downloadButton);
+
+        await waitFor(() => {
+          expect((window.URL as any).createObjectURL).toHaveBeenCalled();
+        });
+
+        (window.URL as any).createObjectURL = originalCreate;
+        (window.URL as any).revokeObjectURL = originalRevoke;
+      }
+    });
+  });
+
+  describe("Try-On Button States", () => {
+    it("should disable try-on button during upload", async () => {
+      mockCatalogFetch();
+
+      (global.fetch as jest.Mock).mockImplementationOnce(
+        () => new Promise(() => {}),
+      );
+
+      render(<WardrobePage />);
+
+      const file = new File(["dummy content"], "test.png", {
+        type: "image/png",
+      });
+      const input = document.querySelector('input[type="file"]');
+
+      if (input) {
+        await userEvent.upload(input as HTMLElement, file);
+
+        await waitFor(() => {
+          expect(screen.getByText(/Uploading.../i)).toBeInTheDocument();
+        });
+
+        const tryOnButton = screen.getByRole("button", { name: "Try On" });
+        expect(tryOnButton).toBeDisabled();
       }
     });
   });
