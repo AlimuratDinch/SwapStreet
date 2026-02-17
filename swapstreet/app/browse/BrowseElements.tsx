@@ -288,7 +288,13 @@ export function Sidebar() {
     </aside>
   );
 }
-export function CardItem({ id, title, imgSrc, price, href }: Readonly<CardItemProps>) {
+export function CardItem({
+  id,
+  title,
+  imgSrc,
+  price,
+  href,
+}: Readonly<CardItemProps>) {
   const [inWardrobe, setInWardrobe] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
