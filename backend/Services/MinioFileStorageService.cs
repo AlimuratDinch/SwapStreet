@@ -94,7 +94,7 @@ namespace backend.Services
 
             // ===== Determine bucket =====
             var bucket = type == UploadType.TryOn || type == UploadType.Generated ? _settings.PrivateBucketName : _settings.PublicBucketName;
-            
+
             // ===== Save to database in transaction =====
             using var transaction = await _context.Database.BeginTransactionAsync();
             try

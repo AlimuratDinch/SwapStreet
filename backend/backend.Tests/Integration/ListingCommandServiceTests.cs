@@ -502,8 +502,8 @@ public class ListingCommandServiceTests
         mockStorage.Verify(
             s => s.DeleteFilesAsync(
                 UploadType.Listing,
-                It.Is<IEnumerable<string>>(paths => 
-                    paths.Count() == 4 && 
+                It.Is<IEnumerable<string>>(paths =>
+                    paths.Count() == 4 &&
                     paths.All(p => imagePaths.Contains(p))),
                 It.IsAny<CancellationToken>()),
             Times.Once);

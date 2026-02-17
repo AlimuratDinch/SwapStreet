@@ -15,7 +15,7 @@ namespace backend.DTOs
 
         ListingImage[]? Images { get; set; }
 
-        
+
 
         [Required(ErrorMessage = "FSA is required")]
         [RegularExpression(@"^^[A-Z]\d[A-Z]$", ErrorMessage = "Invalid Canadian FSA format")]

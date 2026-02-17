@@ -52,9 +52,9 @@ namespace backend.Controllers
 
                 // Upload file (internal logic decides bucket and URL type)
                 var url = await _fileStorage.UploadFileAsync(
-                    request.File, 
-                    request.Type, 
-                    userId, 
+                    request.File,
+                    request.Type,
+                    userId,
                     request.ListingId,
                     displayOrder: request.DisplayOrder);
 
