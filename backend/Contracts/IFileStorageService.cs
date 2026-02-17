@@ -25,5 +25,25 @@ namespace backend.Contracts
         /// <param name="cancellationToken">Cancellation token</param>
         /// <exception cref="ArgumentException">Thrown when required ID is missing for the image type</exception>
         Task DeleteImagesAsync(UploadType type, Guid? listingId = null, Guid? profileId = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Deletes objects from MinIO without touching database records.
+        /// </summary>
+        /// <param name="type">The image type to select the bucket</param>
+        /// <param name="filePaths">Object keys to delete</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Object keys that failed to delete</returns>
+        Task<IReadOnlyCollection<string>> DeleteFilesAsync(
+            UploadType type,
+            IEnumerable<string> filePaths,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Deletes objects from MinIO that no longer exist in the database for the given image type.
+        /// </summary>
+        /// <param name="type">The image type to scan and clean</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Number of deleted orphaned objects</returns>
+        Task<int> CleanupOrphanedFilesAsync(UploadType type, CancellationToken cancellationToken = default);
     }
 }

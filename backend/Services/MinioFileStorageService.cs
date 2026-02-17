@@ -17,6 +17,8 @@ using System.Reactive.Linq;
 using Minio.DataModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace backend.Services
 {
@@ -27,6 +29,8 @@ namespace backend.Services
         private readonly IConfiguration _config;
         private readonly AppDbContext _context;
         private readonly ILogger<MinioFileStorageService> _logger;
+        private static readonly ConcurrentDictionary<UploadType, byte> _cleanupPending = new();
+        private static int _cleanupRunning = 0;
 
         public MinioFileStorageService(
             IMinioClient minio,
@@ -375,7 +379,10 @@ namespace backend.Services
                     ? _settings.PrivateBucketName
                     : _settings.PublicBucketName;
 
-                List<string> imagePaths = new();
+                List<string> imagePaths = [];
+
+                if (!listingId.HasValue) throw new ArgumentException("ListingId is required for Listing image deletion.");
+                if (!profileId.HasValue) throw new ArgumentException("ProfileId is required for TryOn image deletion.");
 
                 // ===== STEP 1: Retrieve image paths from database =====
                 switch (type)
@@ -486,10 +493,11 @@ namespace backend.Services
                     }
                 }
 
-                if (orphanedFiles.Any())
+                if (orphanedFiles.Count != 0)
                 {
                     _logger.LogWarning("Total orphaned files in MinIO for {Type}: {Count}. Bucket: {Bucket}", type, orphanedFiles.Count, bucket);
-                    // TODO: Publish event for cleanup job to process orphaned files
+                    _cleanupPending[type] = 1;
+                    TrySchedulePendingCleanup();
                 }
 
                 _logger.LogInformation("Successfully deleted {Count} images of type {Type}", imagePaths.Count, type);
@@ -503,6 +511,209 @@ namespace backend.Services
             {
                 _logger.LogError(ex, "Error deleting images of type {Type}", type);
                 throw;
+            }
+        }
+
+        public async Task<IReadOnlyCollection<string>> DeleteFilesAsync(
+            UploadType type,
+            IEnumerable<string> filePaths,
+            CancellationToken cancellationToken = default)
+        {
+            if (filePaths == null)
+            {
+                throw new ArgumentNullException(nameof(filePaths));
+            }
+
+            var bucket = type == UploadType.TryOn || type == UploadType.Generated
+                ? _settings.PrivateBucketName
+                : _settings.PublicBucketName;
+
+            var failedDeletes = new List<string>();
+
+            foreach (var filePath in filePaths)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                try
+                {
+                    await _minio.RemoveObjectAsync(new RemoveObjectArgs()
+                        .WithBucket(bucket)
+                        .WithObject(filePath));
+                }
+                catch (Exception ex)
+                {
+                    failedDeletes.Add(filePath);
+                    _logger.LogError(ex, "Failed to delete object {ObjectKey} from bucket {Bucket}", filePath, bucket);
+                }
+            }
+
+            if (failedDeletes.Count != 0)
+            {
+                _logger.LogWarning("Failed to delete {Count} objects from bucket {Bucket}", failedDeletes.Count, bucket);
+            }
+
+            return failedDeletes;
+        }
+
+        public async Task<int> CleanupOrphanedFilesAsync(UploadType type, CancellationToken cancellationToken = default)
+        {
+            var prefix = $"{type.ToString().ToLower()}/";
+            var bucket = type == UploadType.TryOn || type == UploadType.Generated
+                ? _settings.PrivateBucketName
+                : _settings.PublicBucketName;
+
+            HashSet<string> validPaths;
+
+            switch (type)
+            {
+                case UploadType.Listing:
+                    validPaths = (await _context.ListingImages
+                        .Select(li => li.ImagePath)
+                        .ToListAsync(cancellationToken))
+                        .ToHashSet(StringComparer.Ordinal);
+                    break;
+
+                case UploadType.TryOn:
+                    validPaths = (await _context.TryOnImages
+                        .Select(ti => ti.ImagePath)
+                        .ToListAsync(cancellationToken))
+                        .ToHashSet(StringComparer.Ordinal);
+                    break;
+
+                case UploadType.Generated:
+                    validPaths = (await _context.GeneratedImages
+                        .Select(gi => gi.ImagePath)
+                        .ToListAsync(cancellationToken))
+                        .ToHashSet(StringComparer.Ordinal);
+                    break;
+
+                case UploadType.Profile:
+                    validPaths = (await _context.Profiles
+                        .Where(p => p.ProfileImagePath != null)
+                        .Select(p => p.ProfileImagePath!)
+                        .ToListAsync(cancellationToken))
+                        .ToHashSet(StringComparer.Ordinal);
+                    break;
+
+                case UploadType.Banner:
+                    validPaths = (await _context.Profiles
+                        .Where(p => p.BannerImagePath != null)
+                        .Select(p => p.BannerImagePath!)
+                        .ToListAsync(cancellationToken))
+                        .ToHashSet(StringComparer.Ordinal);
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), "Unknown upload type");
+            }
+
+            var args = new ListObjectsArgs()
+                .WithBucket(bucket)
+                .WithPrefix(prefix)
+                .WithRecursive(true);
+
+            var deletedCount = 0;
+            var failedDeletes = new List<string>();
+
+            await foreach (var item in _minio.ListObjectsEnumAsync(args))
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                if (validPaths.Contains(item.Key))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    await _minio.RemoveObjectAsync(new RemoveObjectArgs()
+                        .WithBucket(bucket)
+                        .WithObject(item.Key));
+
+                    deletedCount++;
+                }
+                catch (Exception ex)
+                {
+                    failedDeletes.Add(item.Key);
+                    _logger.LogError(ex, "Failed to delete orphaned object {ObjectKey} from bucket {Bucket}", item.Key, bucket);
+                }
+            }
+
+            if (failedDeletes.Count != 0)
+            {
+                _logger.LogWarning("Failed to delete {Count} orphaned objects from bucket {Bucket}", failedDeletes.Count, bucket);
+            }
+
+            _logger.LogInformation("Deleted {Count} orphaned objects for type {Type} from bucket {Bucket}", deletedCount, type, bucket);
+            return deletedCount;
+        }
+
+        private void TrySchedulePendingCleanup()
+        {
+            // If there’s nothing to clean, don’t schedule any background work.
+            if (_cleanupPending.IsEmpty)
+            {
+                return;
+            }
+
+            // If a cleanup runner is already active, don’t start another.
+            if (Interlocked.CompareExchange(ref _cleanupRunning, 1, 0) != 0)
+            {
+                return;
+            }
+
+            // Fire-and-forget cleanup so request path stays fast.
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    foreach (var entry in _cleanupPending.Keys.ToList())
+                    {
+                        var bucket = entry == UploadType.TryOn || entry == UploadType.Generated
+                            ? _settings.PrivateBucketName
+                            : _settings.PublicBucketName;
+
+                        if (!await IsMinioAvailableAsync(bucket))
+                        {
+                            continue;
+                        }
+
+                        try
+                        {
+                            var deletedCount = await CleanupOrphanedFilesAsync(entry);
+                            _logger.LogInformation("Auto-cleanup deleted {Count} orphaned files for type {Type}", deletedCount, entry);
+                            _cleanupPending.TryRemove(entry, out _);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Auto-cleanup failed for type {Type}", entry);
+                        }
+                    }
+                }
+                finally
+                {
+                    // Allow future cleanups after this run ends.
+                    Interlocked.Exchange(ref _cleanupRunning, 0);
+                }
+            });
+        }
+
+        private async Task<bool> IsMinioAvailableAsync(string bucket)
+        {
+            try
+            {
+                return await _minio.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucket));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "MinIO availability check failed for bucket {Bucket}", bucket);
+                return false;
             }
         }
     }

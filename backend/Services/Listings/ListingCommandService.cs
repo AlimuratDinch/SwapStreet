@@ -1,6 +1,7 @@
 using backend.Contracts;
 using backend.DbContexts;
 using backend.DTOs;
+using backend.DTOs.Image;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services
@@ -41,6 +42,7 @@ namespace backend.Services
 
             // 1. Validate listing exists and belongs to profile
             var listing = await _context.Listings
+                .AsNoTracking()
                 .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId, cancellationToken);
             if (listing == null)
             {
@@ -48,22 +50,42 @@ namespace backend.Services
                 throw new ArgumentException($"Listing {listingId} not found");
             }
 
-            // 2. Delete listing and its images within transaction
+            // Fetch image paths up front so storage cleanup can happen before DB changes
+            var listingImages = await _context.ListingImages
+                .AsNoTracking()
+                .Where(li => li.ListingId == listingId)
+                .ToListAsync(cancellationToken);
+
+            var imagePaths = listingImages
+                .Select(li => li.ImagePath)
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .ToList();
+
+            // 2. Delete images from MinIO first to avoid DB deletes if storage fails
+            if (imagePaths.Count != 0)
+            {
+                if (_fileStorageService == null)
+                {
+                    _logger.LogError("File storage service not available for listing deletion {ListingId}", listingId);
+                    throw new InvalidOperationException("File storage service not available for listing deletion.");
+                }
+
+                var failedDeletes = await _fileStorageService.DeleteFilesAsync(UploadType.Listing, imagePaths, cancellationToken);
+                if (failedDeletes.Count != 0)
+                {
+                    throw new InvalidOperationException($"Failed to delete {failedDeletes.Count} image(s) for listing {listingId}");
+                }
+            }
+
+            // 3. Delete listing and image rows in a single DB transaction
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // Get images associated with listing
-                var listingImages = await _context.ListingImages
-                    .Where(li => li.ListingId == listingId)
-                    .ToListAsync(cancellationToken);
-
-                // Delete images from database first
-                if (listingImages.Any())
+                if (listingImages.Count != 0)
                 {
                     _context.ListingImages.RemoveRange(listingImages);
                 }
 
-                // Delete the listing
                 _context.Listings.Remove(listing);
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
@@ -75,18 +97,6 @@ namespace backend.Services
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Failed to delete listing {ListingId}", listingId);
                 throw;
-            }
-
-            // 3. Delete images from MinIO after database transaction commits
-            try
-            {
-                await _fileStorageService.DeleteImagesAsync(UploadType.Listing, listingId: listingId, cancellationToken: cancellationToken);
-                _logger.LogInformation("Deleted MinIO images for listing {ListingId}", listingId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to delete MinIO images for listing {ListingId}. Images may be orphaned.", listingId);
-                // Don't throw here - database deletion succeeded, orphaned files will be cleaned up later
             }
         }
 
