@@ -79,27 +79,6 @@ describe("SearchBar", () => {
 
 // ---------------- Sidebar ----------------
 describe("Sidebar", () => {
-  it("renders with fixed categories when expanded", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    });
-
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    // Categories are only visible when the button is clicked to expand
-    const categoriesButton = screen.getByRole("button", {
-      name: /Categories/i,
-    });
-    fireEvent.click(categoriesButton);
-
-    await waitFor(() => {
-      expect(screen.getByText("Tops")).toBeInTheDocument();
-    });
-  });
-
   it("sets min and max price", async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
@@ -134,68 +113,6 @@ describe("Sidebar", () => {
           (call[0] as string).includes("maxPrice=100"),
       );
       expect(matched).toBe(true);
-    });
-  });
-
-  it("toggles condition filters", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    });
-
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    // First, click the Condition button to expand it
-    const conditionButton = screen.getByRole("button", { name: /Condition/i });
-    fireEvent.click(conditionButton);
-
-    await waitFor(() => {
-      const checkboxes = screen.getAllByRole("checkbox");
-      expect(checkboxes.length).toBeGreaterThan(0);
-    });
-
-    const checkboxes = screen.getAllByRole("checkbox");
-    const checkbox = checkboxes[0];
-    fireEvent.click(checkbox);
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalled();
-    });
-  });
-
-  it("selects category", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    });
-
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    // Clear previous mocks from initialization
-    mockPush.mockClear();
-
-    // Click Categories button to expand
-    const categoriesButton = screen.getByRole("button", {
-      name: /Categories/i,
-    });
-    fireEvent.click(categoriesButton);
-
-    await waitFor(() => {
-      expect(screen.getByText("Tops")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByText("Tops"));
-    await waitFor(() => {
-      // Just check that it was called with categoryId, regardless of other params
-      expect(mockPush).toHaveBeenCalled();
-      const calls = mockPush.mock.calls;
-      const hasCategory = calls.some((call) =>
-        call[0].includes("categoryId=1"),
-      );
-      expect(hasCategory).toBe(true);
     });
   });
 
@@ -316,159 +233,11 @@ describe("Sidebar", () => {
     });
   });
 
-  it("toggles size selection", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    });
 
-    await act(async () => {
-      render(<Sidebar />);
-    });
 
-    mockPush.mockClear();
-
-    const sizeButtons = screen.getAllByRole("button");
-    const mediumButton = sizeButtons.find((btn) => btn.textContent === "M");
-    expect(mediumButton).toBeTruthy();
-
-    fireEvent.click(mediumButton!);
-    await waitFor(() => {
-      const calls = mockPush.mock.calls;
-      const lastCall = calls[calls.length - 1][0] as string;
-      expect(lastCall).toMatch(/size=M/);
-      expect(mockPush).toHaveBeenCalled();
-    });
-
-    // Toggle off
-    fireEvent.click(mediumButton!);
-    await waitFor(() => {
-      const calls = mockPush.mock.calls;
-      const anyHasMax = calls.some((c) =>
-        (c[0] as string).includes("maxPrice=999999"),
-      );
-      const anyIsBrowse = calls.some((c) => (c[0] as string) === "/browse");
-      expect(anyHasMax || anyIsBrowse).toBe(true);
-    });
-  });
-
-  it("deselects category when clicked again", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    });
-
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    mockPush.mockClear();
-
-    const categoriesButton = screen.getByRole("button", {
-      name: /Categories/i,
-    });
-    fireEvent.click(categoriesButton);
-
-    await waitFor(() => {
-      expect(screen.getByText("Tops")).toBeInTheDocument();
-    });
-
-    const topsButton = screen.getByText("Tops");
-
-    // First click to select
-    fireEvent.click(topsButton);
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalled();
-      const calls = mockPush.mock.calls;
-      const hasCategory = calls.some((call) =>
-        call[0].includes("categoryId=1"),
-      );
-      expect(hasCategory).toBe(true);
-    });
-  });
-
-  it("unchecks condition filter", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    });
-
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    const conditionButton = screen.getByRole("button", { name: /Condition/i });
-    fireEvent.click(conditionButton);
-
-    await waitFor(() => {
-      const checkboxes = screen.getAllByRole("checkbox");
-      expect(checkboxes.length).toBeGreaterThan(0);
-    });
-
-    mockPush.mockClear();
-
-    const checkboxes = screen.getAllByRole("checkbox");
-    const checkbox = checkboxes[0];
-    fireEvent.click(checkbox);
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalled();
-    });
-
-    mockPush.mockClear();
-
-    // Click again to uncheck
-    fireEvent.click(checkbox);
-    await waitFor(() => {
-      const calls = mockPush.mock.calls;
-      const anyHasMax = calls.some((c) =>
-        (c[0] as string).includes("maxPrice=999999"),
-      );
-      const anyIsBrowse = calls.some((c) => (c[0] as string) === "/browse");
-      expect(anyHasMax || anyIsBrowse).toBe(true);
-    });
-  });
-
-  it("syncs conditions from URL on mount", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    });
-
-    const mockSearchParamsWithConditions = new URLSearchParams(
-      "conditions=New,Like%20New",
-    );
-    (useSearchParams as jest.Mock).mockReturnValue(
-      mockSearchParamsWithConditions,
-    );
-
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    const conditionButton = screen.getByRole("button", { name: /Condition/i });
-    fireEvent.click(conditionButton);
-
-    await waitFor(() => {
-      const checkboxes = screen.getAllByRole("checkbox");
-      const newCheckbox = checkboxes.find((cb) =>
-        (cb as HTMLInputElement).parentElement?.textContent.includes("New"),
-      ) as HTMLInputElement;
-      const likeNewCheckbox = checkboxes.find((cb) =>
-        (cb as HTMLInputElement).parentElement?.textContent.includes(
-          "Like New",
-        ),
-      ) as HTMLInputElement;
-      expect(newCheckbox?.checked).toBe(true);
-      expect(likeNewCheckbox?.checked).toBe(true);
-    });
-
-    // Reset mock for other tests
-    (useSearchParams as jest.Mock).mockReturnValue(new URLSearchParams());
-  });
-
-  it("initializes state from URL params including size and min/max", async () => {
+  it("initializes state from URL params including min/max and search query", async () => {
     const params = new URLSearchParams(
-      "categoryId=2&q=test&conditions=New,Used&size=M&minPrice=25&maxPrice=50",
+      "q=test&minPrice=25&maxPrice=50",
     );
     (useSearchParams as jest.Mock).mockReturnValue(params);
 
@@ -485,21 +254,6 @@ describe("Sidebar", () => {
       const inputs = screen.getAllByRole("spinbutton");
       expect((inputs[0] as HTMLInputElement).value).toBe("25");
       expect((inputs[1] as HTMLInputElement).value).toBe("50");
-    });
-
-    // Size M selected
-    const sizeButtons = screen.getAllByRole("button");
-    const medium = sizeButtons.find((b) => b.textContent === "M");
-    expect(medium).toBeTruthy();
-    // Condition checkboxes
-    const conditionButton = screen.getByRole("button", { name: /Condition/i });
-    fireEvent.click(conditionButton);
-    await waitFor(() => {
-      const checkboxes = screen.getAllByRole("checkbox");
-      const newCb = checkboxes.find((cb) =>
-        (cb as HTMLInputElement).parentElement?.textContent?.includes("New"),
-      );
-      expect((newCb as HTMLInputElement).checked).toBe(true);
     });
 
     (useSearchParams as jest.Mock).mockReturnValue(new URLSearchParams());

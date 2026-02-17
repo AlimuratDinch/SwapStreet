@@ -36,7 +36,7 @@ export function Header({ showCenterNav = true }: HeaderProps) {
     >
       <div className="flex items-center gap-3">
         <Shirt className="h-8 w-8 text-teal-500" />
-        <Link href="/browse" className="font-bold text-2xl tracking-tight">
+        <Link href="/.." className="font-bold text-2xl tracking-tight">
           <span>SWAP</span>
           <span>STREET</span>
         </Link>
@@ -168,45 +168,45 @@ export function Sidebar() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [categories] = useState<{ id: number; name: string }[]>([
-    { id: 1, name: "Tops" },
-    { id: 2, name: "Bottoms" },
-    { id: 3, name: "Dresses/One-Pieces" },
-    { id: 4, name: "Footwear" },
-    { id: 5, name: "Accessories" },
-  ]);
+  // const [categories] = useState<{ id: number; name: string }[]>([
+  //   { id: 1, name: "Tops" },
+  //   { id: 2, name: "Bottoms" },
+  //   { id: 3, name: "Dresses/One-Pieces" },
+  //   { id: 4, name: "Footwear" },
+  //   { id: 5, name: "Accessories" },
+  // ]);
 
   const [minPriceVal, setMinPriceVal] = useState<number>(0);
   const [maxPriceVal, setMaxPriceVal] = useState<number>(999999);
-  const [conditions, setConditions] = useState<string[]>([]);
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  // const [conditions, setConditions] = useState<string[]>([]);
+  // const [categoryId, setCategoryId] = useState<string | null>(null);
+  // const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const [showPrice, setShowPrice] = useState(false);
-  const [showCategories, setShowCategories] = useState(false);
-  const [showCondition, setShowCondition] = useState(false);
+  // const [showCategories, setShowCategories] = useState(false);
+  // const [showCondition, setShowCondition] = useState(false);
 
   // Use ref to track if we're initializing from URL
   const isInitialized = useRef(false);
 
   // Initialize state from URL params (runs once on mount)
   useEffect(() => {
-    const cat = searchParams.get("categoryId");
+    // const cat = searchParams.get("categoryId");
     const q = searchParams.get("q") || "";
-    const conditionsParam = searchParams.get("conditions");
-    const sizeParam = searchParams.get("size");
+    // const conditionsParam = searchParams.get("conditions");
+    // const sizeParam = searchParams.get("size");
     const minP = searchParams.get("minPrice");
     const maxP = searchParams.get("maxPrice");
 
-    setCategoryId(cat);
+    // setCategoryId(cat);
     setSearchQuery(q);
 
-    if (conditionsParam) {
-      setConditions(conditionsParam.split(",").map((c) => c.trim()));
-    }
+    // if (conditionsParam) {
+    //   setConditions(conditionsParam.split(",").map((c) => c.trim()));
+    // }
 
-    setSelectedSize(sizeParam);
+    // setSelectedSize(sizeParam);
 
     if (minP) {
       const v = Number(minP);
@@ -227,41 +227,38 @@ export function Sidebar() {
 
     const params = new URLSearchParams();
 
-    if (categoryId) params.set("categoryId", categoryId);
-    if (minPriceVal > 0) params.set("minPrice", minPriceVal.toString());
-    if (maxPriceVal < 999999) params.set("maxPrice", maxPriceVal.toString());
-    if (selectedSize) params.set("size", selectedSize);
+    // Always include price range for consistent filtering
+    params.set("minPrice", minPriceVal.toString());
+    params.set("maxPrice", maxPriceVal.toString());
     if (searchQuery) params.set("q", searchQuery);
-    if (conditions.length > 0) params.set("conditions", conditions.join(","));
 
-    const newQueryString = params.toString();
-    router.replace(newQueryString ? `/browse?${newQueryString}` : "/browse", {
+    router.replace(`/browse?${params.toString()}`, {
       scroll: false,
     });
   }, [
-    categoryId,
+    // categoryId,
     minPriceVal,
     maxPriceVal,
-    selectedSize,
-    conditions,
+    // selectedSize,
+    // conditions,
     searchQuery,
     router,
   ]);
 
-  const handleConditionToggle = (condition: string) => {
-    setConditions((prev) =>
-      prev.includes(condition)
-        ? prev.filter((c) => c !== condition)
-        : [...prev, condition],
-    );
-  };
+  // const handleConditionToggle = (condition: string) => {
+  //   setConditions((prev) =>
+  //     prev.includes(condition)
+  //       ? prev.filter((c) => c !== condition)
+  //       : [...prev, condition],
+  //   );
+  // };
 
   const clearFilters = () => {
     setMinPriceVal(0);
     setMaxPriceVal(999999);
-    setSelectedSize(null);
-    setConditions([]);
-    setCategoryId(null);
+    // setSelectedSize(null);
+    // setConditions([]);
+    // setCategoryId(null);
     setSearchQuery("");
   };
 
@@ -279,28 +276,6 @@ export function Sidebar() {
             Clear
           </button>
         </div>
-
-        {/* Size selector */}
-        <div className="mb-4">
-          <h4 className="text-sm font-medium mb-2">Size</h4>
-          <div className="grid grid-cols-3 gap-2">
-            {["XS", "S", "M", "L", "XL", "XXL"].map((s) => (
-              <button
-                key={s}
-                onClick={() =>
-                  setSelectedSize((prev) => (prev === s ? null : s))
-                }
-                className={`rounded p-2 text-xs text-center transition hover:bg-teal-500 hover:text-white ${
-                  selectedSize === s ? "bg-teal-500 text-white" : "bg-gray-300"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="h-px bg-black my-3" />
 
         {/* Price inputs */}
         <div className="mb-4">
@@ -343,77 +318,6 @@ export function Sidebar() {
                   />
                 </label>
               </div>
-            </div>
-          )}
-        </div>
-
-        <div className="h-px bg-black my-3" />
-
-        {/* Categories */}
-        <div className="mb-4">
-          <button
-            className="w-full flex items-center justify-between"
-            onClick={() => setShowCategories((s) => !s)}
-          >
-            <h4 className="text-sm font-medium">Categories</h4>
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${showCategories ? "rotate-180" : ""}`}
-            />
-          </button>
-          {showCategories && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => {
-                    setCategoryId((prev) =>
-                      prev === category.id.toString()
-                        ? null
-                        : category.id.toString(),
-                    );
-                  }}
-                  className={`rounded p-2 text-xs text-center transition hover:bg-teal-500 hover:text-white ${
-                    categoryId === category.id.toString()
-                      ? "bg-teal-500 text-white"
-                      : "bg-gray-300"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="h-px bg-black my-3" />
-
-        {/* Condition */}
-        <div>
-          <button
-            className="w-full flex items-center justify-between mb-2"
-            onClick={() => setShowCondition((s) => !s)}
-          >
-            <h4 className="text-sm font-medium">Condition</h4>
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${showCondition ? "rotate-180" : ""}`}
-            />
-          </button>
-          {showCondition && (
-            <div>
-              {["New", "Like New", "Used", "Good"].map((condition) => (
-                <label
-                  key={condition}
-                  className={`flex items-center gap-2 rounded p-2 text-xs transition ease-in-out bg-[#d9d9d9] cursor-pointer hover:bg-gray-300`}
-                >
-                  <input
-                    type="checkbox"
-                    className="accent-teal-500 ml-2 w-4 h-4"
-                    checked={conditions.includes(condition)}
-                    onChange={() => handleConditionToggle(condition)}
-                  />
-                  <span>{condition}</span>
-                </label>
-              ))}
             </div>
           )}
         </div>
