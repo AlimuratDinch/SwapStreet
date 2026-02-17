@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
-import BrowsePage, { fetchClothingItems, fetchSearchPage } from "@/app/browse/page";
+import BrowsePage, {
+  fetchClothingItems,
+  fetchSearchPage,
+} from "@/app/browse/page";
 import { JSX } from "react";
 
 // Type definition for clothing items
