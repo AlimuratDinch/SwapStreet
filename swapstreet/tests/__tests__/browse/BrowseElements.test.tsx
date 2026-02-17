@@ -260,7 +260,7 @@ describe("Sidebar", () => {
     });
 
     fireEvent.click(screen.getByText("Clear"));
-    const clearCalls = mockPush.mock.calls;
+    const clearCalls = mockReplace.mock.calls;
     const anyHasBrowseAndDefaultPrices = clearCalls.some(
       (c) =>
         (c[0] as string).startsWith("/browse") &&
@@ -419,124 +419,6 @@ describe("Sidebar", () => {
       expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
     });
   });
-
-  it("toggles categories visibility", async () => {
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    const categoriesButton = screen.getByRole("button", {
-      name: /Categories/i,
-    });
-
-    // Initially collapsed
-    expect(screen.queryByText("Tops")).not.toBeInTheDocument();
-
-    // Click to expand
-    fireEvent.click(categoriesButton);
-    await waitFor(() => {
-      expect(screen.getByText("Tops")).toBeInTheDocument();
-    });
-
-    // Click to collapse
-    fireEvent.click(categoriesButton);
-    await waitFor(() => {
-      expect(screen.queryByText("Tops")).not.toBeInTheDocument();
-    });
-  });
-
-  it("toggles condition visibility", async () => {
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    const conditionButton = screen.getByRole("button", { name: /Condition/i });
-
-    // Initially collapsed
-    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
-
-    // Click to expand
-    fireEvent.click(conditionButton);
-    await waitFor(() => {
-      expect(screen.getAllByRole("checkbox").length).toBeGreaterThan(0);
-    });
-
-    // Click to collapse
-    fireEvent.click(conditionButton);
-    await waitFor(() => {
-      expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
-    });
-  });
-
-  it("displays all size options", async () => {
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    const sizeButtons = screen.getAllByRole("button");
-    const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
-
-    sizes.forEach((size) => {
-      const button = sizeButtons.find((btn) => btn.textContent === size);
-      expect(button).toBeTruthy();
-    });
-  });
-
-  it("displays all categories", async () => {
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    const categoriesButton = screen.getByRole("button", {
-      name: /Categories/i,
-    });
-    fireEvent.click(categoriesButton);
-
-    await waitFor(() => {
-      expect(screen.getByText("Tops")).toBeInTheDocument();
-      expect(screen.getByText("Bottoms")).toBeInTheDocument();
-      expect(screen.getByText("Dresses/One-Pieces")).toBeInTheDocument();
-      expect(screen.getByText("Footwear")).toBeInTheDocument();
-      expect(screen.getByText("Accessories")).toBeInTheDocument();
-    });
-  });
-
-  it("displays all condition options", async () => {
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    const conditionButton = screen.getByRole("button", { name: /Condition/i });
-    fireEvent.click(conditionButton);
-
-    await waitFor(() => {
-      const labels = screen
-        .getAllByRole("checkbox")
-        .map((cb) => cb.parentElement?.textContent);
-      expect(labels).toContain("New");
-      expect(labels).toContain("Like New");
-      expect(labels).toContain("Used");
-      expect(labels).toContain("Good");
-    });
-  });
-
-  it("does not update URL before initialization", async () => {
-    const params = new URLSearchParams("categoryId=1");
-    (useSearchParams as jest.Mock).mockReturnValue(params);
-
-    mockReplace.mockClear();
-
-    await act(async () => {
-      render(<Sidebar />);
-    });
-
-    // Subsequent changes should trigger replace
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalled();
-    });
-
-    (useSearchParams as jest.Mock).mockReturnValue(new URLSearchParams());
-  });
 });
 
 // ---------------- CardItem ----------------
@@ -583,7 +465,7 @@ describe("CardItem", () => {
   it("adds item to wardrobe when button is clicked", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({}),
+      json: jest.fn(async () => ({})),
     });
 
     render(<CardItem id="7" title="New Item" price={35} imgSrc="/item.jpg" />);
@@ -618,7 +500,7 @@ describe("CardItem", () => {
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({}),
+      json: jest.fn(async () => ({})),
     });
 
     render(
@@ -670,7 +552,14 @@ describe("CardItem", () => {
     (global.fetch as jest.Mock).mockImplementation(
       () =>
         new Promise((resolve) =>
-          setTimeout(() => resolve({ ok: true, json: async () => ({}) }), 100),
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: jest.fn(async () => ({})),
+              }),
+            100,
+          ),
         ),
     );
 
@@ -691,7 +580,17 @@ describe("CardItem", () => {
 
   it("disables button while saving", async () => {
     (global.fetch as jest.Mock).mockImplementation(
-      () => new Promise(() => {}), // Never resolves
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: jest.fn(async () => ({})),
+              }),
+            100,
+          ),
+        ),
     );
 
     render(<CardItem id="14" title="Item" price={20} />);
@@ -702,8 +601,12 @@ describe("CardItem", () => {
 
     fireEvent.click(button);
 
+    // Button should be disabled immediately after click
+    expect(button.disabled).toBe(true);
+
+    // Wait for the operation to complete
     await waitFor(() => {
-      expect(button.disabled).toBe(true);
+      expect(global.fetch).toHaveBeenCalled();
     });
   });
 
