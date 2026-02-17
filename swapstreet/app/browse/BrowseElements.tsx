@@ -171,47 +171,24 @@ export function SearchBar({
 
 export function Sidebar() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // const [categories] = useState<{ id: number; name: string }[]>([
-  //   { id: 1, name: "Tops" },
-  //   { id: 2, name: "Bottoms" },
-  //   { id: 3, name: "Dresses/One-Pieces" },
-  //   { id: 4, name: "Footwear" },
-  //   { id: 5, name: "Accessories" },
-  // ]);
+  const searchParams = useSearchParams(); 
 
   const [minPriceVal, setMinPriceVal] = useState<number>(0);
   const [maxPriceVal, setMaxPriceVal] = useState<number>(999999);
-  // const [conditions, setConditions] = useState<string[]>([]);
-  // const [categoryId, setCategoryId] = useState<string | null>(null);
-  // const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const [showPrice, setShowPrice] = useState(false);
-  // const [showCategories, setShowCategories] = useState(false);
-  // const [showCondition, setShowCondition] = useState(false);
 
   // Use ref to track if we're initializing from URL
   const isInitialized = useRef(false);
 
   // Initialize state from URL params (runs once on mount)
   useEffect(() => {
-    // const cat = searchParams.get("categoryId");
     const q = searchParams.get("q") || "";
-    // const conditionsParam = searchParams.get("conditions");
-    // const sizeParam = searchParams.get("size");
     const minP = searchParams.get("minPrice");
     const maxP = searchParams.get("maxPrice");
 
-    // setCategoryId(cat);
     setSearchQuery(q);
-
-    // if (conditionsParam) {
-    //   setConditions(conditionsParam.split(",").map((c) => c.trim()));
-    // }
-
-    // setSelectedSize(sizeParam);
 
     if (minP) {
       const v = Number(minP);
@@ -241,29 +218,15 @@ export function Sidebar() {
       scroll: false,
     });
   }, [
-    // categoryId,
     minPriceVal,
     maxPriceVal,
-    // selectedSize,
-    // conditions,
     searchQuery,
     router,
   ]);
 
-  // const handleConditionToggle = (condition: string) => {
-  //   setConditions((prev) =>
-  //     prev.includes(condition)
-  //       ? prev.filter((c) => c !== condition)
-  //       : [...prev, condition],
-  //   );
-  // };
-
   const clearFilters = () => {
     setMinPriceVal(0);
     setMaxPriceVal(999999);
-    // setSelectedSize(null);
-    // setConditions([]);
-    // setCategoryId(null);
     setSearchQuery("");
   };
 

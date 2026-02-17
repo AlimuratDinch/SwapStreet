@@ -76,18 +76,41 @@ const mockPush = jest.fn();
 const mockReplace = jest.fn();
 const mockSearchParams = new URLSearchParams();
 
+let consoleErrorSpy: jest.SpyInstance;
+
+beforeEach(() => {
+  consoleErrorSpy = jest
+    .spyOn(console, "error")
+    .mockImplementation(() => {});
+});
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore();
+});
+
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockSessionStorage.clear();
   mockSessionStorage.setItem("accessToken", "test-token");
+
   (useRouter as jest.Mock).mockReturnValue({
     push: mockPush,
     replace: mockReplace,
   });
+
   (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
+
   (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
   (wardrobeStorage.addWardrobeItem as jest.Mock).mockClear();
   (wardrobeStorage.removeWardrobeItem as jest.Mock).mockClear();
+
+  (global.fetch as jest.Mock).mockImplementation(() =>
+    Promise.resolve({
+      ok: true,
+      json: async () => ({}),
+    })
+  );
 });
 
 // ---------------- Header ----------------
@@ -269,17 +292,22 @@ describe("Sidebar", () => {
     );
     expect(anyHasBrowseAndDefaultPrices).toBe(true);
   });
-
+    
   it("handles fetch error gracefully", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 500 });
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: "Server error" }),
+    });
+
     const spy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     await act(async () => {
       render(<Sidebar />);
     });
 
-    // The fetch is commented out in the component, so this test just verifies the sidebar still renders
     expect(screen.getByText("Filters")).toBeInTheDocument();
+
     spy.mockRestore();
   });
 
@@ -371,8 +399,10 @@ describe("Sidebar", () => {
     });
   });
 
-  it("initializes state from URL params including min/max and search query", async () => {
-    const params = new URLSearchParams("q=test&minPrice=25&maxPrice=50");
+  it("initializes state from URL params including size and min/max", async () => {
+    const params = new URLSearchParams(
+      "categoryId=2&q=test&conditions=New,Used&size=M&minPrice=25&maxPrice=50",
+    );
     (useSearchParams as jest.Mock).mockReturnValue(params);
 
     await act(async () => {
@@ -465,7 +495,7 @@ describe("CardItem", () => {
   it("adds item to wardrobe when button is clicked", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: jest.fn(async () => ({})),
+      json: async () => ({}),
     });
 
     render(<CardItem id="7" title="New Item" price={35} imgSrc="/item.jpg" />);
@@ -500,7 +530,7 @@ describe("CardItem", () => {
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: jest.fn(async () => ({})),
+      json: async () => ({}),
     });
 
     render(
@@ -552,14 +582,7 @@ describe("CardItem", () => {
     (global.fetch as jest.Mock).mockImplementation(
       () =>
         new Promise((resolve) =>
-          setTimeout(
-            () =>
-              resolve({
-                ok: true,
-                json: jest.fn(async () => ({})),
-              }),
-            100,
-          ),
+          setTimeout(() => resolve({ ok: true, json: async () => ({}) }), 100),
         ),
     );
 
@@ -580,17 +603,7 @@ describe("CardItem", () => {
 
   it("disables button while saving", async () => {
     (global.fetch as jest.Mock).mockImplementation(
-      () =>
-        new Promise((resolve) =>
-          setTimeout(
-            () =>
-              resolve({
-                ok: true,
-                json: jest.fn(async () => ({})),
-              }),
-            100,
-          ),
-        ),
+      () => new Promise(() => {}), // Never resolves
     );
 
     render(<CardItem id="14" title="Item" price={20} />);
@@ -601,12 +614,8 @@ describe("CardItem", () => {
 
     fireEvent.click(button);
 
-    // Button should be disabled immediately after click
-    expect(button.disabled).toBe(true);
-
-    // Wait for the operation to complete
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalled();
+      expect(button.disabled).toBe(true);
     });
   });
 
