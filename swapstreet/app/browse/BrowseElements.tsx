@@ -7,11 +7,11 @@ import {
   Globe,
   User,
   ChevronDown,
+  Shirt,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Shirt } from "lucide-react";
 import Link from "next/link";
 import {
   addWardrobeItem,
@@ -33,7 +33,7 @@ type HeaderProps = {
   showCenterNav?: boolean;
 };
 
-export function Header({ showCenterNav = true }: HeaderProps) {
+export function Header({ showCenterNav = true }: Readonly<HeaderProps>) {
   return (
     <header
       className="fixed top-0 left-0 right-0 shadow-sm px-6 py-2 flex items-center justify-between z-[100]"
@@ -192,12 +192,12 @@ export function Sidebar() {
 
     if (minP) {
       const v = Number(minP);
-      if (!isNaN(v)) setMinPriceVal(v);
+      if (!Number.isNaN(v)) setMinPriceVal(v);
     }
 
     if (maxP) {
       const v = Number(maxP);
-      if (!isNaN(v)) setMaxPriceVal(v);
+      if (!Number.isNaN(v)) setMaxPriceVal(v);
     }
 
     isInitialized.current = true;
@@ -288,8 +288,7 @@ export function Sidebar() {
     </aside>
   );
 }
-
-export function CardItem({ id, title, imgSrc, price, href }: CardItemProps) {
+export function CardItem({ id, title, imgSrc, price, href }: Readonly<CardItemProps>) {
   const [inWardrobe, setInWardrobe] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
