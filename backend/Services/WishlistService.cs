@@ -1,59 +1,84 @@
-// using Microsoft.EntityFrameworkCore;
-// using backend.DbContexts;
-// using backend.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using backend.DbContexts;
+using backend.Contracts;
 
-// namespace backend.Services
-// {
-//     public interface IWishlistService
-//     {
-//         Task<List<int>> GetWishlistAsync(Guid userId);
-//         Task AddToWishlistAsync(Guid userId, int itemId);
-//         Task RemoveFromWishlistAsync(Guid userId, int itemId);
-//     }
+namespace backend.Services
+{
+    public class WishlistService : IWishlistService
+    {
+        private readonly AppDbContext _context;
 
-//     public class WishlistService : IWishlistService
-//     {
-//         private readonly AppDbContext _context;
+        public WishlistService(AppDbContext context)
+        {
+            _context = context;
+        }
 
-//         public WishlistService(AppDbContext context)
-//         {
-//             _context = context;
-//         }
+        public async Task<IReadOnlyList<Guid>> GetWishlistAsync(Guid profileId)
+        {
+            return await _context.WishLists
+                .AsNoTracking()
+                .Where(w => w.ProfileId == profileId)
+                .OrderBy(w => w.DisplayOrder)
+                .Select(w => w.ListingId)
+                .ToListAsync();
+        }
 
-//         public async Task<List<int>> GetWishlistAsync(Guid userId)
-//         {
-//             return await _context.Wishlists
-//                 .Where(w => w.UserId == userId)
-//                 .Select(w => w.ItemId)
-//                 .ToListAsync();
-//         }
+        public async Task<WishlistAddResult> AddToWishlistAsync(Guid profileId, Guid listingId)
+        {
+            var listingExists = await _context.Listings
+                .AsNoTracking()
+                .AnyAsync(l => l.Id == listingId);
 
-//         public async Task AddToWishlistAsync(Guid userId, int itemId)
-//         {
-//             var exists = await _context.Wishlists
-//                 .AnyAsync(w => w.UserId == userId && w.ItemId == itemId);
+            if (!listingExists)
+            {
+                return WishlistAddResult.ListingNotFound;
+            }
 
-//             if (!exists)
-//             {
-//                 _context.Wishlists.Add(new Wishlist
-//                 {
-//                     UserId = userId,
-//                     ItemId = itemId
-//                 });
-//                 await _context.SaveChangesAsync();
-//             }
-//         }
+            var exists = await _context.WishLists
+                .AnyAsync(w => w.ProfileId == profileId && w.ListingId == listingId);
 
-//         public async Task RemoveFromWishlistAsync(Guid userId, int itemId)
-//         {
-//             var item = await _context.Wishlists
-//                 .FirstOrDefaultAsync(w => w.UserId == userId && w.ItemId == itemId);
+            if (exists)
+            {
+                return WishlistAddResult.AlreadyExists;
+            }
 
-//             if (item != null)
-//             {
-//                 _context.Wishlists.Remove(item);
-//                 await _context.SaveChangesAsync();
-//             }
-//         }
-//     }
-// }
+            var maxDisplayOrder = await _context.WishLists
+                .Where(w => w.ProfileId == profileId)
+                .Select(w => (int?)w.DisplayOrder)
+                .MaxAsync();
+
+            var item = new WishList
+            {
+                Id = Guid.NewGuid(),
+                ProfileId = profileId,
+                ListingId = listingId,
+                DisplayOrder = (maxDisplayOrder ?? 0) + 1
+            };
+
+            _context.WishLists.Add(item);
+            await _context.SaveChangesAsync();
+
+            return WishlistAddResult.Added;
+        }
+
+        public async Task<WishlistRemoveResult> RemoveFromWishlistAsync(Guid profileId, Guid listingId)
+        {
+            var item = await _context.WishLists
+                .FirstOrDefaultAsync(w => w.ProfileId == profileId && w.ListingId == listingId);
+
+            if (item == null)
+            {
+                return WishlistRemoveResult.NotFound;
+            }
+
+            _context.WishLists.Remove(item);
+            await _context.SaveChangesAsync();
+
+            return WishlistRemoveResult.Removed;
+        }
+    }
+}
