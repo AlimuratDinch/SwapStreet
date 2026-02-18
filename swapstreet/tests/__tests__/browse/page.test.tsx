@@ -11,15 +11,15 @@ jest.mock("@/components/common/Header", () => ({
   Header: () => <div data-testid="header" />,
 }));
 
-jest.mock("../../../../app/browse/components/Sidebar", () => ({
+jest.mock("@/app/browse/components/Sidebar", () => ({
   Sidebar: () => <div data-testid="sidebar" />,
 }));
 
-jest.mock("../../../../app/browse/components/CreateListingFAB", () => ({
+jest.mock("@/app/browse/components/CreateListingFAB", () => ({
   CreateListingFAB: () => <div data-testid="fab" />,
 }));
 
-jest.mock("../../../../app/browse/components/InfiniteBrowse", () => {
+jest.mock("@/app/browse/components/InfiniteBrowse", () => {
   return function MockInfiniteBrowse({
     initialItems,
   }: {
