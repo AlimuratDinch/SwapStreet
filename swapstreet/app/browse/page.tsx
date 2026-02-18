@@ -37,8 +37,7 @@ export async function fetchClothingItems(
     const q = new URLSearchParams();
     if (params?.minPrice) q.set("minPrice", params.minPrice);
     if (params?.maxPrice) q.set("maxPrice", params.maxPrice);
-    if (params?.categoryId) q.set("categoryId", params.categoryId);
-    if (params?.conditions) q.set("conditions", params.conditions);
+    if (params?.q) q.set("q", params.q);
 
     const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
     const base = envBase || "";
@@ -62,7 +61,8 @@ export async function fetchSearchPage(
     q.set("limit", "18");
     if (params?.cursor) q.set("cursor", params.cursor);
     if (params?.minPrice) q.set("minPrice", params.minPrice);
-    if (params?.categoryId) q.set("categoryId", params.categoryId);
+    if (params?.maxPrice) q.set("maxPrice", params.maxPrice);
+    if (params?.q) q.set("q", params.q);
 
     const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
     const base = envBase || "";
