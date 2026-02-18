@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
   output: "standalone",
   images: {
     unoptimized: true,
-    // This is the key for Local Staging
     remotePatterns: [
       {
         protocol: "https",
@@ -19,15 +18,14 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
-        port: "", // Adjust this to match your backend port if different
+        port: "",
         pathname: "/public/**",
       },
       {
         protocol: "http",
-        hostname: "minio", // Internal Docker name for server-side optimization
+        hostname: "minio",
         port: "9000",
       },
-      // If your staging Nginx uses a domain via hosts file
       {
         protocol: "http",
         hostname: "minio.swapstreet.ca",
