@@ -22,9 +22,9 @@ export default function InfiniteBrowse({
 }) {
   const containerRef = useRef<HTMLElement>(null);
   const { items, loading, hasNext, fetchPage } = useInfiniteSearch(
-    initialItems, 
-    initialCursor, 
-    initialHasNext
+    initialItems,
+    initialCursor,
+    initialHasNext,
   );
 
   useScrollListener(containerRef, fetchPage, hasNext && !loading);
@@ -50,12 +50,26 @@ export default function InfiniteBrowse({
   );
 }
 
-function StatusMessage({ itemsLength, loading }: { itemsLength: number; loading: boolean }) {
+function StatusMessage({
+  itemsLength,
+  loading,
+}: {
+  itemsLength: number;
+  loading: boolean;
+}) {
   if (itemsLength === 0 && !loading) {
-    return <p className="col-span-full text-center text-gray-500">No items available.</p>;
+    return (
+      <p className="col-span-full text-center text-gray-500">
+        No items available.
+      </p>
+    );
   }
   if (loading) {
-    return <div className="col-span-full text-center py-4">Loading more items...</div>;
+    return (
+      <div className="col-span-full text-center py-4">
+        Loading more items...
+      </div>
+    );
   }
   return null;
 }

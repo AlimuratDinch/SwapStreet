@@ -37,16 +37,38 @@ export function Sidebar() {
       <section>
         <div className="flex justify-between mb-2">
           <h3 className="font-semibold">Filters</h3>
-          <button onClick={() => { setMinPriceVal(0); setMaxPriceVal(999999); setSearchQuery(""); }} className="text-xs hover:text-teal-500">Clear</button>
+          <button
+            onClick={() => {
+              setMinPriceVal(0);
+              setMaxPriceVal(999999);
+              setSearchQuery("");
+            }}
+            className="text-xs hover:text-teal-500"
+          >
+            Clear
+          </button>
         </div>
-        <button className="w-full flex justify-between items-center" onClick={() => setShowPrice(!showPrice)}>
+        <button
+          className="w-full flex justify-between items-center"
+          onClick={() => setShowPrice(!showPrice)}
+        >
           <span className="text-sm font-medium">Price Range</span>
-          <ChevronDown className={`w-4 h-4 transition-transform ${showPrice ? "rotate-180" : ""}`} />
+          <ChevronDown
+            className={`w-4 h-4 transition-transform ${showPrice ? "rotate-180" : ""}`}
+          />
         </button>
         {showPrice && (
           <div className="mt-2 flex gap-2">
-            <PriceInput label="Min" value={minPriceVal} onChange={setMinPriceVal} />
-            <PriceInput label="Max" value={maxPriceVal} onChange={setMaxPriceVal} />
+            <PriceInput
+              label="Min"
+              value={minPriceVal}
+              onChange={setMinPriceVal}
+            />
+            <PriceInput
+              label="Max"
+              value={maxPriceVal}
+              onChange={setMaxPriceVal}
+            />
           </div>
         )}
       </section>
@@ -54,7 +76,15 @@ export function Sidebar() {
   );
 }
 
-function PriceInput({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) {
+function PriceInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
   return (
     <label className="flex-1">
       <div className="text-xs text-gray-600 mb-1">{label}</div>

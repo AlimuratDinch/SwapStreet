@@ -2,7 +2,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
-import { addWardrobeItem, hasWardrobeItem, removeWardrobeItem } from "../../wardrobe/wardrobeStorage";
+import {
+  addWardrobeItem,
+  hasWardrobeItem,
+  removeWardrobeItem,
+} from "../../wardrobe/wardrobeStorage";
 import "./CardItemStyle.css";
 
 interface CardItemProps {
@@ -29,7 +33,8 @@ export function CardItem({ id, title, imgSrc, price, href }: CardItemProps) {
     setIsSaving(true);
     try {
       const token = sessionStorage.getItem("accessToken");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const method = inWardrobe ? "DELETE" : "POST";
 
       const res = await fetch(`${apiUrl}/wishlist/${id}`, {
@@ -57,7 +62,11 @@ export function CardItem({ id, title, imgSrc, price, href }: CardItemProps) {
     <div className="card-item">
       <div className="card-item-image-container">
         {imgSrc ? (
-          <img src={imgSrc} alt={title} className="card-item-image object-cover w-full h-full" />
+          <img
+            src={imgSrc}
+            alt={title}
+            className="card-item-image object-cover w-full h-full"
+          />
         ) : (
           <div className="card-item-image-fallback">No Image</div>
         )}
@@ -66,17 +75,26 @@ export function CardItem({ id, title, imgSrc, price, href }: CardItemProps) {
         <h4 className="card-item-title">{title}</h4>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
-          <button 
-            onClick={handleAddToWardrobe} 
+          <button
+            onClick={handleAddToWardrobe}
             disabled={isSaving}
             className="card-item-wardrobe-btn"
           >
-            <ShoppingBag className="w-5 h-5" fill={inWardrobe ? "#14b8a6" : "none"} />
+            <ShoppingBag
+              className="w-5 h-5"
+              fill={inWardrobe ? "#14b8a6" : "none"}
+            />
           </button>
         </div>
       </div>
     </div>
   );
 
-  return href ? <Link href={href} className="block">{content}</Link> : content;
+  return href ? (
+    <Link href={href} className="block">
+      {content}
+    </Link>
+  ) : (
+    content
+  );
 }

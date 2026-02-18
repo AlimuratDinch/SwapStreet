@@ -1,9 +1,9 @@
 import { useEffect, useCallback, useRef } from "react";
 
 export function useScrollListener(
-  containerRef: React.RefObject<HTMLElement | null>, 
-  callback: () => void, 
-  isEnabled: boolean
+  containerRef: React.RefObject<HTMLElement | null>,
+  callback: () => void,
+  isEnabled: boolean,
 ) {
   const lastFetchRef = useRef(0);
 

@@ -1,359 +1,77 @@
-// import { render, screen } from "@testing-library/react";
-// import { act } from "react";
-// import BrowsePage, { fetchClothingItems } from "@/app/browse/page";
-// import { JSX } from "react";
+import { render, screen } from "@testing-library/react";
+import BrowsePage from "../../../app/browse/page";
+import { getSearchResults } from "@/lib/api/browse";
 
-// // Type definition for clothing items
-// type ClothingItem = {
-//   id: number;
-//   title: string;
-//   description: string;
-//   images?: Array<{ imageUrl: string }>;
-//   condition: string;
-//   price: number;
-// };
+// 1. Mock all dependencies strictly
+jest.mock("@/lib/api/browse", () => ({
+  getSearchResults: jest.fn(),
+}));
 
-// interface CardItemProps {
-//   title: string;
-//   imgSrc?: string;
-//   price: number;
-// }
+jest.mock("@/components/common/Header", () => ({
+  Header: () => <div data-testid="header" />,
+}));
 
-// // Mock the BrowseElements components
-// jest.mock("@/app/browse/BrowseElements", () => ({
-//   Header: () => <div data-testid="header">Header</div>,
-//   Sidebar: () => <div data-testid="sidebar">Sidebar</div>,
-//   CardItem: ({ title, imgSrc, price }: CardItemProps) => (
-//     <div data-testid="card-item">
-//       <h4>{title}</h4>
-//       <span>{price}</span>
-//       {imgSrc && <span data-testid="img-src">{imgSrc}</span>}
-//     </div>
-//   ),
-// }));
+jest.mock("@/app/browse/components/Sidebar", () => ({
+  Sidebar: () => <div data-testid="sidebar" />,
+}));
 
-// // Mock fetch globally
-// global.fetch = jest.fn();
+jest.mock("@/app/browse/components/CreateListingFAB", () => ({
+  CreateListingFAB: () => <div data-testid="fab" />,
+}));
 
-// describe("fetchClothingItems", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
+jest.mock("@/app/browse/components/InfiniteBrowse", () => {
+  return function MockInfiniteBrowse({
+    initialItems,
+  }: {
+    initialItems: any[];
+  }) {
+    return <div data-testid="infinite-browse">{initialItems.length}</div>;
+  };
+});
 
-//   it("should fetch items with no filters", async () => {
-//     const mockItems: ClothingItem[] = [
-//       {
-//         id: 1,
-//         title: "Test Item",
-//         description: "Test Description",
-//         images: [{ imageUrl: "/test.jpg" }],
-//         condition: "New",
-//         price: 50,
-//       },
-//     ];
+describe("BrowsePage Coverage Test", () => {
+  const mockResponse = {
+    items: [{ id: "1", title: "Test", price: 10 }],
+    nextCursor: "next-123",
+    hasNextPage: true,
+  };
 
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => mockItems,
-//     });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (getSearchResults as jest.Mock).mockResolvedValue(mockResponse);
+  });
 
-//     const result = await fetchClothingItems(Promise.resolve({}));
+  it("completes full server-side execution path", async () => {
+    // We must pass searchParams as a Promise for Next.js 15
+    const mockParams = Promise.resolve({ q: "Navy", minPrice: "10" });
 
-//     expect(global.fetch).toHaveBeenCalledWith(
-//       "http://backend:8080/api/search/search",
-//       {
-//         cache: "no-store",
-//       },
-//     );
-//     expect(result).toEqual(mockItems);
-//   });
+    // EXECUTION: Await the async server component function directly
+    const JSX = await BrowsePage({ searchParams: mockParams });
 
-//   it("should fetch items with all filters applied", async () => {
-//     const mockItems: ClothingItem[] = [
-//       {
-//         id: 1,
-//         title: "Filtered Item",
-//         description: "Test Description",
-//         images: [{ imageUrl: "/test.jpg" }],
-//         condition: "Like New",
-//         price: 75,
-//       },
-//     ];
+    // RENDERING: Render the resulting JSX
+    render(JSX);
 
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => mockItems,
-//     });
+    // ASSERTIONS: Verify the data fetch logic was hit
+    expect(getSearchResults).toHaveBeenCalledWith({
+      q: "Navy",
+      minPrice: "10",
+    });
 
-//     const result = await fetchClothingItems(
-//       Promise.resolve({
-//         minPrice: "50",
-//         maxPrice: "100",
-//         categoryId: "2",
-//         conditions: "Like New,New",
-//       }),
-//     );
+    // Verify layout orchestration
+    expect(screen.getByTestId("header")).toBeInTheDocument();
+    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    expect(screen.getByTestId("infinite-browse")).toHaveTextContent("1");
+    expect(screen.getByTestId("fab")).toBeInTheDocument();
+  });
 
-//     expect(global.fetch).toHaveBeenCalledWith(
-//       "http://backend:8080/api/search/search?minPrice=50&maxPrice=100&categoryId=2&conditions=Like+New%2CNew",
-//       {
-//         cache: "no-store",
-//       },
-//     );
-//     expect(result).toEqual(mockItems);
-//   });
+  it("handles the edge case of missing searchParams", async () => {
+    // Simulate a hit to /browse with no query strings
+    const mockParams = Promise.resolve({});
 
-//   it("should fetch items with partial filters", async () => {
-//     const mockItems: ClothingItem[] = [];
+    const JSX = await BrowsePage({ searchParams: mockParams });
+    render(JSX);
 
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => mockItems,
-//     });
-
-//     const result = await fetchClothingItems(
-//       Promise.resolve({
-//         minPrice: "20",
-//         categoryId: "3",
-//       }),
-//     );
-
-//     expect(global.fetch).toHaveBeenCalledWith(
-//       "http://backend:8080/api/search/search?minPrice=20&categoryId=3",
-//       {
-//         cache: "no-store",
-//       },
-//     );
-//     expect(result).toEqual(mockItems);
-//   });
-
-//   it("should return empty array on fetch error", async () => {
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: false,
-//       status: 500,
-//     });
-
-//     const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-//     const result = await fetchClothingItems(Promise.resolve({}));
-
-//     expect(result).toEqual([]);
-//     expect(consoleSpy).toHaveBeenCalledWith(
-//       "Failed to fetch clothing items:",
-//       expect.any(Error),
-//     );
-//     consoleSpy.mockRestore();
-//   });
-
-//   it("should return empty array on network error", async () => {
-//     (global.fetch as jest.Mock).mockRejectedValueOnce(
-//       new Error("Network error"),
-//     );
-
-//     const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-//     const result = await fetchClothingItems(Promise.resolve({}));
-
-//     expect(result).toEqual([]);
-//     expect(consoleSpy).toHaveBeenCalledWith(
-//       "Failed to fetch clothing items:",
-//       expect.any(Error),
-//     );
-//     consoleSpy.mockRestore();
-//   });
-
-//   it("should use NEXT_PUBLIC_API_URL when available", async () => {
-//     const originalEnv = process.env.NEXT_PUBLIC_API_URL;
-//     process.env.NEXT_PUBLIC_API_URL = "http://custom-api:3000";
-
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => [],
-//     });
-
-//     await fetchClothingItems(Promise.resolve({}));
-
-//     expect(global.fetch).toHaveBeenCalledWith(
-//       "http://custom-api:3000/api/search/search",
-//       expect.any(Object),
-//     );
-
-//     process.env.NEXT_PUBLIC_API_URL = originalEnv;
-//   });
-// });
-
-// describe("BrowsePage", () => {
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it("should render the page structure with header, sidebar, and main content", async () => {
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => [],
-//     });
-
-//     let container: HTMLElement | null = null;
-//     await act(async () => {
-//       const res = render((<BrowsePage />) as unknown as JSX.Element);
-//       container = res.container;
-//     });
-
-//     expect(await screen.findByTestId("header")).toBeInTheDocument();
-//     expect(await screen.findByTestId("sidebar")).toBeInTheDocument();
-//     expect(container!.querySelector("main")).toBeInTheDocument();
-//   });
-
-//   it("should render add button", async () => {
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => [],
-//     });
-
-//     let container2: HTMLElement | null = null;
-//     await act(async () => {
-//       const res = render((<BrowsePage />) as unknown as JSX.Element);
-//       container2 = res.container;
-//     });
-
-//     expect(container2!.querySelector("main")).toBeInTheDocument();
-//   });
-
-//   it("should show 'No items available' when no items returned", async () => {
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => [],
-//     });
-
-//     await act(async () => {
-//       render((<BrowsePage />) as unknown as JSX.Element);
-//     });
-
-//     expect(await screen.findByText("No items available.")).toBeInTheDocument();
-//   });
-
-//   it("should render CardItem components for each item", async () => {
-//     const mockItems = [
-//       {
-//         id: 1,
-//         title: "Item 1",
-//         description: "Description 1",
-//         images: [{ imageUrl: "/img1.jpg" }],
-//         condition: "New",
-//         price: 25,
-//       },
-//       {
-//         id: 2,
-//         title: "Item 2",
-//         description: "Description 2",
-//         images: [{ imageUrl: "/img2.jpg" }],
-//         condition: "Used",
-//         price: 15,
-//       },
-//       {
-//         id: 3,
-//         title: "Item 3",
-//         description: "Description 3",
-//         images: [{ imageUrl: "/img3.jpg" }],
-//         condition: "Like New",
-//         price: 35,
-//       },
-//     ];
-
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => mockItems,
-//     });
-
-//     await act(async () => {
-//       render((<BrowsePage />) as unknown as JSX.Element);
-//     });
-
-//     const cardItems = await screen.findAllByTestId("card-item");
-//     expect(cardItems).toHaveLength(3);
-
-//     // Check that items are rendered
-//     expect(await screen.findByText("Item 1")).toBeInTheDocument();
-//     expect(await screen.findByText("Item 2")).toBeInTheDocument();
-//     expect(await screen.findByText("Item 3")).toBeInTheDocument();
-
-//     // Check that the img sources are rendered correctly
-//     const imgSources = await screen.findAllByTestId("img-src");
-//     expect(imgSources[0]).toHaveTextContent("/img1.jpg");
-//     expect(imgSources[1]).toHaveTextContent("/img2.jpg");
-//     expect(imgSources[2]).toHaveTextContent("/img3.jpg");
-//   });
-
-//   it("should pass correct props to CardItem components", async () => {
-//     const mockItems = [
-//       {
-//         id: 1,
-//         title: "Test Item",
-//         description: "Test Description",
-//         images: [{ imageUrl: "/test.jpg" }],
-//         condition: "New",
-//         price: 50,
-//       },
-//     ];
-
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => mockItems,
-//     });
-
-//     await act(async () => {
-//       render((<BrowsePage />) as unknown as JSX.Element);
-//     });
-
-//     expect(await screen.findByText("Test Item")).toBeInTheDocument();
-//     expect(await screen.findByTestId("img-src")).toHaveTextContent("/test.jpg");
-//   });
-
-//   it("should handle items without images", async () => {
-//     const mockItems = [
-//       {
-//         id: 1,
-//         title: "No Image Item",
-//         description: "No image",
-//         images: [],
-//         condition: "New",
-//         price: 10,
-//       },
-//     ];
-
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => mockItems,
-//     });
-
-//     await act(async () => {
-//       render((<BrowsePage />) as unknown as JSX.Element);
-//     });
-
-//     expect(await screen.findByText("No Image Item")).toBeInTheDocument();
-//     expect(screen.queryByTestId("img-src")).not.toBeInTheDocument();
-//   });
-
-//   it("should apply correct CSS classes for layout", async () => {
-//     (global.fetch as jest.Mock).mockResolvedValueOnce({
-//       ok: true,
-//       json: async () => [],
-//     });
-
-//     let container3: HTMLElement | null = null;
-//     await act(async () => {
-//       const res = render((<BrowsePage />) as unknown as JSX.Element);
-//       container3 = res.container;
-//     });
-
-//     const mainContainer = container3!.querySelector(".flex.flex-col.h-screen");
-//     expect(mainContainer).toBeInTheDocument();
-
-//     const main = container3!.querySelector("main");
-//     expect(main).toHaveClass(
-//       "pt-24",
-//       "flex-1",
-//       "overflow-y-auto",
-//       "p-6",
-//       "grid",
-//     );
-//   });
-// });
+    expect(getSearchResults).toHaveBeenCalledWith({});
+    expect(screen.getByTestId("infinite-browse")).toBeInTheDocument();
+  });
+});

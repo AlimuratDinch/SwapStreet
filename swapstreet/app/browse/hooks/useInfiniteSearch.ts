@@ -2,42 +2,49 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 
-export function useInfiniteSearch(initialItems: any[], initialCursor: string | null, initialHasNext: boolean) {
+export function useInfiniteSearch(
+  initialItems: any[],
+  initialCursor: string | null,
+  initialHasNext: boolean,
+) {
   const searchParams = useSearchParams();
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(initialCursor);
   const [hasNext, setHasNext] = useState(initialHasNext);
   const [loading, setLoading] = useState(false);
-  
-  const isFirstRender = useRef(true); 
+
+  const isFirstRender = useRef(true);
   const fetchInProgressRef = useRef(false);
 
-  const fetchPage = useCallback(async (currentCursor: string | null) => {
-    if (fetchInProgressRef.current) return;
-    fetchInProgressRef.current = true;
-    setLoading(true);
+  const fetchPage = useCallback(
+    async (currentCursor: string | null) => {
+      if (fetchInProgressRef.current) return;
+      fetchInProgressRef.current = true;
+      setLoading(true);
 
-    try {
-      const q = new URLSearchParams();
-      q.set("Query", searchParams.get("q") || "");
-      q.set("MinPrice", searchParams.get("minPrice") || "");
-      q.set("MaxPrice", searchParams.get("maxPrice") || "");
-      q.set("PageSize", "18");
-      if (currentCursor) q.set("Cursor", currentCursor);
+      try {
+        const q = new URLSearchParams();
+        q.set("Query", searchParams.get("q") || "");
+        q.set("MinPrice", searchParams.get("minPrice") || "");
+        q.set("MaxPrice", searchParams.get("maxPrice") || "");
+        q.set("PageSize", "18");
+        if (currentCursor) q.set("Cursor", currentCursor);
 
-      const res = await fetch(`/api/search/search?${q.toString()}`);
-      const data = await res.json();
+        const res = await fetch(`/api/search/search?${q.toString()}`);
+        const data = await res.json();
 
-      setItems((prev) => [...prev, ...(data.items ?? [])]);
-      setCursor(data.nextCursor);
-      setHasNext(data.hasNextPage);
-    } catch (err) {
-      setHasNext(false);
-    } finally {
-      setLoading(false);
-      fetchInProgressRef.current = false;
-    }
-  }, [searchParams]);
+        setItems((prev) => [...prev, ...(data.items ?? [])]);
+        setCursor(data.nextCursor);
+        setHasNext(data.hasNextPage);
+      } catch (err) {
+        setHasNext(false);
+      } finally {
+        setLoading(false);
+        fetchInProgressRef.current = false;
+      }
+    },
+    [searchParams],
+  );
 
   // RESET LOGIC
   useEffect(() => {
@@ -50,7 +57,7 @@ export function useInfiniteSearch(initialItems: any[], initialCursor: string | n
     setItems([]);
     setCursor(null);
     setHasNext(true);
-    fetchPage(null); 
+    fetchPage(null);
   }, [searchParams, fetchPage]);
 
   return { items, loading, hasNext, fetchPage: () => fetchPage(cursor) };

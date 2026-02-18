@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 // Adjust these import paths based on your actual folder structure
-import { Header } from "@/components/common/Header"; 
-import { Sidebar } from "./components/SideBar";
+import { Header } from "@/components/common/Header";
+import { Sidebar } from "./components/Sidebar";
 import { CreateListingFAB } from "./components/CreateListingFAB";
 import InfiniteBrowse from "./components/InfiniteBrowse";
 import { getSearchResults, SearchParams } from "@/lib/api/browse";
@@ -17,7 +17,7 @@ export default async function BrowsePage({
 }) {
   // 1. Wait for URL search params (Next.js 15 requirement)
   const params = await searchParams;
-  
+
   // 2. Pre-fetch initial data on the server
   // This prevents the "blank page then loading spinner" effect
   const initialData = await getSearchResults(params);
@@ -26,7 +26,7 @@ export default async function BrowsePage({
     <div className="flex flex-col h-screen bg-gray-50">
       {/* 3. Global Navigation */}
       <Header showCenterNav={true} />
-      
+
       <div className="flex flex-1 overflow-hidden">
         {/* 4. Filter Sidebar - Wrapped in Suspense for URL param read safety */}
         <Suspense fallback={<SidebarSkeleton />}>
@@ -35,8 +35,8 @@ export default async function BrowsePage({
 
         {/* 5. Main Content Area */}
         <Suspense fallback={<BrowseSkeleton />}>
-          <InfiniteBrowse 
-            initialItems={initialData.items} 
+          <InfiniteBrowse
+            initialItems={initialData.items}
             initialCursor={initialData.nextCursor}
             initialHasNext={initialData.hasNextPage}
           />

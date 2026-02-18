@@ -16,10 +16,10 @@ const customJestConfig = {
   collectCoverageFrom: [
     "app/**/*.{js,jsx,ts,tsx}",
     "!app/layout.{js,tsx}",
-    "!app/browse/**", // Ignore all source files in browse
-    "!app/wardrobe/**", // Ignore all source files in wardrobe
-    "!app/listing/[id]/**", // Ignore the specific dynamic route folder
-    "!app/profile/**", // Ignore the specific dynamic route folder
+    // "!app/browse/**", // Ignore all source files in browse
+    // "!app/wardrobe/**", // Ignore all source files in wardrobe
+    // "!app/listing/[id]/**", // Ignore the specific dynamic route folder
+    // "!app/profile/**", // Ignore the specific dynamic route folder
   ],
   coverageDirectory: "coverage",
   // 2. testPathIgnorePatterns: Which test files should NOT be executed?
@@ -27,16 +27,16 @@ const customJestConfig = {
     "<rootDir>/node_modules/",
     "<rootDir>/.next/",
     "<rootDir>/e2e/",
-    "<rootDir>/tests/__tests__/browse/", // Stops "Your test suite must contain at least one test"
-    "<rootDir>/tests/__tests__/wardrobe/",
-    "<rootDir>/tests/__tests__/profile/", // Stops "Cannot find module user-event"
+    // "<rootDir>/tests/__tests__/browse/", // Stops "Your test suite must contain at least one test"
+    // "<rootDir>/tests/__tests__/wardrobe/",
+    // "<rootDir>/tests/__tests__/profile/", // Stops "Cannot find module user-event"
   ],
   // 3. coveragePathIgnorePatterns: Extra safety to exclude paths from coverage reports
   coveragePathIgnorePatterns: [
     "/node_modules/",
-    "/app/browse/",
-    "/app/wardrobe/",
-    "/app/listing/\\[id\\]/", // Note: bracket escaping for regex
+    // "/app/browse/",
+    // "/app/wardrobe/",
+    // "/app/listing/\\[id\\]/", // Note: bracket escaping for regex
   ],
 };
 
