@@ -184,6 +184,7 @@ export default function InfiniteBrowse({
       {items.map((item) => (
         <CardItem
           key={item.id}
+          id={String(item.id)}
           title={item.title}
           imgSrc={item.images?.[0]?.imageUrl}
           price={item.price ?? 0}
