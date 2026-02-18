@@ -6,7 +6,7 @@ test("landing page demo (for GIF)", async ({ page }) => {
   await expect(page.getByText("The Marketplace for")).toBeVisible();
   await page.waitForTimeout(2000); // hero typewriter
 
-  // Scroll to features (no locator scroll => no "stable element" waiting)
+  // Scroll to features
   await page.evaluate(() => {
     document.querySelector("#features")?.scrollIntoView({ behavior: "smooth" });
   });
@@ -24,7 +24,7 @@ test("landing page demo (for GIF)", async ({ page }) => {
   });
   await page.waitForTimeout(4000);
 
-  // Scroll to bottom (CTA)
+  // Scroll to bottom
   await page.evaluate(() => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   });

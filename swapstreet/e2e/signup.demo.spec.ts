@@ -1,11 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test("sign up flow demo (for GIF)", async ({ page }) => {
-  // 1) Go to landing page
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  // 2) Click Get Started -> /auth/sign-up
-  // Prefer navbar if present; fallback to exact link name
+  // navigate to sign-up page
   const nav = page.getByRole("navigation");
   if (await nav.count()) {
     const navGetStarted = nav.getByRole("link", { name: "Get Started", exact: true });
@@ -18,11 +16,11 @@ test("sign up flow demo (for GIF)", async ({ page }) => {
     await page.getByRole("link", { name: "Get Started", exact: true }).first().click();
   }
 
-  // 3) Assert sign-up page
+  // check if sign up page loaded
   await expect(page).toHaveURL(/\/auth\/sign-up/);
   await expect(page.getByRole("heading", { name: "Create Account" })).toBeVisible();
 
-  // 4) Fill form (use ids from your FormField props)
+  // fill form 
   const unique = Date.now();
   const email = `ryad+pw${unique}@example.com`;
 
@@ -31,13 +29,12 @@ test("sign up flow demo (for GIF)", async ({ page }) => {
   await page.locator("#password").fill("Password123!");
   await page.locator("#confirmPassword").fill("Password123!");
 
-  // 5) Submit
+  // submit
   await page.getByRole("button", { name: /^sign up$/i }).click();
 
-  // 6) Expect modal
+  // expect to check email
   await expect(page.getByRole("heading", { name: "Check Your Email" })).toBeVisible();
   await expect(page.getByText(email, { exact: true })).toBeVisible();
 
-  // 7) Pause for video/GIF
   await page.waitForTimeout(2500);
 });
