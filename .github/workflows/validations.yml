@@ -80,8 +80,7 @@ jobs:
       run: |
         cd swapstreet
         echo "Linting files: $FILES"
-        # --resolve-plugins-relative-to . ensures it finds the local config and plugins
-        npx eslint $FILES --resolve-plugins-relative-to . --max-warnings=10
+        npx eslint $FILES --max-warnings=10
 
     # Backend dependency vulnerability scan
     - name: Backend dependency vulnerability check
