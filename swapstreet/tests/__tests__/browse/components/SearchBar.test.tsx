@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { SearchBar } from "../../../../app/browse/components/SearchBar";
+import { SearchBar } from "@/app/browse/components/SearchBar";
 
 describe("SearchBar", () => {
   it("updates input value on change", () => {

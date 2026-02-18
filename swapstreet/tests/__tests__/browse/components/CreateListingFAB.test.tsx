@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { CreateListingFAB } from "../../../../app/browse/components/CreateListingFAB";
+import { CreateListingFAB } from "@/app/browse/components/CreateListingFAB";
 
 // Mock Next.js Link to simplify testing navigation logic
 jest.mock("next/link", () => {

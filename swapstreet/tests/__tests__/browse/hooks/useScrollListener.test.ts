@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { useScrollListener } from "../../../../app/browse/hooks/useScrollListener";
+import { useScrollListener } from "@/app/browse/hooks/useScrollListener";
 
 describe("useScrollListener hook", () => {
   let mockContainer: HTMLDivElement;

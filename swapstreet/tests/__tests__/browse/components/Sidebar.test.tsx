@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { Sidebar } from "../../../../app/browse/components/Sidebar";
+import { Sidebar } from "@/app/browse/components/Sidebar";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // Mocking Next.js hooks

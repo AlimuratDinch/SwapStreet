@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { CardItem } from "../../../../app/browse/components/CardItem";
-import * as wardrobeStorage from "../../../../app/wardrobe/wardrobeStorage";
+import { CardItem } from "@/app/browse/components/CardItem";
+import * as wardrobeStorage from "@/app/wardrobe/wardrobeStorage";
 
 // 1. Mock the wardrobe storage utilities
-jest.mock("../../../../app/wardrobe/wardrobeStorage", () => ({
+jest.mock("@/app/wardrobe/wardrobeStorage", () => ({
   addWardrobeItem: jest.fn(),
   hasWardrobeItem: jest.fn(),
   removeWardrobeItem: jest.fn(),

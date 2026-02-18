@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import BrowsePage from "../../../app/browse/page";
+import BrowsePage from "@/app/browse/page";
 import { getSearchResults } from "@/lib/api/browse";
 
 // 1. Mock all dependencies strictly

@@ -1,14 +1,14 @@
 import { render, screen } from "@testing-library/react";
-import InfiniteBrowse from "../../../../app/browse/components/InfiniteBrowse";
-import { useInfiniteSearch } from "../../../../app/browse/hooks/useInfiniteSearch";
-import { useScrollListener } from "../../../../app/browse/hooks/useScrollListener";
+import InfiniteBrowse from "@/app/browse/components/InfiniteBrowse";
+import { useInfiniteSearch } from "@/app/browse/hooks/useInfiniteSearch";
+import { useScrollListener } from "@/app/browse/hooks/useScrollListener";
 
 // 1. Mock the custom hooks
-jest.mock("../../../../app/browse/hooks/useInfiniteSearch");
-jest.mock("../../../../app/browse/hooks/useScrollListener");
+jest.mock("@/app/browse/hooks/useInfiniteSearch");
+jest.mock("@/app/browse/hooks/useScrollListener");
 
 // 2. Mock CardItem to avoid deep rendering complexity
-jest.mock("../../../../app/browse/components/CardItem", () => ({
+jest.mock("@/app/browse/components/CardItem", () => ({
   CardItem: ({ title }: { title: string }) => (
     <div data-testid="card-item">{title}</div>
   ),

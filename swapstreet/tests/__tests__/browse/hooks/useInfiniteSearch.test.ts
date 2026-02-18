@@ -1,5 +1,5 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useInfiniteSearch } from "../../../../app/browse/hooks/useInfiniteSearch";
+import { useInfiniteSearch } from "@/app/browse/hooks/useInfiniteSearch";
 import { useSearchParams } from "next/navigation";
 
 // 1. Mock Next.js navigation
