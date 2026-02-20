@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 
-export function useInfiniteSearch(
-  initialItems: any[],
+export function useInfiniteSearch<T>(
+  initialItems: T[],
   initialCursor: string | null,
   initialHasNext: boolean,
 ) {

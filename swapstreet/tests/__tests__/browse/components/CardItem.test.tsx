@@ -9,11 +9,16 @@ jest.mock("@/app/wardrobe/wardrobeStorage", () => ({
   removeWardrobeItem: jest.fn(),
 }));
 
-// 2. Mock Next.js Link
 jest.mock("next/link", () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  );
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>;
+  MockLink.displayName = "NextLink"; // This satisfies react/display-name
+  return MockLink;
 });
 
 describe("CardItem Component", () => {

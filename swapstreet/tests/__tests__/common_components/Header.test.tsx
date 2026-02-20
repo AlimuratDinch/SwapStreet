@@ -2,10 +2,18 @@ import { render, screen } from "@testing-library/react";
 import { Header } from "../../../components/common/Header";
 
 // Mocking Next/Link because it requires a Router context
+// Mock Next.js Link with a named component to satisfy react/display-name
 jest.mock("next/link", () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  );
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>;
+
+  MockLink.displayName = "NextLink";
+  return MockLink;
 });
 
 describe("Header Component", () => {

@@ -1,11 +1,18 @@
 import { render, screen } from "@testing-library/react";
 import { CreateListingFAB } from "@/app/browse/components/CreateListingFAB";
 
-// Mock Next.js Link to simplify testing navigation logic
+// Mock Next.js Link with a named component to satisfy react/display-name
 jest.mock("next/link", () => {
-  return ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  );
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>;
+
+  MockLink.displayName = "NextLink"; // This is the line that clears the error
+  return MockLink;
 });
 
 describe("CreateListingFAB Component", () => {
