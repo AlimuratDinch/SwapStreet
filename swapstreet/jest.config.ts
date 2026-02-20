@@ -1,4 +1,4 @@
-const nextJest = require("next/jest");
+import nextJest from "next/jest";
 
 const createJestConfig = nextJest({ dir: "./" });
 
@@ -14,6 +14,7 @@ const customJestConfig = {
     "app/**/*.{js,jsx,ts,tsx}",
     "!app/layout.tsx",
     "!app/layout.js",
+    "!app/seller/onboarding/**", // Removed after meeting 24 discussion (to be re-evaluated)
     "!**/node_modules/**",
     "!**/.next/**",
   ],
@@ -21,4 +22,4 @@ const customJestConfig = {
   testPathIgnorePatterns: ["<rootDir>/e2e/"],
 };
 
-module.exports = createJestConfig(customJestConfig);
+export default createJestConfig(customJestConfig);
