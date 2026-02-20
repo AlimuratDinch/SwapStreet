@@ -59,19 +59,22 @@ jobs:
         }
         "
 
-    # Detect changed frontend files only
+# Detect changed frontend files only
     - name: Get changed frontend files
       id: changed-files
       run: |
-        CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(ts|tsx|js|jsx)$' || true)
-        SWAPSTREET_FILES=$(echo "$CHANGED_FILES" | grep "^swapstreet/" | sed 's|^swapstreet/||' | tr '\n' ' ')
-        # Filter out deleted files (only include files that exist)
+        # 1. Get diff of files within the swapstreet directory
+        # 2. Strip the 'swapstreet/' prefix so paths are relative to the frontend root
+        # 3. Filter for existing files
+        FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "^swapstreet/.*[tj]sx\?$" | sed 's|^swapstreet/||' || true)
+        
         EXISTING_FILES=""
-        for file in $SWAPSTREET_FILES; do
+        for file in $FILES; do
           if [ -f "swapstreet/$file" ]; then
             EXISTING_FILES="$EXISTING_FILES $file"
           fi
         done
+        
         echo "FILES=$EXISTING_FILES" >> $GITHUB_ENV
 
     # ESLint (style + security rules, no console logs)
@@ -79,6 +82,8 @@ jobs:
       if: env.FILES != ''
       run: |
         cd swapstreet
+        # Now $FILES contains "app/browse/hooks/useScrollListener.ts" 
+        # which is correct relative to the current directory
         echo "Linting files: $FILES"
         npx eslint $FILES --max-warnings=10
 
