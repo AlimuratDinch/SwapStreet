@@ -59,6 +59,61 @@ describe("CardItem Component", () => {
     expect(screen.getByText("No Image")).toBeInTheDocument();
   });
 
+  it("renders without a Link wrapper when href is not provided", () => {
+  const { container } = render(<CardItem {...mockProps} href={undefined} />);
+  
+  // The mock Link renders an 'a' tag. We check that it's NOT there.
+  const link = container.querySelector("a");
+  expect(link).toBeNull();
+  
+  // Ensure content still renders
+  expect(screen.getByText("Navy Parka")).toBeInTheDocument();
+});
+
+it("does not update wardrobe state if the API request fails", async () => {
+  (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false });
+  (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+  render(<CardItem {...mockProps} />);
+  const button = screen.getByRole("button");
+  fireEvent.click(button);
+
+  await waitFor(() => {
+    // Should NOT call storage update if API failed
+    expect(wardrobeStorage.addWardrobeItem).not.toHaveBeenCalled();
+  });
+});
+
+it("handles network errors gracefully", async () => {
+  const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network Fail"));
+
+  render(<CardItem {...mockProps} />);
+  fireEvent.click(screen.getByRole("button"));
+
+  await waitFor(() => {
+    expect(consoleSpy).toHaveBeenCalledWith("Wishlist error:", expect.any(Error));
+  });
+  
+  // Ensure button is re-enabled via 'finally' block
+  expect(screen.getByRole("button")).not.toBeDisabled();
+  consoleSpy.mockRestore();
+});
+
+
+it("prevents multiple concurrent API calls if clicked twice", async () => {
+  // Mock fetch to stay pending for a bit
+  (global.fetch as jest.Mock).mockReturnValue(new Promise(() => {}));
+
+  render(<CardItem {...mockProps} />);
+  const button = screen.getByRole("button");
+
+  fireEvent.click(button); // First click
+  fireEvent.click(button); // Second click (should be ignored)
+
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+});
+
   // SPLIT INITIALIZATION TESTS
   it("initializes with a filled icon when item IS in wardrobe", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(true);

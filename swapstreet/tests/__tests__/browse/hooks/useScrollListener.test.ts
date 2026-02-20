@@ -37,6 +37,56 @@ describe("useScrollListener hook", () => {
     jest.useRealTimers();
   });
 
+  it("does nothing if the container ref is null", () => {
+  const nullRef = { current: null };
+  renderHook(() => useScrollListener(nullRef, mockCallback, true));
+
+  // The hook should exit the useEffect early and not crash
+  expect(mockCallback).not.toHaveBeenCalled();
+});
+
+it("exits handleScroll early if ref becomes null after mounting", () => {
+  const ref = { current: mockContainer as HTMLElement | null };
+  renderHook(() => useScrollListener(ref, mockCallback, true));
+
+  const scrollHandler = (mockContainer.addEventListener as jest.Mock).mock.calls[0][1];
+
+  // Manually nullify the ref after mounting
+  ref.current = null;
+  
+  // Trigger handler
+  scrollHandler();
+
+  expect(mockCallback).not.toHaveBeenCalled();
+});
+it("does not call callback if user has not reached the threshold", () => {
+  renderHook(() => useScrollListener({ current: mockContainer }, mockCallback, true));
+
+  const scrollHandler = (mockContainer.addEventListener as jest.Mock).mock.calls[0][1];
+
+  // Scroll math: scrollTop (300) + clientHeight (500) = 800
+  // Threshold: scrollHeight (1000) - 100 = 900
+  // 800 is NOT >= 900
+  mockContainer.scrollTop = 300;
+  scrollHandler();
+
+  expect(mockCallback).not.toHaveBeenCalled();
+});
+it("triggers exactly at the threshold boundary", () => {
+  renderHook(() => useScrollListener({ current: mockContainer }, mockCallback, true));
+  const scrollHandler = (mockContainer.addEventListener as jest.Mock).mock.calls[0][1];
+
+  // 1px before threshold (899 < 900)
+  mockContainer.scrollTop = 399;
+  scrollHandler();
+  expect(mockCallback).not.toHaveBeenCalled();
+
+  // Exactly at threshold (900 >= 900)
+  mockContainer.scrollTop = 400;
+  scrollHandler();
+  expect(mockCallback).toHaveBeenCalledTimes(1);
+});
+
   it("attaches scroll listener on mount and detaches on unmount", () => {
     const { unmount } = renderHook(() =>
       useScrollListener({ current: mockContainer }, mockCallback, true),
