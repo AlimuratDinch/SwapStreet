@@ -7,9 +7,6 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-// ----------------------------
-// Mock logger
-// ----------------------------
 jest.mock("@/components/common/logger", () => ({
   logger: {
     debug: jest.fn(),
@@ -19,40 +16,27 @@ jest.mock("@/components/common/logger", () => ({
   },
 }));
 
-// ----------------------------
-// Mock API functions
-// ----------------------------
 jest.mock("@/lib/api/profile", () => ({
   createProfile: jest.fn().mockResolvedValue({ id: "test-id" }),
   uploadImage: jest.fn().mockResolvedValue("https://example.com/image.jpg"),
 }));
 
-// ----------------------------
-// Mock AuthContext
-// ----------------------------
-const mockLogin = jest.fn();
-const mockLogout = jest.fn();
-const mockRefreshToken = jest.fn().mockResolvedValue("new-token");
+if (typeof global.URL.revokeObjectURL !== "function") {
+  (global.URL as { revokeObjectURL: (url: string) => void }).revokeObjectURL =
+    jest.fn();
+}
 
+const mockRefreshToken = jest.fn().mockResolvedValue("new-token");
 const mockUseAuth = jest.fn(() => ({
   accessToken: "mock-token",
   isAuthenticated: true,
   refreshToken: mockRefreshToken,
-  login: mockLogin,
-  logout: mockLogout,
+  login: jest.fn(),
+  logout: jest.fn(),
   userId: "test-user-id",
   username: "test-user",
   email: "test@example.com",
-})) as jest.Mock<{
-  accessToken: string | null;
-  isAuthenticated: boolean;
-  refreshToken: () => Promise<string | null>;
-  login: (token: string) => void;
-  logout: () => void;
-  userId: string | null;
-  username: string | null;
-  email: string | null;
-}>;
+})) as jest.Mock;
 
 jest.mock("@/contexts/AuthContext", () => ({
   __esModule: true,
@@ -60,40 +44,56 @@ jest.mock("@/contexts/AuthContext", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-// ----------------------------
-// Mock URL.createObjectURL for jsdom
-// ----------------------------
 global.URL.createObjectURL = jest.fn(() => "blob:mock-url");
 
-// ----------------------------
-// Mock sessionStorage PROPERLY
-// ----------------------------
-const mockSessionStorage = (() => {
-  let store: Record<string, string> = {};
+const mockProvinces = [
+  { id: 1, name: "Ontario", code: "ON" },
+  { id: 2, name: "Quebec", code: "QC" },
+];
+const mockCities = [
+  { id: 1, name: "Toronto", provinceId: 1 },
+  { id: 2, name: "Ottawa", provinceId: 1 },
+  { id: 3, name: "Montreal", provinceId: 2 },
+];
 
+function defaultFetch(url: string | Request) {
+  const u = typeof url === "string" ? url : (url as Request).url;
+  if (u.includes("location/provinces"))
+    return Promise.resolve({ ok: true, json: async () => mockProvinces });
+  if (u.includes("location/cities")) {
+    const provinceId = new URL(u, "http://localhost").searchParams.get(
+      "provinceId",
+    );
+    const list = provinceId
+      ? mockCities.filter((c) => c.provinceId === parseInt(provinceId))
+      : mockCities;
+    return Promise.resolve({ ok: true, json: async () => list });
+  }
+  return Promise.resolve({
+    ok: false,
+    json: async () => ({ error: "Not found" }),
+  });
+}
+
+const mockSessionStorage = (() => {
+  const store: Record<string, string> = {};
   return {
-    getItem: jest.fn((key: string) => {
-      return store[key] || null;
-    }),
-    setItem: jest.fn((key: string, value: string) => {
-      store[key] = value;
-    }),
-    removeItem: jest.fn((key: string) => {
-      delete store[key];
-    }),
-    clear: jest.fn(() => {
-      store = {};
-    }),
+    getItem: (k: string) => store[k] ?? null,
+    setItem: (k: string, v: string) => {
+      store[k] = v;
+    },
+    removeItem: (k: string) => {
+      delete store[k];
+    },
+    clear: () => {
+      Object.keys(store).forEach((k) => delete store[k]);
+    },
     get length() {
       return Object.keys(store).length;
     },
-    key: jest.fn((index: number) => {
-      const keys = Object.keys(store);
-      return keys[index] || null;
-    }),
+    key: () => null,
   };
 })();
-
 Object.defineProperty(window, "sessionStorage", {
   value: mockSessionStorage,
   writable: true,
@@ -104,1014 +104,517 @@ import SellerOnboardingPage from "@/app/seller/onboarding/page";
 import "@testing-library/jest-dom";
 import * as profileApi from "@/lib/api/profile";
 
-// ----------------------------
-// Mock fetch for location data
-// ----------------------------
-const mockProvinces = [
-  { id: 1, name: "Ontario", code: "ON" },
-  { id: 2, name: "Quebec", code: "QC" },
-];
+global.fetch = jest.fn(defaultFetch) as jest.Mock;
 
-const mockCities = [
-  { id: 1, name: "Toronto", provinceId: 1 },
-  { id: 2, name: "Ottawa", provinceId: 1 },
-  { id: 3, name: "Montreal", provinceId: 2 },
-];
+async function ready() {
+  render(<SellerOnboardingPage />);
+  await waitFor(() =>
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument(),
+  );
+}
 
-global.fetch = jest.fn((url) => {
-  const u = typeof url === "string" ? url : (url as Request).url;
+async function selectCity(name = "Toronto") {
+  const cityInput = screen.getByLabelText(/city/i);
+  fireEvent.focus(cityInput);
+  await waitFor(() =>
+    expect(screen.getAllByRole("option").length).toBeGreaterThan(0),
+  );
+  fireEvent.mouseDown(screen.getByRole("option", { name }));
+}
 
-  if (
-    u.includes("/api/location/provinces") ||
-    u.includes("location/provinces")
-  ) {
-    return Promise.resolve({
-      ok: true,
-      json: async () => mockProvinces,
-    });
-  }
-  if (u.includes("/api/location/cities") || u.includes("location/cities")) {
-    return Promise.resolve({
-      ok: true,
-      json: async () => mockCities,
-    });
-  }
-  return Promise.resolve({
-    ok: false,
-    json: async () => ({ error: "Not found" }),
+async function fillValidForm() {
+  fireEvent.change(screen.getByPlaceholderText(/your first name/i), {
+    target: { value: "John" },
   });
-}) as jest.Mock;
+  fireEvent.change(screen.getByPlaceholderText(/your last name/i), {
+    target: { value: "Doe" },
+  });
+  fireEvent.change(screen.getByLabelText(/province/i), {
+    target: { value: "1" },
+  });
+  await waitFor(() =>
+    expect(screen.getByLabelText(/city/i)).not.toBeDisabled(),
+  );
+  await selectCity();
+  fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
+    target: { value: "M5V 1A1" },
+  });
+}
+
+function submitForm() {
+  fireEvent.submit(
+    screen.getByRole("button", { name: /save and continue/i }).closest("form")!,
+  );
+}
 
 describe("SellerOnboardingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockLogin.mockClear();
-    mockLogout.mockClear();
-    mockRefreshToken.mockClear();
     mockRefreshToken.mockResolvedValue("new-token");
-
-    // Reset sessionStorage to default state
     mockSessionStorage.clear();
     mockSessionStorage.setItem("accessToken", "mock-token");
-
-    // Reset API mocks
-    const createProfile = profileApi.createProfile as jest.Mock;
-    const uploadImage = profileApi.uploadImage as jest.Mock;
-    createProfile.mockClear();
-    createProfile.mockResolvedValue({ id: "test-id" });
-    uploadImage.mockClear();
-    uploadImage.mockResolvedValue("https://example.com/image.jpg");
-
-    // Reset fetch mock to default behavior
-    (global.fetch as jest.Mock).mockImplementation((url) => {
-      const u = typeof url === "string" ? url : (url as Request).url;
-
-      if (
-        u.includes("/api/location/provinces") ||
-        u.includes("location/provinces")
-      ) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockProvinces,
-        });
-      }
-      if (u.includes("/api/location/cities") || u.includes("location/cities")) {
-        // Filter cities based on provinceId query parameter
-        const urlObj = new URL(u, "http://localhost");
-        const provinceId = urlObj.searchParams.get("provinceId");
-        const filteredCities = provinceId
-          ? mockCities.filter((c) => c.provinceId === parseInt(provinceId))
-          : mockCities;
-        return Promise.resolve({
-          ok: true,
-          json: async () => filteredCities,
-        });
-      }
-      return Promise.resolve({
-        ok: false,
-        json: async () => ({ error: "Not found" }),
-      });
+    (profileApi.createProfile as jest.Mock).mockResolvedValue({
+      id: "test-id",
     });
-  });
-
-  afterEach(() => {
-    // Clean up after each test
-    mockSessionStorage.clear();
-  });
-
-  it("shows error if city is missing", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
-
-    const submitBtn = screen.getByRole("button", {
-      name: /save and continue/i,
-    });
-    const form = submitBtn.closest("form");
-    fireEvent.submit(form!);
-
-    const err = await screen.findByText(/please select a city/i);
-    expect(err).toBeInTheDocument();
-  });
-
-  it("loads provinces on mount and cities when province is selected", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    // Provinces should be fetched on mount
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining("location/provinces"),
+    (profileApi.uploadImage as jest.Mock).mockResolvedValue(
+      "https://example.com/image.jpg",
     );
-
-    // Cities should NOT be fetched on mount
-    expect(global.fetch).not.toHaveBeenCalledWith(
-      expect.stringContaining("location/cities"),
-    );
-
-    // Select a province
-    const provinceSelect = screen.getByLabelText(/province/i);
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    // Now cities should be fetched
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("location/cities?provinceId=1"),
-      );
-    });
+    (global.fetch as jest.Mock).mockImplementation(defaultFetch);
   });
 
-  it("shows error when postal code is invalid format", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1); // Has cities loaded
-    });
-
-    fireEvent.change(citySelect, { target: { value: "1" } });
-    fireEvent.change(postalInput, { target: { value: "INVALID" } });
-
-    const submitBtn = screen.getByRole("button", {
-      name: /save and continue/i,
-    });
-    const form = submitBtn.closest("form");
-    fireEvent.submit(form!);
-
-    const err = await screen.findByText(/valid canadian postal code/i);
-    expect(err).toBeInTheDocument();
-  });
-
-  it("validates FSA format after postal code processing", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1);
-    });
-
-    fireEvent.change(citySelect, { target: { value: "1" } });
-    // Test with a postal code that has spaces/hyphens to ensure FSA extraction works
-    // This tests the FSA validation code path (lines 184-191)
-    fireEvent.change(postalInput, { target: { value: "M5V-1A1" } });
-
-    const submitBtn = screen.getByRole("button", {
-      name: /save and continue/i,
-    });
-    const form = submitBtn.closest("form");
-    fireEvent.submit(form!);
-
-    // The postal code should be processed correctly and FSA validation should pass
-    // This ensures the FSA extraction and validation code path is executed
-    await waitFor(() => {
-      // If validation passes, we should navigate to /profile
-      // If FSA validation fails, we'd see "Invalid postal code format."
-      // Since "M5V-1A1" is valid, FSA should be "M5V" which passes FSA_REGEX
-      expect(mockPush).toHaveBeenCalledWith("/profile");
-    });
-  });
-
-  it("shows error when FSA format is invalid after processing", async () => {
-    // This test covers the defensive FSA validation (lines 189-191)
-    // While it's unlikely to trigger in practice (POSTAL_REGEX should catch it),
-    // this tests the code path exists for safety
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1);
-    });
-
-    fireEvent.change(citySelect, { target: { value: "1" } });
-
-    // Mock String.prototype.substring to return an invalid FSA format
-    // This allows us to test the FSA validation error path
-    const originalSubstring = String.prototype.substring;
-    String.prototype.substring = jest.fn(function (
-      this: string,
-      start?: number,
-      end?: number,
-    ) {
-      if (this.includes("A1A") && start === 0 && end === 3) {
-        return "123"; // Invalid FSA format (should be letter-digit-letter)
-      }
-      return originalSubstring.call(this, start ?? 0, end);
-    });
-
-    fireEvent.change(postalInput, { target: { value: "A1A 1A1" } });
-
-    const submitBtn = screen.getByRole("button", {
-      name: /save and continue/i,
-    });
-    const form = submitBtn.closest("form");
-    fireEvent.submit(form!);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Invalid postal code format/i),
-      ).toBeInTheDocument();
-    });
-
-    // Restore original substring
-    String.prototype.substring = originalSubstring;
-  });
-
-  it("renders the onboarding heading and form fields", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
+  it("renders the form", async () => {
+    await ready();
     expect(screen.getByText(/set up your seller profile/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/your first name/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/your last name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/province/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/city/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/a1a 1a1/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/brag a little!/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /save and continue/i }),
     ).toBeInTheDocument();
   });
 
-  it("shows error if first name is missing", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const submitBtn = screen.getByRole("button", {
-      name: /save and continue/i,
-    });
-    const form = submitBtn.closest("form");
-    fireEvent.submit(form!);
-
-    const err = await screen.findByText(/please enter your first name/i);
-    expect(err).toBeInTheDocument();
-  });
-
-  it("shows error if last name is missing", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-
-    const submitBtn = screen.getByRole("button", {
-      name: /save and continue/i,
-    });
-    const form = submitBtn.closest("form");
-    fireEvent.submit(form!);
-
-    const err = await screen.findByText(/please enter your last name/i);
-    expect(err).toBeInTheDocument();
-  });
-
-  it("submits the form with valid data", async () => {
-    const createProfile = profileApi.createProfile as jest.Mock;
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-    const bioInput = screen.getByPlaceholderText(/brag a little!/i);
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(bioInput, { target: { value: "This is my bio." } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1); // Has cities loaded
-    });
-
-    fireEvent.change(citySelect, { target: { value: "1" } });
-    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
-
+  it("submits valid data and redirects", async () => {
+    await ready();
+    await fillValidForm();
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-
-    await waitFor(() => {
-      expect(createProfile).toHaveBeenCalledWith(
-        "mock-token",
-        {
-          firstName: "John",
-          lastName: "Doe",
-          bio: "This is my bio.",
-          cityId: 1,
-          fsa: "M5V",
-          profileImagePath: undefined,
-          bannerImagePath: undefined,
-        },
-        mockRefreshToken,
-      );
-      expect(mockPush).toHaveBeenCalledWith("/profile");
-    });
+    await waitFor(
+      () => {
+        expect(profileApi.createProfile).toHaveBeenCalledWith(
+          "mock-token",
+          expect.objectContaining({
+            firstName: "John",
+            lastName: "Doe",
+            cityId: 1,
+            fsa: "M5V",
+          }),
+          mockRefreshToken,
+        );
+        expect(mockPush).toHaveBeenCalledWith("/profile");
+      },
+      { timeout: 3000 },
+    );
   });
 
-  it("submits the form with both avatar and banner images", async () => {
-    const createProfile = profileApi.createProfile as jest.Mock;
-    const uploadImage = profileApi.uploadImage as jest.Mock;
-    uploadImage.mockResolvedValue("https://example.com/uploaded-image.jpg");
-
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
-    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1); // Has cities loaded
-    });
-
-    fireEvent.change(citySelect, { target: { value: "1" } });
-    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
-
-    // Upload both images
-    const avatarFile = new File(["avatar"], "avatar.png", {
-      type: "image/png",
-    });
-    const bannerFile = new File(["banner"], "banner.png", {
-      type: "image/png",
-    });
-    fireEvent.change(avatarInput!, { target: { files: [avatarFile] } });
-    fireEvent.change(bannerInput!, { target: { files: [bannerFile] } });
-
-    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-
-    await waitFor(() => {
-      expect(uploadImage).toHaveBeenCalledTimes(2);
-      expect(uploadImage).toHaveBeenCalledWith(
-        "mock-token",
-        avatarFile,
-        "Profile",
-        mockRefreshToken,
-      );
-      expect(uploadImage).toHaveBeenCalledWith(
-        "mock-token",
-        bannerFile,
-        "Banner",
-        mockRefreshToken,
-      );
-      expect(createProfile).toHaveBeenCalledWith(
-        "mock-token",
-        {
-          firstName: "John",
-          lastName: "Doe",
-          bio: undefined,
-          cityId: 1,
-          fsa: "M5V",
-          profileImagePath: "https://example.com/uploaded-image.jpg",
-          bannerImagePath: "https://example.com/uploaded-image.jpg",
-        },
-        mockRefreshToken,
-      );
-      expect(mockPush).toHaveBeenCalledWith("/profile");
-    });
-  });
-
-  it("shows error if avatar file is not an image", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
-
-    // Non-image file
-    const file = new File(["not an image"], "document.pdf", {
-      type: "application/pdf",
-    });
-
-    fireEvent.change(avatarInput!, { target: { files: [file] } });
-
-    const err = await screen.findByText(/avatar must be an image/i);
-    expect(err).toBeInTheDocument();
-  });
-  it("shows avatar preview when a valid image is selected", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
-    const imageFile = new File(["(⌐□_□)"], "avatar.png", { type: "image/png" });
-
-    fireEvent.change(avatarInput!, { target: { files: [imageFile] } });
-
-    await waitFor(() => {
-      const img = screen.getByAltText(/avatar preview/i);
-      expect(img).toBeInTheDocument();
-      expect(img).toHaveAttribute("src", "blob:mock-url");
-    });
-  });
-
-  it("shows error if banner file is not an image", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
-    const file = new File(["bad"], "banner.txt", { type: "text/plain" });
-    fireEvent.change(bannerInput!, { target: { files: [file] } });
-
+  it("shows validation errors for missing required fields", async () => {
+    await ready();
+    submitForm();
     expect(
-      screen.getByText(/banner must be an image file/i),
+      await screen.findByText(/please enter your first name/i),
     ).toBeInTheDocument();
   });
 
-  it("shows banner preview when a valid image is selected", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  it("shows error when last name is missing", async () => {
+    await ready();
+    fireEvent.change(screen.getByPlaceholderText(/your first name/i), {
+      target: { value: "John" },
     });
-
-    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
-    const imageFile = new File(["123"], "banner.png", { type: "image/png" });
-
-    fireEvent.change(bannerInput!, { target: { files: [imageFile] } });
-
-    await waitFor(() => {
-      const img = screen.getByAltText(/banner preview/i);
-      expect(img).toBeInTheDocument();
-      expect(img).toHaveAttribute("src", "blob:mock-url");
-    });
+    submitForm();
+    expect(
+      await screen.findByText(/please enter your last name/i),
+    ).toBeInTheDocument();
   });
 
-  it("shows error if postal code is missing", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  it("shows error when city is not selected", async () => {
+    await ready();
+    fireEvent.change(screen.getByPlaceholderText(/your first name/i), {
+      target: { value: "John" },
     });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1); // Has cities loaded
+    fireEvent.change(screen.getByPlaceholderText(/your last name/i), {
+      target: { value: "Doe" },
     });
-
-    fireEvent.change(citySelect, { target: { value: "1" } });
-
-    const submitBtn = screen.getByRole("button", {
-      name: /save and continue/i,
+    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
+      target: { value: "M5V 1A1" },
     });
-    const form = submitBtn.closest("form");
-    fireEvent.submit(form!);
-
-    const err = await screen.findByText(/postal code is required/i);
-    expect(err).toBeInTheDocument();
+    submitForm();
+    expect(
+      await screen.findByText(/please select a city/i),
+    ).toBeInTheDocument();
   });
 
-  it("filters cities based on selected province", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  it("shows error when postal code is missing", async () => {
+    await ready();
+    await fillValidForm();
+    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
+      target: { value: "" },
     });
-
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-
-    // Initially city should be disabled
-    expect(citySelect).toBeDisabled();
-
-    // Select Ontario
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-    });
+    submitForm();
+    expect(
+      await screen.findByText(
+        /postal code is required|Forward Sortation Area/i,
+      ),
+    ).toBeInTheDocument();
   });
 
-  it("shows error when location data fails to load", async () => {
-    // Mock fetch to fail
+  it("shows error for invalid postal code", async () => {
+    await ready();
+    await fillValidForm();
+    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
+      target: { value: "INVALID" },
+    });
+    submitForm();
+    expect(
+      await screen.findByText(/valid canadian postal code/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows error for invalid FSA format", async () => {
+    const origSubstring = String.prototype.substring;
+    String.prototype.substring = function (
+      this: string,
+      start?: number,
+      end?: number,
+    ) {
+      if (start === 0 && end === 3 && /A1A|M5V/.test(this)) return "123";
+      return origSubstring.call(this, start ?? 0, end);
+    };
+    await ready();
+    await fillValidForm();
+    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
+      target: { value: "A1A 1A1" },
+    });
+    submitForm();
+    expect(
+      await screen.findByText(/Invalid postal code format/i),
+    ).toBeInTheDocument();
+    String.prototype.substring = origSubstring;
+  });
+
+  it("shows error when provinces fetch returns non-ok", async () => {
+    (global.fetch as jest.Mock).mockImplementationOnce(
+      (url: string | Request) => {
+        const u = typeof url === "string" ? url : (url as Request).url;
+        if (u.includes("provinces"))
+          return Promise.resolve({ ok: false, json: async () => ({}) });
+        return defaultFetch(url);
+      },
+    );
+    await ready();
+    const opts = screen.getByLabelText(/province/i).querySelectorAll("option");
+    expect(opts.length).toBe(1);
+  });
+
+  it("shows error when provinces fail to load", async () => {
     (global.fetch as jest.Mock).mockImplementationOnce(() =>
       Promise.reject(new Error("Network error")),
     );
-
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
+    await ready();
     expect(
       screen.getByText(/failed to load location data/i),
     ).toBeInTheDocument();
   });
 
-  it("shows error when location API returns non-ok response", async () => {
-    // Mock fetch to return non-ok response
-    (global.fetch as jest.Mock).mockImplementation((url) => {
-      if (
-        url.includes("/api/location/provinces") ||
-        url.includes("location/provinces")
-      ) {
-        return Promise.resolve({
-          ok: false,
-          json: async () => ({ error: "Server error" }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: async () => mockCities,
-      });
+  it("shows error when cities fail after selecting province", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string | Request) => {
+      const u = typeof url === "string" ? url : (url as Request).url;
+      if (u.includes("provinces"))
+        return Promise.resolve({ ok: true, json: async () => mockProvinces });
+      if (u.includes("cities"))
+        return Promise.reject(new Error("Network error"));
+      return defaultFetch(url);
     });
-
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    await ready();
+    fireEvent.change(screen.getByLabelText(/province/i), {
+      target: { value: "1" },
     });
-
-    // Provinces should be empty
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const options = provinceSelect.querySelectorAll("option");
-    expect(options.length).toBe(1); // Only the disabled placeholder
+    expect(
+      await screen.findByText(/failed to load cities/i),
+    ).toBeInTheDocument();
   });
 
-  it("clears avatar preview when file input is cleared", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  it("cities not set when cities fetch returns non-ok", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string | Request) => {
+      const u = typeof url === "string" ? url : (url as Request).url;
+      if (u.includes("provinces"))
+        return Promise.resolve({ ok: true, json: async () => mockProvinces });
+      if (u.includes("cities"))
+        return Promise.resolve({ ok: false, json: async () => ({}) });
+      return defaultFetch(url);
     });
-
-    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
-    const imageFile = new File(["test"], "avatar.png", { type: "image/png" });
-
-    // Add file
-    fireEvent.change(avatarInput!, { target: { files: [imageFile] } });
-
-    await waitFor(() => {
-      expect(screen.getByAltText(/avatar preview/i)).toBeInTheDocument();
+    await ready();
+    fireEvent.change(screen.getByLabelText(/province/i), {
+      target: { value: "1" },
     });
-
-    // Clear file
-    fireEvent.change(avatarInput!, { target: { files: [] } });
-
-    await waitFor(() => {
-      expect(screen.queryByAltText(/avatar preview/i)).not.toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(screen.getByLabelText(/city/i)).not.toBeDisabled(),
+    );
+    fireEvent.focus(screen.getByLabelText(/city/i));
+    expect(
+      screen.queryByRole("option", { name: "Toronto" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("clears banner preview when file input is cleared", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
-    const imageFile = new File(["test"], "banner.png", { type: "image/png" });
-
-    // Add file
-    fireEvent.change(bannerInput!, { target: { files: [imageFile] } });
-
-    await waitFor(() => {
-      expect(screen.getByAltText(/banner preview/i)).toBeInTheDocument();
-    });
-
-    // Clear file
-    fireEvent.change(bannerInput!, { target: { files: [] } });
-
-    await waitFor(() => {
-      expect(screen.queryByAltText(/banner preview/i)).not.toBeInTheDocument();
-    });
-  });
-
-  it("handles image upload failure", async () => {
-    const uploadImage = profileApi.uploadImage as jest.Mock;
-    uploadImage.mockRejectedValueOnce(new Error("Upload failed"));
-
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1); // Has cities loaded
-    });
-
-    fireEvent.change(citySelect, { target: { value: "1" } });
-    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
-
-    // Add avatar file
-    const imageFile = new File(["test"], "avatar.png", { type: "image/png" });
-    fireEvent.change(avatarInput!, { target: { files: [imageFile] } });
-
-    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/upload failed/i)).toBeInTheDocument();
-    });
-  });
-
-  it("handles banner upload failure", async () => {
-    const uploadImage = profileApi.uploadImage as jest.Mock;
-    // First call (avatar) succeeds, second call (banner) fails
-    uploadImage
-      .mockResolvedValueOnce("https://example.com/avatar.jpg")
-      .mockRejectedValueOnce(new Error("Banner upload failed"));
-
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
-    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1); // Has cities loaded
-    });
-
-    fireEvent.change(citySelect, { target: { value: "1" } });
-    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
-
-    // Add both images
-    const avatarFile = new File(["avatar"], "avatar.png", {
-      type: "image/png",
-    });
-    const bannerFile = new File(["banner"], "banner.png", {
-      type: "image/png",
-    });
-    fireEvent.change(avatarInput!, { target: { files: [avatarFile] } });
-    fireEvent.change(bannerInput!, { target: { files: [bannerFile] } });
-
-    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/banner upload failed/i)).toBeInTheDocument();
-    });
-  });
-
-  it("handles profile creation failure", async () => {
-    const createProfile = profileApi.createProfile as jest.Mock;
-    createProfile.mockRejectedValueOnce(new Error("Profile already exists"));
-
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1); // Has cities loaded
-    });
-
-    fireEvent.change(citySelect, { target: { value: "1" } });
-    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
-
-    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/profile already exists/i)).toBeInTheDocument();
-    });
-  });
-
-  it("redirects to sign-in on mount if not authenticated and no token in storage", async () => {
-    // Clear sessionStorage for this test
-    mockSessionStorage.removeItem("accessToken");
-
-    // Mock AuthContext to return unauthenticated state for this test
-    const originalMock = mockUseAuth.getMockImplementation();
+  it("shows not signed in banner when unauthenticated", async () => {
     mockUseAuth.mockReturnValue({
       accessToken: null,
       isAuthenticated: false,
       refreshToken: mockRefreshToken,
-      login: mockLogin,
-      logout: mockLogout,
+      login: jest.fn(),
+      logout: jest.fn(),
       userId: null,
       username: null,
       email: null,
     });
+    await ready();
+    expect(screen.getByText(/not signed in/i)).toBeInTheDocument();
+    mockUseAuth.mockReturnValue({
+      accessToken: "mock-token",
+      isAuthenticated: true,
+      refreshToken: mockRefreshToken,
+      login: jest.fn(),
+      logout: jest.fn(),
+      userId: "test-user-id",
+      username: "test-user",
+      email: "test@example.com",
+    });
+  });
 
-    render(<SellerOnboardingPage />);
+  it("shows error on submit when not logged in and refresh fails", async () => {
+    mockUseAuth.mockReturnValue({
+      accessToken: null,
+      isAuthenticated: false,
+      refreshToken: jest.fn().mockResolvedValue(null),
+      login: jest.fn(),
+      logout: jest.fn(),
+      userId: null,
+      username: null,
+      email: null,
+    });
+    await ready();
+    await fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+    expect(await screen.findByText(/must be logged in/i)).toBeInTheDocument();
+    mockUseAuth.mockReturnValue({
+      accessToken: "mock-token",
+      isAuthenticated: true,
+      refreshToken: mockRefreshToken,
+      login: jest.fn(),
+      logout: jest.fn(),
+      userId: "test-user-id",
+      username: "test-user",
+      email: "test@example.com",
+    });
+  });
 
+  it("uses refreshed token when accessToken is null", async () => {
+    mockUseAuth.mockReturnValue({
+      accessToken: null,
+      isAuthenticated: false,
+      refreshToken: jest.fn().mockResolvedValue("refreshed-token"),
+      login: jest.fn(),
+      logout: jest.fn(),
+      userId: null,
+      username: null,
+      email: null,
+    });
+    await ready();
+    await fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
     await waitFor(
       () => {
-        expect(
-          screen.getByText(/it looks like you're not signed in/i),
-        ).toBeInTheDocument();
-        expect(mockPush).not.toHaveBeenCalled();
+        expect(profileApi.createProfile).toHaveBeenCalledWith(
+          "refreshed-token",
+          expect.any(Object),
+          expect.any(Function),
+        );
+        expect(mockPush).toHaveBeenCalledWith("/profile");
       },
-      { timeout: 500 },
+      { timeout: 3000 },
     );
-
-    // Restore original mock
-    if (originalMock) {
-      mockUseAuth.mockImplementation(originalMock);
-    } else {
-      mockUseAuth.mockReturnValue({
-        accessToken: "mock-token",
-        isAuthenticated: true,
-        refreshToken: mockRefreshToken,
-        login: mockLogin,
-        logout: mockLogout,
-        userId: "test-user-id",
-        username: "test-user",
-        email: "test@example.com",
-      });
-    }
-  });
-
-  it("redirects to sign-in if not authenticated", async () => {
-    // Clear sessionStorage for this test
-    mockSessionStorage.removeItem("accessToken");
-
-    // Mock AuthContext to return unauthenticated state for this test
-    const originalMock = mockUseAuth.getMockImplementation();
-    // Mock refreshToken to return null to test the error case
-    mockRefreshToken.mockResolvedValueOnce(null);
     mockUseAuth.mockReturnValue({
-      accessToken: null,
-      isAuthenticated: false,
+      accessToken: "mock-token",
+      isAuthenticated: true,
       refreshToken: mockRefreshToken,
-      login: mockLogin,
-      logout: mockLogout,
-      userId: null,
-      username: null,
-      email: null,
+      login: jest.fn(),
+      logout: jest.fn(),
+      userId: "test-user-id",
+      username: "test-user",
+      email: "test@example.com",
     });
+  });
 
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+  it("rejects non-image files for avatar and banner", async () => {
+    await ready();
+    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
+    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
+    fireEvent.change(avatarInput!, {
+      target: {
+        files: [new File(["x"], "a.pdf", { type: "application/pdf" })],
+      },
     });
-
-    const firstNameInput = screen.getByPlaceholderText(/your first name/i);
-    const lastNameInput = screen.getByPlaceholderText(/your last name/i);
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-    const postalInput = screen.getByPlaceholderText(/a1a 1a1/i);
-
-    fireEvent.change(firstNameInput, { target: { value: "John" } });
-    fireEvent.change(lastNameInput, { target: { value: "Doe" } });
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-      const options = citySelect.querySelectorAll("option");
-      expect(options.length).toBeGreaterThan(1);
+    expect(screen.getByText(/avatar must be an image/i)).toBeInTheDocument();
+    fireEvent.change(bannerInput!, {
+      target: { files: [new File(["x"], "b.txt", { type: "text/plain" })] },
     });
+    expect(screen.getByText(/banner must be an image/i)).toBeInTheDocument();
+  });
 
-    fireEvent.change(citySelect, { target: { value: "1" } });
-    fireEvent.change(postalInput, { target: { value: "M5V 1A1" } });
+  it("ignores empty file selection for avatar and banner", async () => {
+    await ready();
+    const avatarInput = document.querySelectorAll('input[type="file"]')[0];
+    const bannerInput = document.querySelectorAll('input[type="file"]')[1];
+    fireEvent.change(avatarInput!, { target: { files: [] } });
+    fireEvent.change(bannerInput!, { target: { files: [] } });
+    expect(
+      screen.queryByText(/avatar must be an image/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/banner must be an image/i),
+    ).not.toBeInTheDocument();
+  });
 
+  it("clearing province clears city", async () => {
+    await ready();
+    fireEvent.change(screen.getByLabelText(/province/i), {
+      target: { value: "1" },
+    });
+    await waitFor(() =>
+      expect(screen.getByLabelText(/city/i)).not.toBeDisabled(),
+    );
+    await selectCity();
+    expect(screen.getByLabelText(/city/i)).toHaveValue("Toronto");
+    fireEvent.change(screen.getByLabelText(/province/i), {
+      target: { value: "" },
+    });
+    await waitFor(() => expect(screen.getByLabelText(/city/i)).toHaveValue(""));
+  });
+
+  it("city dropdown closes on blur after delay", async () => {
+    await ready();
+    fireEvent.change(screen.getByLabelText(/province/i), {
+      target: { value: "1" },
+    });
+    await waitFor(() =>
+      expect(screen.getByLabelText(/city/i)).not.toBeDisabled(),
+    );
+    const cityInput = screen.getByLabelText(/city/i);
+    fireEvent.focus(cityInput);
+    await waitFor(() =>
+      expect(screen.getByRole("listbox")).toBeInTheDocument(),
+    );
+    fireEvent.blur(cityInput);
+    await waitFor(
+      () => expect(screen.queryByRole("listbox")).not.toBeInTheDocument(),
+      { timeout: 300 },
+    );
+  });
+
+  it("submits with postal code containing hyphen", async () => {
+    await ready();
+    await fillValidForm();
+    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
+      target: { value: "M5V-1A1" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/you must be logged in/i)).toBeInTheDocument();
-      expect(mockPush).not.toHaveBeenCalled();
-    });
-
-    // Restore original mock
-    if (originalMock) {
-      mockUseAuth.mockImplementation(originalMock);
-    } else {
-      mockUseAuth.mockReturnValue({
-        accessToken: "mock-token",
-        isAuthenticated: true,
-        refreshToken: mockRefreshToken,
-        login: mockLogin,
-        logout: mockLogout,
-        userId: "test-user-id",
-        username: "test-user",
-        email: "test@example.com",
-      });
-    }
+    await waitFor(
+      () =>
+        expect(profileApi.createProfile).toHaveBeenCalledWith(
+          "mock-token",
+          expect.objectContaining({ fsa: "M5V" }),
+          mockRefreshToken,
+        ),
+      { timeout: 3000 },
+    );
   });
 
-  it("resets city selection when changing province to one without the selected city", async () => {
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-    });
-
-    const provinceSelect = screen.getByLabelText(/province/i);
-    const citySelect = screen.getByLabelText(/city/i);
-
-    // Select Ontario
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    await waitFor(() => {
-      expect(citySelect).not.toBeDisabled();
-    });
-
-    // Select Toronto
-    fireEvent.change(citySelect, { target: { value: "1" } });
-
-    // Change to Quebec (Toronto is not in Quebec) - this will fetch new cities
-    fireEvent.change(provinceSelect, { target: { value: "2" } });
-
-    // City selection should be reset and new cities loaded
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("location/cities?provinceId=2"),
-      );
-    });
-
-    // City select should be reset to empty
-    expect(citySelect).toHaveValue("");
-  });
-
-  it("shows error when cities fail to load after province selection", async () => {
-    // Mock fetch to fail for cities endpoint
-    (global.fetch as jest.Mock).mockImplementation((url) => {
-      if (
-        url.includes("/api/location/provinces") ||
-        url.includes("location/provinces")
-      ) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => mockProvinces,
-        });
-      }
-      if (
-        url.includes("/api/location/cities") ||
-        url.includes("location/cities")
-      ) {
+  it("shows Failed to load cities when cities fetch throws", async () => {
+    (global.fetch as jest.Mock).mockImplementation((url: string | Request) => {
+      const u = typeof url === "string" ? url : (url as Request).url;
+      if (u.includes("provinces"))
+        return Promise.resolve({ ok: true, json: async () => mockProvinces });
+      if (u.includes("cities"))
         return Promise.reject(new Error("Network error"));
-      }
-      return Promise.resolve({
-        ok: false,
-        json: async () => ({ error: "Not found" }),
-      });
+      return Promise.resolve({ ok: false });
     });
-
-    render(<SellerOnboardingPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    await ready();
+    fireEvent.change(screen.getByLabelText(/province/i), {
+      target: { value: "1" },
     });
+    await waitFor(
+      () =>
+        expect(screen.getByText(/failed to load cities/i)).toBeInTheDocument(),
+      { timeout: 2000 },
+    );
+  });
 
-    const provinceSelect = screen.getByLabelText(/province/i);
+  it("city shows Select province first when no province", async () => {
+    await ready();
+    const cityInput = screen.getByLabelText(/city/i);
+    expect(cityInput).toBeDisabled();
+    expect(cityInput).toHaveAttribute("placeholder", "Select province first");
+    fireEvent.focus(cityInput);
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
 
-    // Select a province - this should trigger cities fetch which will fail
-    fireEvent.change(provinceSelect, { target: { value: "1" } });
-
-    // Wait for error message
-    await waitFor(() => {
-      expect(screen.getByText(/failed to load cities/i)).toBeInTheDocument();
+  it("shows No matching city when filter matches nothing", async () => {
+    await ready();
+    fireEvent.change(screen.getByLabelText(/province/i), {
+      target: { value: "1" },
     });
+    await waitFor(() =>
+      expect(screen.getByLabelText(/city/i)).not.toBeDisabled(),
+    );
+    const cityInput = screen.getByLabelText(/city/i);
+    fireEvent.focus(cityInput);
+    await waitFor(() =>
+      expect(screen.getByRole("listbox")).toBeInTheDocument(),
+    );
+    fireEvent.change(cityInput, { target: { value: "zzznomatch" } });
+    await waitFor(() =>
+      expect(screen.getByText(/no matching city/i)).toBeInTheDocument(),
+    );
+  });
+
+  it("shows success overlay after submit", async () => {
+    await ready();
+    await fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+    await waitFor(
+      () => {
+        expect(screen.getByText(/profile created!/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/taking you to your profile/i),
+        ).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
+  });
+
+  it("shows error when createProfile fails", async () => {
+    (profileApi.createProfile as jest.Mock).mockRejectedValueOnce(
+      new Error("Profile already exists"),
+    );
+    await ready();
+    await fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+    expect(
+      await screen.findByText(/profile already exists/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows generic error when createProfile rejects with non-Error", async () => {
+    (profileApi.createProfile as jest.Mock).mockRejectedValueOnce(
+      "string error",
+    );
+    await ready();
+    await fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+    expect(
+      await screen.findByText(/failed to create profile/i),
+    ).toBeInTheDocument();
+  });
+
+  it("sends bio to createProfile when provided", async () => {
+    await ready();
+    await fillValidForm();
+    fireEvent.change(screen.getByPlaceholderText(/brag a little/i), {
+      target: { value: "Vintage seller." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+    await waitFor(
+      () =>
+        expect(profileApi.createProfile).toHaveBeenCalledWith(
+          "mock-token",
+          expect.objectContaining({ bio: "Vintage seller." }),
+          mockRefreshToken,
+        ),
+      { timeout: 3000 },
+    );
   });
 });

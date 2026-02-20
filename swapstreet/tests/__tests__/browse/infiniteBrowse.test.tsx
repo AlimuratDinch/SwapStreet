@@ -235,4 +235,36 @@ describe("InfiniteBrowse", () => {
 
     await waitFor(() => expect(screen.getByText("Arr")).toBeInTheDocument());
   });
+
+  it("stops after 4 fetch failures (exhaust retries)", async () => {
+    jest.useFakeTimers();
+    const fetchMock = jest.fn().mockRejectedValue(new Error("network"));
+
+    global.fetch = fetchMock as unknown as typeof global.fetch;
+
+    render(
+      <InfiniteBrowse
+        initialItems={[]}
+        initialCursor={null}
+        initialHasNext={true}
+      />,
+    );
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    for (let i = 0; i < 3; i++) {
+      await act(async () => {
+        jest.advanceTimersByTime(1000 * (i + 1));
+        await Promise.resolve();
+      });
+      await waitFor(() =>
+        expect(fetchMock).toHaveBeenCalledTimes(Math.min(i + 2, 4)),
+      );
+    }
+    await act(async () => {
+      jest.advanceTimersByTime(4000);
+      await Promise.resolve();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    jest.useRealTimers();
+  });
 });

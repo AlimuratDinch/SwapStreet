@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
-import BrowsePage, { fetchClothingItems } from "@/app/browse/page";
+import BrowsePage, {
+  fetchClothingItems,
+  fetchSearchPage,
+} from "@/app/browse/page";
 import { JSX } from "react";
 
 // Type definition for clothing items
@@ -68,6 +71,17 @@ describe("fetchClothingItems", () => {
     expect(result).toEqual(mockItems);
   });
 
+  it("should return data.items when response is object with items", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: [{ id: 2, title: "From object" }] }),
+    });
+
+    const result = await fetchClothingItems(Promise.resolve({}));
+
+    expect(result).toEqual([{ id: 2, title: "From object" }]);
+  });
+
   it("should fetch items with all filters applied", async () => {
     const mockItems: ClothingItem[] = [
       {
@@ -89,13 +103,12 @@ describe("fetchClothingItems", () => {
       Promise.resolve({
         minPrice: "50",
         maxPrice: "100",
-        categoryId: "2",
-        conditions: "Like New,New",
+        q: "shirt",
       }),
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/search/search?minPrice=50&maxPrice=100&categoryId=2&conditions=Like+New%2CNew",
+      "http://backend:8080/api/search/search?minPrice=50&maxPrice=100&q=shirt",
       {
         cache: "no-store",
       },
@@ -114,12 +127,11 @@ describe("fetchClothingItems", () => {
     const result = await fetchClothingItems(
       Promise.resolve({
         minPrice: "20",
-        categoryId: "3",
       }),
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://backend:8080/api/search/search?minPrice=20&categoryId=3",
+      "http://backend:8080/api/search/search?minPrice=20",
       {
         cache: "no-store",
       },
@@ -177,6 +189,278 @@ describe("fetchClothingItems", () => {
     );
 
     process.env.NEXT_PUBLIC_API_URL = originalEnv;
+  });
+
+  it("should fetch with all search parameters", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+
+    await fetchClothingItems(
+      Promise.resolve({
+        minPrice: "25",
+        maxPrice: "75",
+        q: "sweater",
+      }),
+    );
+
+    const callUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+    expect(callUrl).toContain("minPrice=25");
+    expect(callUrl).toContain("maxPrice=75");
+    expect(callUrl).toContain("q=sweater");
+  });
+
+  it("should handle data as items array directly", async () => {
+    const mockData = [
+      { id: 1, title: "Item", price: 10 },
+      { id: 2, title: "Item 2", price: 20 },
+    ];
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockData,
+    });
+
+    const result = await fetchClothingItems(Promise.resolve({}));
+
+    expect(result).toEqual(mockData);
+  });
+
+  it("should handle data with items property", async () => {
+    const mockData = {
+      items: [{ id: 1, title: "Item", price: 10 }],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockData,
+    });
+
+    const result = await fetchClothingItems(Promise.resolve({}));
+
+    expect(result).toEqual(mockData.items);
+  });
+
+  it("should default to localhost when NEXT_PUBLIC_API_URL is empty", async () => {
+    const originalEnv = process.env.NEXT_PUBLIC_API_URL;
+    process.env.NEXT_PUBLIC_API_URL = "";
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+
+    await fetchClothingItems(Promise.resolve({}));
+
+    const callUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+    expect(callUrl).toBe("/api/search/search");
+
+    process.env.NEXT_PUBLIC_API_URL = originalEnv;
+  });
+});
+
+describe("fetchSearchPage", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should fetch with limit parameter", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: [], nextCursor: null, hasNextPage: false }),
+    });
+
+    await fetchSearchPage(Promise.resolve({}));
+
+    const callUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+    expect(callUrl).toContain("limit=18");
+  });
+
+  it("should include cursor when provided", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: [], nextCursor: null, hasNextPage: false }),
+    });
+
+    await fetchSearchPage(Promise.resolve({ cursor: "abc123" }));
+
+    const callUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+    expect(callUrl).toContain("cursor=abc123");
+  });
+
+  it("should return items with pagination info", async () => {
+    const mockResponse = {
+      items: [{ id: 1, title: "Item", price: 50 }],
+      nextCursor: "cursor-xyz",
+      hasNextPage: true,
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    });
+
+    const result = await fetchSearchPage(Promise.resolve({}));
+
+    expect(result.items).toEqual(mockResponse.items);
+    expect(result.nextCursor).toBe("cursor-xyz");
+    expect(result.hasNextPage).toBe(true);
+  });
+
+  it("should handle array response format for search page", async () => {
+    const mockArray = [{ id: 1, title: "Item", price: 30 }];
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockArray,
+    });
+
+    const result = await fetchSearchPage(Promise.resolve({}));
+
+    expect(result.items).toEqual(mockArray);
+    expect(result.nextCursor).toBeNull();
+    expect(result.hasNextPage).toBe(false);
+  });
+
+  it("should return defaults on fetch error", async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error("Network error"),
+    );
+
+    const result = await fetchSearchPage(Promise.resolve({}));
+
+    expect(result).toEqual({
+      items: [],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+  });
+
+  it("should return defaults on non-ok response", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+    });
+
+    const result = await fetchSearchPage(Promise.resolve({}));
+
+    expect(result).toEqual({
+      items: [],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+  });
+
+  it("should include all filter parameters", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: [], nextCursor: null, hasNextPage: false }),
+    });
+
+    await fetchSearchPage(
+      Promise.resolve({
+        minPrice: "10",
+        maxPrice: "100",
+        q: "jacket",
+        cursor: "next-page",
+      }),
+    );
+
+    const callUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+    expect(callUrl).toContain("minPrice=10");
+    expect(callUrl).toContain("maxPrice=100");
+    expect(callUrl).toContain("q=jacket");
+    expect(callUrl).toContain("cursor=next-page");
+    expect(callUrl).toContain("limit=18");
+  });
+
+  it("should use custom API URL for search page", async () => {
+    const originalEnv = process.env.NEXT_PUBLIC_API_URL;
+    process.env.NEXT_PUBLIC_API_URL = "http://api.example.com";
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: [], nextCursor: null, hasNextPage: false }),
+    });
+
+    await fetchSearchPage(Promise.resolve({}));
+
+    const callUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+    expect(callUrl).toContain("http://api.example.com");
+
+    process.env.NEXT_PUBLIC_API_URL = originalEnv;
+  });
+
+  it("should handle missing page info from response", async () => {
+    const mockResponse = {
+      items: [{ id: 1, title: "Item", price: 40 }],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    });
+
+    const result = await fetchSearchPage(Promise.resolve({}));
+
+    expect(result.items).toEqual(mockResponse.items);
+    expect(result.nextCursor).toBeNull();
+    expect(result.hasNextPage).toBe(false);
+  });
+});
+
+describe("fetchSearchPage", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns items and cursor when response is object", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [{ id: "1", title: "Item" }],
+        nextCursor: "c1",
+        hasNextPage: true,
+      }),
+    });
+
+    const result = await fetchSearchPage(
+      Promise.resolve({ cursor: "c0", minPrice: "10" }),
+    );
+
+    expect(result).toEqual({
+      items: [{ id: "1", title: "Item" }],
+      nextCursor: "c1",
+      hasNextPage: true,
+    });
+  });
+
+  it("returns items when response is array", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: "1", title: "A" }],
+    });
+
+    const result = await fetchSearchPage(Promise.resolve({}));
+
+    expect(result).toEqual({
+      items: [{ id: "1", title: "A" }],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+  });
+
+  it("returns empty result on fetch error", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false });
+
+    const result = await fetchSearchPage(Promise.resolve({}));
+
+    expect(result).toEqual({
+      items: [],
+      nextCursor: null,
+      hasNextPage: false,
+    });
   });
 });
 
@@ -355,5 +639,19 @@ describe("BrowsePage", () => {
       "p-6",
       "grid",
     );
+  });
+
+  it("should render create listing button with correct href", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    });
+
+    await act(async () => {
+      render((<BrowsePage />) as unknown as JSX.Element);
+    });
+
+    const createListingLink = screen.getByRole("link", { name: "+" });
+    expect(createListingLink).toHaveAttribute("href", "/seller/createListing");
   });
 });
