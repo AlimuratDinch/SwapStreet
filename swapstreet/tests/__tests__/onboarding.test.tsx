@@ -55,7 +55,6 @@ const mockCities = [
   { id: 2, name: "Ottawa", provinceId: 1 },
   { id: 3, name: "Montreal", provinceId: 2 },
 ];
-
 function defaultFetch(url: string | Request) {
   const u = typeof url === "string" ? url : (url as Request).url;
   if (u.includes("location/provinces"))
@@ -136,8 +135,8 @@ async function fillValidForm() {
     expect(screen.getByLabelText(/city/i)).not.toBeDisabled(),
   );
   await selectCity();
-  fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
-    target: { value: "M5V 1A1" },
+  fireEvent.change(screen.getByPlaceholderText(/a1a/i), {
+    target: { value: "M5V" },
   });
 }
 
@@ -219,8 +218,8 @@ describe("SellerOnboardingPage", () => {
     fireEvent.change(screen.getByPlaceholderText(/your last name/i), {
       target: { value: "Doe" },
     });
-    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
-      target: { value: "M5V 1A1" },
+    fireEvent.change(screen.getByPlaceholderText(/a1a/i), {
+      target: { value: "M5V" },
     });
     submitForm();
     expect(
@@ -228,52 +227,26 @@ describe("SellerOnboardingPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows error when postal code is missing", async () => {
+  it("shows error when FSA is missing", async () => {
     await ready();
     await fillValidForm();
-    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
+    fireEvent.change(screen.getByPlaceholderText(/a1a/i), {
       target: { value: "" },
     });
     submitForm();
-    expect(
-      await screen.findByText(
-        /postal code is required|Forward Sortation Area/i,
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/FSA is required/i)).toBeInTheDocument();
   });
 
-  it("shows error for invalid postal code", async () => {
+  it("shows error for invalid FSA format", async () => {
     await ready();
     await fillValidForm();
-    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
+    fireEvent.change(screen.getByPlaceholderText(/a1a/i), {
       target: { value: "INVALID" },
     });
     submitForm();
     expect(
-      await screen.findByText(/valid canadian postal code/i),
+      await screen.findByText(/Please enter a valid FSA \(e\.g\., M5V\)\./i),
     ).toBeInTheDocument();
-  });
-
-  it("shows error for invalid FSA format", async () => {
-    const origSubstring = String.prototype.substring;
-    String.prototype.substring = function (
-      this: string,
-      start?: number,
-      end?: number,
-    ) {
-      if (start === 0 && end === 3 && /A1A|M5V/.test(this)) return "123";
-      return origSubstring.call(this, start ?? 0, end);
-    };
-    await ready();
-    await fillValidForm();
-    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
-      target: { value: "A1A 1A1" },
-    });
-    submitForm();
-    expect(
-      await screen.findByText(/Invalid postal code format/i),
-    ).toBeInTheDocument();
-    String.prototype.substring = origSubstring;
   });
 
   it("shows error when provinces fetch returns non-ok", async () => {
@@ -492,24 +465,6 @@ describe("SellerOnboardingPage", () => {
     await waitFor(
       () => expect(screen.queryByRole("listbox")).not.toBeInTheDocument(),
       { timeout: 300 },
-    );
-  });
-
-  it("submits with postal code containing hyphen", async () => {
-    await ready();
-    await fillValidForm();
-    fireEvent.change(screen.getByPlaceholderText(/a1a 1a1/i), {
-      target: { value: "M5V-1A1" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
-    await waitFor(
-      () =>
-        expect(profileApi.createProfile).toHaveBeenCalledWith(
-          "mock-token",
-          expect.objectContaining({ fsa: "M5V" }),
-          mockRefreshToken,
-        ),
-      { timeout: 3000 },
     );
   });
 

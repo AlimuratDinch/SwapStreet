@@ -21,7 +21,6 @@ const Cropper = nextDynamic(
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
-const POSTAL_REGEX = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 
 /** Produce a cropped image blob from image URL and crop area in pixels (natural image coords). */
 async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
@@ -69,7 +68,7 @@ export default function SellerOnboardingPage() {
     null,
   );
   const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
-  const [postalCode, setPostalCode] = useState("");
+  const [fsa, setFsa] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -298,29 +297,14 @@ export default function SellerOnboardingPage() {
           return;
         }
 
-        // Extract FSA from postal code (first 3 characters)
-        let fsa = "";
-        if (postalCode) {
-          if (!POSTAL_REGEX.test(postalCode.trim())) {
-            setError(
-              "Please enter a valid Canadian postal code (e.g., A1A 1A1).",
-            );
-            return;
-          }
-          // Extract first 3 characters and remove spaces
-          fsa = postalCode
-            .trim()
-            .replace(/\s|-/g, "")
-            .substring(0, 3)
-            .toUpperCase();
-          if (!FSA_REGEX.test(fsa)) {
-            setError("Invalid postal code format.");
-            return;
-          }
-        } else {
-          setError(
-            "Postal code is required to determine your Forward Sortation Area (FSA).",
-          );
+        // Validate FSA input
+        const normalizedFsa = fsa.trim().toUpperCase();
+        if (!normalizedFsa) {
+          setError("FSA is required.");
+          return;
+        }
+        if (!FSA_REGEX.test(normalizedFsa)) {
+          setError("Please enter a valid FSA (e.g., M5V).");
           return;
         }
 
@@ -362,7 +346,7 @@ export default function SellerOnboardingPage() {
           lastName: lastName.trim(),
           bio: bio.trim() || undefined,
           cityId: selectedCityId!, // Non-null assertion since we validated above
-          fsa: fsa,
+          fsa: normalizedFsa,
           profileImagePath,
           bannerImagePath,
         };
@@ -388,7 +372,7 @@ export default function SellerOnboardingPage() {
       lastName,
       bio,
       selectedCityId,
-      postalCode,
+      fsa,
       avatarFile,
       bannerFile,
       router,
@@ -685,18 +669,18 @@ export default function SellerOnboardingPage() {
             </div>
             <div>
               <label
-                htmlFor="postal-code"
+                htmlFor="fsa"
                 className="block text-sm font-medium text-gray-700"
               >
-                Postal code
+                FSA
               </label>
               <input
                 type="text"
-                id="postal-code"
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value.toUpperCase())}
-                placeholder="A1A 1A1"
-                maxLength={7}
+                id="fsa"
+                value={fsa}
+                onChange={(e) => setFsa(e.target.value.toUpperCase())}
+                placeholder="A1A"
+                maxLength={3}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 required
                 disabled={loading}
