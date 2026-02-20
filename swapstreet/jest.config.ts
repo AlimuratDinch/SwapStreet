@@ -1,4 +1,4 @@
-import nextJest from "next/jest.js";
+import nextJest from "next/jest";
 
 const createJestConfig = nextJest({
   dir: "./",
@@ -21,6 +21,9 @@ const customJestConfig = {
     "!app/wardrobe/**", // Ignore all source files in wardrobe
     // "!app/listing/[id]/**", // Ignore the specific dynamic route folder
     // "!app/profile/**", // Ignore the specific dynamic route folder
+    "!app/seller/onboarding/**", // Removed after meeting 24 discussion (to be re-evaluated)
+    "!**/node_modules/**",
+    "!**/.next/**",
   ],
   coverageDirectory: "coverage",
   // 2. testPathIgnorePatterns: Which test files should NOT be executed?
