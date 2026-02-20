@@ -38,54 +38,61 @@ describe("useScrollListener hook", () => {
   });
 
   it("does nothing if the container ref is null", () => {
-  const nullRef = { current: null };
-  renderHook(() => useScrollListener(nullRef, mockCallback, true));
+    const nullRef = { current: null };
+    renderHook(() => useScrollListener(nullRef, mockCallback, true));
 
-  // The hook should exit the useEffect early and not crash
-  expect(mockCallback).not.toHaveBeenCalled();
-});
+    // The hook should exit the useEffect early and not crash
+    expect(mockCallback).not.toHaveBeenCalled();
+  });
 
-it("exits handleScroll early if ref becomes null after mounting", () => {
-  const ref = { current: mockContainer as HTMLElement | null };
-  renderHook(() => useScrollListener(ref, mockCallback, true));
+  it("exits handleScroll early if ref becomes null after mounting", () => {
+    const ref = { current: mockContainer as HTMLElement | null };
+    renderHook(() => useScrollListener(ref, mockCallback, true));
 
-  const scrollHandler = (mockContainer.addEventListener as jest.Mock).mock.calls[0][1];
+    const scrollHandler = (mockContainer.addEventListener as jest.Mock).mock
+      .calls[0][1];
 
-  // Manually nullify the ref after mounting
-  ref.current = null;
-  
-  // Trigger handler
-  scrollHandler();
+    // Manually nullify the ref after mounting
+    ref.current = null;
 
-  expect(mockCallback).not.toHaveBeenCalled();
-});
-it("does not call callback if user has not reached the threshold", () => {
-  renderHook(() => useScrollListener({ current: mockContainer }, mockCallback, true));
+    // Trigger handler
+    scrollHandler();
 
-  const scrollHandler = (mockContainer.addEventListener as jest.Mock).mock.calls[0][1];
+    expect(mockCallback).not.toHaveBeenCalled();
+  });
+  it("does not call callback if user has not reached the threshold", () => {
+    renderHook(() =>
+      useScrollListener({ current: mockContainer }, mockCallback, true),
+    );
 
-  // Scroll math: scrollTop (300) + clientHeight (500) = 800
-  // Threshold: scrollHeight (1000) - 100 = 900
-  // 800 is NOT >= 900
-  mockContainer.scrollTop = 300;
-  scrollHandler();
+    const scrollHandler = (mockContainer.addEventListener as jest.Mock).mock
+      .calls[0][1];
 
-  expect(mockCallback).not.toHaveBeenCalled();
-});
-it("triggers exactly at the threshold boundary", () => {
-  renderHook(() => useScrollListener({ current: mockContainer }, mockCallback, true));
-  const scrollHandler = (mockContainer.addEventListener as jest.Mock).mock.calls[0][1];
+    // Scroll math: scrollTop (300) + clientHeight (500) = 800
+    // Threshold: scrollHeight (1000) - 100 = 900
+    // 800 is NOT >= 900
+    mockContainer.scrollTop = 300;
+    scrollHandler();
 
-  // 1px before threshold (899 < 900)
-  mockContainer.scrollTop = 399;
-  scrollHandler();
-  expect(mockCallback).not.toHaveBeenCalled();
+    expect(mockCallback).not.toHaveBeenCalled();
+  });
+  it("triggers exactly at the threshold boundary", () => {
+    renderHook(() =>
+      useScrollListener({ current: mockContainer }, mockCallback, true),
+    );
+    const scrollHandler = (mockContainer.addEventListener as jest.Mock).mock
+      .calls[0][1];
 
-  // Exactly at threshold (900 >= 900)
-  mockContainer.scrollTop = 400;
-  scrollHandler();
-  expect(mockCallback).toHaveBeenCalledTimes(1);
-});
+    // 1px before threshold (899 < 900)
+    mockContainer.scrollTop = 399;
+    scrollHandler();
+    expect(mockCallback).not.toHaveBeenCalled();
+
+    // Exactly at threshold (900 >= 900)
+    mockContainer.scrollTop = 400;
+    scrollHandler();
+    expect(mockCallback).toHaveBeenCalledTimes(1);
+  });
 
   it("attaches scroll listener on mount and detaches on unmount", () => {
     const { unmount } = renderHook(() =>
