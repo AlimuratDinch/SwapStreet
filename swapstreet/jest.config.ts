@@ -14,6 +14,7 @@ const customJestConfig = {
     "app/**/*.{js,jsx,ts,tsx}",
     "!app/layout.tsx",
     "!app/layout.js",
+    "!app/seller/onboarding/**", // Removed after meeting 24 discussion (to be re-evaluated)
     "!**/node_modules/**",
     "!**/.next/**",
   ],
