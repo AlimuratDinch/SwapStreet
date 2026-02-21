@@ -249,6 +249,22 @@ describe("SellerOnboardingPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders FSA field with label, placeholder A1A, and maxLength 3", async () => {
+    await ready();
+    expect(screen.getByText(/^FSA$/i)).toBeInTheDocument();
+    const fsaInput = screen.getByLabelText(/^FSA$/i);
+    expect(fsaInput).toHaveAttribute("id", "fsa");
+    expect(fsaInput).toHaveAttribute("placeholder", "A1A");
+    expect(fsaInput).toHaveAttribute("maxlength", "3");
+  });
+
+  it("FSA input uppercases typed value", async () => {
+    await ready();
+    const fsaInput = screen.getByLabelText(/^FSA$/i);
+    fireEvent.change(fsaInput, { target: { value: "m5v" } });
+    expect(fsaInput).toHaveValue("M5V");
+  });
+
   it("shows error when provinces fetch returns non-ok", async () => {
     (global.fetch as jest.Mock).mockImplementationOnce(
       (url: string | Request) => {
