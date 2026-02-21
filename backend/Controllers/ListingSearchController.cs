@@ -11,33 +11,38 @@ using backend.DTOs.Search;
 public class ListingSearchController : ControllerBase
 {
     private readonly IListingSearchService _listingSearchService;
+    private readonly IFileStorageService _minio;
     private readonly AppDbContext _db;
-    private readonly IConfiguration _configuration;
 
-    public ListingSearchController(IListingSearchService listingSearchService, AppDbContext db, IConfiguration configuration)
+    public ListingSearchController(
+        IListingSearchService listingSearchService,
+        AppDbContext db,
+        IFileStorageService minio)
     {
         _listingSearchService = listingSearchService;
         _db = db;
-        _configuration = configuration;
+        _minio = minio;
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> SearchListings(
-        [FromQuery] string? q,
-        [FromQuery] string? cursor = null,
-        [FromQuery] int limit = 18)
+    public async Task<IActionResult> SearchListings([FromQuery] SearchRequestDto request)
     {
-        var cappedLimit = Math.Min(limit, 50); // Cap at 50
-        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(q ?? string.Empty, cappedLimit, cursor);
+        // 1. Sanitize input and cap the limit
+        var cappedLimit = Math.Min(request.PageSize > 0 ? request.PageSize : 18, 50);
+        var searchTerms = request.Query ?? string.Empty;
 
-        // Build MinIO base URL from configuration
-        var minioEndpoint = _configuration["MINIO_ENDPOINT"] ?? "minio:9000";
-        var minioBucket = _configuration["MINIO_PUBLIC_BUCKET"] ?? "public";
-        var minioUrl = $"http://{minioEndpoint}/{minioBucket}";
+        // 2. Call the search service once
+        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(
+            searchTerms,
+            cappedLimit,
+            request.Cursor
+        );
 
+        // 3. Extract IDs for batch hydration
         var listingIds = items.Select(i => i.Listing.Id).ToList();
         var profileIds = items.Select(i => i.Listing.ProfileId).Distinct().ToList();
 
+        // 4. Batch Query Profiles and Images
         var profiles = await _db.Profiles.AsNoTracking()
             .Where(p => profileIds.Contains(p.Id))
             .ToListAsync();
@@ -47,20 +52,22 @@ public class ListingSearchController : ControllerBase
             .OrderBy(li => li.DisplayOrder)
             .ToListAsync();
 
-        // Group images by listing id
-        var imagesByListing = images.GroupBy(i => i.ListingId)
-            .ToDictionary(g => g.Key, g => g.Select(img => new
-            {
-                img.Id,
-                imageUrl = img.ImagePath != null ? $"{minioUrl}/{img.ImagePath}" : null,
-                img.DisplayOrder,
-                img.ForTryon
-            }).ToList());
+        // 5. Group images by ListingId for O(1) lookup in the loop
+        var imagesByListing = images.ToLookup(img => img.ListingId);
 
+        // 6. Map to the final result
         var mapped = items.Select(l =>
         {
             var seller = profiles.FirstOrDefault(p => p.Id == l.Listing.ProfileId);
-            imagesByListing.TryGetValue(l.Listing.Id, out var imgs);
+
+            // Use the Lookup to get images safely
+            var listingImages = imagesByListing[l.Listing.Id].Select(img => new
+            {
+                img.Id,
+                imageUrl = _minio.GetPublicFileUrl(img.ImagePath),
+                img.DisplayOrder,
+                img.ForTryon
+            }).ToList();
 
             return new
             {
@@ -68,6 +75,7 @@ public class ListingSearchController : ControllerBase
                 l.Listing.Title,
                 l.Listing.Description,
                 l.Listing.Price,
+                l.Listing.FSA,
                 createdAt = l.Listing.CreatedAt,
                 seller = seller == null ? null : new
                 {
@@ -77,21 +85,18 @@ public class ListingSearchController : ControllerBase
                     seller.VerifiedSeller,
                     seller.Rating,
                     seller.Bio,
-                    seller.CityId,
-                    seller.FSA,
-                    profileImageUrl = seller.ProfileImagePath != null ? $"{minioUrl}/{seller.ProfileImagePath}" : null,
-                    bannerImageUrl = seller.BannerImagePath != null ? $"{minioUrl}/{seller.BannerImagePath}" : null,
-                    seller.CreatedAt,
-                    seller.UpdatedAt
+                    profileImageUrl = _minio.GetPublicFileUrl(seller.ProfileImagePath),
+                    bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath),
+                    seller.CreatedAt
                 },
-                images = imgs?.Cast<object>().ToList() ?? new List<object>()
+                images = listingImages
             };
         }).ToList();
 
         return Ok(new
         {
             items = mapped,
-            limit,
+            limit = cappedLimit,
             nextCursor,
             hasNextPage
         });
@@ -100,28 +105,13 @@ public class ListingSearchController : ControllerBase
     [HttpGet("listing/{id:guid}")]
     public async Task<IActionResult> GetListing([FromRoute] Guid id)
     {
-        // Build MinIO base URL from configuration
-        var minioEndpoint = _configuration["MINIO_ENDPOINT"] ?? "minio:9000";
-        var minioBucket = _configuration["MINIO_PUBLIC_BUCKET"] ?? "public";
-        var minioUrl = $"http://{minioEndpoint}/{minioBucket}";
-
-        var listing = await _db.Listings.AsNoTracking()
-            .FirstOrDefaultAsync(l => l.Id == id);
-
+        var listing = await _db.Listings.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
         if (listing == null) return NotFound();
 
         var seller = await _db.Profiles.AsNoTracking().FirstOrDefaultAsync(p => p.Id == listing.ProfileId);
-
         var images = await _db.ListingImages.AsNoTracking()
             .Where(li => li.ListingId == listing.Id)
             .OrderBy(li => li.DisplayOrder)
-            .Select(img => new
-            {
-                img.Id,
-                imageUrl = img.ImagePath != null ? $"{minioUrl}/{img.ImagePath}" : null,
-                img.DisplayOrder,
-                img.ForTryon
-            })
             .ToListAsync();
 
         var mapped = new
@@ -136,17 +126,15 @@ public class ListingSearchController : ControllerBase
                 seller.Id,
                 seller.FirstName,
                 seller.LastName,
-                seller.VerifiedSeller,
-                seller.Rating,
-                seller.Bio,
-                seller.CityId,
-                seller.FSA,
-                profileImageUrl = seller.ProfileImagePath != null ? $"{minioUrl}/{seller.ProfileImagePath}" : null,
-                bannerImageUrl = seller.BannerImagePath != null ? $"{minioUrl}/{seller.BannerImagePath}" : null,
-                seller.CreatedAt,
-                seller.UpdatedAt
+                profileImageUrl = _minio.GetPublicFileUrl(seller.ProfileImagePath),
+                bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath)
             },
-            images = images.Cast<object>().ToList()
+            images = images.Select(img => new
+            {
+                img.Id,
+                imageUrl = _minio.GetPublicFileUrl(img.ImagePath),
+                img.DisplayOrder
+            })
         };
 
         return Ok(mapped);
@@ -158,38 +146,30 @@ public class ListingSearchController : ControllerBase
 public class CatalogController : ControllerBase
 {
     private readonly AppDbContext _db;
-    private readonly IConfiguration _configuration;
+    private readonly IFileStorageService _minio;
 
-    public CatalogController(AppDbContext db, IConfiguration configuration)
+    public CatalogController(AppDbContext db, IFileStorageService minio)
     {
         _db = db;
-        _configuration = configuration;
+        _minio = minio;
     }
 
     [HttpGet("items")]
     public async Task<IActionResult> GetItems(
         [FromQuery] decimal? minPrice = null,
-        [FromQuery] decimal? maxPrice = null,
-        [FromQuery] int? categoryId = null,
-        [FromQuery] string? conditions = null)
+        [FromQuery] decimal? maxPrice = null)
     {
         var query = _db.Listings.AsNoTracking();
 
-        // Price filtering
-        if (minPrice.HasValue)
-            query = query.Where(l => l.Price >= minPrice.Value);
+        if (minPrice.HasValue) query = query.Where(l => l.Price >= minPrice.Value);
+        if (maxPrice.HasValue) query = query.Where(l => l.Price <= maxPrice.Value);
 
-        if (maxPrice.HasValue)
-            query = query.Where(l => l.Price <= maxPrice.Value);
-
-        // Order by most recent and take all
         var items = await query
             .OrderByDescending(l => l.CreatedAt)
             .Select(l => new
             {
                 Listing = l,
-                Profile = _db.Profiles.AsNoTracking()
-                    .FirstOrDefault(p => p.Id == l.ProfileId),
+                Profile = _db.Profiles.AsNoTracking().FirstOrDefault(p => p.Id == l.ProfileId),
                 Image = _db.ListingImages.AsNoTracking()
                     .Where(li => li.ListingId == l.Id)
                     .OrderBy(li => li.DisplayOrder)
@@ -197,34 +177,17 @@ public class CatalogController : ControllerBase
             })
             .ToListAsync();
 
-        // Get MinIO configuration
-        var minioEndpoint = _configuration["MINIO_ENDPOINT"] ?? "minio:9000";
-        var minioBucket = _configuration["MINIO_PUBLIC_BUCKET"] ?? "public";
-        var minioUrl = $"http://{minioEndpoint}/{minioBucket}";
-
-        // Map -> DTO with image information
-        var result = new List<object>();
-        foreach (var item in items)
+        var result = items.Select(item => new
         {
-            var profile = item.Profile;
-
-            var image = item.Image;
-
-            var imageUrl = image?.ImagePath != null
-                ? $"{minioUrl}/{image.ImagePath}"
-                : "/images/clothes_login_page.png";
-
-            result.Add(new
-            {
-                item.Listing.Id,
-                item.Listing.Title,
-                item.Listing.Description,
-                item.Listing.Price,
-                imageUrl,
-                item.Listing.CreatedAt,
-                sellerName = profile?.FirstName + " " + profile?.LastName
-            });
-        }
+            item.Listing.Id,
+            item.Listing.Title,
+            item.Listing.Description,
+            item.Listing.Price,
+            // Fallback to a placeholder if no image exists
+            imageUrl = _minio.GetPublicFileUrl(item.Image?.ImagePath) ?? "https://images.pexels.com/photos/29562692/pexels-photo-29562692.jpeg?_gl=1*1tn66e8*_ga*MTg0MzQ2NDU3Mi4xNzcxMTcxODUx*_ga_8JE65Q40S6*czE3NzExNzE4NTEkbzEkZzEkdDE3NzExNzE4NTgkajUzJGwwJGgw",
+            item.Listing.CreatedAt,
+            sellerName = $"{item.Profile?.FirstName} {item.Profile?.LastName}"
+        });
 
         return Ok(result);
     }

@@ -16,6 +16,7 @@
     <PackageReference Include="CsvHelper" Version="33.1.0" />
     <!-- <PackageReference Include="DotNet.Testcontainers" Version="1.6.0" /> -->
     <PackageReference Include="MailKit" Version="4.14.1" />
+    <PackageReference Include="Meilisearch" Version="0.18.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">

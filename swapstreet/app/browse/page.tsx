@@ -1,84 +1,79 @@
-"use client";
 import { Suspense } from "react";
-import { Sidebar, Header } from "./BrowseElements";
-import InfiniteBrowse from "./InfiniteBrowse";
+// Adjust these import paths based on your actual folder structure
+import { Header } from "@/components/common/Header";
+import { Sidebar } from "./components/Sidebar";
+import { CreateListingFAB } from "./components/CreateListingFAB";
+import InfiniteBrowse from "./components/InfiniteBrowse";
+import { getSearchResults, SearchParams } from "@/lib/api/browse";
 
-export default function BrowsePage() {
+/**
+ * Next.js 15 Server Component
+ * This handles the initial data fetch and layout.
+ */
+export default async function BrowsePage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  // 1. Wait for URL search params (Next.js 15 requirement)
+  const params = await searchParams;
+
+  // 2. Pre-fetch initial data on the server
+  // This prevents the "blank page then loading spinner" effect
+  const initialData = await getSearchResults(params);
+
   return (
-    <div className="flex flex-col h-screen">
-      <Header />
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* 3. Global Navigation */}
+      <Header showCenterNav={true} />
+
       <div className="flex flex-1 overflow-hidden">
-        <Suspense fallback={<div className="w-64" />}>
+        {/* 4. Filter Sidebar - Wrapped in Suspense for URL param read safety */}
+        <Suspense fallback={<SidebarSkeleton />}>
           <Sidebar />
         </Suspense>
-        <Suspense>
-          <InfiniteBrowse />
+
+        {/* 5. Main Content Area */}
+        <Suspense fallback={<BrowseSkeleton />}>
+          <InfiniteBrowse
+            initialItems={initialData.items}
+            initialCursor={initialData.nextCursor}
+            initialHasNext={initialData.hasNextPage}
+          />
         </Suspense>
       </div>
-      <div className="fixed bottom-4 right-4">
-        <a href="/seller/createListing">
-          <button className="bg-teal-400 hover:bg-teal-500 text-white font-bold w-12 h-12 rounded-full shadow-lg transition duration-150 ease-in-out">
-            +
-          </button>
-        </a>
-      </div>
+
+      {/* 6. Floating Action Button */}
+      <CreateListingFAB />
     </div>
   );
 }
 
-// Helper to fetch clothing items (used for tests)
-type SearchParams = { [key: string]: string | undefined } | undefined;
+/** SKELETONS FOR LOADING STATES **/
 
-export async function fetchClothingItems(
-  searchParamsPromise: Promise<SearchParams>,
-) {
-  const params = await searchParamsPromise;
-  try {
-    const q = new URLSearchParams();
-    if (params?.minPrice) q.set("minPrice", params.minPrice);
-    if (params?.maxPrice) q.set("maxPrice", params.maxPrice);
-    if (params?.q) q.set("q", params.q);
-
-    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
-    const base = envBase || "";
-    const url = `${base}/api/search/search${q.toString() ? `?${q.toString()}` : ""}`;
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return Array.isArray(data) ? data : (data.items ?? []);
-  } catch (err) {
-    console.error("Failed to fetch clothing items:", err);
-    return [];
-  }
+function SidebarSkeleton() {
+  return (
+    <aside className="w-64 bg-[#d9d9d9] border-r p-4 pt-24 h-screen animate-pulse">
+      <div className="h-10 bg-gray-300 rounded mb-6" />
+      <div className="h-6 w-1/2 bg-gray-300 rounded mb-4" />
+      <div className="space-y-3">
+        <div className="h-4 bg-gray-300 rounded" />
+        <div className="h-4 bg-gray-300 rounded w-5/6" />
+      </div>
+    </aside>
+  );
 }
 
-export async function fetchSearchPage(
-  searchParamsPromise: Promise<SearchParams>,
-) {
-  const params = await searchParamsPromise;
-  try {
-    const q = new URLSearchParams();
-    q.set("limit", "18");
-    if (params?.cursor) q.set("cursor", params.cursor);
-    if (params?.minPrice) q.set("minPrice", params.minPrice);
-    if (params?.maxPrice) q.set("maxPrice", params.maxPrice);
-    if (params?.q) q.set("q", params.q);
-
-    const envBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
-    const base = envBase || "";
-    const url = `${base}/api/search/search?${q.toString()}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      return { items: data, nextCursor: null, hasNextPage: false };
-    }
-    return {
-      items: data.items ?? [],
-      nextCursor: data.nextCursor ?? null,
-      hasNextPage: !!data.hasNextPage,
-    };
-  } catch {
-    return { items: [], nextCursor: null, hasNextPage: false };
-  }
+function BrowseSkeleton() {
+  return (
+    <main className="pt-24 flex-1 p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+      {[...Array(12)].map((_, i) => (
+        <div key={i} className="flex flex-col gap-3">
+          <div className="aspect-square bg-gray-200 animate-pulse rounded-md" />
+          <div className="h-4 bg-gray-200 animate-pulse rounded w-3/4" />
+          <div className="h-4 bg-gray-200 animate-pulse rounded w-1/4" />
+        </div>
+      ))}
+    </main>
+  );
 }
