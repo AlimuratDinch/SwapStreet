@@ -1,9 +1,6 @@
-"use client"
+"use client";
 import { useState } from "react";
-import { 
-    X, 
-    Navigation,
-} from "lucide-react";
+import { X, Navigation } from "lucide-react";
 
 type LocationResult = {
   lat: number;
@@ -17,35 +14,28 @@ type Props = {
   onApply: (location: LocationResult) => void;
 };
 
-const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
-export function LocationFilterModal({ onClose, onApply, }: Props) {
+export function LocationFilterModal({ onClose, onApply }: Props) {
   const [fsa, setFsa] = useState("");
   const [radius, setRadius] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Normalize + validate FSA
-    const normalizeFSA = (input: string) =>
-    input
-        .toUpperCase()
-        .replace(/\s/g, "")
-        .slice(0, 3);
+  const normalizeFSA = (input: string) =>
+    input.toUpperCase().replace(/\s/g, "").slice(0, 3);
 
   const isValidFsa = /^[A-Z]\d[A-Z]$/.test(fsa);
 
   const handleFsaLookup = async () => {
-    
     if (!isValidFsa) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(
-        `${apiUrl}/location/lookup/${fsa}`
-      );
+      const res = await fetch(`${apiUrl}/location/lookup/${fsa}`);
 
       if (!res.ok) {
         throw new Error("Postal code not supported");
@@ -60,7 +50,7 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
         radiusKm: radius,
         name: data.name,
       });
-      
+
       onApply({
         lat: data.lat,
         lng: data.lng,
@@ -89,23 +79,22 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-      // ("Applying location", lat, lng);
+        // ("Applying location", lat, lng);
 
-      onApply({
-        lat,
-        lng,
-        radiusKm : radius,
-        name: "wip"
-      });
-        
+        onApply({
+          lat,
+          lng,
+          radiusKm: radius,
+          name: "wip",
+        });
+
         onClose();
       },
-        (error) => {
+      (error) => {
         console.error(error);
         alert("Unable to retrieve your location");
-        }
+      },
     );
-    
   };
 
   return (
@@ -170,9 +159,7 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-red-400">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-400">{error}</p>}
         </div>
 
         {/* Footer */}

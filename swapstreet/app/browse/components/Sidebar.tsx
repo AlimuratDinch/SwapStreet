@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { SearchBar } from "./SearchBar";
 import { LocationFilterModal } from "./LocationFilterModal";
-import { Portal } from "./portal";
+import { Portal } from "./Portal";
 
 interface LocationResult {
   lat: number;
@@ -28,7 +28,6 @@ export function Sidebar() {
     radiusKm: number;
   } | null>(null);
 
-
   useEffect(() => {
     setSearchQuery(searchParams.get("q") || "");
     setMinPriceVal(Number(searchParams.get("minPrice")) || 0);
@@ -43,12 +42,12 @@ export function Sidebar() {
     params.set("maxPrice", maxPriceVal.toString());
     if (searchQuery) params.set("q", searchQuery);
     if (location) {
-          params.set("lat", location.lat.toString());
-          params.set("lng", location.lng.toString());
-          params.set("radiusKm", location.radiusKm.toString());
-        }
+      params.set("lat", location.lat.toString());
+      params.set("lng", location.lng.toString());
+      params.set("radiusKm", location.radiusKm.toString());
+    }
     router.replace(`/browse?${params.toString()}`, { scroll: false });
-  }, [minPriceVal, maxPriceVal, searchQuery, location, router]);
+  }, [minPriceVal, maxPriceVal, searchQuery, router]);
 
   return (
     <aside className="w-64 bg-[#d9d9d9] p-4 flex flex-col gap-6 pt-24 h-screen sticky top-0">
@@ -93,20 +92,20 @@ export function Sidebar() {
         <button
           onClick={() => setShowLocationModal(true)}
           className="w-full flex items-center justify-between mb-2 hover:text-teal-500 transition"
-          >
-            <h4 className="text-sm font-medium">Location</h4>
-          </button>
-          {showLocationModal && (
-            <Portal>
-              <LocationFilterModal
-                onClose={() => setShowLocationModal(false)}
-                onApply={(loc: LocationResult) => {
-                  setLocation(loc);
-                  setShowLocationModal(false);
-                }}
-              />
-            </Portal>
-          )}
+        >
+          <h4 className="text-sm font-medium">Location</h4>
+        </button>
+        {showLocationModal && (
+          <Portal>
+            <LocationFilterModal
+              onClose={() => setShowLocationModal(false)}
+              onApply={(loc: LocationResult) => {
+                setLocation(loc);
+                setShowLocationModal(false);
+              }}
+            />
+          </Portal>
+        )}
       </section>
     </aside>
   );
