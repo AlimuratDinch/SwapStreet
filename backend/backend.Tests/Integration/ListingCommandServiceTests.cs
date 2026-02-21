@@ -1,6 +1,7 @@
 using backend.Contracts;
 using backend.DbContexts;
 using backend.DTOs;
+using backend.DTOs.Image;
 using backend.Services;
 using backend.Tests.Fixtures;
 using AwesomeAssertions;
@@ -15,6 +16,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using NetTopologySuite.Geometries;
+using Moq;
+using System.Threading;
 
 namespace backend.Tests.Integration;
 
@@ -211,6 +214,407 @@ public class ListingCommandServiceTests
             .ToListAsync();
 
         listings.Should().HaveCount(2);
+    }
+
+    #endregion
+
+    #region Delete Listing Tests
+
+    [Fact]
+    public async Task DeleteListingAsync_RemovesListingAndImages_WhenStorageSucceeds()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_fixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Delete Me",
+                Description = "To be deleted",
+                Price = 10.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            seedContext.ListingImages.AddRange(
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/one.jpg" },
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/two.jpg" });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        using var context = new AppDbContext(_fixture.DbOptions);
+        var service = new ListingCommandService(context, CreateMockLogger(), mockStorage.Object);
+
+        // Act
+        await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        using var verifyContext = new AppDbContext(_fixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().BeNull();
+
+        var images = await verifyContext.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().BeEmpty();
+
+        mockStorage.Verify(
+            s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WhenStorageFails_DoesNotRemoveDatabaseRows()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_fixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Delete Me",
+                Description = "To be deleted",
+                Price = 10.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            seedContext.ListingImages.Add(
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/one.jpg" });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { "listing/one.jpg" });
+
+        using var context = new AppDbContext(_fixture.DbOptions);
+        var service = new ListingCommandService(context, CreateMockLogger(), mockStorage.Object);
+
+        // Act
+        Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        using var verifyContext = new AppDbContext(_fixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().NotBeNull();
+
+        var images = await verifyContext.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WhenListingDoesNotExist_ThrowsArgumentException()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var nonExistentListingId = Guid.NewGuid();
+        var mockStorage = new Mock<IFileStorageService>();
+
+        using var context = new AppDbContext(_fixture.DbOptions);
+        var service = new ListingCommandService(context, CreateMockLogger(), mockStorage.Object);
+
+        // Act
+        Func<Task> act = async () => await service.DeleteListingAsync(nonExistentListingId, TestData.TestProfileId);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage($"Listing {nonExistentListingId} not found");
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WhenUserDoesNotOwnListing_ThrowsArgumentException()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_fixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Not My Listing",
+                Description = "Owned by another user",
+                Price = 10.00m,
+                ProfileId = TestData.TestSecondProfileId, // Different profile
+                FSA = "M5A",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+
+        using var context = new AppDbContext(_fixture.DbOptions);
+        var service = new ListingCommandService(context, CreateMockLogger(), mockStorage.Object);
+
+        // Act - Try to delete with wrong profile ID
+        Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage($"Listing {listingId} not found");
+
+        // Verify listing still exists
+        using var verifyContext = new AppDbContext(_fixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WithNoImages_RemovesListingSuccessfully()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_fixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "No Images Listing",
+                Description = "Listing without any images",
+                Price = 10.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+
+        using var context = new AppDbContext(_fixture.DbOptions);
+        var service = new ListingCommandService(context, CreateMockLogger(), mockStorage.Object);
+
+        // Act
+        await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        using var verifyContext = new AppDbContext(_fixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().BeNull();
+
+        // Verify DeleteFilesAsync was never called since there were no images
+        mockStorage.Verify(
+            s => s.DeleteFilesAsync(
+                It.IsAny<UploadType>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WithMultipleImages_RemovesAllImagesAndListing()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        var imagePaths = new[] { "listing/img1.jpg", "listing/img2.jpg", "listing/img3.jpg", "listing/img4.jpg" };
+
+        using (var seedContext = new AppDbContext(_fixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Multi Image Listing",
+                Description = "Listing with multiple images",
+                Price = 20.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            foreach (var path in imagePaths)
+            {
+                seedContext.ListingImages.Add(
+                    new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = path });
+            }
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.Is<IEnumerable<string>>(paths => paths.Count() == 4),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        using var context = new AppDbContext(_fixture.DbOptions);
+        var service = new ListingCommandService(context, CreateMockLogger(), mockStorage.Object);
+
+        // Act
+        await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        using var verifyContext = new AppDbContext(_fixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().BeNull();
+
+        var images = await verifyContext.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().BeEmpty();
+
+        // Verify all 4 image paths were passed to DeleteFilesAsync
+        mockStorage.Verify(
+            s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.Is<IEnumerable<string>>(paths =>
+                    paths.Count() == 4 &&
+                    paths.All(p => imagePaths.Contains(p))),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WhenStorageServiceIsNull_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_fixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Listing With Images",
+                Description = "Has images but no storage service",
+                Price = 10.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            seedContext.ListingImages.Add(
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/image.jpg" });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        using var context = new AppDbContext(_fixture.DbOptions);
+        // Create service WITHOUT storage service
+        var service = new ListingCommandService(context, CreateMockLogger());
+
+        // Act
+        Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("File storage service not available for listing deletion.");
+
+        // Verify listing was NOT deleted
+        using var verifyContext = new AppDbContext(_fixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().NotBeNull();
+
+        var images = await verifyContext.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WithPartialStorageFailure_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_fixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Listing With Multiple Images",
+                Description = "Some images fail to delete",
+                Price = 15.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            seedContext.ListingImages.AddRange(
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/img1.jpg" },
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/img2.jpg" },
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/img3.jpg" });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+        // Simulate partial failure - 2 out of 3 images fail to delete
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { "listing/img1.jpg", "listing/img3.jpg" });
+
+        using var context = new AppDbContext(_fixture.DbOptions);
+        var service = new ListingCommandService(context, CreateMockLogger(), mockStorage.Object);
+
+        // Act
+        Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage($"Failed to delete 2 image(s) for listing {listingId}");
+
+        // Verify listing and images were NOT deleted from database
+        using var verifyContext = new AppDbContext(_fixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().NotBeNull();
+
+        var images = await verifyContext.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().HaveCount(3);
     }
 
     #endregion

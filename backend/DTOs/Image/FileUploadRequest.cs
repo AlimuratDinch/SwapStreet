@@ -16,5 +16,7 @@ namespace backend.DTOs.Image
         public UploadType Type { get; set; }
 
         public Guid? ListingId { get; set; }
+
+        public int DisplayOrder { get; set; } = 0;  // Optional display order for listing images
     }
 }

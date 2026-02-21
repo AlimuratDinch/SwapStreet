@@ -50,14 +50,20 @@ namespace backend.Controllers
                 if (request.File == null || request.File.Length == 0)
                     return BadRequest("No file uploaded.");
 
-                // Upload file (internal logic decides bucket and URL type) 
-                var url = await _fileStorage.UploadFileAsync(request.File, request.Type, userId, request.ListingId);
+                // Upload file (internal logic decides bucket and URL type)
+                var url = await _fileStorage.UploadFileAsync(
+                    request.File,
+                    request.Type,
+                    userId,
+                    request.ListingId,
+                    displayOrder: request.DisplayOrder);
 
                 return Ok(new
                 {
                     fileName = request.File.FileName,
                     url,
-                    type = request.Type.ToString()
+                    type = request.Type.ToString(),
+                    displayOrder = request.DisplayOrder
                 });
             }
             catch (ArgumentException ex)
