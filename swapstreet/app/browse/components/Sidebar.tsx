@@ -47,7 +47,7 @@ export function Sidebar() {
       params.set("radiusKm", location.radiusKm.toString());
     }
     router.replace(`/browse?${params.toString()}`, { scroll: false });
-  }, [minPriceVal, maxPriceVal, searchQuery, router]);
+  }, [minPriceVal, maxPriceVal, searchQuery, location, router]);
 
   return (
     <aside className="w-64 bg-[#d9d9d9] p-4 flex flex-col gap-6 pt-24 h-screen sticky top-0">

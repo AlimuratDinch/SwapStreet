@@ -43,14 +43,6 @@ export function LocationFilterModal({ onClose, onApply }: Props) {
 
       const data = await res.json();
 
-      console.log("Applying FSA location", {
-        fsa,
-        lat: data.lat,
-        lng: data.lng,
-        radiusKm: radius,
-        name: data.name,
-      });
-
       onApply({
         lat: data.lat,
         lng: data.lng,
@@ -78,8 +70,6 @@ export function LocationFilterModal({ onClose, onApply }: Props) {
       (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-
-        // ("Applying location", lat, lng);
 
         onApply({
           lat,
