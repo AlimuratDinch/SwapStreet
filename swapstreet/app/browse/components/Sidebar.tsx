@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { SearchBar } from "./SearchBar";
 import { LocationFilterModal } from "./LocationFilterModal";
+import { Portal } from "./portal";
 
 interface LocationResult {
   lat: number;
@@ -47,7 +48,7 @@ export function Sidebar() {
           params.set("radiusKm", location.radiusKm.toString());
         }
     router.replace(`/browse?${params.toString()}`, { scroll: false });
-  }, [minPriceVal, maxPriceVal, searchQuery, router]);
+  }, [minPriceVal, maxPriceVal, searchQuery, location, router]);
 
   return (
     <aside className="w-64 bg-[#d9d9d9] p-4 flex flex-col gap-6 pt-24 h-screen sticky top-0">
@@ -96,13 +97,15 @@ export function Sidebar() {
             <h4 className="text-sm font-medium">Location</h4>
           </button>
           {showLocationModal && (
-          <LocationFilterModal
-            onClose={() => setShowLocationModal(false)}
-            onApply={(loc: LocationResult) => {
-              setLocation(loc);
-              setShowLocationModal(false);
-            }}
-          />
+            <Portal>
+              <LocationFilterModal
+                onClose={() => setShowLocationModal(false)}
+                onApply={(loc: LocationResult) => {
+                  setLocation(loc);
+                  setShowLocationModal(false);
+                }}
+              />
+            </Portal>
           )}
       </section>
     </aside>

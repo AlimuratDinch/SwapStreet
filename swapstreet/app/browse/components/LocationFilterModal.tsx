@@ -1,4 +1,4 @@
-"use-client"
+"use client"
 import { useState } from "react";
 import { 
     X, 
@@ -109,7 +109,7 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-auto flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60">
       <div className="w-full max-w-lg rounded-xl bg-white text-black shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
