@@ -41,8 +41,9 @@ jest.mock("react-easy-crop", () => ({
 jest.mock("next/dynamic", () => ({
   __esModule: true,
   default: (
-    loader: () => Promise<{ default: React.ComponentType<unknown> }>,
+    _loader: () => Promise<{ default: React.ComponentType<unknown> }>,
   ) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- Jest mock needs sync module resolution
     const Mod = require("react-easy-crop").default;
     return function DynamicWrapper(props: Record<string, unknown>) {
       return React.createElement(Mod, props);
