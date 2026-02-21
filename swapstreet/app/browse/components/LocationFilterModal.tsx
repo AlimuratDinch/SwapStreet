@@ -17,8 +17,8 @@ type Props = {
   onApply: (location: LocationResult) => void;
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+const apiUrl =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 export function LocationFilterModal({ onClose, onApply, }: Props) {
   const [fsa, setFsa] = useState("");
@@ -44,7 +44,7 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
 
     try {
       const res = await fetch(
-        `${API_URL}/api/location/lookup/${fsa}`
+        `${apiUrl}/location/lookup/${fsa}`
       );
 
       if (!res.ok) {
@@ -109,7 +109,7 @@ export function LocationFilterModal({ onClose, onApply, }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-auto flex items-center justify-center bg-black/60">
       <div className="w-full max-w-lg rounded-xl bg-white text-black shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
