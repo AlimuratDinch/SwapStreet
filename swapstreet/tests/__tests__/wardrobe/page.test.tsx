@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import * as wardrobeStorage from "@/app/wardrobe/wardrobeStorage";
 
 // Mock header component
-jest.mock("@/app/browse/BrowseElements", () => ({
+jest.mock("@/components/common/Header", () => ({
   Header: ({ showCenterNav }: { showCenterNav?: boolean }) => (
     <div data-testid="header">
       Header {showCenterNav ? "with nav" : "without nav"}

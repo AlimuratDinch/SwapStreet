@@ -39,6 +39,22 @@ services:
       timeout: 5s
       retries: 5
 
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: meilisearch-dev
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-masterKey}
+      - MEILI_ENV=development
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -50,10 +66,14 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_dev;Username=postgres;Password=${POSTGRES_PASSWORD}
       - MINIO_ENDPOINT=minio:9000
+      - MEILISEARCH_HOST=http://meilisearch:7700
+      - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY:-masterKey}
     depends_on:
       postgres:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      meilisearch:
         condition: service_healthy
     networks:
       - app-net
@@ -100,3 +120,4 @@ networks:
 volumes:
   postgres_data_dev:
   minio_data_dev:
+  meilisearch_data:

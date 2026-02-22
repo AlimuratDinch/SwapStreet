@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import Gallery from "./Gallery";
 import PostedAt from "./PostedAt";
-import { Header } from "../../browse/BrowseElements";
+import { Header } from "@/components/common/Header";
 
 export const dynamic = "force-dynamic";
 

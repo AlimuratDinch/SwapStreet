@@ -186,11 +186,17 @@ namespace backend.Services
         }
 
 
-        // Generate URL for public file (no expiry)
-        public string GetPublicFileUrl(string objectName)
+        public string? GetPublicFileUrl(string? objectName)
         {
-            var frontendUrl = _config["FRONTEND_URL"];
-            return $"{frontendUrl}/{_settings.PublicBucketName}/{objectName}";
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return null; // Or return a default "placeholder.png" path
+            }
+
+            var frontendUrl = _config["FRONTEND_URL"]?.TrimEnd('/');
+            var bucket = _settings.PublicBucketName;
+
+            return $"{frontendUrl}/{bucket}/{objectName.TrimStart('/')}";
         }
 
         // Regenerate URL for an existing private file

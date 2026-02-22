@@ -4,7 +4,7 @@ import webpack from "webpack";
 const nextConfig: NextConfig = {
   output: "standalone",
   images: {
-    // This is the key for Local Staging
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
@@ -17,13 +17,28 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "http",
-        hostname: "minio", // Internal Docker name for server-side optimization
+        hostname: "localhost",
+        port: "",
+        pathname: "/public/**",
+      },
+      {
+        protocol: "http",
+        hostname: "minio",
         port: "9000",
       },
-      // If your staging Nginx uses a domain via hosts file
       {
         protocol: "http",
         hostname: "minio.swapstreet.ca",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "", // Empty means any port
+        pathname: "/public/**",
       },
     ],
   },

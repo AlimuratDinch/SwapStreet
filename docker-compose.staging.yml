@@ -38,6 +38,24 @@ services:
       timeout: 20s
       retries: 3
 
+  # --- Search Engine ---
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: meilisearch-staging
+    restart: always
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - MEILI_ENV=production
+    volumes:
+      - meilisearch_data_staging:/meili_data
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # --- App Services ---
   backend:
     build:
@@ -51,32 +69,35 @@ services:
       - ASPNETCORE_ENVIRONMENT=Staging
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
       - ConnectionStrings__AuthConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
-      # Point MinIO to the internal container name
       - MINIO_ENDPOINT=minio:9000
+      - MEILISEARCH_HOST=http://meilisearch:7700
+      - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY}
       - FrontendUrl=${FRONTEND_URL}
     depends_on:
       postgres:
-        condition: service_healthy # Wait for DB to be actually ready
+        condition: service_healthy
       minio:
-        condition: service_started
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
     networks:
       - app-net
 
   swapstreet: # Frontend
-      build:
-        context: ./swapstreet
-        dockerfile: Dockerfile.staging
-        args:
-          NEXT_PUBLIC_API_URL: ${FRONTEND_URL}/api
-          NEXT_PUBLIC_FRONTEND_URL: http://localhost:3000
-      container_name: swapstreet-frontend-staging
-      restart: always
-      env_file:
-        - .env
-      depends_on:
-        - backend
-      networks:
-        - app-net
+    build:
+      context: ./swapstreet
+      dockerfile: Dockerfile.staging
+      args:
+        NEXT_PUBLIC_API_URL: ${FRONTEND_URL}/api
+        NEXT_PUBLIC_FRONTEND_URL: http://localhost:3000
+    container_name: swapstreet-frontend-staging
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    networks:
+      - app-net
 
   # --- Reverse Proxy ---
   nginx:
@@ -89,6 +110,7 @@ services:
       - backend
       - swapstreet
       - minio
+      - meilisearch
     networks:
       - app-net
 
@@ -110,5 +132,6 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data_prod:
-  minio_data_prod:
+  postgres_data_staging:
+  minio_data_staging:
+  meilisearch_data_staging:

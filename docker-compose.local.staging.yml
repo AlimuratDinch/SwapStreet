@@ -43,6 +43,24 @@ services:
       timeout: 20s
       retries: 3
 
+  # --- Search Engine ---
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: meilisearch-local-staging
+    restart: always
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-masterKey}
+      - MEILI_ENV=development # Using development for local staging for easier access
+    volumes:
+      - meilisearch_data_local_staging:/meili_data
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   # --- App Services ---
   backend:
     build:
@@ -57,16 +75,19 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
       - ConnectionStrings__AuthConnection=Host=postgres;Port=5432;Database=swapstreet_prod;Username=postgres;Password=${POSTGRES_PASSWORD}
-      # Point MinIO to the internal container name
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MEILISEARCH_HOST=http://meilisearch:7700
+      - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY:-masterKey}
       - FrontendUrl=http://localhost
     depends_on:
       postgres:
-        condition: service_healthy # Wait for DB to be actually ready
+        condition: service_healthy
       minio:
-        condition: service_started
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
     networks:
       - app-net
 
@@ -99,6 +120,7 @@ services:
       - backend
       - swapstreet
       - minio
+      - meilisearch
     networks:
       - app-net
 
@@ -109,3 +131,4 @@ networks:
 volumes:
   postgres_data_local_staging:
   minio_data_local_staging:
+  meilisearch_data_local_staging:
