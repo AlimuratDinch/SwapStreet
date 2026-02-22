@@ -8,6 +8,7 @@ interface Item {
   id: string;
   title: string;
   price: number;
+  fsa: string;
   images?: { imageUrl: string }[];
 }
 
@@ -41,6 +42,7 @@ export default function InfiniteBrowse({
           title={item.title}
           imgSrc={item.images?.[0]?.imageUrl}
           price={item.price ?? 0}
+          fsa={item.fsa}
           href={`/listing/${item.id}`}
         />
       ))}
