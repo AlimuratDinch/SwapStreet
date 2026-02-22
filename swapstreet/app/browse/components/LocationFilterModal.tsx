@@ -99,8 +99,8 @@ export function LocationFilterModal({ onClose, onApply }: Readonly<Props>) {
       // If permission API fails, continue to prompt via getCurrentPosition.
     }
 
+    //NOSONAR
     navigator.geolocation.getCurrentPosition(
-      //NOSONAR
       (position) => {
         // Reduce precision to minimize sensitive data exposure
         const lat = roundCoord(position.coords.latitude, 3);
