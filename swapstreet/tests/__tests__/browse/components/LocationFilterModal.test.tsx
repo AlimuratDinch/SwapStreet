@@ -271,10 +271,10 @@ describe("LocationFilterModal Component", () => {
       fireEvent.click(geoButton);
 
       expect(mockOnApply).toHaveBeenCalledWith({
-        lat: 45.5017,
-        lng: -73.5673,
+        lat: 45.502,
+        lng: -73.567,
         radiusKm: 20,
-        name: "wip",
+        name: "Current location",
       });
 
       expect(mockOnClose).toHaveBeenCalled();
@@ -296,16 +296,17 @@ describe("LocationFilterModal Component", () => {
     });
 
     it("handles geolocation errors", async () => {
-      const mockError = {
+      const mockGeoError = {
         code: 1,
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
         message: "Permission denied",
       };
 
       (
         global.navigator.geolocation.getCurrentPosition as jest.Mock
-      ).mockImplementationOnce((success, error) => error(mockError));
-
-      window.alert = jest.fn();
+      ).mockImplementationOnce((success, error) => error(mockGeoError));
 
       render(
         <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
@@ -314,9 +315,11 @@ describe("LocationFilterModal Component", () => {
       const geoButton = screen.getByText("Use my current location");
       fireEvent.click(geoButton);
 
-      expect(window.alert).toHaveBeenCalledWith(
-        "Unable to retrieve your location",
-      );
+      expect(
+        screen.getByText(
+          "Permission denied. Please allow location access to use this.",
+        ),
+      ).toBeInTheDocument();
     });
   });
 

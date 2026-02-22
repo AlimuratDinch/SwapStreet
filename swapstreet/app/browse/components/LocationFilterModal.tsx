@@ -59,7 +59,12 @@ export function LocationFilterModal({ onClose, onApply }: Readonly<Props>) {
     }
   };
 
-  const handleUseMyLocation = () => {
+  const roundCoord = (value: number, decimals = 3) => {
+    const factor = Math.pow(10, decimals);
+    return Math.round(value * factor) / factor;
+  };
+
+  const handleUseMyLocation = async () => {
     setError(null);
 
     if (!navigator.geolocation) {
@@ -67,23 +72,63 @@ export function LocationFilterModal({ onClose, onApply }: Readonly<Props>) {
       return;
     }
 
+    // Geolocation is OPTIONAL and user-initiated (button click) to center search results near the user.
+    // We only use it for a local radius filter and do not store/persist coordinates.
+    try {
+      // Permission pre-check (not supported in all browsers)
+      if ("permissions" in navigator && (navigator as any).permissions?.query) {
+        const status = await (navigator as any).permissions.query({
+          name: "geolocation",
+        });
+
+        if (status.state === "denied") {
+          setError(
+            "Location permission is blocked. Enable it in your browser settings to use this feature.",
+          );
+          return;
+        }
+      }
+    } catch {
+      // If permission API fails, continue to prompt via getCurrentPosition.
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+        // Reduce precision to minimize sensitive data exposure
+        const lat = roundCoord(position.coords.latitude, 3);
+        const lng = roundCoord(position.coords.longitude, 3);
 
         onApply({
           lat,
           lng,
           radiusKm: radius,
-          name: "wip",
+          name: "Current location",
         });
 
         onClose();
       },
-      (error) => {
-        console.error(error);
-        alert("Unable to retrieve your location");
+      (geoError) => {
+        // Don't use alert; provide a UI error message instead
+        switch (geoError.code) {
+          case geoError.PERMISSION_DENIED:
+            setError(
+              "Permission denied. Please allow location access to use this.",
+            );
+            break;
+          case geoError.POSITION_UNAVAILABLE:
+            setError("Your location is unavailable right now.");
+            break;
+          case geoError.TIMEOUT:
+            setError("Timed out while retrieving your location.");
+            break;
+          default:
+            setError("Unable to retrieve your location.");
+        }
+      },
+      {
+        enableHighAccuracy: false, // less sensitive + usually sufficient for radius search
+        timeout: 8000,
+        maximumAge: 60_000,
       },
     );
   };
