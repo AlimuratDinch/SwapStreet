@@ -14,6 +14,12 @@ type Props = {
   onApply: (location: LocationResult) => void;
 };
 
+interface NavigatorWithPermissions extends Navigator {
+  permissions: {
+    query: (descriptor: { name: string }) => Promise<PermissionStatus>;
+  };
+}
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 export function LocationFilterModal({ onClose, onApply }: Readonly<Props>) {
@@ -76,8 +82,9 @@ export function LocationFilterModal({ onClose, onApply }: Readonly<Props>) {
     // We only use it for a local radius filter and do not store/persist coordinates.
     try {
       // Permission pre-check (not supported in all browsers)
-      if ("permissions" in navigator && (navigator as any).permissions?.query) {
-        const status = await (navigator as any).permissions.query({
+      const navWithPermissions = navigator as NavigatorWithPermissions;
+      if ("permissions" in navigator && navWithPermissions.permissions?.query) {
+        const status = await navWithPermissions.permissions.query({
           name: "geolocation",
         });
 
@@ -92,7 +99,7 @@ export function LocationFilterModal({ onClose, onApply }: Readonly<Props>) {
       // If permission API fails, continue to prompt via getCurrentPosition.
     }
 
-    navigator.geolocation.getCurrentPosition(
+    navigator.geolocation.getCurrentPosition( //NOSONAR
       (position) => {
         // Reduce precision to minimize sensitive data exposure
         const lat = roundCoord(position.coords.latitude, 3);
