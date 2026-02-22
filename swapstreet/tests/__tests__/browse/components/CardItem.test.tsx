@@ -26,6 +26,7 @@ describe("CardItem Component", () => {
     id: "item-123",
     title: "Navy Parka",
     price: 89.99,
+    fsa: "J4J",
     imgSrc: "http://localhost/parka.jpg",
     href: "/listing/item-123",
   };
@@ -56,6 +57,7 @@ describe("CardItem Component", () => {
 
     expect(screen.getByText("Navy Parka")).toBeInTheDocument();
     expect(screen.getByText("$89.99")).toBeInTheDocument();
+    expect(screen.getByText("J4J")).toBeInTheDocument();
     expect(screen.getByRole("img")).toHaveAttribute("src", mockProps.imgSrc);
   });
 

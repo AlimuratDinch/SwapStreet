@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, MapPin } from "lucide-react";
 import {
   addWardrobeItem,
   hasWardrobeItem,
@@ -14,10 +14,18 @@ interface CardItemProps {
   title: string;
   imgSrc?: string;
   price: number;
+  fsa: string;
   href?: string;
 }
 
-export function CardItem({ id, title, imgSrc, price, href }: CardItemProps) {
+export function CardItem({
+  id,
+  title,
+  imgSrc,
+  price,
+  fsa,
+  href,
+}: CardItemProps) {
   const [inWardrobe, setInWardrobe] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -75,6 +83,10 @@ export function CardItem({ id, title, imgSrc, price, href }: CardItemProps) {
         <h4 className="card-item-title">{title}</h4>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
+          <p className="card-item-fsa">
+            <MapPin size={12} />
+            {fsa}
+          </p>
           <button
             onClick={handleAddToWardrobe}
             disabled={isSaving}

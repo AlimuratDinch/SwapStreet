@@ -3,6 +3,14 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { SearchBar } from "./SearchBar";
+import { LocationFilterModal } from "./LocationFilterModal";
+import { Portal } from "./Portal";
+
+interface LocationResult {
+  lat: number;
+  lng: number;
+  radiusKm: number;
+}
 
 export function Sidebar() {
   const router = useRouter();
@@ -13,6 +21,12 @@ export function Sidebar() {
   const [maxPriceVal, setMaxPriceVal] = useState(999999);
   const [searchQuery, setSearchQuery] = useState("");
   const [showPrice, setShowPrice] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+    radiusKm: number;
+  } | null>(null);
 
   useEffect(() => {
     setSearchQuery(searchParams.get("q") || "");
@@ -27,9 +41,13 @@ export function Sidebar() {
     params.set("minPrice", minPriceVal.toString());
     params.set("maxPrice", maxPriceVal.toString());
     if (searchQuery) params.set("q", searchQuery);
-
+    if (location) {
+      params.set("lat", location.lat.toString());
+      params.set("lng", location.lng.toString());
+      params.set("radiusKm", location.radiusKm.toString());
+    }
     router.replace(`/browse?${params.toString()}`, { scroll: false });
-  }, [minPriceVal, maxPriceVal, searchQuery, router]);
+  }, [minPriceVal, maxPriceVal, searchQuery, location, router]);
 
   return (
     <aside className="w-64 bg-[#d9d9d9] p-4 flex flex-col gap-6 pt-24 h-screen sticky top-0">
@@ -49,7 +67,7 @@ export function Sidebar() {
           </button>
         </div>
         <button
-          className="w-full flex justify-between items-center"
+          className="w-full flex justify-between items-center mb-2 hover:text-teal-500 transition"
           onClick={() => setShowPrice(!showPrice)}
         >
           <span className="text-sm font-medium">Price Range</span>
@@ -70,6 +88,23 @@ export function Sidebar() {
               onChange={setMaxPriceVal}
             />
           </div>
+        )}
+        <button
+          onClick={() => setShowLocationModal(true)}
+          className="w-full flex items-center justify-between mb-2 hover:text-teal-500 transition"
+        >
+          <h4 className="text-sm font-medium">Location</h4>
+        </button>
+        {showLocationModal && (
+          <Portal>
+            <LocationFilterModal
+              onClose={() => setShowLocationModal(false)}
+              onApply={(loc: LocationResult) => {
+                setLocation(loc);
+                setShowLocationModal(false);
+              }}
+            />
+          </Portal>
         )}
       </section>
     </aside>
