@@ -16,7 +16,7 @@ type Props = {
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
-export function LocationFilterModal({ onClose, onApply }: Props) {
+export function LocationFilterModal({ onClose, onApply }: Readonly<Props>) {
   const [fsa, setFsa] = useState("");
   const [radius, setRadius] = useState(20);
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export function LocationFilterModal({ onClose, onApply }: Props) {
 
   // Normalize + validate FSA
   const normalizeFSA = (input: string) =>
-    input.toUpperCase().replace(/\s/g, "").slice(0, 3);
+    input.toUpperCase().replaceAll(/\s/g, "").slice(0, 3);
 
   const isValidFsa = /^[A-Z]\d[A-Z]$/.test(fsa);
 
@@ -52,6 +52,7 @@ export function LocationFilterModal({ onClose, onApply }: Props) {
 
       onClose();
     } catch (err) {
+      console.error("FSA lookup error:", err);
       setError("Postal code not supported.");
     } finally {
       setLoading(false);
@@ -116,10 +117,11 @@ export function LocationFilterModal({ onClose, onApply }: Props) {
 
           {/* FSA input */}
           <div>
-            <label className="text-sm text-black">
+            <label htmlFor="fsa-input" className="text-sm text-black">
               Enter three first characters of postal code
             </label>
             <input
+              id="fsa-input"
               value={fsa}
               onChange={(e) => setFsa(normalizeFSA(e.target.value))}
               placeholder="H3Z"
