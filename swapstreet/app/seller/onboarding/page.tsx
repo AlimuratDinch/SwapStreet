@@ -7,54 +7,14 @@ import React, {
   useRef,
   useState,
 } from "react";
-import nextDynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import type { Area } from "react-easy-crop";
 import { createProfile, uploadImage, City, Province } from "@/lib/api/profile";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/components/common/logger";
-
-const Cropper = nextDynamic(
-  () => import("react-easy-crop").then((mod) => mod.default),
-  { ssr: false },
-);
+import ImageCropModal from "@/components/image/ImageCropModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
-
-/** Produce a cropped image blob from image URL and crop area in pixels (natural image coords). */
-async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = imageSrc;
-  });
-  const canvas = document.createElement("canvas");
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas 2d context not available");
-  ctx.drawImage(
-    image,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    0,
-    0,
-    pixelCrop.width,
-    pixelCrop.height,
-  );
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
-      "image/jpeg",
-      0.92,
-    );
-  });
-}
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
@@ -88,10 +48,6 @@ export default function SellerOnboardingPage() {
   );
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [cropPreviewUrl, setCropPreviewUrl] = useState<string>("");
-  const [cropZoom, setCropZoom] = useState(1);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [cropAreaPixels, setCropAreaPixels] = useState<Area | null>(null);
-  const [cropConfirming, setCropConfirming] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -181,9 +137,6 @@ export default function SellerOnboardingPage() {
       setCropFile(file);
       setCropPreviewUrl(URL.createObjectURL(file));
       setCropTarget("avatar");
-      setCropZoom(1);
-      setCrop({ x: 0, y: 0 });
-      setCropAreaPixels(null);
     },
     [cropPreviewUrl, cropTarget],
   );
@@ -205,9 +158,6 @@ export default function SellerOnboardingPage() {
       setCropFile(file);
       setCropPreviewUrl(URL.createObjectURL(file));
       setCropTarget("banner");
-      setCropZoom(1);
-      setCrop({ x: 0, y: 0 });
-      setCropAreaPixels(null);
     },
     [cropPreviewUrl, cropTarget],
   );
@@ -219,28 +169,15 @@ export default function SellerOnboardingPage() {
     setCropTarget(null);
     setCropFile(null);
     setCropPreviewUrl("");
-    setCropAreaPixels(null);
     if (avatarInputRef.current) avatarInputRef.current.value = "";
     if (bannerInputRef.current) bannerInputRef.current.value = "";
   }, [cropPreviewUrl]);
 
-  // Confirm crop: produce cropped blob, set avatar/banner file and preview, close modal
-  const handleCropConfirm = useCallback(async () => {
-    if (!cropTarget || !cropFile || !cropPreviewUrl) return;
-    const pixels = cropAreaPixels;
-    if (!pixels) {
-      setError("Adjust the crop area and try again.");
-      return;
-    }
-    setCropConfirming(true);
-    setError("");
-    try {
-      const blob = await getCroppedImg(cropPreviewUrl, pixels);
-      const fileName = cropFile.name.replace(/\.[^.]+$/, "") || "cropped";
-      const file = new File([blob], `${fileName}.jpg`, {
-        type: "image/jpeg",
-      });
-      const previewUrl = URL.createObjectURL(blob);
+  // When modal confirms crop: set avatar/banner file and preview, then close modal
+  const handleCropConfirm = useCallback(
+    (file: File) => {
+      if (!cropTarget) return;
+      const previewUrl = URL.createObjectURL(file);
       if (cropTarget === "avatar") {
         if (avatarPreview && typeof URL.revokeObjectURL === "function")
           URL.revokeObjectURL(avatarPreview);
@@ -252,28 +189,16 @@ export default function SellerOnboardingPage() {
         setBannerFile(file);
         setBannerPreview(previewUrl);
       }
-      if (typeof URL.revokeObjectURL === "function")
+      if (typeof URL.revokeObjectURL === "function" && cropPreviewUrl)
         URL.revokeObjectURL(cropPreviewUrl);
       setCropTarget(null);
       setCropFile(null);
       setCropPreviewUrl("");
-      setCropAreaPixels(null);
       if (avatarInputRef.current) avatarInputRef.current.value = "";
       if (bannerInputRef.current) bannerInputRef.current.value = "";
-    } catch (err) {
-      logger.error("Crop failed", err);
-      setError("Failed to crop image. Please try another image.");
-    } finally {
-      setCropConfirming(false);
-    }
-  }, [
-    cropTarget,
-    cropFile,
-    cropPreviewUrl,
-    cropAreaPixels,
-    avatarPreview,
-    bannerPreview,
-  ]);
+    },
+    [cropTarget, cropPreviewUrl, avatarPreview, bannerPreview],
+  );
 
   // Submit handler: validate inputs, upload images, create profile via API
   const handleSubmit = useCallback(
@@ -447,75 +372,16 @@ export default function SellerOnboardingPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
-      {/* Image crop modal: adjust crop/zoom then confirm */}
-      {cropTarget && cropPreviewUrl && (
-        <div className="fixed inset-0 z-[200] flex flex-col bg-gray-900">
-          <div className="flex-1 relative min-h-0">
-            <Cropper
-              image={cropPreviewUrl}
-              crop={crop}
-              zoom={cropZoom}
-              rotation={0}
-              aspect={cropTarget === "avatar" ? 1 : 3}
-              onCropChange={setCrop}
-              onZoomChange={setCropZoom}
-              onCropComplete={(_area: Area, pixels: Area) =>
-                setCropAreaPixels(pixels)
-              }
-              onCropAreaChange={(_area: Area, pixels: Area) =>
-                setCropAreaPixels(pixels)
-              }
-              minZoom={1}
-              maxZoom={3}
-              cropShape={cropTarget === "avatar" ? "round" : "rect"}
-              showGrid={cropTarget !== "avatar"}
-              zoomSpeed={1}
-              restrictPosition
-              keyboardStep={0.1}
-              style={{
-                containerStyle: { backgroundColor: "inherit" },
-              }}
-              classes={{
-                containerClassName: "rounded-none",
-              }}
-              mediaProps={{}}
-              cropperProps={{}}
-            />
-          </div>
-          <div className="flex-shrink-0 p-4 bg-gray-900 border-t border-gray-700 flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-300">Zoom</span>
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.1}
-                value={cropZoom}
-                onChange={(e) => setCropZoom(Number(e.target.value))}
-                className="flex-1 h-2 rounded-lg appearance-none cursor-pointer bg-gray-600 accent-teal-500"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeCropModal}
-                disabled={cropConfirming}
-                className="rounded-lg border border-gray-500 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCropConfirm}
-                disabled={cropConfirming || !cropAreaPixels}
-                className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {cropConfirming ? "Applying…" : "Apply crop"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ImageCropModal
+        open={!!(cropTarget && cropPreviewUrl)}
+        imageUrl={cropPreviewUrl}
+        aspect={cropTarget === "avatar" ? 1 : 3}
+        cropShape={cropTarget === "avatar" ? "round" : "rect"}
+        onConfirm={handleCropConfirm}
+        onCancel={closeCropModal}
+        onError={setError}
+        sourceFileName={cropFile?.name}
+      />
 
       <div className="mx-auto max-w-3xl px-4 py-10">
         <h1 className="text-2xl font-semibold text-gray-900">
