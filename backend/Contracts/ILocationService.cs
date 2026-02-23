@@ -15,5 +15,7 @@ namespace backend.Contracts
 
         //Validation: Check if an FSA exists
         Task<bool> IsValidFsaAsync(string fsaCode);
+
+        Task<LatLng?> getLatLongFromFSAAsync(string fsaCode);
     }
 }

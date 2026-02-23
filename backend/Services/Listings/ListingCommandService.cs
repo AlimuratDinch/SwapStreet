@@ -3,6 +3,7 @@ using backend.DbContexts;
 using backend.DTOs;
 using backend.DTOs.Image;
 using Microsoft.EntityFrameworkCore;
+using Meilisearch;
 
 namespace backend.Services
 {
@@ -13,27 +14,40 @@ namespace backend.Services
         private readonly ILogger<ListingCommandService> _logger;
         private readonly IFileStorageService _fileStorageService;
 
-        public ListingCommandService(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly ILocationService _locationService;
+        private readonly MeilisearchClient _meiliClient;
 
-        public ListingCommandService(
-            AppDbContext context,
-            ILogger<ListingCommandService> logger)
+        public ListingCommandService(AppDbContext context, MeilisearchClient client)
         {
             _context = context;
-            _logger = logger;
+            _meiliClient = client;
+
         }
 
         public ListingCommandService(
             AppDbContext context,
             ILogger<ListingCommandService> logger,
-            IFileStorageService fileStorageService)
+            ILocationService locationService,
+            MeilisearchClient client)
+        {
+            _context = context;
+            _logger = logger;
+            _locationService = locationService;
+            _meiliClient = client;
+        }
+
+        public ListingCommandService(
+            AppDbContext context,
+            ILogger<ListingCommandService> logger,
+            IFileStorageService fileStorageService,
+            ILocationService locationService,
+            MeilisearchClient client)
         {
             _context = context;
             _logger = logger;
             _fileStorageService = fileStorageService;
+            _locationService = locationService;
+            _meiliClient = client;
         }
 
         public async Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
@@ -104,106 +118,62 @@ namespace backend.Services
         {
             _logger.LogInformation("Creating listing for ProfileId {ProfileId}", request.ProfileId);
 
-            // 1. Validate Images
-            // if (request.Images == null || request.Images.Count == 0)
-            // {
-            //     _logger.LogWarning("No images provided for listing");
-            //     throw new ArgumentException("At least one image is required");
-            // }
-
-            // 2. Validate FSA exists
+            // 1. Validate FSA (and get coordinates for proximity search)
             var fsa = await _context.Fsas
                 .FirstOrDefaultAsync(f => f.Code == request.FSA, cancellationToken);
-            if (fsa == null)
-            {
-                _logger.LogWarning("Invalid FSA {Fsa} for listing", request.FSA);
-                throw new ArgumentException($"Invalid FSA: {request.FSA}");
-            }
+            if (fsa == null) throw new ArgumentException($"Invalid FSA: {request.FSA}");
 
-            // 3. Validate Profile exists (seller)
-            var profile = await _context.Profiles
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == request.ProfileId, cancellationToken);
-            if (profile == null)
-            {
-                _logger.LogWarning("Profile {ProfileId} not found", request.ProfileId);
-                throw new ArgumentException($"Profile {request.ProfileId} not found");
-            }
+            // 2. Validate Profile
+            var profileExists = await _context.Profiles.AnyAsync(p => p.Id == request.ProfileId, cancellationToken);
+            if (!profileExists) throw new ArgumentException($"Profile {request.ProfileId} not found");
 
-            // 4. Validate Tag exists (optional)
-            Tag? tag = null;
-            if (request.TagId.HasValue)
+            // 3. Create listing entity
+            var listing = new Listing
             {
-                tag = await _context.Tags
-                    .FirstOrDefaultAsync(t => t.Id == request.TagId.Value, cancellationToken);
-                if (tag == null)
-                {
-                    _logger.LogWarning("Tag {TagId} not found", request.TagId);
-                    throw new ArgumentException($"Tag {request.TagId} not found");
-                }
-            }
-
-            // 5. Create listing within transaction
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
-            {
-                var listing = new Listing
-                {
-                    Id = Guid.NewGuid(),
-                    Title = request.Title,
-                    Description = request.Description,
-                    Price = request.Price,
-                    ProfileId = request.ProfileId,
-                    TagId = request.TagId,
-                    FSA = request.FSA,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                Id = Guid.NewGuid(),
+                Title = request.Title,
+                Description = request.Description,
+                Price = request.Price,
+                ProfileId = request.ProfileId,
+                TagId = null,
+                FSA = request.FSA,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
 
                 _context.Listings.Add(listing);
                 await _context.SaveChangesAsync(cancellationToken);
 
-                _logger.LogInformation("Created listing {ListingId} successfully", listing.Id);
 
-                // 6. Upload images and create ListingImage records
-                // int displayOrder = 0;
-                // foreach (var imageFile in request.Images)
-                // {
-                //     try
-                //     {
-                //         // Create ListingImage entry directly (the file storage service will handle upload and DB entry)
-                //         var listingImage = new ListingImage
-                //         {
-                //             Id = Guid.NewGuid(),
-                //             ListingId = listing.Id,
-                //             ImagePath = $"listing/{Guid.NewGuid()}_{imageFile.FileName}",
-                //             DisplayOrder = displayOrder++,
-                //             ForTryon = false,
-                //             CreatedAt = DateTime.UtcNow
-                //         };
-                //         _context.ListingImages.Add(listingImage);
+            var latlong = await _locationService.getLatLongFromFSAAsync(request.FSA);
 
-                //         _logger.LogInformation("Added image {ImageId} for listing {ListingId}", listingImage.Id, listing.Id);
-                //     }
-                //     catch (Exception ex)
-                //     {
-                //         _logger.LogError(ex, "Failed to process image for listing {ListingId}", listing.Id);
-                //         throw;
-                //     }
-                // }
+            // 4. Sync to Meilisearch
+            try
+            {
+                var index = _meiliClient.Index("listings");
 
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
+                var searchDoc = new ListingSearchDto
+                {
+                    Id = listing.Id.ToString(),
+                    Title = listing.Title,
+                    Description = listing.Description,
+                    FSA = listing.FSA,
+                    CreatedAtTimestamp = new DateTimeOffset(listing.CreatedAt).ToUnixTimeSeconds(),
+                    _geo = latlong
+                };
 
-                _logger.LogInformation("Listing {ListingId} created successfully with transaction committed", listing.Id);
-                return listing.Id;
+
+                await index.AddDocumentsAsync(new[] { searchDoc }, cancellationToken: cancellationToken);
+
+                _logger.LogInformation("Synced listing {ListingId} to Meilisearch", listing.Id);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "Failed to create listing for ProfileId {ProfileId}", request.ProfileId);
-                throw;
+                // We log the error but don't fail the request because the DB record is already saved.
+                _logger.LogError(ex, "Failed to sync listing {ListingId} to Meilisearch", listing.Id);
             }
+
+            return listing.Id;
         }
     }
 }

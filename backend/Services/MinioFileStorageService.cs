@@ -211,11 +211,17 @@ namespace backend.Services
         }
 
 
-        // Generate URL for public file (no expiry)
-        public string GetPublicFileUrl(string objectName)
+        public string? GetPublicFileUrl(string? objectName)
         {
-            var frontendUrl = _config["FRONTEND_URL"];
-            return $"{frontendUrl}/{_settings.PublicBucketName}/{objectName}";
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return null; // Or return a default "placeholder.png" path
+            }
+
+            var frontendUrl = _config["FRONTEND_URL"]?.TrimEnd('/');
+            var bucket = _settings.PublicBucketName;
+
+            return $"{frontendUrl}/{bucket}/{objectName.TrimStart('/')}";
         }
 
         // Regenerate URL for an existing private file
@@ -230,8 +236,8 @@ namespace backend.Services
             return type switch
             {
                 UploadType.Listing => (5 * 1024 * 1024, 2000, 2000),   // 5MB, max 2000x2000
-                UploadType.Banner => (3 * 1024 * 1024, 1200, 400),    // 3MB, max 1200x400
-                UploadType.Profile => (2 * 1024 * 1024, 500, 500),     // 2MB, max 500x500
+                UploadType.Banner => (5 * 1024 * 1024, 4096, 4096),     // 5MB, no dimension limit (frontend crop)
+                UploadType.Profile => (5 * 1024 * 1024, 4096, 4096),   // 5MB, no dimension limit (frontend crop)
                 UploadType.TryOn => (5 * 1024 * 1024, 2000, 2000),   // 5MB, max 2000x2000
                 UploadType.Generated => (5 * 1024 * 1024, 2000, 2000),   // 5MB, max 2000x2000
                 _ => throw new ArgumentOutOfRangeException(nameof(type), "Unknown upload type")
