@@ -141,8 +141,8 @@ namespace backend.Services
                 UpdatedAt = DateTime.UtcNow
             };
 
-                _context.Listings.Add(listing);
-                await _context.SaveChangesAsync(cancellationToken);
+            _context.Listings.Add(listing);
+            await _context.SaveChangesAsync(cancellationToken);
 
 
             var latlong = await _locationService.getLatLongFromFSAAsync(request.FSA);
