@@ -22,7 +22,54 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// Create a new listing
+        /// Delete a listing
+        /// </summary>
+        /// <param name="listingId">The ID of the listing to delete</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>No content on success</returns>
+        [Authorize]
+        [HttpDelete("{listingId}")]
+        public async Task<IActionResult> Delete(
+            Guid listingId,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug("Attempting to delete listing with ID {ListingId}", listingId);
+
+            try
+            {
+                // Get the profile ID from the authenticated user's claims
+                var profileIdClaim = User.FindFirst("ProfileId")?.Value;
+                if (string.IsNullOrEmpty(profileIdClaim))
+                {
+                    _logger.LogWarning("Profile ID not found in claims for user deleting listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Profile ID not found in claims" });
+                }
+
+                if (!Guid.TryParse(profileIdClaim, out var profileId))
+                {
+                    _logger.LogWarning("Invalid Profile ID format in claims for user deleting listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Invalid Profile ID format" });
+                }
+
+                await _listingCommandService.DeleteListingAsync(listingId, profileId, cancellationToken);
+
+                _logger.LogInformation("Successfully deleted listing with ID {ListingId}", listingId);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete listing with ID {ListingId}: {Message}", listingId, ex.Message);
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting listing with ID {ListingId}: {Message}", listingId, ex.Message);
+                return StatusCode(500, new { Error = "An error occurred while deleting the listing. Please try again." });
+            }
+        }
+
+        /// <summary>
+        /// Create a new listing with optional images
         /// </summary>
         /// <param name="dto">The listing creation request with optional images</param>
         /// <param name="cancellationToken">Cancellation token</param>

@@ -1,6 +1,7 @@
 using backend.Contracts;
 using backend.DbContexts;
 using backend.DTOs;
+using backend.DTOs.Image;
 using Microsoft.EntityFrameworkCore;
 using Meilisearch;
 
@@ -47,6 +48,70 @@ namespace backend.Services
             _fileStorageService = fileStorageService;
             _locationService = locationService;
             _meiliClient = client;
+        }
+
+        public async Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Deleting listing {ListingId} for ProfileId {ProfileId}", listingId, profileId);
+
+            // 1. Validate listing exists and belongs to profile
+            var listing = await _context.Listings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId, cancellationToken);
+            if (listing == null)
+            {
+                _logger.LogWarning("Listing {ListingId} not found for deletion", listingId);
+                throw new ArgumentException($"Listing {listingId} not found");
+            }
+
+            // Fetch image paths up front so storage cleanup can happen before DB changes
+            var listingImages = await _context.ListingImages
+                .AsNoTracking()
+                .Where(li => li.ListingId == listingId)
+                .ToListAsync(cancellationToken);
+
+            var imagePaths = listingImages
+                .Select(li => li.ImagePath)
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .ToList();
+
+            // 2. Delete images from MinIO first to avoid DB deletes if storage fails
+            if (imagePaths.Count != 0)
+            {
+                if (_fileStorageService == null)
+                {
+                    _logger.LogError("File storage service not available for listing deletion {ListingId}", listingId);
+                    throw new InvalidOperationException("File storage service not available for listing deletion.");
+                }
+
+                var failedDeletes = await _fileStorageService.DeleteFilesAsync(UploadType.Listing, imagePaths, cancellationToken);
+                if (failedDeletes.Count != 0)
+                {
+                    throw new InvalidOperationException($"Failed to delete {failedDeletes.Count} image(s) for listing {listingId}");
+                }
+            }
+
+            // 3. Delete listing and image rows in a single DB transaction
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                if (listingImages.Count != 0)
+                {
+                    _context.ListingImages.RemoveRange(listingImages);
+                }
+
+                _context.Listings.Remove(listing);
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                _logger.LogInformation("Deleted listing {ListingId} and {ImageCount} images from database", listingId, listingImages.Count);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError(ex, "Failed to delete listing {ListingId}", listingId);
+                throw;
+            }
         }
 
         public async Task<Guid> CreateListingAsync(CreateListingRequestDto request, CancellationToken cancellationToken = default)

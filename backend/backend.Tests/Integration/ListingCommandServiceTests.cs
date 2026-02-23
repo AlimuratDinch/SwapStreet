@@ -745,6 +745,7 @@
 using backend.Contracts;
 using backend.DbContexts;
 using backend.DTOs;
+using backend.DTOs.Image;
 using backend.Services;
 using backend.Tests.Fixtures;
 using AwesomeAssertions;
@@ -758,6 +759,8 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using NetTopologySuite.Geometries;
+using Moq;
+using System.Threading;
 
 namespace backend.Tests.Integration;
 
