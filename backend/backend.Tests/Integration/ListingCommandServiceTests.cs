@@ -58,7 +58,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -101,7 +101,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -143,7 +143,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId1 = await service.CreateListingAsync(request1);
@@ -198,7 +198,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var id1 = await service.CreateListingAsync(request1);
@@ -538,7 +538,7 @@ public class ListingCommandServiceTests
 
         using var context = new AppDbContext(_fixture.DbOptions);
         // Create service WITHOUT storage service
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
@@ -638,7 +638,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -669,7 +669,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
@@ -695,7 +695,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
@@ -727,7 +727,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
@@ -766,7 +766,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
@@ -799,7 +799,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
@@ -831,7 +831,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -865,7 +865,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -898,7 +898,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -935,7 +935,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -967,7 +967,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -1000,7 +1000,7 @@ public class ListingCommandServiceTests
         };
 
         using var context = new AppDbContext(_fixture.DbOptions);
-        var service = new ListingCommandService(context, CreateMockLogger());
+        var service = new ListingCommandService(context, CreateMockLogger(), CreateMockFileStorageService());
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -1022,6 +1022,19 @@ public class ListingCommandServiceTests
     {
         var factory = new LoggerFactory();
         return factory.CreateLogger<ListingCommandService>();
+    }
+
+    private IFileStorageService CreateMockFileStorageService()
+    {
+        var mockStorage = new Mock<IFileStorageService>();
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                It.IsAny<UploadType>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        return mockStorage.Object;
     }
 
     /// <summary>

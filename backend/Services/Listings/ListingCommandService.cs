@@ -13,19 +13,6 @@ namespace backend.Services
         private readonly ILogger<ListingCommandService> _logger;
         private readonly IFileStorageService _fileStorageService;
 
-        public ListingCommandService(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        public ListingCommandService(
-            AppDbContext context,
-            ILogger<ListingCommandService> logger)
-        {
-            _context = context;
-            _logger = logger;
-        }
-
         public ListingCommandService(
             AppDbContext context,
             ILogger<ListingCommandService> logger,
