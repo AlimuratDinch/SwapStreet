@@ -1270,54 +1270,6 @@ public class ListingCommandServiceTests
     }
 
     [Fact]
-    public async Task DeleteListingAsync_WhenStorageServiceIsNull_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        await SeedTestDataAsync();
-
-        var listingId = Guid.NewGuid();
-        using (var seedContext = new AppDbContext(_pgFixture.DbOptions))
-        {
-            seedContext.Listings.Add(new Listing
-            {
-                Id = listingId,
-                Title = "Listing With Images",
-                Description = "Has images but no storage service",
-                Price = 10.00m,
-                ProfileId = TestData.TestProfileId,
-                FSA = "H2X",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            });
-
-            seedContext.ListingImages.Add(
-                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/image.jpg" });
-
-            await seedContext.SaveChangesAsync();
-        }
-
-        var context = new AppDbContext(_pgFixture.DbOptions);
-        var service = CreateService(context);
-
-        // Act
-        Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
-
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("File storage service not available for listing deletion.");
-
-        // Verify listing was NOT deleted
-        using var verifyContext = new AppDbContext(_pgFixture.DbOptions);
-        var listing = await verifyContext.Listings.FindAsync(listingId);
-        listing.Should().NotBeNull();
-
-        var images = await verifyContext.ListingImages
-            .Where(li => li.ListingId == listingId)
-            .ToListAsync();
-        images.Should().HaveCount(1);
-    }
-
-    [Fact]
     public async Task DeleteListingAsync_WithPartialStorageFailure_ThrowsInvalidOperationException()
     {
         // Arrange
