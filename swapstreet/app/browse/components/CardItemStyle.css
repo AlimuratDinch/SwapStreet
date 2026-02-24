@@ -80,6 +80,22 @@
   color: #111;
 }
 
+.card-item-fsa-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-item-fsa {
+  font-weight: 500;
+  margin: 0;
+  font-size: 0.9em;
+  color: #505050;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .card-item-wardrobe-btn {
   background: none;
   border: none;

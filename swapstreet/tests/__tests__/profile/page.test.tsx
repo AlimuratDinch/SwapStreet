@@ -23,7 +23,7 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-jest.mock("@/app/browse/BrowseElements", () => ({
+jest.mock("@/components/common/Header", () => ({
   Header: () => <div data-testid="header">Header</div>,
 }));
 

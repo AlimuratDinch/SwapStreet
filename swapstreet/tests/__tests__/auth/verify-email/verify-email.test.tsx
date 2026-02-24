@@ -16,17 +16,18 @@ jest.mock("@/components/common/logger", () => ({
 }));
 
 const pushMock = jest.fn();
+const mockSearchParamsGet = jest.fn((param: string) => {
+  if (param === "token") return "test-token-123";
+  if (param === "email") return "test@example.com";
+  return null;
+});
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: pushMock,
   }),
   useSearchParams: () => ({
-    get: jest.fn((param: string) => {
-      if (param === "token") return "test-token-123";
-      if (param === "email") return "test@example.com";
-      return null;
-    }),
+    get: mockSearchParamsGet,
   }),
 }));
 
@@ -34,6 +35,11 @@ describe("VerifyEmailPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    mockSearchParamsGet.mockImplementation((param: string) => {
+      if (param === "token") return "test-token-123";
+      if (param === "email") return "test@example.com";
+      return null;
+    });
   });
 
   afterEach(() => {
@@ -378,6 +384,22 @@ describe("VerifyEmailPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/failed to send email/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows error when token or email is missing", async () => {
+    mockSearchParamsGet.mockImplementation((param: string) => {
+      if (param === "token") return null;
+      if (param === "email") return "test@example.com";
+      return null;
+    });
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/missing verification token or email/i),
+      ).toBeInTheDocument();
     });
   });
 

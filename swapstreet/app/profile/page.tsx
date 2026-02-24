@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, ProfileResponse } from "@/lib/api/profile";
-import { Header } from "@/app/browse/BrowseElements";
+import { Header } from "@/components/common/Header";
 import { Phone, Mail, MapPin, Star } from "lucide-react";
 
 export default function ProfilePage() {
