@@ -789,8 +789,8 @@ public class ListingCommandServiceTests
         // Matches your 4-parameter constructor
         return new ListingCommandService(
             context,
-            CreateMockLogger(), 
-            CreateMockFileStorageService(), 
+            CreateMockLogger(),
+            CreateMockFileStorageService(),
             _locationMock.Object,
             _meiliFixture.Client // REAL Meilisearch Client
         );
@@ -815,7 +815,7 @@ public class ListingCommandServiceTests
             FSA = "H2X",
             TagId = TestData.TestTagId
         };
-        
+
 
         // Act
         var listingId = await service.CreateListingAsync(request);
@@ -1019,7 +1019,7 @@ public class ListingCommandServiceTests
         await service.DeleteListingAsync(listingId, TestData.TestProfileId);
 
         // Assert
-        using var verifyContext = new AppDbContext(_pgFixture   .DbOptions);
+        using var verifyContext = new AppDbContext(_pgFixture.DbOptions);
         var listing = await verifyContext.Listings.FindAsync(listingId);
         listing.Should().BeNull();
 
