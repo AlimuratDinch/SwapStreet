@@ -786,13 +786,17 @@ public class ListingCommandServiceTests
 
     private ListingCommandService CreateService(AppDbContext context)
     {
-        // Matches your 4-parameter constructor
+        return CreateService(context, CreateMockFileStorageService());
+    }
+
+    private ListingCommandService CreateService(AppDbContext context, IFileStorageService fileStorageService)
+    {
         return new ListingCommandService(
             context,
             CreateMockLogger(),
-            CreateMockFileStorageService(),
+            fileStorageService,
             _locationMock.Object,
-            _meiliFixture.Client // REAL Meilisearch Client
+            _meiliFixture.Client
         );
     }
 
@@ -1013,7 +1017,7 @@ public class ListingCommandServiceTests
             .ReturnsAsync(Array.Empty<string>());
 
         using var context = new AppDbContext(_pgFixture.DbOptions);
-        var service = CreateService(context);
+        var service = CreateService(context, mockStorage.Object);
 
         // Act
         await service.DeleteListingAsync(listingId, TestData.TestProfileId);
@@ -1072,7 +1076,7 @@ public class ListingCommandServiceTests
             .ReturnsAsync(new[] { "listing/one.jpg" });
 
         using var context = new AppDbContext(_pgFixture.DbOptions);
-        var service = CreateService(context);
+        var service = CreateService(context, mockStorage.Object);
 
         // Act
         Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
@@ -1100,7 +1104,7 @@ public class ListingCommandServiceTests
         var mockStorage = new Mock<IFileStorageService>();
 
         using var context = new AppDbContext(_pgFixture.DbOptions);
-        var service = CreateService(context);
+        var service = CreateService(context, mockStorage.Object);
 
         // Act
         Func<Task> act = async () => await service.DeleteListingAsync(nonExistentListingId, TestData.TestProfileId);
@@ -1137,7 +1141,7 @@ public class ListingCommandServiceTests
         var mockStorage = new Mock<IFileStorageService>();
 
         using var context = new AppDbContext(_pgFixture.DbOptions);
-        var service = CreateService(context);
+        var service = CreateService(context, mockStorage.Object);
 
         // Act - Try to delete with wrong profile ID
         Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
@@ -1179,7 +1183,7 @@ public class ListingCommandServiceTests
         var mockStorage = new Mock<IFileStorageService>();
 
         using var context = new AppDbContext(_pgFixture.DbOptions);
-        var service = CreateService(context);
+        var service = CreateService(context, mockStorage.Object);
 
         // Act
         await service.DeleteListingAsync(listingId, TestData.TestProfileId);
@@ -1239,7 +1243,7 @@ public class ListingCommandServiceTests
             .ReturnsAsync(Array.Empty<string>());
 
         using var context = new AppDbContext(_pgFixture.DbOptions);
-        var service = CreateService(context);
+        var service = CreateService(context, mockStorage.Object);
 
         // Act
         await service.DeleteListingAsync(listingId, TestData.TestProfileId);
@@ -1293,7 +1297,6 @@ public class ListingCommandServiceTests
         }
 
         var context = new AppDbContext(_pgFixture.DbOptions);
-        // Create service WITHOUT storage service
         var service = CreateService(context);
 
         // Act
@@ -1353,7 +1356,7 @@ public class ListingCommandServiceTests
             .ReturnsAsync(new[] { "listing/img1.jpg", "listing/img3.jpg" });
 
         using var context = new AppDbContext(_pgFixture.DbOptions);
-        var service = CreateService(context);
+        var service = CreateService(context, mockStorage.Object);
 
         // Act
         Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
@@ -1524,44 +1527,65 @@ public class ListingCommandServiceTests
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
-        // Seed in correct order: Province -> City -> FSA -> Profile
-        var province = new Province
-        {
-            Id = 1,
-            Code = "QC",
-            Name = "Quebec"
-        };
-        context.Provinces.Add(province);
-        await context.SaveChangesAsync(); // Save province first
-
-        var city = new City
-        {
-            Id = 1,
-            Name = "Montreal",
-            ProvinceId = 1
-        };
-        context.Cities.Add(city);
-        await context.SaveChangesAsync(); // Save city before FSA and Profile
-
-        context.Fsas.Add(new Fsa
-        {
-            Code = "H2X",
-            CityId = 1,
-            Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
-        });
-
-        context.Profiles.Add(new Profile
-        {
-            Id = TestData.TestProfileId,
-            FirstName = "John",
-            FSA = "H2X",
-            CityId = 1 // Add the required CityId
-        });
-
+        // Seed in correct order: Province -> City -> FSA -> Profile -> Tag dependencies -> Tag
+        context.Provinces.AddRange(
+            new Province { Id = 1, Code = "QC", Name = "Quebec" },
+            new Province { Id = 2, Code = "ON", Name = "Ontario" });
         await context.SaveChangesAsync();
 
-        // 2. Reset Meilisearch Index for a clean test state
-        await _meiliFixture.InitializeAsync();
+        context.Cities.AddRange(
+            new City { Id = 1, Name = "Montreal", ProvinceId = 1 },
+            new City { Id = 2, Name = "Toronto", ProvinceId = 2 });
+        await context.SaveChangesAsync();
+
+        context.Fsas.AddRange(
+            new Fsa { Code = "H2X", CityId = 1, Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 } },
+            new Fsa { Code = "M5A", CityId = 2, Centroid = new Point(-79.3832, 43.6532) { SRID = 4326 } });
+
+        context.Profiles.AddRange(
+            new Profile { Id = TestData.TestProfileId, FirstName = "John", LastName = "Doe", FSA = "H2X", CityId = 1 },
+            new Profile { Id = TestData.TestSecondProfileId, FirstName = "Jane", LastName = "Smith", FSA = "M5A", CityId = 2 });
+        await context.SaveChangesAsync();
+
+        context.ArticleTypes.Add(new ArticleType { Id = TestData.TestArticleTypeId, Name = "Footwear" });
+        context.Styles.Add(new Style { Id = TestData.TestStyleId, Name = "Casual" });
+        context.Sizes.Add(new Size { Id = TestData.TestSizeId, Value = "10", ArticleTypeId = TestData.TestArticleTypeId });
+        context.Brands.Add(new Brand { Id = TestData.TestBrandId, Name = "Nike" });
+        await context.SaveChangesAsync();
+
+        context.Tags.AddRange(
+            new Tag
+            {
+                Id = TestData.TestTagId,
+                ArticleTypeId = TestData.TestArticleTypeId,
+                StyleId = TestData.TestStyleId,
+                SizeId = TestData.TestSizeId,
+                Color = ColorEnum.Black,
+                BrandId = TestData.TestBrandId,
+                Sex = SexEnum.Unisex,
+                Condition = ConditionEnum.NewWithTags,
+                Material = (int)MaterialEnum.Leather,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Tag
+            {
+                Id = TestData.TestSecondTagId,
+                ArticleTypeId = TestData.TestArticleTypeId,
+                StyleId = TestData.TestStyleId,
+                SizeId = TestData.TestSizeId,
+                Color = ColorEnum.White,
+                BrandId = TestData.TestBrandId,
+                Sex = SexEnum.Unisex,
+                Condition = ConditionEnum.ExcellentUsedCondition,
+                Material = (int)MaterialEnum.Cotton,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+        await context.SaveChangesAsync();
+
+        // 2. Reset Meilisearch index documents for a clean test state
+        await _meiliFixture.Index.DeleteAllDocumentsAsync();
     }
 
     #endregion
