@@ -8,6 +8,25 @@ jest.mock("next/navigation", () => ({
   useSearchParams: jest.fn(),
 }));
 
+jest.mock("@/components/ui/sheet", () => ({
+  Sheet: ({ children }: any) => <div>{children}</div>,
+  SheetContent: ({ children }: any) => <div>{children}</div>,
+  SheetTrigger: ({ children }: any) => <div>{children}</div>,
+}));
+
+jest.mock("@/components/ui/sidebar", () => ({
+  SidebarProvider: ({ children }: any) => <div>{children}</div>,
+  SidebarInset: ({ children }: any) => <div>{children}</div>,
+  SidebarTrigger: () => <button>Toggle</button>,
+  Sidebar: ({ children }: any) => <div>{children}</div>,
+  useSidebar: () => ({
+    state: "expanded",
+    open: true,
+    setOpen: jest.fn(),
+    isMobile: false,
+  }),
+}));
+
 // Mock Portal so portal children render inline in the test DOM
 jest.mock("@/app/browse/components/Portal", () => ({
   Portal: ({ children }: { children: React.ReactNode }) => (

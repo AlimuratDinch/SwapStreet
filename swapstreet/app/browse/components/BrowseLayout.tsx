@@ -11,7 +11,6 @@ import InfiniteBrowse from "./InfiniteBrowse";
 import { CreateListingFAB } from "./CreateListingFAB";
 import { Item } from "./InfiniteBrowse";
 
-
 interface BrowseLayoutProps {
   initialItems: Item[];
   initialCursor: string | null;
