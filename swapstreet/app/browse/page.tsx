@@ -1,7 +1,11 @@
 import { Suspense } from "react";
 // Adjust these import paths based on your actual folder structure
 import { Header } from "@/components/common/Header";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Sidebar } from "./components/Sidebar";
 import { CreateListingFAB } from "./components/CreateListingFAB";
 import InfiniteBrowse from "./components/InfiniteBrowse";

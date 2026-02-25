@@ -1,13 +1,19 @@
 "use client";
 
 import { Suspense } from "react";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { BrowseSidebar } from "./Sidebar";
 import InfiniteBrowse from "./InfiniteBrowse";
 import { CreateListingFAB } from "./CreateListingFAB";
+import { Item } from "./InfiniteBrowse";
+
 
 interface BrowseLayoutProps {
-  initialItems: any[];
+  initialItems: Item[];
   initialCursor: string | null;
   initialHasNext: boolean;
 }

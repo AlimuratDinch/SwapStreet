@@ -111,7 +111,9 @@ export function BrowseSidebar() {
                     className="w-full justify-between"
                   >
                     <DollarSign className="h-4 w-4" />
-                    <span className="group-data-[collapsible=icon]:hidden">Price Range</span>
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      Price Range
+                    </span>
                     <ChevronDown
                       className={`w-4 h-4 transition-transform group-data-[collapsible=icon]:hidden ${
                         showPrice ? "rotate-180" : ""
@@ -140,7 +142,9 @@ export function BrowseSidebar() {
                     className="w-full justify-between"
                   >
                     <MapPin className="h-4 w-4" />
-                    <span className="group-data-[collapsible=icon]:hidden">Location</span>
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      Location
+                    </span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
