@@ -1,10 +1,17 @@
 import { render, screen } from "@testing-library/react";
-import { BrowseLayout, BrowseSkeleton } from "@/app/browse/components/BrowseLayout";
+import {
+  BrowseLayout,
+  BrowseSkeleton,
+} from "@/app/browse/components/BrowseLayout";
 
 // 1. Mock the UI Sidebar components
 jest.mock("@/components/ui/sidebar", () => ({
-  SidebarProvider: ({ children }: any) => <div data-testid="sidebar-provider">{children}</div>,
-  SidebarInset: ({ children, className }: any) => <div className={className}>{children}</div>,
+  SidebarProvider: ({ children }: any) => (
+    <div data-testid="sidebar-provider">{children}</div>
+  ),
+  SidebarInset: ({ children, className }: any) => (
+    <div className={className}>{children}</div>
+  ),
   SidebarTrigger: () => <button data-testid="sidebar-trigger">Trigger</button>,
 }));
 
@@ -24,9 +31,8 @@ jest.mock("@/app/browse/components/CreateListingFAB", () => ({
   CreateListingFAB: () => <button data-testid="fab">FAB</button>,
 }));
 
-
 describe("BrowseLayout Component", () => {
-  const mockProps = {   
+  const mockProps = {
     initialItems: [
       { id: "1", title: "Test Item 1" } as any,
       { id: "2", title: "Test Item 2" } as any,
@@ -40,7 +46,7 @@ describe("BrowseLayout Component", () => {
 
     // Check if the Provider and Inset are present
     expect(screen.getByTestId("sidebar-provider")).toBeInTheDocument();
-    
+
     // Check if child components are rendered
     expect(screen.getByTestId("mock-sidebar")).toBeInTheDocument();
     expect(screen.getByTestId("sidebar-trigger")).toBeInTheDocument();
@@ -53,9 +59,9 @@ describe("BrowseLayout Component", () => {
 
   it("renders the skeleton (Coverage for Lines 45-58)", () => {
     const { container } = render(<BrowseSkeleton />);
-    
+
     const skeletonItems = container.querySelectorAll(".animate-pulse");
-    
+
     expect(skeletonItems.length).toBe(36);
     expect(container.querySelector("main")).toHaveClass("grid-cols-1");
   });

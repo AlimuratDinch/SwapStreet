@@ -33,13 +33,19 @@ jest.mock("@/components/ui/sidebar", () => ({
 // Mock Sub-components to ensure we focus on Sidebar logic
 jest.mock("@/app/browse/components/SearchBar", () => ({
   SearchBar: ({ onSearch }: any) => (
-    <input data-testid="search-input" onChange={(e) => onSearch(e.target.value)} />
+    <input
+      data-testid="search-input"
+      onChange={(e) => onSearch(e.target.value)}
+    />
   ),
 }));
 
 jest.mock("@/app/browse/components/LocationFilterModal", () => ({
   LocationFilterModal: ({ onApply }: any) => (
-    <button data-testid="apply-loc" onClick={() => onApply({ lat: 10, lng: 20, radiusKm: 5 })}>
+    <button
+      data-testid="apply-loc"
+      onClick={() => onApply({ lat: 10, lng: 20, radiusKm: 5 })}
+    >
       Apply Location
     </button>
   ),
@@ -65,7 +71,7 @@ describe("Sidebar Component Coverage Fix", () => {
     });
 
     render(<BrowseSidebar />);
-    
+
     // Expand price to check values
     fireEvent.click(screen.getByText("Price Range"));
     expect(screen.getByDisplayValue("100")).toBeInTheDocument();
@@ -82,14 +88,14 @@ describe("Sidebar Component Coverage Fix", () => {
 
     // Trigger Location Modal
     fireEvent.click(screen.getByText("Location"));
-    
+
     // Click the mocked "Apply" button inside the modal
     const applyBtn = screen.getByTestId("apply-loc");
     fireEvent.click(applyBtn);
 
     expect(mockReplace).toHaveBeenCalledWith(
       expect.stringContaining("lat=10&lng=20&radiusKm=5"),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -100,29 +106,29 @@ describe("Sidebar Component Coverage Fix", () => {
     });
 
     render(<BrowseSidebar />);
-    
+
     const clearBtn = screen.getByText("Clear");
     fireEvent.click(clearBtn);
 
     // Should reset to defaults
     expect(mockReplace).toHaveBeenCalledWith(
       expect.stringContaining("minPrice=0&maxPrice=999999"),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
   it("handles empty input in PriceInput (Lines 158-161)", async () => {
-     render(<BrowseSidebar />);
-     fireEvent.click(screen.getByText("Price Range"));
-     
-     const minInput = screen.getByDisplayValue("0");
-     // Simulate clearing the input (empty string)
-     fireEvent.change(minInput, { target: { value: "" } });
-     
-     // The component logic `Number(e.target.value) || 0` should convert "" to 0
-     expect(mockReplace).toHaveBeenCalledWith(
-       expect.stringContaining("minPrice=0"),
-       expect.any(Object)
-     );
+    render(<BrowseSidebar />);
+    fireEvent.click(screen.getByText("Price Range"));
+
+    const minInput = screen.getByDisplayValue("0");
+    // Simulate clearing the input (empty string)
+    fireEvent.change(minInput, { target: { value: "" } });
+
+    // The component logic `Number(e.target.value) || 0` should convert "" to 0
+    expect(mockReplace).toHaveBeenCalledWith(
+      expect.stringContaining("minPrice=0"),
+      expect.any(Object),
+    );
   });
 });
