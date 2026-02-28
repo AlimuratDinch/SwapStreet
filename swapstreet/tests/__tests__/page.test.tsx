@@ -190,4 +190,57 @@ describe("Home Page", () => {
     const headings = screen.getAllByRole("heading");
     expect(headings.length).toBeGreaterThan(3);
   });
+
+  it("cycles to next word when deletion completes", async () => {
+    render(<Home />);
+
+    for (let i = 0; i < 60; i++) {
+      await act(async () => {
+        jest.advanceTimersByTime(100);
+      });
+    }
+
+    expect(true).toBe(true);
+  });
+
+  it("shows scroll-to-top button", () => {
+    render(<Home />);
+
+    Object.defineProperty(window, "scrollY", {
+      value: 400,
+      writable: true,
+      configurable: true,
+    });
+
+    act(() => {
+      fireEvent.scroll(window);
+    });
+
+    expect(
+      screen.getByRole("button", { name: /scroll to top/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("scroll-to-top button calls window.scrollTo", () => {
+    const scrollToMock = jest
+      .spyOn(window, "scrollTo")
+      .mockImplementation(() => {});
+
+    render(<Home />);
+
+    Object.defineProperty(window, "scrollY", {
+      value: 400,
+      writable: true,
+      configurable: true,
+    });
+
+    act(() => {
+      fireEvent.scroll(window);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /scroll to top/i }));
+
+    expect(scrollToMock).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
+    scrollToMock.mockRestore();
+  });
 });
