@@ -50,7 +50,7 @@ describe("Home Page", () => {
   it("renders the page successfully", () => {
     render(<Home />);
     expect(
-      screen.getAllByText((_, el) => el?.textContent === "SWAPSTREET")[0]
+      screen.getAllByText((_, el) => el?.textContent === "SWAPSTREET")[0],
     ).toBeInTheDocument();
   });
 

@@ -10,7 +10,9 @@ describe("Terms of Service Page", () => {
 
   it("renders SWAPSTREET logo", () => {
     render(<TermsOfService />);
-    const logos = screen.getAllByText((_, el) => el?.textContent === "SWAPSTREET");
+    const logos = screen.getAllByText(
+      (_, el) => el?.textContent === "SWAPSTREET",
+    );
     expect(logos.length).toBeGreaterThan(0);
   });
 
