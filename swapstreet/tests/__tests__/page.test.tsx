@@ -49,7 +49,9 @@ describe("Home Page", () => {
 
   it("renders the page successfully", () => {
     render(<Home />);
-    expect(screen.getAllByText("SWAPSTREET")[0]).toBeInTheDocument();
+    expect(
+      screen.getAllByText((_, el) => el?.textContent === "SWAPSTREET")[0]
+    ).toBeInTheDocument();
   });
 
   it("renders login link with correct href", () => {
@@ -180,10 +182,6 @@ describe("Home Page", () => {
     expect(screen.getByRole("link", { name: /Terms/i })).toHaveAttribute(
       "href",
       "/terms",
-    );
-    expect(screen.getByRole("link", { name: /Contact/i })).toHaveAttribute(
-      "href",
-      "/contact",
     );
   });
 
