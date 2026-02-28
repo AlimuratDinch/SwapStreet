@@ -14,7 +14,12 @@ jest.mock("@/components/common/Header", () => ({
 }));
 
 jest.mock("@/components/common/logger", () => ({
-  logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() },
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
 }));
 
 const mockGetMyProfile = jest.fn();
@@ -49,7 +54,9 @@ function defaultFetch(url: string | Request) {
     return Promise.resolve({ ok: true, json: async () => mockProvinces });
   }
   if (u.includes("location/cities")) {
-    const provinceId = new URL(u, "http://localhost").searchParams.get("provinceId");
+    const provinceId = new URL(u, "http://localhost").searchParams.get(
+      "provinceId",
+    );
     const list = provinceId
       ? mockCities.filter((c) => c.provinceId === parseInt(provinceId))
       : mockCities;
@@ -80,14 +87,20 @@ const defaultProfile = {
 describe("EditSellerProfilePage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({ accessToken: "test-token", refreshToken: mockRefreshToken });
+    mockUseAuth.mockReturnValue({
+      accessToken: "test-token",
+      refreshToken: mockRefreshToken,
+    });
     mockGetMyProfile.mockResolvedValue(defaultProfile);
     mockUpdateProfile.mockResolvedValue({});
     global.fetch = jest.fn(defaultFetch) as typeof fetch;
   });
 
   it("redirects to profile when not authenticated", () => {
-    mockUseAuth.mockReturnValue({ accessToken: null, refreshToken: mockRefreshToken });
+    mockUseAuth.mockReturnValue({
+      accessToken: null,
+      refreshToken: mockRefreshToken,
+    });
     render(<EditSellerProfilePage />);
     expect(mockReplace).toHaveBeenCalledWith("/profile");
   });
@@ -103,7 +116,9 @@ describe("EditSellerProfilePage", () => {
     render(<EditSellerProfilePage />);
 
     expect(await screen.findByText(/network error/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /back to profile/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /back to profile/i }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /back to profile/i }));
     expect(mockPush).toHaveBeenCalledWith("/profile");
@@ -116,20 +131,29 @@ describe("EditSellerProfilePage", () => {
       expect(mockGetMyProfile).toHaveBeenCalledWith("test-token");
     });
 
-    expect(await screen.findByText(/edit your seller profile/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/edit your seller profile/i),
+    ).toBeInTheDocument();
     expect(await screen.findByDisplayValue("Jane")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Doe")).toBeInTheDocument();
     expect(screen.getByDisplayValue("M5V")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /save changes/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /save changes/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
   });
 
   it("Cancel button navigates to profile", async () => {
     render(<EditSellerProfilePage />);
 
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole("button", { name: /cancel/i }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
     expect(mockPush).toHaveBeenCalledWith("/profile");
@@ -146,7 +170,9 @@ describe("EditSellerProfilePage", () => {
       { timeout: 3000 },
     );
 
-    const form = screen.getByRole("button", { name: /save changes/i }).closest("form");
+    const form = screen
+      .getByRole("button", { name: /save changes/i })
+      .closest("form");
     fireEvent.submit(form!);
 
     await waitFor(
@@ -173,10 +199,14 @@ describe("EditSellerProfilePage", () => {
     fireEvent.change(screen.getByLabelText(/first name/i), {
       target: { value: "" },
     });
-    const form = screen.getByRole("button", { name: /save changes/i }).closest("form");
+    const form = screen
+      .getByRole("button", { name: /save changes/i })
+      .closest("form");
     fireEvent.submit(form!);
 
-    expect(await screen.findByText(/please enter your first name/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/please enter your first name/i),
+    ).toBeInTheDocument();
     expect(mockUpdateProfile).not.toHaveBeenCalled();
   });
 });

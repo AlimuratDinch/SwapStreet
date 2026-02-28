@@ -76,14 +76,29 @@ describe("SellerProfileForm", () => {
   it("renders form fields with idPrefix in ids", () => {
     const props = createMockFormProps();
     render(<SellerProfileForm {...props} />);
-    expect(screen.getByLabelText(/first name/i)).toHaveAttribute("id", "test-first-name");
-    expect(screen.getByLabelText(/last name/i)).toHaveAttribute("id", "test-last-name");
+    expect(screen.getByLabelText(/first name/i)).toHaveAttribute(
+      "id",
+      "test-first-name",
+    );
+    expect(screen.getByLabelText(/last name/i)).toHaveAttribute(
+      "id",
+      "test-last-name",
+    );
     expect(screen.getByLabelText(/^FSA$/i)).toHaveAttribute("id", "test-fsa");
     expect(screen.getByLabelText(/bio/i)).toHaveAttribute("id", "test-bio");
-    expect(screen.getByLabelText(/province/i)).toHaveAttribute("id", "test-province");
+    expect(screen.getByLabelText(/province/i)).toHaveAttribute(
+      "id",
+      "test-province",
+    );
     expect(screen.getByLabelText(/city/i)).toHaveAttribute("id", "test-city");
-    expect(screen.getByLabelText(/avatar image/i)).toHaveAttribute("id", "test-avatar");
-    expect(screen.getByLabelText(/banner image/i)).toHaveAttribute("id", "test-banner");
+    expect(screen.getByLabelText(/avatar image/i)).toHaveAttribute(
+      "id",
+      "test-avatar",
+    );
+    expect(screen.getByLabelText(/banner image/i)).toHaveAttribute(
+      "id",
+      "test-banner",
+    );
   });
 
   it("renders province options from provinces prop", () => {
@@ -127,25 +142,34 @@ describe("SellerProfileForm", () => {
   it("does not render cancel button when cancelButton is not provided", () => {
     const props = createMockFormProps();
     render(<SellerProfileForm {...props} />);
-    expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /cancel/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders submit button with submitLabel", () => {
     const props = createMockFormProps({ submitLabel: "Create profile" });
     render(<SellerProfileForm {...props} />);
-    expect(screen.getByRole("button", { name: /create profile/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /create profile/i }),
+    ).toBeInTheDocument();
   });
 
   it("calls handleSubmit when form is submitted", () => {
     const handleSubmit = jest.fn((e: React.FormEvent) => e.preventDefault());
     const props = createMockFormProps({ handleSubmit });
     render(<SellerProfileForm {...props} />);
-    fireEvent.submit(screen.getByRole("button", { name: /save/i }).closest("form")!);
+    fireEvent.submit(
+      screen.getByRole("button", { name: /save/i }).closest("form")!,
+    );
     expect(handleSubmit).toHaveBeenCalled();
   });
 
   it("disables submit button when loading is true", () => {
-    const props = createMockFormProps({ loading: true, submitLabel: "Saving..." });
+    const props = createMockFormProps({
+      loading: true,
+      submitLabel: "Saving...",
+    });
     render(<SellerProfileForm {...props} />);
     expect(screen.getByRole("button", { name: /saving/i })).toBeDisabled();
   });
@@ -157,8 +181,12 @@ describe("SellerProfileForm", () => {
     });
     render(<SellerProfileForm {...props} />);
     const images = screen.getAllByRole("img");
-    const avatar = images.find((img) => (img as HTMLImageElement).alt === "Avatar");
-    const banner = images.find((img) => (img as HTMLImageElement).alt === "Banner");
+    const avatar = images.find(
+      (img) => (img as HTMLImageElement).alt === "Avatar",
+    );
+    const banner = images.find(
+      (img) => (img as HTMLImageElement).alt === "Banner",
+    );
     expect(avatar).toHaveAttribute("src", "https://example.com/avatar.jpg");
     expect(banner).toHaveAttribute("src", "https://example.com/banner.jpg");
   });

@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { uploadImage, City, Province } from "@/lib/api/profile";
 import { logger } from "@/components/common/logger";
 
@@ -133,7 +127,9 @@ export function useSellerProfileForm({
       provinces.length === 0
     )
       return;
-    const province = provinces.find((p) => p.code === initialValues.provinceCode);
+    const province = provinces.find(
+      (p) => p.code === initialValues.provinceCode,
+    );
     if (province) setSelectedProvinceId(province.id);
   }, [mode, initialValues?.provinceCode, provinces]);
 
@@ -185,7 +181,11 @@ export function useSellerProfileForm({
         return;
       }
       setError("");
-      if (cropPreviewUrl && cropTarget && typeof URL.revokeObjectURL === "function")
+      if (
+        cropPreviewUrl &&
+        cropTarget &&
+        typeof URL.revokeObjectURL === "function"
+      )
         URL.revokeObjectURL(cropPreviewUrl);
       setCropFile(file);
       setCropPreviewUrl(URL.createObjectURL(file));
@@ -203,7 +203,11 @@ export function useSellerProfileForm({
         return;
       }
       setError("");
-      if (cropPreviewUrl && cropTarget && typeof URL.revokeObjectURL === "function")
+      if (
+        cropPreviewUrl &&
+        cropTarget &&
+        typeof URL.revokeObjectURL === "function"
+      )
         URL.revokeObjectURL(cropPreviewUrl);
       setCropFile(file);
       setCropPreviewUrl(URL.createObjectURL(file));
@@ -325,7 +329,9 @@ export function useSellerProfileForm({
         onSuccess?.();
       } catch (err) {
         logger.error(
-          mode === "create" ? "Failed to create profile" : "Failed to update profile",
+          mode === "create"
+            ? "Failed to create profile"
+            : "Failed to update profile",
           err,
         );
         setError(
@@ -423,4 +429,6 @@ export function useSellerProfileForm({
   };
 }
 
-export type UseSellerProfileFormReturn = ReturnType<typeof useSellerProfileForm>;
+export type UseSellerProfileFormReturn = ReturnType<
+  typeof useSellerProfileForm
+>;

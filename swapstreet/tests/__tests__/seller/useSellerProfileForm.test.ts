@@ -2,7 +2,12 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { useSellerProfileForm } from "@/components/seller/useSellerProfileForm";
 
 jest.mock("@/components/common/logger", () => ({
-  logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() },
+  logger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
 }));
 
 jest.mock("@/lib/api/profile", () => ({
@@ -24,7 +29,9 @@ function mockFetch(url: string | Request) {
     return Promise.resolve({ ok: true, json: async () => mockProvinces });
   }
   if (u.includes("location/cities")) {
-    const provinceId = new URL(u, "http://localhost").searchParams.get("provinceId");
+    const provinceId = new URL(u, "http://localhost").searchParams.get(
+      "provinceId",
+    );
     const list = provinceId
       ? mockCities.filter((c) => c.provinceId === parseInt(provinceId))
       : mockCities;
@@ -125,7 +132,9 @@ describe("useSellerProfileForm", () => {
   });
 
   it("sets error when provinces fetch fails", async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error("Network error"),
+    );
 
     const { result } = renderHook(() => useSellerProfileForm(defaultOptions));
 
