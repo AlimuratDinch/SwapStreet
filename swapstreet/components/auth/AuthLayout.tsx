@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface AuthLayoutProps {
   children: React.ReactNode;
 }
@@ -7,10 +9,10 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
     <div className="flex min-h-screen">
       {/* Logo - Top Left */}
       <div className="fixed top-0 left-0 p-6 z-10">
-        <h2 className="text-2xl font-bold">
+        <Link href="/" className="text-2xl font-bold hover: cursor-pointer">
           <span className="text-teal-600">SWAP</span>
           <span className="text-gray-900">STREET</span>
-        </h2>
+        </Link>
       </div>
 
       {/* Left Side - Form */}
