@@ -329,7 +329,9 @@ export async function updateProfile(
       } else if (errorData.message && typeof errorData.message === "string") {
         errorMessage = errorData.message;
       } else if (errorData.errors && typeof errorData.errors === "object") {
-        const validationErrors = Object.entries(errorData.errors as Record<string, unknown>)
+        const validationErrors = Object.entries(
+          errorData.errors as Record<string, unknown>,
+        )
           .map(([key, value]) => {
             if (Array.isArray(value)) {
               return `${key}: ${value.join(", ")}`;

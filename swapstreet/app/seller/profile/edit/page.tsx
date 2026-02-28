@@ -167,7 +167,11 @@ export default function EditSellerProfilePage() {
         return;
       }
       setError("");
-      if (cropPreviewUrl && cropTarget && typeof URL.revokeObjectURL === "function")
+      if (
+        cropPreviewUrl &&
+        cropTarget &&
+        typeof URL.revokeObjectURL === "function"
+      )
         URL.revokeObjectURL(cropPreviewUrl);
       setCropFile(file);
       setCropPreviewUrl(URL.createObjectURL(file));
@@ -185,7 +189,11 @@ export default function EditSellerProfilePage() {
         return;
       }
       setError("");
-      if (cropPreviewUrl && cropTarget && typeof URL.revokeObjectURL === "function")
+      if (
+        cropPreviewUrl &&
+        cropTarget &&
+        typeof URL.revokeObjectURL === "function"
+      )
         URL.revokeObjectURL(cropPreviewUrl);
       setCropFile(file);
       setCropPreviewUrl(URL.createObjectURL(file));
@@ -260,7 +268,7 @@ export default function EditSellerProfilePage() {
         }
 
         let tokenToUse = accessToken;
-        if (!tokenToUse) tokenToUse = await refreshToken?.() ?? null;
+        if (!tokenToUse) tokenToUse = (await refreshToken?.()) ?? null;
         if (!tokenToUse) {
           setError("You must be logged in to update your profile.");
           return;
@@ -391,7 +399,9 @@ export default function EditSellerProfilePage() {
             </div>
           </div>
           <p className="text-lg font-medium text-gray-900">Profile updated!</p>
-          <p className="text-sm text-gray-500">Taking you back to your profile...</p>
+          <p className="text-sm text-gray-500">
+            Taking you back to your profile...
+          </p>
         </div>
       </div>
     );
@@ -427,7 +437,8 @@ export default function EditSellerProfilePage() {
           Edit your seller profile
         </h1>
         <p className="mt-1 text-sm text-gray-600">
-          Update your details below. Changes are saved when you click Save changes.
+          Update your details below. Changes are saved when you click Save
+          changes.
         </p>
 
         <form
@@ -442,7 +453,10 @@ export default function EditSellerProfilePage() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label htmlFor="edit-first-name" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="edit-first-name"
+                className="block text-sm font-medium text-gray-700"
+              >
                 First name
               </label>
               <input
@@ -457,7 +471,10 @@ export default function EditSellerProfilePage() {
               />
             </div>
             <div>
-              <label htmlFor="edit-last-name" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="edit-last-name"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Last name
               </label>
               <input
@@ -475,7 +492,10 @@ export default function EditSellerProfilePage() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
-              <label htmlFor="edit-province" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="edit-province"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Province
               </label>
               <select
@@ -501,7 +521,10 @@ export default function EditSellerProfilePage() {
               </select>
             </div>
             <div className="relative">
-              <label htmlFor="edit-city" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="edit-city"
+                className="block text-sm font-medium text-gray-700"
+              >
                 City
               </label>
               <input
@@ -554,7 +577,10 @@ export default function EditSellerProfilePage() {
               )}
             </div>
             <div>
-              <label htmlFor="edit-fsa" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="edit-fsa"
+                className="block text-sm font-medium text-gray-700"
+              >
                 FSA
               </label>
               <input
@@ -572,7 +598,10 @@ export default function EditSellerProfilePage() {
           </div>
 
           <div>
-            <label htmlFor="edit-bio" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="edit-bio"
+              className="block text-sm font-medium text-gray-700"
+            >
               Bio
             </label>
             <textarea
@@ -588,7 +617,10 @@ export default function EditSellerProfilePage() {
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
-              <label htmlFor="edit-avatar" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="edit-avatar"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Avatar image
               </label>
               <input
@@ -609,7 +641,10 @@ export default function EditSellerProfilePage() {
               </div>
             </div>
             <div>
-              <label htmlFor="edit-banner" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="edit-banner"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Banner image
               </label>
               <input
