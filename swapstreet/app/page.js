@@ -388,10 +388,10 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-border z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Link href="/" className="text-2xl font-bold max-[425px]:hidden hover:opacity-80 transition-opacity cursor-pointer">
+            <h2 className="text-2xl font-bold max-[425px]:hidden">
               <span className="text-teal-600">SWAP</span>
               <span className="text-gray-900">STREET</span>
-            </Link>
+            </h2>
           </div>
 
           <div className="hidden md:flex items-center space-x-8">
@@ -794,10 +794,10 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <Link href="/" className="text-2xl font-bold hover:opacity-80 transition-opacity cursor-pointer">
+              <h2 className="text-2xl font-bold">
                 <span className="text-teal-600">SWAP</span>
                 <span className="text-gray-900">STREET</span>
-              </Link>
+              </h2>
             </div>
 
             <div className="flex items-center space-x-6 text-muted-foreground">
