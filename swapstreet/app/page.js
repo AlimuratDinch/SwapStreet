@@ -6,7 +6,6 @@ import AnimatedCounter from "@/components/AnimatedCounter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Shirt,
   Leaf,
   Zap,
   Users,
@@ -15,6 +14,7 @@ import {
   Heart,
   ShoppingBag,
   ArrowRight,
+  ArrowUp,
   Shield,
   Sparkles,
   TrendingUp,
@@ -41,6 +41,7 @@ export default function LandingPage() {
   const [heroText, setHeroText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [wordIndex, setWordIndex] = useState(0);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
   const heroWords = [
     "Endless Outfits",
     "Sustainable Fashion",
@@ -364,16 +365,33 @@ export default function LandingPage() {
     return () => clearTimeout(timeout);
   }, [heroText, isDeleting, wordIndex]);
 
+  // Scroll to top
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-border z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Shirt className="h-8 w-8 text-teal-500" />
-            <span className="text-2xl font-bold text-foreground max-[425px]:hidden">
-              SWAPSTREET
-            </span>
+            <Link href="/" className="text-2xl font-bold max-[425px]:hidden hover:opacity-80 transition-opacity cursor-pointer">
+              <span className="text-teal-600">SWAP</span>
+              <span className="text-gray-900">STREET</span>
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center space-x-8">
@@ -776,8 +794,10 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <Shirt className="h-8 w-8 text-teal-500" />
-              <span className="text-2xl font-bold">SWAPSTREET</span>
+              <Link href="/" className="text-2xl font-bold hover:opacity-80 transition-opacity cursor-pointer">
+                <span className="text-teal-600">SWAP</span>
+                <span className="text-gray-900">STREET</span>
+              </Link>
             </div>
 
             <div className="flex items-center space-x-6 text-muted-foreground">
@@ -793,12 +813,6 @@ export default function LandingPage() {
               >
                 Terms
               </Link>
-              <Link
-                href="/contact"
-                className="hover:text-foreground transition-colors"
-              >
-                Contact
-              </Link>
             </div>
           </div>
 
@@ -807,6 +821,17 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Scroll to Top Button */}
+      {showScrollToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-teal-500 hover:bg-teal-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-110 z-50"
+          aria-label="Scroll to top"
+        >
+          <ArrowUp className="h-6 w-6" />
+        </button>
+      )}
     </div>
   );
 }
