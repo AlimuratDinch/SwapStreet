@@ -4,7 +4,7 @@ import { CardItem } from "./CardItem";
 import { useInfiniteSearch } from "../hooks/useInfiniteSearch";
 import { useScrollListener } from "../hooks/useScrollListener";
 
-interface Item {
+export interface Item {
   id: string;
   title: string;
   price: number;
