@@ -14,7 +14,7 @@ public class TopicSignal
         {
             _channels.GetOrAdd(topic, _ => CreateChannel());
         }
-        
+
     }
 
     // The Worker calls this once during initialization
@@ -45,8 +45,8 @@ public class TopicSignal
     public async Task WaitAsync(string topic, CancellationToken ct)
     {
         var channel = _channels.GetOrAdd(topic, _ => CreateChannel());
-        
-        try 
+
+        try
         {
             if (await channel.Reader.WaitToReadAsync(ct))
             {
@@ -56,10 +56,10 @@ public class TopicSignal
         catch (ChannelClosedException)
         {
             // Handle the case where the topic was deleted while we were waiting
-            await Task.Delay(1000, ct); 
+            await Task.Delay(1000, ct);
         }
     }
 
-    private static Channel<bool> CreateChannel() => 
+    private static Channel<bool> CreateChannel() =>
         Channel.CreateBounded<bool>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite });
 }

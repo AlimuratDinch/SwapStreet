@@ -33,7 +33,7 @@ public class PartitionTests : IDisposable
         int eventCount = 0;
 
         // Subscribe to the event
-        sut.OnDataAppended += (topic) => 
+        sut.OnDataAppended += (topic) =>
         {
             firedTopic = topic;
             eventCount++;

@@ -200,31 +200,31 @@ static void ConfigureLogQueue(WebApplicationBuilder builder)
     builder.Services.AddSingleton<TopicSignal>();
 
     // 3. Register the OffsetManager using the raw BasePath
-    builder.Services.AddSingleton<OffsetManager>(sp => 
+    builder.Services.AddSingleton<OffsetManager>(sp =>
     {
         if (!Directory.Exists(basePath)) Directory.CreateDirectory(basePath);
         return new OffsetManager(basePath);
     });
 
     // 4. Register the ITopicManager using the raw BasePath
-builder.Services.AddSingleton<ITopicManager>(sp => 
-{
-    var signal = sp.GetRequiredService<TopicSignal>();
-    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    var basePath = builder.Configuration["LogQueueSettings:BasePath"] ?? "App_Data";
-
-    var manager = TopicManager.InitializeAsync(basePath, signal, loggerFactory).GetAwaiter().GetResult();
-
-    // FORCE THE CREATION: If it doesn't exist, make it.
-    if (manager.GetTopic("listings") == null)
+    builder.Services.AddSingleton<ITopicManager>(sp =>
     {
-        int maxFileSize = 64 * 1024 * 1024; // 64MB in bytes
-        // This is what physically creates /listings/state.json and /listings/listings-0/
-        manager.CreateTopic("listings", 1, true,maxFileSize,TimeSpan.FromMinutes(20)).GetAwaiter().GetResult();
-    }
+        var signal = sp.GetRequiredService<TopicSignal>();
+        var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+        var basePath = builder.Configuration["LogQueueSettings:BasePath"] ?? "App_Data";
 
-    return manager;
-});
+        var manager = TopicManager.InitializeAsync(basePath, signal, loggerFactory).GetAwaiter().GetResult();
+
+        // FORCE THE CREATION: If it doesn't exist, make it.
+        if (manager.GetTopic("listings") == null)
+        {
+            int maxFileSize = 64 * 1024 * 1024; // 64MB in bytes
+                                                // This is what physically creates /listings/state.json and /listings/listings-0/
+            manager.CreateTopic("listings", 1, true, maxFileSize, TimeSpan.FromMinutes(20)).GetAwaiter().GetResult();
+        }
+
+        return manager;
+    });
 
     // 5. Add the Worker
     builder.Services.AddHostedService<MeiliSyncWorker>();

@@ -61,7 +61,7 @@ public class OffsetManagerTests : IDisposable
 
         // Act
         await sut.CommitOffset(weirdGroup, weirdTopic, 0, 123);
-        
+
         // Re-read from a fresh instance to ensure URI escaping worked
         var sut2 = new OffsetManager(_testPath);
         var result = sut2.GetOffset(weirdGroup, weirdTopic, 0);

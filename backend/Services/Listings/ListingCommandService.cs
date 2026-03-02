@@ -146,7 +146,7 @@ namespace backend.Services
 
 
                 // We simply create the searchDoc and append it to the log to be handled by a Meillisearch worker
-                await AppendToListingLog(listing.Id,searchDoc,ListingAction.Create);
+                await AppendToListingLog(listing.Id, searchDoc, ListingAction.Create);
 
 
                 _logger.LogInformation("Appended Create listing {ListingId} log to LogQueue", listing.Id);
@@ -157,7 +157,7 @@ namespace backend.Services
                 _logger.LogError(ex, "Failed to sync listing {ListingId} to Meilisearch", listing.Id);
             }
 
-            
+
 
             return listing.Id;
         }

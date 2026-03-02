@@ -9,14 +9,14 @@ public class MinioSyncWorker : BackgroundService
     private readonly ITopicManager _topicManager;
     private readonly OffsetManager _offsetManager;
     private readonly ILogger<MinioSyncWorker> _logger;
-    
+
     // Configurable via Program.cs
     private readonly string _topicName;
     private readonly string _groupId;
 
     public MinioSyncWorker(
-        ITopicManager topicManager, 
-        OffsetManager offsetManager, 
+        ITopicManager topicManager,
+        OffsetManager offsetManager,
         ILogger<MinioSyncWorker> logger,
         string topicName = "listings", // Default to listings for SwapStreet
         string groupId = "minio-sync")

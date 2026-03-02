@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Linq;
 using Xunit;
-using AwesomeAssertions; 
+using AwesomeAssertions;
 using Moq;
 using Microsoft.Extensions.Logging;
 using backend.Contracts;
@@ -39,7 +39,7 @@ public class ListingCommandServiceTests
     {
         _pgFixture = pgFixture;
         _topicManagerMock = new Mock<ITopicManager>();
-        _partitionMock = new Mock<IPartition>(); 
+        _partitionMock = new Mock<IPartition>();
         _fileStorageMock = new Mock<IFileStorageService>();
         _locationMock = new Mock<ILocationService>();
 
@@ -100,7 +100,7 @@ public class ListingCommandServiceTests
         capturedBytes.Should().NotBeNull();
         var json = Encoding.UTF8.GetString(capturedBytes);
         var taskData = JsonSerializer.Deserialize<ListingTaskData>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-        
+
         taskData.Should().NotBeNull();
         taskData!.ListingId.Should().Be(listingId);
         taskData.Action.Should().Be(ListingAction.Create);
@@ -132,7 +132,7 @@ public class ListingCommandServiceTests
         var listingId = await service.CreateListingAsync(request);
 
         // Assert
-        listingId.Should().NotBeEmpty(); 
+        listingId.Should().NotBeEmpty();
         var dbListing = await context.Listings.AnyAsync(l => l.Id == listingId);
         dbListing.Should().BeTrue();
     }

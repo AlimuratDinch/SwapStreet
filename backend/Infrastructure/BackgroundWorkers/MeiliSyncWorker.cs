@@ -19,12 +19,12 @@ public class MeiliSyncWorker : BackgroundService
     private readonly string _groupId;
 
     public MeiliSyncWorker(
-        ITopicManager topicManager, 
+        ITopicManager topicManager,
         TopicSignal signal,
-        OffsetManager offsetManager, 
+        OffsetManager offsetManager,
         ILogger<MeiliSyncWorker> logger,
         MeilisearchClient client,
-        string topicName = "listings", 
+        string topicName = "listings",
         string groupId = "meilisearch-sync")
     {
         _topicManager = topicManager;
@@ -36,54 +36,54 @@ public class MeiliSyncWorker : BackgroundService
         _groupId = groupId;
     }
 
-protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-{
-    _logger.LogInformation("Starting {WorkerName} for topic: {Topic}", nameof(MeiliSyncWorker), _topicName);
-
-    // If OffsetManager returns -1 for "never processed", this starts us at 0.
-    long currentOffset = _offsetManager.GetOffset(_groupId, _topicName, 0);
-
-    while (!stoppingToken.IsCancellationRequested)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        try 
+        _logger.LogInformation("Starting {WorkerName} for topic: {Topic}", nameof(MeiliSyncWorker), _topicName);
+
+        // If OffsetManager returns -1 for "never processed", this starts us at 0.
+        long currentOffset = _offsetManager.GetOffset(_groupId, _topicName, 0);
+
+        while (!stoppingToken.IsCancellationRequested)
         {
-            var partition = _topicManager.GetTopic(_topicName, 0);
-            if (partition == null)
+            try
             {
-                await Task.Delay(2000, stoppingToken);
-                continue;
+                var partition = _topicManager.GetTopic(_topicName, 0);
+                if (partition == null)
+                {
+                    await Task.Delay(2000, stoppingToken);
+                    continue;
+                }
+
+                // 1. Try to read the CURRENT offset we are looking for
+                // If we just started, currentOffset might be 0.
+                var data = await partition.ReadAsync(currentOffset);
+
+                if (data != null)
+                {
+                    await ProcessMeiliIndex(data, stoppingToken);
+
+                    // 2. Commit the fact that we FINISHED this offset
+                    await _offsetManager.CommitOffset(_groupId, _topicName, 0, currentOffset);
+
+                    // 3. Increment to look for the next one in the next iteration
+                    currentOffset++;
+                }
             }
-
-            // 1. Try to read the CURRENT offset we are looking for
-            // If we just started, currentOffset might be 0.
-            var data = await partition.ReadAsync(currentOffset);
-
-            if (data != null)
+            catch (IndexOutOfRangeException)
             {
-                await ProcessMeiliIndex(data, stoppingToken);
+                // This means we've hit the end of the log
+                _logger.LogDebug("Caught up at offset {Offset}. Waiting for signal...", currentOffset);
 
-                // 2. Commit the fact that we FINISHED this offset
-                await _offsetManager.CommitOffset(_groupId, _topicName, 0, currentOffset);
-                
-                // 3. Increment to look for the next one in the next iteration
-                currentOffset++;
+                // Wait for the Doorbell
+                await _signal.WaitAsync(_topicName, stoppingToken);
             }
-        }
-        catch (IndexOutOfRangeException) 
-        {
-            // This means we've hit the end of the log
-            _logger.LogDebug("Caught up at offset {Offset}. Waiting for signal...", currentOffset);
-            
-            // Wait for the Doorbell
-            await _signal.WaitAsync(_topicName, stoppingToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Meilisearch sync failed at offset {Offset}", currentOffset);
-            await Task.Delay(5000, stoppingToken); 
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Meilisearch sync failed at offset {Offset}", currentOffset);
+                await Task.Delay(5000, stoppingToken);
+            }
         }
     }
-}
 
     private async Task ProcessMeiliIndex(byte[] data, CancellationToken ct)
     {
@@ -100,7 +100,7 @@ protected override async Task ExecuteAsync(CancellationToken stoppingToken)
                     // Meilisearch 'AddDocuments' acts as an Upsert
                     await HandleMeiliCreate(taskData, ct);
                     break;
-                    
+
                 case ListingAction.Delete:
                     await HandleMeiliDelete(taskData, ct);
                     break;
@@ -108,30 +108,30 @@ protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         }
     }
 
-private async Task HandleMeiliCreate(ListingTaskData taskData, CancellationToken ct)
-{
-    if (taskData.SearchData == null)
+    private async Task HandleMeiliCreate(ListingTaskData taskData, CancellationToken ct)
     {
-        _logger.LogWarning("ListingTaskData {TaskId} has no SearchData. Skipping.", taskData.TaskId);
-        return;
+        if (taskData.SearchData == null)
+        {
+            _logger.LogWarning("ListingTaskData {TaskId} has no SearchData. Skipping.", taskData.TaskId);
+            return;
+        }
+
+        _logger.LogInformation("Processing Meilisearch sync (CREATE/UPDATE) for Listing {ListingId}", taskData.ListingId);
+
+        var index = _meiliClient.Index("listings");
+
+        // Meilisearch AddDocuments handles both creation and updates (upsert)
+        // We wrap it in an array because the API expects a collection
+        await index.AddDocumentsAsync(new[] { taskData.SearchData }, cancellationToken: ct);
     }
 
-    _logger.LogInformation("Processing Meilisearch sync (CREATE/UPDATE) for Listing {ListingId}", taskData.ListingId);
+    private async Task HandleMeiliDelete(ListingTaskData taskData, CancellationToken ct)
+    {
+        _logger.LogInformation("Processing Meilisearch DELETE for Listing {ListingId}", taskData.ListingId);
 
-    var index = _meiliClient.Index("listings");
+        var index = _meiliClient.Index("listings");
 
-    // Meilisearch AddDocuments handles both creation and updates (upsert)
-    // We wrap it in an array because the API expects a collection
-    await index.AddDocumentsAsync(new[] { taskData.SearchData }, cancellationToken: ct);
-}
-
-private async Task HandleMeiliDelete(ListingTaskData taskData, CancellationToken ct)
-{
-    _logger.LogInformation("Processing Meilisearch DELETE for Listing {ListingId}", taskData.ListingId);
-
-    var index = _meiliClient.Index("listings");
-
-    // We use the ListingId as the document identifier to remove it from the index
-    await index.DeleteDocumentsAsync(new[] { taskData.ListingId.ToString() }, cancellationToken: ct);
-}
+        // We use the ListingId as the document identifier to remove it from the index
+        await index.DeleteDocumentsAsync(new[] { taskData.ListingId.ToString() }, cancellationToken: ct);
+    }
 }

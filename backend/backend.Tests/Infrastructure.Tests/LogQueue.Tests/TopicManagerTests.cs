@@ -41,7 +41,7 @@ public class TopicManagerTests : IDisposable
 
         // Assert: Verify Folder Structure
         Directory.Exists(Path.Combine(_testPath, topicName)).Should().BeTrue();
-        
+
         // Verify GetSignalReader works (proves AddTopic was called in Signal)
         var reader = sut.GetSignalReader(topicName);
         reader.Should().NotBeNull();
@@ -54,7 +54,7 @@ public class TopicManagerTests : IDisposable
         var sut = await TopicManager.InitializeAsync(_testPath, _testSignal, _mockLoggerFactory.Object);
         string topicName = "reactive-topic";
         await sut.CreateTopic(topicName, 1, true, 1024, TimeSpan.FromMinutes(5));
-        
+
         var partition = sut.GetTopic(topicName, 0);
         var reader = sut.GetSignalReader(topicName);
         var data = Encoding.UTF8.GetBytes("Test Pulse");
@@ -74,14 +74,14 @@ public class TopicManagerTests : IDisposable
         // Arrange: Create data and close manager
         var firstManager = await TopicManager.InitializeAsync(_testPath, _testSignal, _mockLoggerFactory.Object);
         await firstManager.CreateTopic("persistent", 1, true, 500, TimeSpan.FromHours(1));
-        
+
         // Act: Start second manager (simulating app restart)
         var secondSignal = new TopicSignal();
         var secondManager = await TopicManager.InitializeAsync(_testPath, secondSignal, _mockLoggerFactory.Object);
-        
+
         var partition = secondManager.GetTopic("persistent", 0);
         var reader = secondManager.GetSignalReader("persistent");
-        
+
         await partition.AppendAsync(Encoding.UTF8.GetBytes("Data after restart"));
 
         // Assert: Verify event wiring was restored

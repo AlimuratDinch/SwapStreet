@@ -24,15 +24,15 @@ public class Partition : IDisposable, IPartition
 
     private readonly ILogger<Partition> _logger;
 
-    public long CurrentOffset => _activeBaseOffset + (IndexLength / 8 );
+    public long CurrentOffset => _activeBaseOffset + (IndexLength / 8);
 
     public event Action<string>? OnDataAppended;
     private readonly string _topicName;
 
 
-    public Partition(int id,string topicName,string directoryPath, bool autoFlush, ILogger<Partition> logger, TimeSpan timeSpan,int maxFileSize = 1024)
+    public Partition(int id, string topicName, string directoryPath, bool autoFlush, ILogger<Partition> logger, TimeSpan timeSpan, int maxFileSize = 1024)
     {
-         Id = id;
+        Id = id;
 
         _logger = logger;
 
@@ -307,7 +307,7 @@ public class Partition : IDisposable, IPartition
 
 
 
-    public async Task<(List<byte[]> Messages, long NextOffset)> ReadBatchAsync(long offset,int maxCount)
+    public async Task<(List<byte[]> Messages, long NextOffset)> ReadBatchAsync(long offset, int maxCount)
     {
         // Finds .log file closest to index ( smaller than )
         var validKeys = _offsets.Keys.Where(k => k <= offset);
@@ -399,14 +399,16 @@ public class Partition : IDisposable, IPartition
                         // Read Length
                         byte[] lengthBuffer = new byte[4];
 
-                        try{
+                        try
+                        {
 
-                         await tempLog.ReadExactlyAsync(lengthBuffer);
+                            await tempLog.ReadExactlyAsync(lengthBuffer);
 
-                        } catch (EndOfStreamException) 
+                        }
+                        catch (EndOfStreamException)
                         {
                             _logger.LogWarning("[BatchReadAsync] EndOfStreamException - Returning partial result.");
-                            
+
                             // Stop everything and return what we have
                             return (readResults, offset + readResults.Count);
                         }
@@ -460,77 +462,77 @@ public class Partition : IDisposable, IPartition
         }
     }
 
-private void RecoverIndex()
-{
-    _logger.LogWarning("Starting Index Recovery on segment {BaseOffset}", _activeBaseOffset);
-
-    if (_indexStream.Length == 0)
-        return;
-
-    // 1. Get the last index entry
-    _indexStream.Seek(-8, SeekOrigin.End);
-    byte[] buffer = new byte[8];
-    _indexStream.ReadExactly(buffer); // Safer than Read
-    long lastMessageStart = BitConverter.ToInt64(buffer, 0);
-
-    // 2. We need to find where that last message ENDS to know if the log is healthy
-    _fileStream.Seek(lastMessageStart, SeekOrigin.Begin);
-    byte[] lenBuffer = new byte[4];
-    if (_fileStream.Read(lenBuffer, 0, 4) == 4)
+    private void RecoverIndex()
     {
-        int lastMessageLen = BitConverter.ToInt32(lenBuffer, 0);
-        long expectedLogLength = lastMessageStart + 4 + lastMessageLen;
+        _logger.LogWarning("Starting Index Recovery on segment {BaseOffset}", _activeBaseOffset);
 
-        // 3. Only truncate if the log is actually corrupted/longer than the index
-        if (_fileStream.Length > expectedLogLength)
+        if (_indexStream.Length == 0)
+            return;
+
+        // 1. Get the last index entry
+        _indexStream.Seek(-8, SeekOrigin.End);
+        byte[] buffer = new byte[8];
+        _indexStream.ReadExactly(buffer); // Safer than Read
+        long lastMessageStart = BitConverter.ToInt64(buffer, 0);
+
+        // 2. We need to find where that last message ENDS to know if the log is healthy
+        _fileStream.Seek(lastMessageStart, SeekOrigin.Begin);
+        byte[] lenBuffer = new byte[4];
+        if (_fileStream.Read(lenBuffer, 0, 4) == 4)
         {
-            _logger.LogWarning("[Recovery] Truncating corrupted log tail from {Old} to {New}", _fileStream.Length, expectedLogLength);
-            _fileStream.SetLength(expectedLogLength);
+            int lastMessageLen = BitConverter.ToInt32(lenBuffer, 0);
+            long expectedLogLength = lastMessageStart + 4 + lastMessageLen;
+
+            // 3. Only truncate if the log is actually corrupted/longer than the index
+            if (_fileStream.Length > expectedLogLength)
+            {
+                _logger.LogWarning("[Recovery] Truncating corrupted log tail from {Old} to {New}", _fileStream.Length, expectedLogLength);
+                _fileStream.SetLength(expectedLogLength);
+            }
         }
+
+        // 4. Always ensure the writer is at the very end
+        _fileStream.Position = _fileStream.Length;
+        _indexStream.Position = _indexStream.Length;
     }
 
-    // 4. Always ensure the writer is at the very end
-    _fileStream.Position = _fileStream.Length;
-    _indexStream.Position = _indexStream.Length;
-}
-
-        public async Task TruncateFromIndexAsync(long index)
-        {
-            if (index < 0)
-                throw new ArgumentOutOfRangeException(nameof(index));
+    public async Task TruncateFromIndexAsync(long index)
+    {
+        if (index < 0)
+            throw new ArgumentOutOfRangeException(nameof(index));
 
 
-            long indexFileLength = _indexStream.Length;
-            long totalEntries = indexFileLength / 8;
+        long indexFileLength = _indexStream.Length;
+        long totalEntries = indexFileLength / 8;
 
-            // Nothing to truncate
-            if (index >= totalEntries)
-                return;
+        // Nothing to truncate
+        if (index >= totalEntries)
+            return;
 
-            // 1. Read the log byte offset from the index file
-            long indexEntryOffset = index * 8;
+        // 1. Read the log byte offset from the index file
+        long indexEntryOffset = index * 8;
 
-            byte[] buffer = new byte[8];
+        byte[] buffer = new byte[8];
 
-            _indexStream.Seek(indexEntryOffset, SeekOrigin.Begin);
-            int read = await _indexStream.ReadAsync(buffer, 0, buffer.Length);
+        _indexStream.Seek(indexEntryOffset, SeekOrigin.Begin);
+        int read = await _indexStream.ReadAsync(buffer, 0, buffer.Length);
 
-            if (read != 8)
-                throw new IOException("Failed to read index entry");
+        if (read != 8)
+            throw new IOException("Failed to read index entry");
 
-            long logByteOffset = BitConverter.ToInt64(buffer, 0);
+        long logByteOffset = BitConverter.ToInt64(buffer, 0);
 
-            // 2. Truncate the log file
-            if (logByteOffset < 0 || logByteOffset > _fileStream.Length)
-                throw new InvalidDataException("Corrupted index entry");
+        // 2. Truncate the log file
+        if (logByteOffset < 0 || logByteOffset > _fileStream.Length)
+            throw new InvalidDataException("Corrupted index entry");
 
-            _fileStream.SetLength(logByteOffset);
-            await _fileStream.FlushAsync();
+        _fileStream.SetLength(logByteOffset);
+        await _fileStream.FlushAsync();
 
-            // 3. Truncate the index file
-            _indexStream.SetLength(indexEntryOffset);
-            await _indexStream.FlushAsync();
-        }
+        // 3. Truncate the index file
+        _indexStream.SetLength(indexEntryOffset);
+        await _indexStream.FlushAsync();
+    }
 
 
 

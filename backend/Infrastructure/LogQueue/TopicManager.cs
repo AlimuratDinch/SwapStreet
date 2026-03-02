@@ -20,13 +20,13 @@ public class TopicManager : ITopicManager, IDisposable
 
     private readonly ILoggerFactory _loggerFactory;
 
-    private Dictionary<string,TopicState> _topicStates;
+    private Dictionary<string, TopicState> _topicStates;
 
     private int _defaultPartitions = 1;
 
     private readonly TopicSignal _signal;
 
-    private TopicManager(string basePath,TopicSignal signal, ILoggerFactory loggerFactory, int defaultPartitions)
+    private TopicManager(string basePath, TopicSignal signal, ILoggerFactory loggerFactory, int defaultPartitions)
     {
         _basePath = basePath;
         _signal = signal;
@@ -38,18 +38,18 @@ public class TopicManager : ITopicManager, IDisposable
     }
 
 
-    public static async Task<TopicManager> InitializeAsync(string basePath,TopicSignal signal, ILoggerFactory loggerFactory, int defaultPartitions = 1)
+    public static async Task<TopicManager> InitializeAsync(string basePath, TopicSignal signal, ILoggerFactory loggerFactory, int defaultPartitions = 1)
     {
 
-        TopicManager topicManager = new TopicManager(basePath,signal,loggerFactory,defaultPartitions);
+        TopicManager topicManager = new TopicManager(basePath, signal, loggerFactory, defaultPartitions);
 
         await topicManager.LoadTopics();
 
         return topicManager;
-        
+
     }
 
-    public async Task CreateTopic(string topic, int partitionCount,bool autoFlush,int maxFileSize, TimeSpan timeSpan)
+    public async Task CreateTopic(string topic, int partitionCount, bool autoFlush, int maxFileSize, TimeSpan timeSpan)
     {
         // 1. Safety Check: Don't overwrite existing topics
         if (_topics.ContainsKey(topic) || Directory.Exists(Path.Combine(_basePath, topic)))
@@ -65,19 +65,19 @@ public class TopicManager : ITopicManager, IDisposable
         List<IPartition> newPartitions = new List<IPartition>();
 
         TopicData tpd = new TopicData
-            {
-                TopicName = topic,
-                AutoFlush = autoFlush,
-                MaxFileSize = maxFileSize,
-                TimeSpan = timeSpan
-            };
+        {
+            TopicName = topic,
+            AutoFlush = autoFlush,
+            MaxFileSize = maxFileSize,
+            TimeSpan = timeSpan
+        };
 
         // 3. Create the specific number of partitions requested, save the state
         for (int i = 0; i < partitionCount; i++)
         {
             string newFolder = Path.Combine(_basePath, topic, $"{topic}-{i}");
 
-            Partition newPartition = new Partition(i,topic,newFolder,autoFlush, partitionLogger, timeSpan, maxFileSize);
+            Partition newPartition = new Partition(i, topic, newFolder, autoFlush, partitionLogger, timeSpan, maxFileSize);
             newPartitions.Add(newPartition);
 
             // Add pulse to notify workers when new logs are appended
@@ -92,9 +92,9 @@ public class TopicManager : ITopicManager, IDisposable
 
         }
 
-        string newPath = Path.Combine(_basePath,topic);
+        string newPath = Path.Combine(_basePath, topic);
 
-        TopicState ts = await TopicState.CreateAsync(newPath,tpd);
+        TopicState ts = await TopicState.CreateAsync(newPath, tpd);
 
         // 4. Register it in memory
         _topicStates[topic] = ts;
@@ -105,81 +105,81 @@ public class TopicManager : ITopicManager, IDisposable
         Console.WriteLine($"Created topic '{topic}' with {partitionCount} partitions.");
     }
 
-public IPartition? GetTopic(string topic, int index = 0)
-{
-    if (!_topics.TryGetValue(topic, out var partitions))
+    public IPartition? GetTopic(string topic, int index = 0)
     {
-        return null;
-    }
-    
-    if (index < 0 || index >= partitions.Count)
-    {
-        return null;
-    }
-
-    return partitions[index];
-}
-
-
-
-private async Task LoadTopics()
-{
-    if (!Directory.Exists(_basePath)) Directory.CreateDirectory(_basePath);
-
-    // Initialize the dictionary once at the start
-    _topics ??= new Dictionary<string, List<IPartition>>();
-
-    string[] drs = Directory.GetDirectories(_basePath);
-    
-    foreach (var dr in drs)
-    {
-        string topic = Path.GetFileName(dr);
-        string topicPath = Path.Combine(_basePath, topic);
-        string statePath = Path.Combine(topicPath, "state.json");
-
-        // FIX 1: Don't RETURN. Just skip this specific directory if it's not a valid topic.
-        if (!File.Exists(statePath))
+        if (!_topics.TryGetValue(topic, out var partitions))
         {
-            continue; 
+            return null;
         }
 
-        try 
+        if (index < 0 || index >= partitions.Count)
         {
-            TopicState ts = await TopicState.LoadAsync(topicPath);
-            if (ts is null) continue;
+            return null;
+        }
 
-            List<IPartition> newPartitions = new List<IPartition>();
-            _topicStates[topic] = ts;
+        return partitions[index];
+    }
 
-            foreach (var pmtda in ts.TopicData.PartitionMetadata)
+
+
+    private async Task LoadTopics()
+    {
+        if (!Directory.Exists(_basePath)) Directory.CreateDirectory(_basePath);
+
+        // Initialize the dictionary once at the start
+        _topics ??= new Dictionary<string, List<IPartition>>();
+
+        string[] drs = Directory.GetDirectories(_basePath);
+
+        foreach (var dr in drs)
+        {
+            string topic = Path.GetFileName(dr);
+            string topicPath = Path.Combine(_basePath, topic);
+            string statePath = Path.Combine(topicPath, "state.json");
+
+            // FIX 1: Don't RETURN. Just skip this specific directory if it's not a valid topic.
+            if (!File.Exists(statePath))
             {
-                ILogger<Partition> partitionLogger = _loggerFactory.CreateLogger<Partition>();
-
-                int partitionId = pmtda.PartitionId;
-                bool autoFlush = ts.TopicData.AutoFlush;
-                TimeSpan timeSpan = ts.TopicData.TimeSpan;
-                int maxFileSize = ts.TopicData.MaxFileSize;
-
-                string partitionPath = Path.Combine(topicPath, $"{topic}-{partitionId}");
-
-                Partition newPartition = new Partition(partitionId, topic, partitionPath, autoFlush, partitionLogger, timeSpan, maxFileSize);
-                newPartitions.Add(newPartition);
-
-                // Wire up the signal pulse
-                newPartition.OnDataAppended += (t) => _signal.Pulse(t);
+                continue;
             }
 
-            _topics[topic] = newPartitions;
-            _signal.AddTopic(topic); // Register with signal manager
-        }
-        catch (Exception ex)
-        {
+            try
+            {
+                TopicState ts = await TopicState.LoadAsync(topicPath);
+                if (ts is null) continue;
+
+                List<IPartition> newPartitions = new List<IPartition>();
+                _topicStates[topic] = ts;
+
+                foreach (var pmtda in ts.TopicData.PartitionMetadata)
+                {
+                    ILogger<Partition> partitionLogger = _loggerFactory.CreateLogger<Partition>();
+
+                    int partitionId = pmtda.PartitionId;
+                    bool autoFlush = ts.TopicData.AutoFlush;
+                    TimeSpan timeSpan = ts.TopicData.TimeSpan;
+                    int maxFileSize = ts.TopicData.MaxFileSize;
+
+                    string partitionPath = Path.Combine(topicPath, $"{topic}-{partitionId}");
+
+                    Partition newPartition = new Partition(partitionId, topic, partitionPath, autoFlush, partitionLogger, timeSpan, maxFileSize);
+                    newPartitions.Add(newPartition);
+
+                    // Wire up the signal pulse
+                    newPartition.OnDataAppended += (t) => _signal.Pulse(t);
+                }
+
+                _topics[topic] = newPartitions;
+                _signal.AddTopic(topic); // Register with signal manager
+            }
+            catch (Exception ex)
+            {
+            }
         }
     }
-}
 
 
-        // The Worker calls this once in its constructor or ExecuteAsync
+    // The Worker calls this once in its constructor or ExecuteAsync
     public ChannelReader<bool> GetSignalReader(string topicName)
     {
         // This asks the TopicSignal to find or create the pipe 
@@ -187,7 +187,7 @@ private async Task LoadTopics()
         return _signal.GetReader(topicName);
     }
 
-        public void Dispose()
+    public void Dispose()
     {
         _loggerFactory.CreateLogger<TopicManager>().LogInformation("TopicManager shutting down. Closing all partitions...");
 
@@ -201,7 +201,7 @@ private async Task LoadTopics()
         }
     }
 
-    }
+}
 
 
 
