@@ -105,22 +105,20 @@ public class TopicManager : ITopicManager, IDisposable
         Console.WriteLine($"Created topic '{topic}' with {partitionCount} partitions.");
     }
 
-    public IPartition GetTopic(string topic, int index = -1)
+public IPartition? GetTopic(string topic, int index = 0)
+{
+    if (!_topics.TryGetValue(topic, out var partitions))
     {
-        // Ensure valid param
-        if (string.IsNullOrEmpty(topic)) return null;
-
-        // If topic exists return logSegment right away based on provided index if any
-        if (_topics.TryGetValue(topic, out var partitions))
-        {
-
-            if (index <= partitions.Count - 1)
-            
-                return partitions[index];
-        }
-
         return null;
     }
+    
+    if (index < 0 || index >= partitions.Count)
+    {
+        return null;
+    }
+
+    return partitions[index];
+}
 
 
 

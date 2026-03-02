@@ -10,7 +10,7 @@ public class Partition : IDisposable, IPartition
     private readonly ILoggerFactory _loggerFactory;
     private FileStream _fileStream;
     private FileStream _indexStream;
-    private readonly int _maxFileSize;
+    private readonly int _maxFileSize; // In Bytes
 
     private readonly System.TimeSpan _retentionMaxAge = TimeSpan.FromMinutes(5);
     private readonly bool _autoFlush = false; //debug mode

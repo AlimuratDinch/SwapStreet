@@ -36,46 +36,54 @@ public class MeiliSyncWorker : BackgroundService
         _groupId = groupId;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+{
+    _logger.LogInformation("Starting {WorkerName} for topic: {Topic}", nameof(MeiliSyncWorker), _topicName);
+
+    // If OffsetManager returns -1 for "never processed", this starts us at 0.
+    long currentOffset = _offsetManager.GetOffset(_groupId, _topicName, 0);
+
+    while (!stoppingToken.IsCancellationRequested)
     {
-        _logger.LogInformation("Starting {WorkerName} for topic: {Topic}", nameof(MeiliSyncWorker), _topicName);
-
-        long lastOffset = _offsetManager.GetOffset(_groupId, _topicName, 0);
-
-        while (!stoppingToken.IsCancellationRequested)
+        try 
         {
-            try 
+            var partition = _topicManager.GetTopic(_topicName, 0);
+            if (partition == null)
             {
-                var partition = _topicManager.GetTopic(_topicName, 0);
-                if (partition == null)
-                {
-                    await Task.Delay(5000, stoppingToken);
-                    continue;
-                }
-
-                // Try to read the NEXT message
-                var data = await partition.ReadAsync(lastOffset + 1);
-
-                await ProcessMeiliIndex(data,stoppingToken);
-
-                lastOffset++;
-                await _offsetManager.CommitOffset(_groupId, _topicName, 0, lastOffset);
+                await Task.Delay(2000, stoppingToken);
+                continue;
             }
-            catch (IndexOutOfRangeException) 
+
+            // 1. Try to read the CURRENT offset we are looking for
+            // If we just started, currentOffset might be 0.
+            var data = await partition.ReadAsync(currentOffset);
+
+            if (data != null)
             {
-                // WAKE UP ONLY ON SIGNAL
-                _logger.LogDebug("Caught up. Sleeping until signaled on {Topic}...", _topicName);
+                await ProcessMeiliIndex(data, stoppingToken);
+
+                // 2. Commit the fact that we FINISHED this offset
+                await _offsetManager.CommitOffset(_groupId, _topicName, 0, currentOffset);
                 
-                // Directly await the separate signal service
-                await _signal.WaitAsync(_topicName, stoppingToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Meilisearch sync failed at offset {Offset}", lastOffset);
-                await Task.Delay(5000, stoppingToken); 
+                // 3. Increment to look for the next one in the next iteration
+                currentOffset++;
             }
         }
+        catch (IndexOutOfRangeException) 
+        {
+            // This means we've hit the end of the log
+            _logger.LogDebug("Caught up at offset {Offset}. Waiting for signal...", currentOffset);
+            
+            // Wait for the Doorbell
+            await _signal.WaitAsync(_topicName, stoppingToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Meilisearch sync failed at offset {Offset}", currentOffset);
+            await Task.Delay(5000, stoppingToken); 
+        }
     }
+}
 
     private async Task ProcessMeiliIndex(byte[] data, CancellationToken ct)
     {

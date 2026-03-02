@@ -218,10 +218,9 @@ builder.Services.AddSingleton<ITopicManager>(sp =>
     // FORCE THE CREATION: If it doesn't exist, make it.
     if (manager.GetTopic("listings") == null)
     {
+        int maxFileSize = 64 * 1024 * 1024; // 64MB in bytes
         // This is what physically creates /listings/state.json and /listings/listings-0/
-        manager.CreateTopic("listings", 1, true,1024,TimeSpan.FromMinutes(20)).GetAwaiter().GetResult();
-
-        
+        manager.CreateTopic("listings", 1, true,maxFileSize,TimeSpan.FromMinutes(20)).GetAwaiter().GetResult();
     }
 
     return manager;
