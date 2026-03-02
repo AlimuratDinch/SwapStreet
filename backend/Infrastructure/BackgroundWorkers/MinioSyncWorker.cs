@@ -6,7 +6,7 @@ namespace backend.Infrastructure;
 
 public class MinioSyncWorker : BackgroundService
 {
-    private readonly TopicManager _topicManager;
+    private readonly ITopicManager _topicManager;
     private readonly OffsetManager _offsetManager;
     private readonly ILogger<MinioSyncWorker> _logger;
     
@@ -15,7 +15,7 @@ public class MinioSyncWorker : BackgroundService
     private readonly string _groupId;
 
     public MinioSyncWorker(
-        TopicManager topicManager, 
+        ITopicManager topicManager, 
         OffsetManager offsetManager, 
         ILogger<MinioSyncWorker> logger,
         string topicName = "listings", // Default to listings for SwapStreet

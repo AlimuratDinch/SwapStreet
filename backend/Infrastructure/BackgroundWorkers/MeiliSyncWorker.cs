@@ -1,29 +1,37 @@
+using System.Text.Json;
 using backend.Infrastructure.LogQueue;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using RestSharp.Portable.Deserializers;
+using Meilisearch;
 
 namespace backend.Infrastructure;
 
 public class MeiliSyncWorker : BackgroundService
 {
-    private readonly TopicManager _topicManager;
+    private readonly ITopicManager _topicManager;
+    private readonly TopicSignal _signal; // Separated service
     private readonly OffsetManager _offsetManager;
     private readonly ILogger<MeiliSyncWorker> _logger;
-    
-    // Configurable fields to remove hardcoding
+
+    private readonly MeilisearchClient _meiliClient;
     private readonly string _topicName;
     private readonly string _groupId;
 
     public MeiliSyncWorker(
-        TopicManager topicManager, 
+        ITopicManager topicManager, 
+        TopicSignal signal,
         OffsetManager offsetManager, 
         ILogger<MeiliSyncWorker> logger,
+        MeilisearchClient client,
         string topicName = "listings", 
         string groupId = "meilisearch-sync")
     {
         _topicManager = topicManager;
+        _signal = signal;
         _offsetManager = offsetManager;
         _logger = logger;
+        _meiliClient = client;
         _topicName = topicName;
         _groupId = groupId;
     }
@@ -32,49 +40,90 @@ public class MeiliSyncWorker : BackgroundService
     {
         _logger.LogInformation("Starting {WorkerName} for topic: {Topic}", nameof(MeiliSyncWorker), _topicName);
 
-        // 1. Get the current bookmark for this specific group/topic
         long lastOffset = _offsetManager.GetOffset(_groupId, _topicName, 0);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try 
             {
-                // 2. Locate the partition
                 var partition = _topicManager.GetTopic(_topicName, 0);
                 if (partition == null)
                 {
-                    _logger.LogWarning("Topic {Topic} not found. Waiting for initialization...", _topicName);
                     await Task.Delay(5000, stoppingToken);
                     continue;
                 }
 
-                // 3. Try to read the NEXT message
+                // Try to read the NEXT message
                 var data = await partition.ReadAsync(lastOffset + 1);
 
-                // 4. Logic: Send to Meilisearch
-                await ProcessMeiliIndex(data);
+                await ProcessMeiliIndex(data,stoppingToken);
 
-                // 5. Success! Commit the offset
                 lastOffset++;
                 await _offsetManager.CommitOffset(_groupId, _topicName, 0, lastOffset);
             }
             catch (IndexOutOfRangeException) 
             {
-                // Caught up with the log. Polling interval.
-                await Task.Delay(1000, stoppingToken);
+                // WAKE UP ONLY ON SIGNAL
+                _logger.LogDebug("Caught up. Sleeping until signaled on {Topic}...", _topicName);
+                
+                // Directly await the separate signal service
+                await _signal.WaitAsync(_topicName, stoppingToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Meilisearch sync failed at offset {Offset}", lastOffset);
-                await Task.Delay(5000, stoppingToken); // Exponential backoff/retry delay
+                await Task.Delay(5000, stoppingToken); 
             }
         }
     }
 
-    private async Task ProcessMeiliIndex(byte[] data)
+    private async Task ProcessMeiliIndex(byte[] data, CancellationToken ct)
     {
-        // TODO: Deserialize 'data' to Listing object
-        // TODO: Push to Meilisearch index (e.g., listings_index)
-        await Task.CompletedTask;
+        // Adding options to handle Case Insensitivity just in case
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var taskData = JsonSerializer.Deserialize<ListingTaskData>(data, options);
+
+        if (taskData != null)
+        {
+            switch (taskData.Action)
+            {
+                case ListingAction.Create:
+                case ListingAction.Update:
+                    // Meilisearch 'AddDocuments' acts as an Upsert
+                    await HandleMeiliCreate(taskData, ct);
+                    break;
+                    
+                case ListingAction.Delete:
+                    await HandleMeiliDelete(taskData, ct);
+                    break;
+            }
+        }
     }
+
+private async Task HandleMeiliCreate(ListingTaskData taskData, CancellationToken ct)
+{
+    if (taskData.SearchData == null)
+    {
+        _logger.LogWarning("ListingTaskData {TaskId} has no SearchData. Skipping.", taskData.TaskId);
+        return;
+    }
+
+    _logger.LogInformation("Processing Meilisearch sync (CREATE/UPDATE) for Listing {ListingId}", taskData.ListingId);
+
+    var index = _meiliClient.Index("listings");
+
+    // Meilisearch AddDocuments handles both creation and updates (upsert)
+    // We wrap it in an array because the API expects a collection
+    await index.AddDocumentsAsync(new[] { taskData.SearchData }, cancellationToken: ct);
+}
+
+private async Task HandleMeiliDelete(ListingTaskData taskData, CancellationToken ct)
+{
+    _logger.LogInformation("Processing Meilisearch DELETE for Listing {ListingId}", taskData.ListingId);
+
+    var index = _meiliClient.Index("listings");
+
+    // We use the ListingId as the document identifier to remove it from the index
+    await index.DeleteDocumentsAsync(new[] { taskData.ListingId.ToString() }, cancellationToken: ct);
+}
 }

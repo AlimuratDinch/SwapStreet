@@ -17,13 +17,13 @@ public class ListingTaskData
     public ListingAction Action { get; set; }
     
     // The actual Listing data (Title, Description, Price, etc.)
-    public CreateListingRequestDto? Data { get; set; }
+    public ListingSearchDto? SearchData { get; set; }
     
-    // Crucial for MinIO Worker: Where the file is sitting right now
-    public string? TempImagePath { get; set; }
+    // For MinIO Worker: Where the file is sitting right now, will be done later
+    public string[]? TempImagePaths { get; set; }
     
-    // Crucial for Meilisearch: The ID of the listing in the DB
-    public int ListingId { get; set; }
+    // For Meilisearch: The ID of the listing in the DB
+    public Guid ListingId { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

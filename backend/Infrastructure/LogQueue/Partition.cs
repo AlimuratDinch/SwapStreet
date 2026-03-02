@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace backend.Infrastructure.LogQueue;
 
-public class Partition : IDisposable
+public class Partition : IDisposable, IPartition
 {
-    public int Id;
+    public int Id { get; }
     private readonly string _directoryPath;
     private readonly ILoggerFactory _loggerFactory;
     private FileStream _fileStream;
@@ -26,8 +26,11 @@ public class Partition : IDisposable
 
     public long CurrentOffset => _activeBaseOffset + (IndexLength / 8 );
 
+    public event Action<string>? OnDataAppended;
+    private readonly string _topicName;
 
-    public Partition(int id,string directoryPath, bool autoFlush, ILogger<Partition> logger, TimeSpan timeSpan,int maxFileSize = 1024)
+
+    public Partition(int id,string topicName,string directoryPath, bool autoFlush, ILogger<Partition> logger, TimeSpan timeSpan,int maxFileSize = 1024)
     {
          Id = id;
 
@@ -42,6 +45,8 @@ public class Partition : IDisposable
         _offsets = new SortedDictionary<long, string>();
 
         _maxFileSize = maxFileSize;
+
+        _topicName = topicName;
 
         // Ensure folder exists
         if (!Directory.Exists(_directoryPath))
@@ -145,6 +150,9 @@ public class Partition : IDisposable
             PruneOldSegments(_retentionMaxAge);
         }
 
+        // Ring Bell
+        OnDataAppended?.Invoke(_topicName);
+
         // 5. Return the ID of the message we just wrote
         return currentLogicalId;
     }
@@ -230,6 +238,9 @@ public class Partition : IDisposable
             await _fileStream.FlushAsync();
             await _indexStream.FlushAsync();
         }
+
+        // Ring Bell
+        OnDataAppended?.Invoke(_topicName);
 
         // 5. Return the ID of the last message we wrote
         return lastLogicalId;
