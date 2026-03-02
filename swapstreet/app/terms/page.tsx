@@ -1,41 +1,12 @@
-"use client";
-
-import Link from "next/link";
+import LegalPageLayout from "@/components/legal/LegalPageLayout";
 
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header & Logo */}
-      <header className="fixed top-0 w-full bg-white border-b border-gray-100 px-6 py-4 z-50">
-        <Link
-          href="/"
-          className="inline-block text-2xl font-bold hover:opacity-80 transition-opacity cursor-pointer"
-        >
-          <span className="text-teal-600">SWAP</span>
-          <span className="text-gray-900">STREET</span>
-        </Link>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-6 py-12 pt-24">
-        {/* Title */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Terms of Service
-          </h1>
-          <p className="text-gray-600 mb-8">Last Updated: Feb 27, 2026</p>
-
-          {/* Image */}
-          <div className="flex justify-center mb-8">
-            <img
-              src="/images/terms.svg"
-              alt="Terms of Service"
-              className="w-60 h-60 object-contain"
-            />
-          </div>
-        </div>
-
-        {/* Sections */}
-        <div className="prose prose-lg max-w-none text-justify">
+    <LegalPageLayout
+      title="Terms of Service"
+      lastUpdated="Feb 27, 2026"
+      image={{ src: "/images/terms.svg", alt: "Terms of Service" }}
+    >
           {/* Intro */}
           <div className="mb-8">
             <p className="text-gray-700 leading-relaxed mb-4">
@@ -278,13 +249,6 @@ export default function TermsOfService() {
               expansions, or policy clarifications.
             </p>
           </section>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="py-12 text-center text-muted-foreground mt-8 pt-8 border-t border-border">
-        © 2025 SWAPSTREET. Made with ❤.
-      </footer>
-    </div>
+    </LegalPageLayout>
   );
 }
