@@ -1,7 +1,19 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Filter, DollarSign, MapPin, Search } from "lucide-react";
+import {
+  Sidebar as ShadcnSidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { SearchBar } from "./SearchBar";
 import { LocationFilterModal } from "./LocationFilterModal";
 import { Portal } from "./Portal";
@@ -12,10 +24,11 @@ interface LocationResult {
   radiusKm: number;
 }
 
-export function Sidebar() {
+export function BrowseSidebar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isInitialized = useRef(false);
+  const { setOpen, state } = useSidebar();
 
   const [minPriceVal, setMinPriceVal] = useState(0);
   const [maxPriceVal, setMaxPriceVal] = useState(999999);
@@ -49,67 +62,113 @@ export function Sidebar() {
     router.replace(`/browse?${params.toString()}`, { scroll: false });
   }, [minPriceVal, maxPriceVal, searchQuery, location, router]);
 
+  const handleClear = () => {
+    setMinPriceVal(0);
+    setMaxPriceVal(999999);
+    setSearchQuery("");
+    setLocation(null);
+  };
+
   return (
-    <aside className="w-64 bg-[#d9d9d9] p-4 flex flex-col gap-6 pt-24 h-screen sticky top-0">
-      <SearchBar onSearch={setSearchQuery} initialValue={searchQuery} />
-      <section>
-        <div className="flex justify-between mb-2">
-          <h3 className="font-semibold">Filters</h3>
-          <button
-            onClick={() => {
-              setMinPriceVal(0);
-              setMaxPriceVal(999999);
-              setSearchQuery("");
-            }}
-            className="text-xs hover:text-teal-500"
-          >
-            Clear
-          </button>
-        </div>
-        <button
-          className="w-full flex justify-between items-center mb-2 hover:text-teal-500 transition"
-          onClick={() => setShowPrice(!showPrice)}
-        >
-          <span className="text-sm font-medium">Price Range</span>
-          <ChevronDown
-            className={`w-4 h-4 transition-transform ${showPrice ? "rotate-180" : ""}`}
-          />
-        </button>
-        {showPrice && (
-          <div className="mt-2 flex gap-2">
-            <PriceInput
-              label="Min"
-              value={minPriceVal}
-              onChange={setMinPriceVal}
-            />
-            <PriceInput
-              label="Max"
-              value={maxPriceVal}
-              onChange={setMaxPriceVal}
-            />
+    <>
+      <ShadcnSidebar collapsible="icon" side="left" className="border-r">
+        <SidebarHeader className="pt-20">
+          <div className="px-2 group-data-[collapsible=icon]:px-0">
+            <div className="group-data-[collapsible=icon]:hidden">
+              <SearchBar onSearch={setSearchQuery} initialValue={searchQuery} />
+            </div>
+            {state === "collapsed" && (
+              <SidebarMenuButton
+                tooltip="Search"
+                className="w-full justify-center"
+                onClick={() => setOpen(true)}
+              >
+                <Search className="h-4 w-4" />
+              </SidebarMenuButton>
+            )}
           </div>
-        )}
-        <button
-          onClick={() => setShowLocationModal(true)}
-          className="w-full flex items-center justify-between mb-2 hover:text-teal-500 transition"
-        >
-          <h4 className="text-sm font-medium">Location</h4>
-        </button>
-        {showLocationModal && (
-          <Portal>
-            <LocationFilterModal
-              onClose={() => setShowLocationModal(false)}
-              onApply={(loc: LocationResult) => {
-                setLocation(loc);
-                setShowLocationModal(false);
-              }}
-            />
-          </Portal>
-        )}
-      </section>
-    </aside>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <div className="flex items-center justify-between px-2 mb-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+              <SidebarGroupLabel className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+                <Filter className="h-4 w-4" />
+                <span>Filters</span>
+              </SidebarGroupLabel>
+              <button
+                onClick={handleClear}
+                className="text-xs hover:text-teal-500 group-data-[collapsible=icon]:hidden"
+              >
+                Clear
+              </button>
+            </div>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setShowPrice(!showPrice)}
+                    tooltip="Price Range"
+                    className="w-full justify-between"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      Price Range
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform group-data-[collapsible=icon]:hidden ${
+                        showPrice ? "rotate-180" : ""
+                      }`}
+                    />
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {showPrice && (
+                  <div className="px-2 mt-2 flex gap-2 group-data-[collapsible=icon]:hidden">
+                    <PriceInput
+                      label="Min"
+                      value={minPriceVal}
+                      onChange={setMinPriceVal}
+                    />
+                    <PriceInput
+                      label="Max"
+                      value={maxPriceVal}
+                      onChange={setMaxPriceVal}
+                    />
+                  </div>
+                )}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setShowLocationModal(true)}
+                    tooltip="Location"
+                    className="w-full justify-between"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      Location
+                    </span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </ShadcnSidebar>
+      {showLocationModal && (
+        <Portal>
+          <LocationFilterModal
+            onClose={() => setShowLocationModal(false)}
+            onApply={(loc: LocationResult) => {
+              setLocation(loc);
+              setShowLocationModal(false);
+            }}
+          />
+        </Portal>
+      )}
+    </>
   );
 }
+
+// Export as Sidebar for backward compatibility
+export const Sidebar = BrowseSidebar;
 
 function PriceInput({
   label,
