@@ -10,7 +10,7 @@ namespace backend.Infrastructure;
 public class MeiliSyncWorker : BackgroundService
 {
     private readonly ITopicManager _topicManager;
-    private readonly TopicSignal _signal; // Separated service
+    private readonly TopicSignal _signal;
     private readonly OffsetManager _offsetManager;
     private readonly ILogger<MeiliSyncWorker> _logger;
 
@@ -40,7 +40,7 @@ public class MeiliSyncWorker : BackgroundService
     {
         _logger.LogInformation("Starting {WorkerName} for topic: {Topic}", nameof(MeiliSyncWorker), _topicName);
 
-        // If OffsetManager returns -1 for "never processed", this starts us at 0.
+        // If OffsetManager returns 0 for "never processed"
         long currentOffset = _offsetManager.GetOffset(_groupId, _topicName, 0);
 
         while (!stoppingToken.IsCancellationRequested)

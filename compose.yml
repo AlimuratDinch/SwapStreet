@@ -70,7 +70,7 @@ services:
       - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY:-masterKey}
       - LOGQUEUESETTINGS__BASEPATH=App_Data
     volumes:
-      - ./backend/App_Data:/app/App_Data
+      - app-data:/app/App_Data
     depends_on:
       postgres:
         condition: service_healthy
@@ -121,6 +121,7 @@ networks:
     driver: bridge
 
 volumes:
+  app-data:
   postgres_data_dev:
   minio_data_dev:
   meilisearch_data:
