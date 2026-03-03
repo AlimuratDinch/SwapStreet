@@ -10,9 +10,9 @@ export default function PrivacyPolicy() {
       {/* Intro */}
       <div className="mb-8">
         <p className="text-gray-700 leading-relaxed mb-4">
-          This Privacy Policy explains what information SWAPSTREET collects,
-          how it is used, and the choices you have regarding your personal data.
-          By using our platform, you agree to the practices described below.
+          This Privacy Policy explains what information SWAPSTREET collects, how
+          it is used, and the choices you have regarding your personal data. By
+          using our platform, you agree to the practices described below.
         </p>
       </div>
 
@@ -39,8 +39,8 @@ export default function PrivacyPolicy() {
             details you upload for items
           </li>
           <li>
-            <strong>Usage data</strong> — pages visited, searches performed,
-            and interactions within the platform
+            <strong>Usage data</strong> — pages visited, searches performed, and
+            interactions within the platform
           </li>
           <li>
             <strong>Communication data</strong> — messages exchanged with other
@@ -90,16 +90,16 @@ export default function PrivacyPolicy() {
         </p>
         <ul className="list-disc ml-6 text-gray-700 leading-relaxed mb-4">
           <li>
-            <strong>With other users</strong> — your public profile and
-            listings are visible to other platform users
+            <strong>With other users</strong> — your public profile and listings
+            are visible to other platform users
           </li>
           <li>
             <strong>With service providers</strong> — third-party tools that
             help us operate the platform (e.g., cloud storage, authentication)
           </li>
           <li>
-            <strong>When required by law</strong> — if disclosure is required
-            by applicable legal obligations
+            <strong>When required by law</strong> — if disclosure is required by
+            applicable legal obligations
           </li>
         </ul>
       </section>
@@ -154,8 +154,8 @@ export default function PrivacyPolicy() {
         <p className="text-gray-700 leading-relaxed">
           We apply reasonable technical measures to protect your data, including
           encrypted connections and secure authentication. However, no system is
-          completely immune to risk. Users are encouraged to use strong,
-          unique passwords and report any suspicious account activity promptly.
+          completely immune to risk. Users are encouraged to use strong, unique
+          passwords and report any suspicious account activity promptly.
         </p>
       </section>
 
