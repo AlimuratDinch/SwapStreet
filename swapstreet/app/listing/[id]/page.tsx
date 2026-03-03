@@ -1,55 +1,54 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Gallery from "./Gallery";
 import PostedAt from "./PostedAt";
 import { Header } from "@/components/common/Header";
 
-export const dynamic = "force-dynamic";
+type Seller = {
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+  FSA?: string;
+  fsa?: string;
+};
 
-async function fetchListing(id: string) {
-  const envBase = (
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.BACKEND_URL ||
-    ""
-  ).replace(/\/$/, "");
-  const api = envBase || "";
-  const res = await fetch(`${api}/api/search/listing/${id}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
+type Listing = {
+  title?: string;
+  price?: number | string;
+  createdAt?: string;
+  images?: { imageUrl?: string }[];
+  seller?: Seller | null;
+  description?: string;
+  location?: string;
+  fsa?: string;
+  FSA?: string;
+};
 
-export default async function ListingPage({
+export default function ListingPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const id = params.id;
-  type Seller = {
-    firstName?: string;
-    lastName?: string;
-    profileImageUrl?: string;
-    FSA?: string;
-    fsa?: string;
-  };
-  type Listing = {
-    title?: string;
-    price?: number | string;
-    createdAt?: string;
-    images?: { imageUrl?: string }[];
-    seller?: Seller | null;
-    description?: string;
-    location?: string;
-    fsa?: string;
-    FSA?: string;
-  };
+  const { id } = params;
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [error, setError] = useState(false);
 
-  let listing: Listing | null = null;
-  try {
-    listing = await fetchListing(id);
-  } catch (e) {
-    console.error("Failed to fetch listing", e);
+  useEffect(() => {
+    fetch(`/api/search/listing/${id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => setListing(data))
+      .catch((e) => {
+        console.error("Failed to fetch listing", e);
+        setError(true);
+      });
+  }, [id]);
+
+  if (error) {
     return (
       <div className="p-6">
         <Header />
@@ -60,8 +59,19 @@ export default async function ListingPage({
     );
   }
 
-  const images: { imageUrl?: string }[] = listing?.images ?? [];
-  const seller = listing?.seller ?? null;
+  if (!listing) {
+    return (
+      <div className="p-6">
+        <Header />
+        <div className="flex items-center justify-center h-96 text-white">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
+  const images: { imageUrl?: string }[] = listing.images ?? [];
+  const seller = listing.seller ?? null;
 
   return (
     <div className="h-screen overflow-hidden bg-[#111] text-white">
@@ -89,26 +99,26 @@ export default async function ListingPage({
             {/* Title & Price */}
             <div>
               <h1 className="text-2xl font-semibold text-white">
-                {listing?.title}
+                {listing.title}
               </h1>
               <div className="text-2xl text-teal-400 font-bold mt-2">
-                ${Number(listing?.price ?? 0).toFixed(2)}
+                ${Number(listing.price ?? 0).toFixed(2)}
               </div>
             </div>
 
             {/* When listed */}
             <div className="text-gray-400">
               <div className="text-xs">Posted</div>
-              <PostedAt iso={listing?.createdAt} />
+              <PostedAt iso={listing.createdAt} />
             </div>
 
             {/* Location / Where */}
             <div>
               <div className="text-gray-400 text-xs">Location</div>
               <div className="text-gray-200">
-                {listing?.location ??
-                  listing?.fsa ??
-                  listing?.FSA ??
+                {listing.location ??
+                  listing.fsa ??
+                  listing.FSA ??
                   seller?.fsa ??
                   seller?.FSA ??
                   "Unknown"}
@@ -119,7 +129,7 @@ export default async function ListingPage({
             <div>
               <div className="text-gray-400 text-xs mb-2">Description</div>
               <div className="text-gray-200 whitespace-pre-wrap">
-                {listing?.description}
+                {listing.description}
               </div>
             </div>
 
