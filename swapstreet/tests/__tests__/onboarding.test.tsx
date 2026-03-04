@@ -532,16 +532,13 @@ describe("SellerOnboardingPage", () => {
     );
   });
 
-  it("shows success overlay after submit", async () => {
+  it("redirects to profile after submit", async () => {
     await ready();
     await fillValidForm();
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
     await waitFor(
       () => {
-        expect(screen.getByText(/profile created!/i)).toBeInTheDocument();
-        expect(
-          screen.getByText(/taking you to your profile/i),
-        ).toBeInTheDocument();
+        expect(mockPush).toHaveBeenCalledWith("/profile");
       },
       { timeout: 3000 },
     );
