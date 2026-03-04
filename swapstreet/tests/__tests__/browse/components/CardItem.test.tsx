@@ -9,6 +9,10 @@ jest.mock("@/app/wardrobe/wardrobeStorage", () => ({
   removeWardrobeItem: jest.fn(),
 }));
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
 jest.mock("next/link", () => {
   const MockLink = ({
     children,
@@ -17,7 +21,7 @@ jest.mock("next/link", () => {
     children: React.ReactNode;
     href: string;
   }) => <a href={href}>{children}</a>;
-  MockLink.displayName = "NextLink"; // This satisfies react/display-name
+  MockLink.displayName = "NextLink";
   return MockLink;
 });
 
@@ -175,6 +179,22 @@ describe("CardItem Component", () => {
       expect(wardrobeStorage.removeWardrobeItem).toHaveBeenCalledWith(
         "item-123",
       );
+    });
+  });
+
+  it("redirects to sign-in when no access token is stored", async () => {
+    Object.defineProperty(window, "sessionStorage", {
+      value: { getItem: jest.fn(() => null) },
+      writable: true,
+    });
+
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+    render(<CardItem {...mockProps} />);
+
+    fireEvent.click(screen.getByRole("button"));
+
+    await waitFor(() => {
+      expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 
