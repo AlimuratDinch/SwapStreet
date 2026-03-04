@@ -24,17 +24,6 @@ describe("Header Component", () => {
     expect(screen.getByText(/street/i)).toBeInTheDocument();
   });
 
-  it("shows the center navigation by default", () => {
-    render(<Header showCenterNav={true} />);
-    expect(screen.getByText("Featured")).toBeInTheDocument();
-    expect(screen.getByText("Collections")).toBeInTheDocument();
-  });
-
-  it("hides the center navigation when showCenterNav is false", () => {
-    render(<Header showCenterNav={false} />);
-    expect(screen.queryByText("Featured")).not.toBeInTheDocument();
-  });
-
   it("renders action buttons (Wardrobe and Profile)", () => {
     render(<Header />);
     const wardrobeLink = screen.getByTitle("Shopping Bag").closest("a");

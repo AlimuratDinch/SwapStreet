@@ -30,7 +30,7 @@ export default async function BrowsePage({
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* 3. Global Navigation */}
-      <Header showCenterNav={true} />
+      <Header />
 
       <div className="flex-1 overflow-hidden">
         <SidebarProvider defaultOpen={true}>

@@ -5,11 +5,7 @@ import * as wardrobeStorage from "@/app/wardrobe/wardrobeStorage";
 
 // Mock header component
 jest.mock("@/components/common/Header", () => ({
-  Header: ({ showCenterNav }: { showCenterNav?: boolean }) => (
-    <div data-testid="header">
-      Header {showCenterNav ? "with nav" : "without nav"}
-    </div>
-  ),
+  Header: () => <div data-testid="header">Header</div>,
 }));
 
 // Mock lucide-react icons
