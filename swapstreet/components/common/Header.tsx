@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Globe, Leaf, Bookmark, MessageSquare, Bell, User, ChevronDown, Settings, MessageCircle, LogOut } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
   return (
@@ -42,6 +43,7 @@ function NotificationButton() {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { unread, totalUnread, markAsRead } = useChatContext();
+  const { isAuthenticated, authLoaded } = useAuth();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -58,7 +60,10 @@ function NotificationButton() {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => {
+          if (authLoaded && !isAuthenticated) { router.push("/auth/sign-in"); return; }
+          setOpen((prev) => !prev);
+        }}
         className="relative p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
         title="Notifications"
       >
@@ -122,6 +127,8 @@ function NotificationButton() {
 function ProfileButton() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const { isAuthenticated, authLoaded } = useAuth();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -136,7 +143,10 @@ function ProfileButton() {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => {
+          if (authLoaded && !isAuthenticated) { router.push("/auth/sign-in"); return; }
+          setOpen((prev) => !prev);
+        }}
         className="relative p-2.5 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
         title="Profile"
       >
@@ -202,14 +212,18 @@ function IconButton({
   icon: React.ReactNode;
   title: string;
 }) {
+  const { isAuthenticated, authLoaded } = useAuth();
+  const router = useRouter();
   return (
-    <Link href={href}>
-      <button
-        className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
-        title={title}
-      >
-        {icon}
-      </button>
-    </Link>
+    <button
+      onClick={() => {
+        if (authLoaded && !isAuthenticated) { router.push("/auth/sign-in"); return; }
+        router.push(href);
+      }}
+      className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
+      title={title}
+    >
+      {icon}
+    </button>
   );
 }

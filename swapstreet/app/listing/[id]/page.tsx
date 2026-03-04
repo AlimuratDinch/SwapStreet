@@ -48,7 +48,7 @@ export default function ListingPage({
     if (!seller?.id) return;
     if (!authLoaded) return;
     if (!userId || !accessToken) {
-      setChatError("You must be signed in to message a seller.");
+      router.push("/auth/sign-in");
       return;
     }
     setChatLoading(true);

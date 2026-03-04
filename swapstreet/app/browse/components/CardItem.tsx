@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bookmark, MapPin } from "lucide-react";
 import {
   addWardrobeItem,
@@ -28,6 +29,7 @@ export function CardItem({
 }: CardItemProps) {
   const [inWardrobe, setInWardrobe] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setInWardrobe(hasWardrobeItem(id));
@@ -41,6 +43,10 @@ export function CardItem({
     setIsSaving(true);
     try {
       const token = sessionStorage.getItem("accessToken");
+      if (!token) {
+        router.push("/auth/sign-in");
+        return;
+      }
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const method = inWardrobe ? "DELETE" : "POST";
