@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShoppingBag, MapPin } from "lucide-react";
+import { Bookmark, MapPin } from "lucide-react";
 import {
   addWardrobeItem,
   hasWardrobeItem,
@@ -92,7 +92,7 @@ export function CardItem({
             disabled={isSaving}
             className="card-item-wardrobe-btn"
           >
-            <ShoppingBag
+            <Bookmark
               className="w-5 h-5"
               fill={inWardrobe ? "#14b8a6" : "none"}
             />

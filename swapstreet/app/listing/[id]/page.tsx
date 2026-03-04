@@ -2,11 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Gallery from "./Gallery";
 import PostedAt from "./PostedAt";
 import { Header } from "@/components/common/Header";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Seller = {
+  id?: string;
   firstName?: string;
   lastName?: string;
   profileImageUrl?: string;
@@ -32,8 +35,53 @@ export default function ListingPage({
   params: { id: string };
 }) {
   const { id } = params;
+  const router = useRouter();
+  const { userId, accessToken, authLoaded } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
   const [error, setError] = useState(false);
+  const [message, setMessage] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [noProfile, setNoProfile] = useState(false);
+
+  const handleStartChat = async () => {
+    if (!seller?.id) return;
+    if (!authLoaded) return;
+    if (!userId || !accessToken) {
+      setChatError("You must be signed in to message a seller.");
+      return;
+    }
+    setChatLoading(true);
+    setChatError(null);
+    setNoProfile(false);
+    try {
+      const res = await fetch("/api/chat/chatrooms/get-or-create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ sellerId: seller.id, buyerId: userId }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const errMsg: string = body?.error ?? body?.Error ?? `HTTP ${res.status}`;
+        if (errMsg.toLowerCase().includes("buyer profile not found")) {
+          setNoProfile(true);
+          return;
+        }
+        throw new Error(errMsg);
+      }
+      const chatroom = await res.json();
+      router.push(`/chat/${chatroom.id}${message ? `?msg=${encodeURIComponent(message)}` : ""}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to start chat";
+      console.error("Failed to start chat", e);
+      setChatError(msg);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetch(`/api/search/listing/${id}`)
@@ -158,9 +206,34 @@ export default function ListingPage({
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <button className="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 rounded">
-                  Send message
+              <div className="flex flex-col gap-2">
+                {noProfile && (
+                  <div className="bg-yellow-900/40 border border-yellow-700 rounded p-3 text-xs text-yellow-300">
+                    <p className="mb-2 font-medium">You need a profile before you can message sellers.</p>
+                    <button
+                      onClick={() => router.push("/seller/onboarding")}
+                      className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold px-3 py-1.5 rounded w-full"
+                    >
+                      Create your profile
+                    </button>
+                  </div>
+                )}
+                {chatError && (
+                  <div className="text-red-400 text-xs px-1">{chatError}</div>
+                )}
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Write a message..."
+                  rows={3}
+                  className="w-full bg-[#1a2535] text-white text-sm placeholder-gray-500 border border-gray-700 rounded px-3 py-2 resize-none focus:outline-none focus:border-teal-500"
+                />
+                <button
+                  onClick={handleStartChat}
+                  disabled={chatLoading}
+                  className="flex-1 bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-white font-semibold py-2 rounded"
+                >
+                  {chatLoading ? "Opening chat..." : "Send message"}
                 </button>
               </div>
             </div>
