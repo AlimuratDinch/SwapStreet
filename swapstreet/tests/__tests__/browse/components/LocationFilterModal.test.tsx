@@ -321,6 +321,99 @@ describe("LocationFilterModal Component", () => {
         ),
       ).toBeInTheDocument();
     });
+
+    it("shows error for POSITION_UNAVAILABLE", () => {
+      const mockGeoError = {
+        code: 2,
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+        message: "Position unavailable",
+      };
+      (global.navigator.geolocation.getCurrentPosition as jest.Mock)
+        .mockImplementationOnce((success: unknown, error: (e: unknown) => void) => error(mockGeoError));
+
+      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      expect(screen.getByText("Your location is unavailable right now.")).toBeInTheDocument();
+    });
+
+    it("shows error for TIMEOUT", () => {
+      const mockGeoError = {
+        code: 3,
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+        message: "Timeout",
+      };
+      (global.navigator.geolocation.getCurrentPosition as jest.Mock)
+        .mockImplementationOnce((success: unknown, error: (e: unknown) => void) => error(mockGeoError));
+
+      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      expect(screen.getByText("Timed out while retrieving your location.")).toBeInTheDocument();
+    });
+
+    it("shows generic error for unknown geolocation error code", () => {
+      const mockGeoError = {
+        code: 99,
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+        message: "Unknown",
+      };
+      (global.navigator.geolocation.getCurrentPosition as jest.Mock)
+        .mockImplementationOnce((success: unknown, error: (e: unknown) => void) => error(mockGeoError));
+
+      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      expect(screen.getByText("Unable to retrieve your location.")).toBeInTheDocument();
+    });
+
+    it("shows error when location permission is denied via permissions API", async () => {
+      Object.defineProperty(navigator, "permissions", {
+        value: {
+          query: jest.fn().mockResolvedValue({ state: "denied" }),
+        },
+        configurable: true,
+        writable: true,
+      });
+
+      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/location permission is blocked/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("falls through to getCurrentPosition when permissions.query rejects", async () => {
+      Object.defineProperty(navigator, "permissions", {
+        value: {
+          query: jest.fn().mockRejectedValue(new Error("Not supported")),
+        },
+        configurable: true,
+        writable: true,
+      });
+
+      const mockPosition = { coords: { latitude: 45.5, longitude: -73.5 } };
+      (global.navigator.geolocation.getCurrentPosition as jest.Mock)
+        .mockImplementationOnce((success: (p: typeof mockPosition) => void) => success(mockPosition));
+
+      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      await waitFor(() => {
+        expect(mockOnApply).toHaveBeenCalledWith(
+          expect.objectContaining({ name: "Current location" })
+        );
+      });
+    });
   });
 
   describe("Close Button", () => {
