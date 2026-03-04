@@ -2,7 +2,18 @@
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, Leaf, Bookmark, MessageSquare, Bell, User, ChevronDown, Settings, MessageCircle, LogOut } from "lucide-react";
+import {
+  Globe,
+  Leaf,
+  Bookmark,
+  MessageSquare,
+  Bell,
+  User,
+  ChevronDown,
+  Settings,
+  MessageCircle,
+  LogOut,
+} from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -19,7 +30,8 @@ function Logo() {
   return (
     <div className="flex items-center gap-3">
       <Link href="/browse" className="font-bold text-2xl">
-        <span className="text-teal-500">SWAP</span><span className="text-gray-900">STREET</span>
+        <span className="text-teal-500">SWAP</span>
+        <span className="text-gray-900">STREET</span>
       </Link>
     </div>
   );
@@ -29,7 +41,11 @@ function ActionButtons() {
   return (
     <div className="flex gap-2 items-center">
       <IconButton href="/community" icon={<Globe />} title="Community" />
-      <IconButton href="/sustainability" icon={<Leaf />} title="Sustainability" />
+      <IconButton
+        href="/sustainability"
+        icon={<Leaf />}
+        title="Sustainability"
+      />
       <IconButton href="/wardrobe" icon={<Bookmark />} title="Wardrobe" />
       <IconButton href="/chat" icon={<MessageSquare />} title="Messages" />
       <NotificationButton />
@@ -61,7 +77,10 @@ function NotificationButton() {
     <div ref={ref} className="relative">
       <button
         onClick={() => {
-          if (authLoaded && !isAuthenticated) { router.push("/auth/sign-in"); return; }
+          if (authLoaded && !isAuthenticated) {
+            router.push("/auth/sign-in");
+            return;
+          }
           setOpen((prev) => !prev);
         }}
         className="relative p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
@@ -110,7 +129,8 @@ function NotificationButton() {
                   />
                   <div className="overflow-hidden">
                     <p className="text-sm text-gray-800">
-                      <span className="font-medium">{n.senderName}</span> has sent you a message!
+                      <span className="font-medium">{n.senderName}</span> has
+                      sent you a message!
                     </p>
                   </div>
                   <span className="ml-auto mt-1 w-2 h-2 rounded-full bg-teal-500 shrink-0" />
@@ -144,7 +164,10 @@ function ProfileButton() {
     <div ref={ref} className="relative">
       <button
         onClick={() => {
-          if (authLoaded && !isAuthenticated) { router.push("/auth/sign-in"); return; }
+          if (authLoaded && !isAuthenticated) {
+            router.push("/auth/sign-in");
+            return;
+          }
           setOpen((prev) => !prev);
         }}
         className="relative p-2.5 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
@@ -158,8 +181,16 @@ function ProfileButton() {
       {open && (
         <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
           {[
-            { label: "View profile", href: "/profile", icon: <User className="w-4 h-4" /> },
-            { label: "Settings & Preferences", href: "/settings", icon: <Settings className="w-4 h-4" /> },
+            {
+              label: "View profile",
+              href: "/profile",
+              icon: <User className="w-4 h-4" />,
+            },
+            {
+              label: "Settings & Preferences",
+              href: "/settings",
+              icon: <Settings className="w-4 h-4" />,
+            },
           ].map(({ label, href, icon }) => (
             <Link
               key={href}
@@ -217,7 +248,10 @@ function IconButton({
   return (
     <button
       onClick={() => {
-        if (authLoaded && !isAuthenticated) { router.push("/auth/sign-in"); return; }
+        if (authLoaded && !isAuthenticated) {
+          router.push("/auth/sign-in");
+          return;
+        }
         router.push(href);
       }}
       className="p-2 rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"

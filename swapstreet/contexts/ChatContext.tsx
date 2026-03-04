@@ -65,12 +65,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { userId, accessToken, isAuthenticated, authLoaded } = useAuth();
 
   const [unread, setUnread] = useState<Record<string, ChatNotification>>({});
-  const [latestMessages, setLatestMessages] = useState<Record<string, string>>({});
+  const [latestMessages, setLatestMessages] = useState<Record<string, string>>(
+    {},
+  );
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   // Store chatroom owner to resolve sender
   const chatroomsRef = useRef<Chatroom[]>([]);
   // Cache resolved names/images (avoid re-fetching)
-  const profileCacheRef = useRef<Record<string, { name: string; image: string | null }>>({});
+  const profileCacheRef = useRef<
+    Record<string, { name: string; image: string | null }>
+  >({});
 
   const markAsRead = useCallback((chatroomId: string) => {
     setUnread((prev) => {
@@ -84,8 +88,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const totalUnread = Object.keys(unread).length;
 
   const resolveProfile = useCallback(
-    async (otherId: string): Promise<{ name: string; image: string | null }> => {
-      if (profileCacheRef.current[otherId]) return profileCacheRef.current[otherId];
+    async (
+      otherId: string,
+    ): Promise<{ name: string; image: string | null }> => {
+      if (profileCacheRef.current[otherId])
+        return profileCacheRef.current[otherId];
       try {
         const res = await fetch(`/api/profile/${otherId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -94,19 +101,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           const p = await res.json();
           const first = p?.firstName ?? "";
           const last = p?.lastName ?? "";
-          const name = first || last ? `${first} ${last}`.trim() : `User ${otherId.slice(0, 6)}`;
+          const name =
+            first || last
+              ? `${first} ${last}`.trim()
+              : `User ${otherId.slice(0, 6)}`;
           const image: string | null = p?.profileImagePath ?? null;
           profileCacheRef.current[otherId] = { name, image };
           return { name, image };
         }
-      } catch {
-
-      }
+      } catch {}
       const fallback = { name: `User ${otherId.slice(0, 6)}`, image: null };
       profileCacheRef.current[otherId] = fallback;
       return fallback;
     },
-    [accessToken]
+    [accessToken],
   );
 
   useEffect(() => {
@@ -137,7 +145,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       connection.on("ReceiveMessage", async (msg: Message) => {
         // Ignore own messages (update sidebar preview only, no notification)
         if (msg.author === userId) {
-          setLatestMessages((prev) => ({ ...prev, [msg.chatroomId]: msg.content }));
+          setLatestMessages((prev) => ({
+            ...prev,
+            [msg.chatroomId]: msg.content,
+          }));
           return;
         }
 
@@ -187,7 +198,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
       if (connectionRef.current) {
         chatroomsRef.current.forEach((r) =>
-          connectionRef.current!.invoke("LeaveChatroom", r.id).catch(() => {})
+          connectionRef.current!.invoke("LeaveChatroom", r.id).catch(() => {}),
         );
         connectionRef.current.stop();
         connectionRef.current = null;
@@ -196,7 +207,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [authLoaded, isAuthenticated, accessToken, userId, resolveProfile]);
 
   return (
-    <ChatContext.Provider value={{ unread, totalUnread, markAsRead, latestMessages }}>
+    <ChatContext.Provider
+      value={{ unread, totalUnread, markAsRead, latestMessages }}
+    >
       {children}
     </ChatContext.Provider>
   );

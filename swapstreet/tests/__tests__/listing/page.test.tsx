@@ -2,7 +2,13 @@
  * @jest-environment jsdom
  */
 import React from "react";
-import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ListingPage from "@/app/listing/[id]/page";
 
@@ -11,7 +17,11 @@ import ListingPage from "@/app/listing/[id]/page";
 const mockPush = jest.fn();
 
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, replace: jest.fn(), prefetch: jest.fn() }),
+  useRouter: () => ({
+    push: mockPush,
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
   useSearchParams: () => new URLSearchParams(""),
   usePathname: () => "/listing/123",
 }));
@@ -45,7 +55,11 @@ type Seller = {
 
 function setupFetch(
   listing: Record<string, unknown>,
-  chatroomResponse?: { ok: boolean; status?: number; json?: () => Promise<unknown> }
+  chatroomResponse?: {
+    ok: boolean;
+    status?: number;
+    json?: () => Promise<unknown>;
+  },
 ) {
   (global.fetch as jest.Mock).mockImplementation((url: string) => {
     if (url.includes("/api/search/listing/")) {
@@ -53,7 +67,7 @@ function setupFetch(
     }
     if (url.includes("/api/chat/chatrooms/get-or-create")) {
       return Promise.resolve(
-        chatroomResponse ?? { ok: true, json: async () => ({ id: "cr-99" }) }
+        chatroomResponse ?? { ok: true, json: async () => ({ id: "cr-99" }) },
       );
     }
     return Promise.resolve({ ok: false, status: 404 });
@@ -78,7 +92,12 @@ describe("ListingPage", () => {
   beforeEach(() => {
     global.fetch = jest.fn();
     jest.clearAllMocks();
-    mockAuthState = { userId: null, accessToken: null, authLoaded: true, isAuthenticated: false };
+    mockAuthState = {
+      userId: null,
+      accessToken: null,
+      authLoaded: true,
+      isAuthenticated: false,
+    };
   });
 
   afterEach(() => {
@@ -94,10 +113,17 @@ describe("ListingPage", () => {
       createdAt: new Date().toISOString(),
       description: "Warm and cozy",
       images: [{ imageUrl: "https://example.com/j1.jpg" }],
-      seller: { firstName: "Alice", lastName: "Smith", profileImageUrl: "https://example.com/p.jpg" },
+      seller: {
+        firstName: "Alice",
+        lastName: "Smith",
+        profileImageUrl: "https://example.com/p.jpg",
+      },
       fsa: "M5V",
     };
-    (global.fetch as jest.Mock).mockResolvedValue({ ok: true, json: async () => mockListing });
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => mockListing,
+    });
 
     render(<ListingPage params={Promise.resolve({ id: "123" }) as any} />);
 
@@ -110,7 +136,10 @@ describe("ListingPage", () => {
   });
 
   it("renders error UI when fetch fails", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 500 });
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    });
 
     render(<ListingPage params={Promise.resolve({ id: "bad" }) as any} />);
 
@@ -129,7 +158,10 @@ describe("ListingPage", () => {
       seller: null,
       fsa: "Z9Z",
     };
-    (global.fetch as jest.Mock).mockResolvedValue({ ok: true, json: async () => mockListing });
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => mockListing,
+    });
 
     render(<ListingPage params={Promise.resolve({ id: "nomedia" }) as any} />);
 
@@ -152,7 +184,9 @@ describe("ListingPage", () => {
   it("uses listing.location when present", async () => {
     setupFetch({ ...baseListing, location: "Toronto", fsa: undefined });
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Toronto")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Toronto")).toBeInTheDocument(),
+    );
   });
 
   it("falls back to listing.FSA when no location or fsa", async () => {
@@ -165,26 +199,46 @@ describe("ListingPage", () => {
     setupFetch({
       ...baseListing,
       fsa: undefined,
-      seller: { id: "seller-1", firstName: "Bob", lastName: "Seller", FSA: "V6B" },
+      seller: {
+        id: "seller-1",
+        firstName: "Bob",
+        lastName: "Seller",
+        FSA: "V6B",
+      },
     });
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getAllByText("V6B").length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText("V6B").length).toBeGreaterThan(0),
+    );
   });
 
   it("falls back to 'Unknown' when all location fields are absent", async () => {
-    setupFetch({ ...baseListing, fsa: undefined, seller: { id: "seller-1", firstName: "Bob", lastName: "Seller" } });
+    setupFetch({
+      ...baseListing,
+      fsa: undefined,
+      seller: { id: "seller-1", firstName: "Bob", lastName: "Seller" },
+    });
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Unknown")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Unknown")).toBeInTheDocument(),
+    );
   });
 
   // ──────────────────── handleStartChat - unauthenticated ────────────────────
 
   it("redirects to sign-in when unauthenticated user clicks Send message", async () => {
-    mockAuthState = { userId: null, accessToken: null, authLoaded: true, isAuthenticated: false };
+    mockAuthState = {
+      userId: null,
+      accessToken: null,
+      authLoaded: true,
+      isAuthenticated: false,
+    };
     setupFetch(baseListing);
 
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Send message")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Send message")).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByText("Send message"));
 
@@ -192,11 +246,18 @@ describe("ListingPage", () => {
   });
 
   it("does nothing when authLoaded is false and Send message is clicked", async () => {
-    mockAuthState = { userId: null, accessToken: null, authLoaded: false, isAuthenticated: false };
+    mockAuthState = {
+      userId: null,
+      accessToken: null,
+      authLoaded: false,
+      isAuthenticated: false,
+    };
     setupFetch(baseListing);
 
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Send message")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Send message")).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByText("Send message"));
 
@@ -204,11 +265,18 @@ describe("ListingPage", () => {
   });
 
   it("does nothing when seller has no id", async () => {
-    mockAuthState = { userId: "u-1", accessToken: "tok", authLoaded: true, isAuthenticated: true };
+    mockAuthState = {
+      userId: "u-1",
+      accessToken: "tok",
+      authLoaded: true,
+      isAuthenticated: true,
+    };
     setupFetch({ ...baseListing, seller: { firstName: "No", lastName: "Id" } });
 
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Send message")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Send message")).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByText("Send message"));
     expect(mockPush).not.toHaveBeenCalled();
@@ -217,11 +285,18 @@ describe("ListingPage", () => {
   // ──────────────────── handleStartChat - authenticated ────────────────────
 
   it("navigates to chatroom on successful chat creation", async () => {
-    mockAuthState = { userId: "u-1", accessToken: "tok", authLoaded: true, isAuthenticated: true };
+    mockAuthState = {
+      userId: "u-1",
+      accessToken: "tok",
+      authLoaded: true,
+      isAuthenticated: true,
+    };
     setupFetch(baseListing, { ok: true, json: async () => ({ id: "cr-42" }) });
 
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Send message")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Send message")).toBeInTheDocument(),
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByText("Send message"));
@@ -231,25 +306,41 @@ describe("ListingPage", () => {
   });
 
   it("appends ?msg= to the URL when a message is typed before clicking Send", async () => {
-    mockAuthState = { userId: "u-1", accessToken: "tok", authLoaded: true, isAuthenticated: true };
+    mockAuthState = {
+      userId: "u-1",
+      accessToken: "tok",
+      authLoaded: true,
+      isAuthenticated: true,
+    };
     setupFetch(baseListing, { ok: true, json: async () => ({ id: "cr-42" }) });
 
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByPlaceholderText(/Write a message/i)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        screen.getByPlaceholderText(/Write a message/i),
+      ).toBeInTheDocument(),
+    );
 
-    fireEvent.change(screen.getByPlaceholderText(/Write a message/i), { target: { value: "Hi!" } });
+    fireEvent.change(screen.getByPlaceholderText(/Write a message/i), {
+      target: { value: "Hi!" },
+    });
 
     await act(async () => {
       fireEvent.click(screen.getByText("Send message"));
     });
 
     await waitFor(() =>
-      expect(mockPush).toHaveBeenCalledWith("/chat/cr-42?msg=Hi!")
+      expect(mockPush).toHaveBeenCalledWith("/chat/cr-42?msg=Hi!"),
     );
   });
 
   it("shows noProfile warning when buyer profile not found", async () => {
-    mockAuthState = { userId: "u-1", accessToken: "tok", authLoaded: true, isAuthenticated: true };
+    mockAuthState = {
+      userId: "u-1",
+      accessToken: "tok",
+      authLoaded: true,
+      isAuthenticated: true,
+    };
     setupFetch(baseListing, {
       ok: false,
       status: 403,
@@ -257,19 +348,28 @@ describe("ListingPage", () => {
     });
 
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Send message")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Send message")).toBeInTheDocument(),
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByText("Send message"));
     });
 
     await waitFor(() =>
-      expect(screen.getByText(/You need a profile before you can message sellers/i)).toBeInTheDocument()
+      expect(
+        screen.getByText(/You need a profile before you can message sellers/i),
+      ).toBeInTheDocument(),
     );
   });
 
   it("navigates to onboarding when 'Create your profile' is clicked", async () => {
-    mockAuthState = { userId: "u-1", accessToken: "tok", authLoaded: true, isAuthenticated: true };
+    mockAuthState = {
+      userId: "u-1",
+      accessToken: "tok",
+      authLoaded: true,
+      isAuthenticated: true,
+    };
     setupFetch(baseListing, {
       ok: false,
       status: 403,
@@ -277,17 +377,28 @@ describe("ListingPage", () => {
     });
 
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Send message")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Send message")).toBeInTheDocument(),
+    );
 
-    await act(async () => { fireEvent.click(screen.getByText("Send message")); });
-    await waitFor(() => expect(screen.getByText("Create your profile")).toBeInTheDocument());
+    await act(async () => {
+      fireEvent.click(screen.getByText("Send message"));
+    });
+    await waitFor(() =>
+      expect(screen.getByText("Create your profile")).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByText("Create your profile"));
     expect(mockPush).toHaveBeenCalledWith("/seller/onboarding");
   });
 
   it("shows chatError when the API returns a non-profile error", async () => {
-    mockAuthState = { userId: "u-1", accessToken: "tok", authLoaded: true, isAuthenticated: true };
+    mockAuthState = {
+      userId: "u-1",
+      accessToken: "tok",
+      authLoaded: true,
+      isAuthenticated: true,
+    };
     setupFetch(baseListing, {
       ok: false,
       status: 500,
@@ -295,17 +406,26 @@ describe("ListingPage", () => {
     });
 
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Send message")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Send message")).toBeInTheDocument(),
+    );
 
-    await act(async () => { fireEvent.click(screen.getByText("Send message")); });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Send message"));
+    });
 
     await waitFor(() =>
-      expect(screen.getByText(/Internal server error/i)).toBeInTheDocument()
+      expect(screen.getByText(/Internal server error/i)).toBeInTheDocument(),
     );
   });
 
   it("shows generic chatError when fetch throws a non-Error value", async () => {
-    mockAuthState = { userId: "u-1", accessToken: "tok", authLoaded: true, isAuthenticated: true };
+    mockAuthState = {
+      userId: "u-1",
+      accessToken: "tok",
+      authLoaded: true,
+      isAuthenticated: true,
+    };
     (global.fetch as jest.Mock).mockImplementation((url: string) => {
       if (url.includes("/api/search/listing/")) {
         return Promise.resolve({ ok: true, json: async () => baseListing });
@@ -314,12 +434,16 @@ describe("ListingPage", () => {
     });
 
     render(<ListingPage params={Promise.resolve({ id: "1" }) as any} />);
-    await waitFor(() => expect(screen.getByText("Send message")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Send message")).toBeInTheDocument(),
+    );
 
-    await act(async () => { fireEvent.click(screen.getByText("Send message")); });
+    await act(async () => {
+      fireEvent.click(screen.getByText("Send message"));
+    });
 
     await waitFor(() =>
-      expect(screen.getByText(/Failed to start chat/i)).toBeInTheDocument()
+      expect(screen.getByText(/Failed to start chat/i)).toBeInTheDocument(),
     );
   });
 });

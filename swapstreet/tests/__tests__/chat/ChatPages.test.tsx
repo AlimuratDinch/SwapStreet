@@ -14,10 +14,21 @@ jest.mock("@/components/common/Header", () => ({
   Header: () => <header data-testid="header" />,
 }));
 
-jest.mock("@/app/chat/ChatLayout", () =>
-  function MockChatLayout({ activeChatroomId }: { activeChatroomId: string | null }) {
-    return <div data-testid="chat-layout" data-active={activeChatroomId ?? "null"} />;
-  }
+jest.mock(
+  "@/app/chat/ChatLayout",
+  () =>
+    function MockChatLayout({
+      activeChatroomId,
+    }: {
+      activeChatroomId: string | null;
+    }) {
+      return (
+        <div
+          data-testid="chat-layout"
+          data-active={activeChatroomId ?? "null"}
+        />
+      );
+    },
 );
 
 // ──────────────────── ChatIndexPage ────────────────────

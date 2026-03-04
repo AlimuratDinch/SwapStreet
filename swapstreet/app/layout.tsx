@@ -16,9 +16,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <AuthProvider>
-          <ChatProvider>
-            {children}
-          </ChatProvider>
+          <ChatProvider>{children}</ChatProvider>
         </AuthProvider>
       </body>
     </html>

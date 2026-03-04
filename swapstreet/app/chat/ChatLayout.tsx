@@ -2,12 +2,7 @@
 
 "use client";
 
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-} from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as signalR from "@microsoft/signalr";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,7 +30,13 @@ type Chatroom = {
 
 function Avatar({ src, size = 10 }: { src?: string | null; size?: number }) {
   const cls = `w-${size} h-${size} rounded-full shrink-0 object-cover`;
-  return <img src={src || "/images/default-avatar-icon.jpg"} alt="" className={cls} />;
+  return (
+    <img
+      src={src || "/images/default-avatar-icon.jpg"}
+      alt=""
+      className={cls}
+    />
+  );
 }
 
 // ──────────────────────── Sidebar ────────────────────────
@@ -64,7 +65,9 @@ function Sidebar({
       )}
       {chatrooms.map((room) => {
         const name = otherNames[room.id] ?? "…";
-        const lastMsg = latestMessages[room.id] ?? room.messages[room.messages.length - 1]?.content;
+        const lastMsg =
+          latestMessages[room.id] ??
+          room.messages[room.messages.length - 1]?.content;
         const isActive = room.id === activeChatroomId;
         const hasUnread = !!unread[room.id];
         return (
@@ -77,9 +80,17 @@ function Sidebar({
           >
             <Avatar src={otherImages[room.id]} size={10} />
             <div className="overflow-hidden flex-1">
-              <p className={`text-sm truncate ${hasUnread ? "font-bold text-gray-900" : "font-medium text-gray-800"}`}>{name}</p>
+              <p
+                className={`text-sm truncate ${hasUnread ? "font-bold text-gray-900" : "font-medium text-gray-800"}`}
+              >
+                {name}
+              </p>
               {lastMsg && (
-                <p className={`text-xs truncate ${hasUnread ? "text-gray-700 font-medium" : "text-gray-500"}`}>{lastMsg}</p>
+                <p
+                  className={`text-xs truncate ${hasUnread ? "text-gray-700 font-medium" : "text-gray-500"}`}
+                >
+                  {lastMsg}
+                </p>
               )}
             </div>
             {hasUnread && (
@@ -144,9 +155,9 @@ function ChatPanel({
             .sort(
               (a, b) =>
                 new Date(a.sendDate ?? 0).getTime() -
-                new Date(b.sendDate ?? 0).getTime()
-            )
-        )
+                new Date(b.sendDate ?? 0).getTime(),
+            ),
+        ),
       )
       .catch((e) => console.error("Failed to load messages", e));
   }, [accessToken, chatroomId]);
@@ -249,7 +260,9 @@ function ChatPanel({
               >
                 {msg.content}
                 {msg.sendDate && (
-                  <div className={`text-[10px] mt-1 ${isOwn ? "text-black" : "text-gray-400"}`}>
+                  <div
+                    className={`text-[10px] mt-1 ${isOwn ? "text-black" : "text-gray-400"}`}
+                  >
                     {new Date(msg.sendDate).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -292,7 +305,9 @@ function ChatPanel({
 function EmptyState() {
   return (
     <div className="flex-1 flex items-center justify-center bg-[#f5f5f5]">
-      <p className="text-gray-400 text-sm">Select a conversation to start chatting</p>
+      <p className="text-gray-400 text-sm">
+        Select a conversation to start chatting
+      </p>
     </div>
   );
 }
@@ -309,7 +324,9 @@ export default function ChatLayout({
 
   const [chatrooms, setChatrooms] = useState<Chatroom[]>([]);
   const [otherNames, setOtherNames] = useState<Record<string, string>>({});
-  const [otherImages, setOtherImages] = useState<Record<string, string | null>>({});
+  const [otherImages, setOtherImages] = useState<Record<string, string | null>>(
+    {},
+  );
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -346,7 +363,7 @@ export default function ChatLayout({
           const first = profile?.firstName ?? "";
           const last = profile?.lastName ?? "";
           const name =
-            (first || last)
+            first || last
               ? `${first} ${last}`.trim()
               : `User ${otherId.slice(0, 6)}`;
           const image: string | null = profile?.profileImagePath ?? null;
@@ -355,7 +372,8 @@ export default function ChatLayout({
             const nameUpdates: Record<string, string> = {};
             const imageUpdates: Record<string, string | null> = {};
             prev.forEach((room) => {
-              const rid = room.sellerId === userId ? room.buyerId : room.sellerId;
+              const rid =
+                room.sellerId === userId ? room.buyerId : room.sellerId;
               if (rid === otherId) {
                 nameUpdates[room.id] = name;
                 imageUpdates[room.id] = image;
@@ -379,7 +397,9 @@ export default function ChatLayout({
   const otherName = activeChatroomId
     ? (otherNames[activeChatroomId] ?? "…")
     : "";
-  const otherImage = activeChatroomId ? (otherImages[activeChatroomId] ?? null) : null;
+  const otherImage = activeChatroomId
+    ? (otherImages[activeChatroomId] ?? null)
+    : null;
 
   return (
     <div className="flex h-screen pt-[60px]">
@@ -390,7 +410,11 @@ export default function ChatLayout({
         activeChatroomId={activeChatroomId}
       />
       {activeRoom && activeChatroomId ? (
-        <ChatPanel chatroomId={activeChatroomId} otherName={otherName} otherImage={otherImage} />
+        <ChatPanel
+          chatroomId={activeChatroomId}
+          otherName={otherName}
+          otherImage={otherImage}
+        />
       ) : (
         <EmptyState />
       )}

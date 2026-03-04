@@ -21,7 +21,12 @@ jest.mock("next/navigation", () => ({
 }));
 
 jest.mock("@/components/common/logger", () => ({
-  logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+  },
 }));
 
 // SignalR mock
@@ -81,7 +86,15 @@ const mockChatrooms = [
     id: "room-1",
     sellerId: "seller-abc",
     buyerId: "user-123",
-    messages: [{ id: "m1", content: "Hello!", author: "seller-abc", chatroomId: "room-1", sendDate: "2026-01-01T10:00:00Z" }],
+    messages: [
+      {
+        id: "m1",
+        content: "Hello!",
+        author: "seller-abc",
+        chatroomId: "room-1",
+        sendDate: "2026-01-01T10:00:00Z",
+      },
+    ],
   },
   {
     id: "room-2",
@@ -92,11 +105,27 @@ const mockChatrooms = [
 ];
 
 const mockMessages = [
-  { id: "m1", content: "Hello!", author: "seller-abc", chatroomId: "room-1", sendDate: "2026-01-01T10:00:00Z" },
-  { id: "m2", content: "Hi there", author: "user-123", chatroomId: "room-1", sendDate: "2026-01-01T10:01:00Z" },
+  {
+    id: "m1",
+    content: "Hello!",
+    author: "seller-abc",
+    chatroomId: "room-1",
+    sendDate: "2026-01-01T10:00:00Z",
+  },
+  {
+    id: "m2",
+    content: "Hi there",
+    author: "user-123",
+    chatroomId: "room-1",
+    sendDate: "2026-01-01T10:01:00Z",
+  },
 ];
 
-function setupFetch(chatrooms = mockChatrooms, messages = mockMessages, profile = { firstName: "Alice", lastName: "Smith", profileImagePath: null }) {
+function setupFetch(
+  chatrooms = mockChatrooms,
+  messages = mockMessages,
+  profile = { firstName: "Alice", lastName: "Smith", profileImagePath: null },
+) {
   (global.fetch as jest.Mock).mockImplementation((url: string) => {
     if (url === "/api/chat/chatrooms") {
       return Promise.resolve({ ok: true, json: async () => chatrooms });
@@ -132,13 +161,21 @@ describe("ChatLayout", () => {
   // ──────────────────── Authentication ────────────────────
 
   it("returns null while auth is loading", () => {
-    mockAuthState = { ...mockAuthState, authLoaded: false, isAuthenticated: false };
+    mockAuthState = {
+      ...mockAuthState,
+      authLoaded: false,
+      isAuthenticated: false,
+    };
     const { container } = render(<ChatLayout activeChatroomId={null} />);
     expect(container.firstChild).toBeNull();
   });
 
   it("redirects to sign-in when unauthenticated", async () => {
-    mockAuthState = { ...mockAuthState, authLoaded: true, isAuthenticated: false };
+    mockAuthState = {
+      ...mockAuthState,
+      authLoaded: true,
+      isAuthenticated: false,
+    };
     render(<ChatLayout activeChatroomId={null} />);
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
@@ -198,7 +235,15 @@ describe("ChatLayout", () => {
   });
 
   it("shows an unread dot for rooms with unread messages", async () => {
-    mockUnread = { "room-1": { chatroomId: "room-1", senderName: "Alice", content: "Hey", sendDate: "", senderImage: null } };
+    mockUnread = {
+      "room-1": {
+        chatroomId: "room-1",
+        senderName: "Alice",
+        content: "Hey",
+        sendDate: "",
+        senderImage: null,
+      },
+    };
     const { container } = render(<ChatLayout activeChatroomId={null} />);
     await waitFor(() => {
       const dot = container.querySelector(".bg-teal-500.rounded-full");
@@ -233,7 +278,9 @@ describe("ChatLayout", () => {
   it("renders the chat panel when an active chatroom is selected", async () => {
     render(<ChatLayout activeChatroomId="room-1" />);
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/type message here/i)).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/type message here/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -242,7 +289,9 @@ describe("ChatLayout", () => {
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         "/api/chat/chatrooms/room-1/messages",
-        expect.objectContaining({ headers: { Authorization: "Bearer fake-token" } })
+        expect.objectContaining({
+          headers: { Authorization: "Bearer fake-token" },
+        }),
       );
     });
   });
@@ -298,7 +347,11 @@ describe("ChatLayout", () => {
   });
 
   it("redirects to sign-in from ChatPanel when unauthenticated", async () => {
-    mockAuthState = { ...mockAuthState, authLoaded: true, isAuthenticated: false };
+    mockAuthState = {
+      ...mockAuthState,
+      authLoaded: true,
+      isAuthenticated: false,
+    };
     render(<ChatLayout activeChatroomId="room-1" />);
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");

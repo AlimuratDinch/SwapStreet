@@ -330,13 +330,20 @@ describe("LocationFilterModal Component", () => {
         TIMEOUT: 3,
         message: "Position unavailable",
       };
-      (global.navigator.geolocation.getCurrentPosition as jest.Mock)
-        .mockImplementationOnce((success: unknown, error: (e: unknown) => void) => error(mockGeoError));
+      (
+        global.navigator.geolocation.getCurrentPosition as jest.Mock
+      ).mockImplementationOnce(
+        (success: unknown, error: (e: unknown) => void) => error(mockGeoError),
+      );
 
-      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
       fireEvent.click(screen.getByText("Use my current location"));
 
-      expect(screen.getByText("Your location is unavailable right now.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Your location is unavailable right now."),
+      ).toBeInTheDocument();
     });
 
     it("shows error for TIMEOUT", () => {
@@ -347,13 +354,20 @@ describe("LocationFilterModal Component", () => {
         TIMEOUT: 3,
         message: "Timeout",
       };
-      (global.navigator.geolocation.getCurrentPosition as jest.Mock)
-        .mockImplementationOnce((success: unknown, error: (e: unknown) => void) => error(mockGeoError));
+      (
+        global.navigator.geolocation.getCurrentPosition as jest.Mock
+      ).mockImplementationOnce(
+        (success: unknown, error: (e: unknown) => void) => error(mockGeoError),
+      );
 
-      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
       fireEvent.click(screen.getByText("Use my current location"));
 
-      expect(screen.getByText("Timed out while retrieving your location.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Timed out while retrieving your location."),
+      ).toBeInTheDocument();
     });
 
     it("shows generic error for unknown geolocation error code", () => {
@@ -364,13 +378,20 @@ describe("LocationFilterModal Component", () => {
         TIMEOUT: 3,
         message: "Unknown",
       };
-      (global.navigator.geolocation.getCurrentPosition as jest.Mock)
-        .mockImplementationOnce((success: unknown, error: (e: unknown) => void) => error(mockGeoError));
+      (
+        global.navigator.geolocation.getCurrentPosition as jest.Mock
+      ).mockImplementationOnce(
+        (success: unknown, error: (e: unknown) => void) => error(mockGeoError),
+      );
 
-      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
       fireEvent.click(screen.getByText("Use my current location"));
 
-      expect(screen.getByText("Unable to retrieve your location.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Unable to retrieve your location."),
+      ).toBeInTheDocument();
     });
 
     it("shows error when location permission is denied via permissions API", async () => {
@@ -382,7 +403,9 @@ describe("LocationFilterModal Component", () => {
         writable: true,
       });
 
-      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
       fireEvent.click(screen.getByText("Use my current location"));
 
       await waitFor(() => {
@@ -402,15 +425,20 @@ describe("LocationFilterModal Component", () => {
       });
 
       const mockPosition = { coords: { latitude: 45.5, longitude: -73.5 } };
-      (global.navigator.geolocation.getCurrentPosition as jest.Mock)
-        .mockImplementationOnce((success: (p: typeof mockPosition) => void) => success(mockPosition));
+      (
+        global.navigator.geolocation.getCurrentPosition as jest.Mock
+      ).mockImplementationOnce((success: (p: typeof mockPosition) => void) =>
+        success(mockPosition),
+      );
 
-      render(<LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />);
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
       fireEvent.click(screen.getByText("Use my current location"));
 
       await waitFor(() => {
         expect(mockOnApply).toHaveBeenCalledWith(
-          expect.objectContaining({ name: "Current location" })
+          expect.objectContaining({ name: "Current location" }),
         );
       });
     });

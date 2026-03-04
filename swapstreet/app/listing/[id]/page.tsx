@@ -29,11 +29,7 @@ type Listing = {
   FSA?: string;
 };
 
-export default function ListingPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function ListingPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const router = useRouter();
   const { userId, accessToken, authLoaded } = useAuth();
@@ -65,7 +61,8 @@ export default function ListingPage({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        const errMsg: string = body?.error ?? body?.Error ?? `HTTP ${res.status}`;
+        const errMsg: string =
+          body?.error ?? body?.Error ?? `HTTP ${res.status}`;
         if (errMsg.toLowerCase().includes("buyer profile not found")) {
           setNoProfile(true);
           return;
@@ -73,7 +70,9 @@ export default function ListingPage({
         throw new Error(errMsg);
       }
       const chatroom = await res.json();
-      router.push(`/chat/${chatroom.id}${message ? `?msg=${encodeURIComponent(message)}` : ""}`);
+      router.push(
+        `/chat/${chatroom.id}${message ? `?msg=${encodeURIComponent(message)}` : ""}`,
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to start chat";
       console.error("Failed to start chat", e);
@@ -209,7 +208,9 @@ export default function ListingPage({
               <div className="flex flex-col gap-2">
                 {noProfile && (
                   <div className="bg-yellow-900/40 border border-yellow-700 rounded p-3 text-xs text-yellow-300">
-                    <p className="mb-2 font-medium">You need a profile before you can message sellers.</p>
+                    <p className="mb-2 font-medium">
+                      You need a profile before you can message sellers.
+                    </p>
                     <button
                       onClick={() => router.push("/seller/onboarding")}
                       className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold px-3 py-1.5 rounded w-full"
