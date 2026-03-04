@@ -15,6 +15,11 @@ jest.mock("@/components/common/logger", () => ({
   },
 }));
 
+jest.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ login: jest.fn() }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 const pushMock = jest.fn();
 const mockSearchParamsGet = jest.fn((param: string) => {
   if (param === "token") return "test-token-123";
@@ -98,7 +103,8 @@ describe("VerifyEmailPage", () => {
   it("shows success state and redirects on successful verification", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-    } as Response);
+      json: async () => ({ message: "Email confirmed successfully!", accessToken: "fake-token" }),
+    } as unknown as Response);
 
     render(<VerifyEmailPage />);
 
@@ -109,13 +115,13 @@ describe("VerifyEmailPage", () => {
     expect(
       screen.getByText(/your email has been successfully verified/i),
     ).toBeInTheDocument();
-    expect(screen.getByText(/redirecting you to sign in/i)).toBeInTheDocument();
+    expect(screen.getByText(/redirecting you to onboarding/i)).toBeInTheDocument();
 
     // trigger redirect
     jest.runAllTimers();
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith("/auth/sign-in");
+      expect(pushMock).toHaveBeenCalledWith("/seller/onboarding");
     });
   });
 
@@ -203,7 +209,8 @@ describe("VerifyEmailPage", () => {
   it("verifies email and shows success with redirect message", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-    } as Response);
+      json: async () => ({ message: "Email confirmed successfully!", accessToken: "fake-token" }),
+    } as unknown as Response);
 
     render(<VerifyEmailPage />);
 
@@ -216,7 +223,7 @@ describe("VerifyEmailPage", () => {
     jest.advanceTimersByTime(3000);
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith("/auth/sign-in");
+      expect(pushMock).toHaveBeenCalledWith("/seller/onboarding");
     });
   });
 
@@ -251,7 +258,8 @@ describe("VerifyEmailPage", () => {
   it("verifies email successfully and shows checkmark icon", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-    } as Response);
+      json: async () => ({ message: "Email confirmed successfully!", accessToken: "fake-token" }),
+    } as unknown as Response);
 
     const { container } = render(<VerifyEmailPage />);
 
@@ -401,6 +409,80 @@ describe("VerifyEmailPage", () => {
         screen.getByText(/missing verification token or email/i),
       ).toBeInTheDocument();
     });
+  });
+
+  it("shows success state even when accessToken is absent from response", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ message: "Email confirmed successfully!" }), // no accessToken
+    } as unknown as Response);
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/email verified/i)).toBeInTheDocument();
+    });
+
+    jest.runAllTimers();
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/seller/onboarding");
+    });
+  });
+
+  it("handles resend fetch rejection gracefully when email is present", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ Error: "Token expired" }),
+      } as unknown as Response)
+      .mockRejectedValueOnce("network failure string");
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/verification failed/i)).toBeInTheDocument();
+    });
+
+    const resendButton = screen.getByRole("button", { name: /resend verification email/i });
+    resendButton.click();
+
+    await waitFor(() => {
+      expect(screen.getByText(/failed to resend verification email/i)).toBeInTheDocument();
+    });
+  });
+
+  it("resend does nothing when email param is missing", async () => {
+    mockSearchParamsGet.mockImplementation((param: string) => {
+      if (param === "token") return null;
+      if (param === "email") return null;
+      return null;
+    });
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/missing verification token or email/i)).toBeInTheDocument();
+    });
+
+    const resendButton = screen.queryByRole("button", { name: /resend verification email/i });
+    if (resendButton) {
+      resendButton.click();
+      expect(global.fetch).not.toHaveBeenCalled();
+    }
+  });
+
+  it("handles verifyEmail catch with non-Error rejection", async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce("raw string error"); 
+
+    render(<VerifyEmailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/verification failed/i)).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText(/failed to verify email. please try again/i),
+    ).toBeInTheDocument();
   });
 
   it("disables resend button while sending", async () => {
