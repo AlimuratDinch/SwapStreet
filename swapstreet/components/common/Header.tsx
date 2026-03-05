@@ -36,7 +36,7 @@ function Logo() {
   return (
     <div className="flex items-center gap-3">
       <Shirt className="h-8 w-8 text-teal-500" />
-      <Link href="/.." className="font-bold text-2xl">
+      <Link href="/browse" className="font-bold text-2xl">
         SWAPSTREET
       </Link>
     </div>

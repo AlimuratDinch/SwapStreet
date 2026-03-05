@@ -10,6 +10,7 @@ const customJestConfig = {
   testEnvironment: "jest-environment-jsdom",
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
+    "^@radix-ui/react-dialog$": "<rootDir>/node_modules/@radix-ui/react-dialog",
   },
   collectCoverage: true,
   // 1. collectCoverageFrom: Which source files should be measured?

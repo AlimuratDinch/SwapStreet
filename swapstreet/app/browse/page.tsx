@@ -1,6 +1,11 @@
 import { Suspense } from "react";
 // Adjust these import paths based on your actual folder structure
 import { Header } from "@/components/common/Header";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Sidebar } from "./components/Sidebar";
 import { CreateListingFAB } from "./components/CreateListingFAB";
 import InfiniteBrowse from "./components/InfiniteBrowse";
@@ -27,24 +32,33 @@ export default async function BrowsePage({
       {/* 3. Global Navigation */}
       <Header showCenterNav={true} />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* 4. Filter Sidebar - Wrapped in Suspense for URL param read safety */}
-        <Suspense fallback={<SidebarSkeleton />}>
-          <Sidebar />
-        </Suspense>
+      <div className="flex-1 overflow-hidden">
+        <SidebarProvider defaultOpen={true}>
+          {/* 4. Filter Sidebar - Wrapped in Suspense for URL param read safety */}
+          <Suspense fallback={<SidebarSkeleton />}>
+            <Sidebar />
+          </Suspense>
 
-        {/* 5. Main Content Area */}
-        <Suspense fallback={<BrowseSkeleton />}>
-          <InfiniteBrowse
-            initialItems={initialData.items}
-            initialCursor={initialData.nextCursor}
-            initialHasNext={initialData.hasNextPage}
-          />
-        </Suspense>
+          {/* 5. Main Content Area */}
+          <SidebarInset className="flex flex-col pt-[56px]">
+            <div className="flex h-10 items-center border-b px-2">
+              <SidebarTrigger />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <Suspense fallback={<BrowseSkeleton />}>
+                <InfiniteBrowse
+                  initialItems={initialData.items}
+                  initialCursor={initialData.nextCursor}
+                  initialHasNext={initialData.hasNextPage}
+                />
+              </Suspense>
+            </div>
+          </SidebarInset>
+
+          {/* 6. Floating Action Button */}
+          <CreateListingFAB />
+        </SidebarProvider>
       </div>
-
-      {/* 6. Floating Action Button */}
-      <CreateListingFAB />
     </div>
   );
 }

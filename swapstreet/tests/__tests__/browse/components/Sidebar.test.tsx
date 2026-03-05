@@ -1,99 +1,134 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { Sidebar } from "@/app/browse/components/Sidebar";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { BrowseSidebar } from "@/app/browse/components/Sidebar";
 import { useRouter, useSearchParams } from "next/navigation";
 
-// Mocking Next.js hooks
+// Mock Next.js hooks
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
   useSearchParams: jest.fn(),
 }));
 
-// Mock Portal so portal children render inline in the test DOM
-jest.mock("@/app/browse/components/Portal", () => ({
-  Portal: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
+// Mocking Shadcn components and custom sub-components
+jest.mock("@/components/ui/sidebar", () => ({
+  Sidebar: ({ children }: any) => <nav>{children}</nav>,
+  SidebarHeader: ({ children }: any) => <div>{children}</div>,
+  SidebarContent: ({ children }: any) => <div>{children}</div>,
+  SidebarGroup: ({ children }: any) => <div>{children}</div>,
+  SidebarGroupLabel: ({ children }: any) => <div>{children}</div>,
+  SidebarGroupContent: ({ children }: any) => <div>{children}</div>,
+  SidebarMenu: ({ children }: any) => <ul>{children}</ul>,
+  SidebarMenuItem: ({ children }: any) => <li>{children}</li>,
+  SidebarMenuButton: ({ children, onClick }: any) => (
+    <button onClick={onClick}>{children}</button>
+  ),
+  useSidebar: () => ({
+    state: "expanded",
+    setOpen: jest.fn(),
+    open: true,
+    isMobile: false,
+    toggleSidebar: jest.fn(),
+  }),
+}));
+
+// Mock Sub-components to ensure we focus on Sidebar logic
+jest.mock("@/app/browse/components/SearchBar", () => ({
+  SearchBar: ({ onSearch }: any) => (
+    <input
+      data-testid="search-input"
+      onChange={(e) => onSearch(e.target.value)}
+    />
   ),
 }));
 
-describe("Sidebar Component", () => {
+jest.mock("@/app/browse/components/LocationFilterModal", () => ({
+  LocationFilterModal: ({ onApply }: any) => (
+    <button
+      data-testid="apply-loc"
+      onClick={() => onApply({ lat: 10, lng: 20, radiusKm: 5 })}
+    >
+      Apply Location
+    </button>
+  ),
+}));
+
+describe("Sidebar Component Coverage Fix", () => {
   const mockReplace = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue({ replace: mockReplace });
+  });
+
+  it("initializes state from URL parameters (Lines 58-60)", () => {
     (useSearchParams as jest.Mock).mockReturnValue({
-      get: jest.fn((key) => null), // Simulate no initial params
+      get: (key: string) => {
+        if (key === "minPrice") return "100";
+        if (key === "maxPrice") return "500";
+        if (key === "q") return "test-query";
+        return null;
+      },
+      toString: () => "minPrice=100&maxPrice=500&q=test-query",
     });
-  });
 
-  it("toggles the Price Range visibility", () => {
-    render(<Sidebar />);
-    expect(screen.queryByText("Min")).not.toBeInTheDocument();
+    render(<BrowseSidebar />);
 
-    const toggleButton = screen.getByText("Price Range");
-    fireEvent.click(toggleButton);
-
-    expect(screen.getByText("Min")).toBeInTheDocument();
-    expect(screen.getByText("Max")).toBeInTheDocument();
-  });
-
-  it("updates the URL when inputs change", () => {
-    render(<Sidebar />);
-
-    // Open price range
+    // Expand price to check values
     fireEvent.click(screen.getByText("Price Range"));
+    expect(screen.getByDisplayValue("100")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("500")).toBeInTheDocument();
+  });
 
-    const minInput = screen.getByDisplayValue("0");
-    fireEvent.change(minInput, { target: { value: "50" } });
+  it("updates URL when location is applied (Lines 66-69)", async () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: () => null,
+      toString: () => "",
+    });
 
-    // Expecting router.replace to be called with updated params
+    render(<BrowseSidebar />);
+
+    // Trigger Location Modal
+    fireEvent.click(screen.getByText("Location"));
+
+    // Click the mocked "Apply" button inside the modal
+    const applyBtn = screen.getByTestId("apply-loc");
+    fireEvent.click(applyBtn);
+
     expect(mockReplace).toHaveBeenCalledWith(
-      expect.stringContaining("minPrice=50"),
+      expect.stringContaining("lat=10&lng=20&radiusKm=5"),
       expect.any(Object),
     );
   });
 
-  it("clears all filters when the Clear button is clicked", () => {
-    render(<Sidebar />);
-    const clearButton = screen.getByText("Clear");
+  it("clears all filters when 'Clear' is clicked (Line 84)", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: () => null,
+      toString: () => "",
+    });
 
-    fireEvent.click(clearButton);
+    render(<BrowseSidebar />);
 
+    const clearBtn = screen.getByText("Clear");
+    fireEvent.click(clearBtn);
+
+    // Should reset to defaults
     expect(mockReplace).toHaveBeenCalledWith(
       expect.stringContaining("minPrice=0&maxPrice=999999"),
       expect.any(Object),
     );
   });
 
-  describe("Location button and modal", () => {
-    it("renders the location filter button", () => {
-      render(<Sidebar />);
+  it("handles empty input in PriceInput (Lines 158-161)", async () => {
+    render(<BrowseSidebar />);
+    fireEvent.click(screen.getByText("Price Range"));
 
-      expect(screen.getByText("Location")).toBeInTheDocument();
-    });
+    const minInput = screen.getByDisplayValue("0");
+    // Simulate clearing the input (empty string)
+    fireEvent.change(minInput, { target: { value: "" } });
 
-    it("opens and closes the modal when using geolocation", async () => {
-      // Mock geolocation
-      (global.navigator as any).geolocation = {
-        getCurrentPosition: jest.fn((success: any) =>
-          success({ coords: { latitude: 45.5017, longitude: -73.5673 } }),
-        ),
-      };
-
-      render(<Sidebar />);
-
-      const locationButton = screen.getByText("Location");
-      fireEvent.click(locationButton);
-
-      // Modal should open (Portal renders inline in tests)
-      expect(screen.getByText("Change location")).toBeInTheDocument();
-
-      const useLocationButton = screen.getByText("Use my current location");
-      fireEvent.click(useLocationButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText("Change location")).not.toBeInTheDocument();
-      });
-    });
+    // The component logic `Number(e.target.value) || 0` should convert "" to 0
+    expect(mockReplace).toHaveBeenCalledWith(
+      expect.stringContaining("minPrice=0"),
+      expect.any(Object),
+    );
   });
 });
