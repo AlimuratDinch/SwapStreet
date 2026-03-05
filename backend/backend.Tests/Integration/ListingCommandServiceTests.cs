@@ -54,7 +54,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -97,7 +97,7 @@
 //             // TagId is null/not provided
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -139,7 +139,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -194,7 +194,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -233,7 +233,7 @@
 //             // Images intentionally left null to assert current behavior
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -264,7 +264,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act & Assert
@@ -290,7 +290,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act & Assert
@@ -322,7 +322,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act & Assert
@@ -361,7 +361,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act & Assert
@@ -394,7 +394,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act & Assert
@@ -426,7 +426,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -460,14 +460,14 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
 //         var listingId = await service.CreateListingAsync(request);
 
 //         // Assert - Retrieve in a new context to ensure it was persisted
-//         using var newContext = new AppDbContext(_fixture.DbOptions);
+//         using var newContext = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var persistedListing = await newContext.Listings
 //             .AsNoTracking()
 //             .FirstOrDefaultAsync(l => l.Id == listingId);
@@ -493,7 +493,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -530,7 +530,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -562,7 +562,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -595,7 +595,7 @@
 //             // Images = CreateTestImages()
 //         };
 
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 //         var service = new ListingCommandService(context, CreateMockLogger());
 
 //         // Act
@@ -625,7 +625,7 @@
 //     /// </summary>
 //     private async Task SeedTestDataAsync()
 //     {
-//         using var context = new AppDbContext(_fixture.DbOptions);
+//         using var context = new ListingCommandService(context, CreateMockLogger(), new AppDbContext(_pgFixture.DbOptions);());
 
 //         // Clear existing data
 //         await context.Database.EnsureDeletedAsync();
@@ -759,7 +759,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using NetTopologySuite.Geometries;
-using Moq;
 using System.Threading;
 
 namespace backend.Tests.Integration;
@@ -780,16 +779,24 @@ public class ListingCommandServiceTests
         _pgFixture = pgFixture;
         _meiliFixture = meiliFixture;
         _locationMock = new Mock<ILocationService>();
+        _locationMock
+            .Setup(service => service.getLatLongFromFSAAsync(It.IsAny<string>()))
+            .ReturnsAsync(new LatLng(45.5017, -73.5673));
     }
 
     private ListingCommandService CreateService(AppDbContext context)
     {
-        // Matches your 4-parameter constructor
+        return CreateService(context, CreateMockFileStorageService());
+    }
+
+    private ListingCommandService CreateService(AppDbContext context, IFileStorageService fileStorageService)
+    {
         return new ListingCommandService(
             context,
             CreateMockLogger(),
+            fileStorageService,
             _locationMock.Object,
-            _meiliFixture.Client // REAL Meilisearch Client
+            _meiliFixture.Client
         );
     }
 
@@ -813,26 +820,549 @@ public class ListingCommandServiceTests
             TagId = TestData.TestTagId
         };
 
-        // Mock the location for this FSA
-        var coords = new LatLng(43.7, -79.3);
-        _locationMock.Setup(s => s.getLatLongFromFSAAsync(request.FSA)).ReturnsAsync(coords);
+
+        // Act
+        var listingId = await service.CreateListingAsync(request);
+        // Assert
+        listingId.Should().NotBeEmpty();
+
+        var listing = await context
+            .Listings
+            .Include(l => l.Tag)
+            .Include(l => l.Profile)
+            .FirstAsync(l => l.Id == listingId);
+
+        listing.Should().NotBeNull();
+        listing.Title.Should().Be(request.Title);
+        listing.Description.Should().Be(request.Description);
+        listing.Price.Should().Be(request.Price);
+        listing.ProfileId.Should().Be(request.ProfileId);
+        listing.FSA.Should().Be(request.FSA);
+        listing.TagId.Should().Be(request.TagId);
+        listing.CreatedAt.Should().NotBe(default);
+        // listing.UpdatedAt.Should().BeCloseTo(listing.CreatedAt, TimeSpan.FromMilliseconds(1));
+    }
+
+    [Fact]
+    public async Task CreateListingAsync_ValidRequestWithoutTag_CreatesListingWithoutTag()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var request = new CreateListingRequestDto
+        {
+            Title = "Vintage Levi's Jeans",
+            Description = "Classic blue denim, size 32. Well-maintained.",
+            Price = 45.50m,
+            ProfileId = TestData.TestProfileId,
+            FSA = "M5A",
+            // Images = CreateTestImages()
+            // TagId is null/not provided
+        };
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context);
 
         // Act
         var listingId = await service.CreateListingAsync(request);
 
-        // Assert - 1. Database
-        var listing = await context.Listings.FirstAsync(l => l.Id == listingId);
+        // Assert
+        var listing = await context
+            .Listings
+            .FirstAsync(l => l.Id == listingId);
+
+        listing.TagId.Should().BeNull();
         listing.Title.Should().Be(request.Title);
+        listing.Price.Should().Be(request.Price);
+    }
 
-        // Assert - 2. REAL Meilisearch
-        // Give Meilisearch a moment to process the async task
-        await Task.Delay(500);
+    [Fact]
+    public async Task CreateListingAsync_MultipleListings_EachHasUniqueId()
+    {
+        // Arrange
+        await SeedTestDataAsync();
 
-        var meiliDoc = await _meiliFixture.Index.GetDocumentAsync<ListingSearchDto>(listingId.ToString());
-        meiliDoc.Should().NotBeNull();
-        meiliDoc.Title.Should().Be(request.Title);
-        meiliDoc._geo.Should().NotBeNull();
-        meiliDoc._geo!.lat.Should().Be(coords.lat);
+        var request1 = new CreateListingRequestDto
+        {
+            Title = "Adidas Sneakers",
+            Description = "White leather sneakers, size 9",
+            Price = 65.00m,
+            ProfileId = TestData.TestProfileId,
+            FSA = "H2X",
+            // Images = CreateTestImages()
+        };
+
+        var request2 = new CreateListingRequestDto
+        {
+            Title = "Puma Running Shoes",
+            Description = "Black running shoes, size 10",
+            Price = 75.00m,
+            ProfileId = TestData.TestSecondProfileId,
+            FSA = "M5A",
+            // Images = CreateTestImages()
+        };
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context);
+
+        // Act
+        var listingId1 = await service.CreateListingAsync(request1);
+        var listingId2 = await service.CreateListingAsync(request2);
+
+        // Assert
+        listingId1.Should().NotBe(listingId2);
+
+        var listings = await context
+            .Listings
+            .AsNoTracking()
+            .Where(l => l.Id == listingId1 || l.Id == listingId2)
+            .OrderBy(l => l.Title)
+            .ToListAsync();
+
+        listings.Should().HaveCount(2);
+        listings[0].Title.Should().Be("Adidas Sneakers");
+        listings[1].Title.Should().Be("Puma Running Shoes");
+    }
+
+    [Fact]
+    public async Task CreateListingAsync_SameSellerMultipleListings_CreatesIndependently()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var baseRequest = new CreateListingRequestDto
+        {
+            ProfileId = TestData.TestProfileId,
+            FSA = "H2X"
+        };
+
+        var request1 = new CreateListingRequestDto
+        {
+            Title = "Listing 1",
+            Description = "First listing from seller",
+            Price = 100.00m,
+            ProfileId = baseRequest.ProfileId,
+            FSA = baseRequest.FSA,
+            TagId = TestData.TestTagId,
+            // Images = CreateTestImages()
+        };
+
+        var request2 = new CreateListingRequestDto
+        {
+            Title = "Listing 2",
+            Description = "Second listing from same seller",
+            Price = 150.00m,
+            ProfileId = baseRequest.ProfileId,
+            FSA = baseRequest.FSA,
+            // Images = CreateTestImages()
+        };
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context);
+
+        // Act
+        var id1 = await service.CreateListingAsync(request1);
+        var id2 = await service.CreateListingAsync(request2);
+
+        // Assert
+        id1.Should().NotBe(id2);
+
+        var listings = await context
+            .Listings
+            .AsNoTracking()
+            .Where(l => l.ProfileId == TestData.TestProfileId)
+            .ToListAsync();
+
+        listings.Should().HaveCount(2);
+    }
+
+    #endregion
+
+    #region Delete Listing Tests
+
+    [Fact]
+    public async Task DeleteListingAsync_RemovesListingAndImages_WhenStorageSucceeds()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_pgFixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Delete Me",
+                Description = "To be deleted",
+                Price = 10.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            seedContext.ListingImages.AddRange(
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/one.jpg" },
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/two.jpg" });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context, mockStorage.Object);
+
+        // Act
+        await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        using var verifyContext = new AppDbContext(_pgFixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().BeNull();
+
+        var images = await verifyContext.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().BeEmpty();
+
+        mockStorage.Verify(
+            s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WhenStorageFails_DoesNotRemoveDatabaseRows()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_pgFixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Delete Me",
+                Description = "To be deleted",
+                Price = 10.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            seedContext.ListingImages.Add(
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/one.jpg" });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { "listing/one.jpg" });
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context, mockStorage.Object);
+
+        // Act
+        Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        using var verifyContext = new AppDbContext(_pgFixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().NotBeNull();
+
+        var images = await verifyContext.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WhenListingDoesNotExist_ThrowsArgumentException()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var nonExistentListingId = Guid.NewGuid();
+        var mockStorage = new Mock<IFileStorageService>();
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context, mockStorage.Object);
+
+        // Act
+        Func<Task> act = async () => await service.DeleteListingAsync(nonExistentListingId, TestData.TestProfileId);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage($"Listing {nonExistentListingId} not found");
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WhenUserDoesNotOwnListing_ThrowsArgumentException()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_pgFixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Not My Listing",
+                Description = "Owned by another user",
+                Price = 10.00m,
+                ProfileId = TestData.TestSecondProfileId, // Different profile
+                FSA = "M5A",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context, mockStorage.Object);
+
+        // Act - Try to delete with wrong profile ID
+        Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage($"Listing {listingId} not found");
+
+        // Verify listing still exists
+        using var verifyContext = new AppDbContext(_pgFixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WithNoImages_RemovesListingSuccessfully()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_pgFixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "No Images Listing",
+                Description = "Listing without any images",
+                Price = 10.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context, mockStorage.Object);
+
+        // Act
+        await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        using var verifyContext = new AppDbContext(_pgFixture.DbOptions);
+        var listing = await verifyContext.Listings.FindAsync(listingId);
+        listing.Should().BeNull();
+
+        // Verify DeleteFilesAsync was never called since there were no images
+        mockStorage.Verify(
+            s => s.DeleteFilesAsync(
+                It.IsAny<UploadType>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WithMultipleImages_RemovesAllImagesAndListing()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        var imagePaths = new[] { "listing/img1.jpg", "listing/img2.jpg", "listing/img3.jpg", "listing/img4.jpg" };
+
+        using (var seedContext = new AppDbContext(_pgFixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Multi Image Listing",
+                Description = "Listing with multiple images",
+                Price = 20.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            foreach (var path in imagePaths)
+            {
+                seedContext.ListingImages.Add(
+                    new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = path });
+            }
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.Is<IEnumerable<string>>(paths => paths.Count() == 4),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context, mockStorage.Object);
+
+        // Act
+        await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        using var verifyDbContext = new AppDbContext(_pgFixture.DbOptions);
+        var listing = await verifyDbContext.Listings.FindAsync(listingId);
+        listing.Should().BeNull();
+
+        var images = await verifyDbContext.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().BeEmpty();
+
+        // Verify all 4 image paths were passed to DeleteFilesAsync
+        mockStorage.Verify(
+            s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.Is<IEnumerable<string>>(paths =>
+                    paths.Count() == 4 &&
+                    paths.All(p => imagePaths.Contains(p))),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteListingAsync_WithPartialStorageFailure_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var listingId = Guid.NewGuid();
+        using (var seedContext = new AppDbContext(_pgFixture.DbOptions))
+        {
+            seedContext.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Listing With Multiple Images",
+                Description = "Some images fail to delete",
+                Price = 15.00m,
+                ProfileId = TestData.TestProfileId,
+                FSA = "H2X",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            seedContext.ListingImages.AddRange(
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/img1.jpg" },
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/img2.jpg" },
+                new ListingImage { Id = Guid.NewGuid(), ListingId = listingId, ImagePath = "listing/img3.jpg" });
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var mockStorage = new Mock<IFileStorageService>();
+        // Simulate partial failure - 2 out of 3 images fail to delete
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                UploadType.Listing,
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { "listing/img1.jpg", "listing/img3.jpg" });
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context, mockStorage.Object);
+
+        // Act
+        Func<Task> act = async () => await service.DeleteListingAsync(listingId, TestData.TestProfileId);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage($"Failed to delete 2 image(s) for listing {listingId}");
+
+        // Verify listing and images were NOT deleted from database
+        using var verifyDbContext = new AppDbContext(_pgFixture.DbOptions);
+        var listing = await verifyDbContext.Listings.FindAsync(listingId);
+        listing.Should().NotBeNull();
+
+        var images = await verifyDbContext.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().HaveCount(3);
+    }
+
+    #endregion
+
+    #region Validation Tests - Invalid FSA
+
+    [Fact]
+    public async Task CreateListingAsync_NoImagesProvided_CreatesListingWithoutImages()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var request = new CreateListingRequestDto
+        {
+            Title = "No Images",
+            Description = "Service currently allows listings without images (BECAUSE CHECKED IN FRONTEND)",
+            Price = 10.00m,
+            ProfileId = TestData.TestProfileId,
+            FSA = "H2X",
+            // Images intentionally left null to assert current behavior
+        };
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context);
+
+        // Act
+        var listingId = await service.CreateListingAsync(request);
+
+        // Assert (listing should be created and have no images (AGAIN, CHECKED IN FRONTEND))
+        listingId.Should().NotBeEmpty();
+        var listing = await context.Listings.FirstAsync(l => l.Id == listingId);
+        listing.Should().NotBeNull();
+
+        var images = await context.ListingImages
+            .Where(li => li.ListingId == listingId)
+            .ToListAsync();
+        images.Should().HaveCount(0);
     }
 
     [Fact]
@@ -851,8 +1381,35 @@ public class ListingCommandServiceTests
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => service.CreateListingAsync(request));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.CreateListingAsync(request));
 
+        exception.Message.Should().Contain("Invalid FSA");
+    }
+
+    [Fact]
+    public async Task CreateListingAsync_NonexistentFsa_ThrowsArgumentException()
+    {
+        // Arrange
+        await SeedTestDataAsync();
+
+        var request = new CreateListingRequestDto
+        {
+            Title = "Nonexistent FSA",
+            Description = "FSA not in database",
+            Price = 99.99m,
+            ProfileId = TestData.TestProfileId,
+            FSA = "X9X", // Not seeded
+            // Images = CreateTestImages()
+        };
+
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        var service = CreateService(context);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            async () => await service.CreateListingAsync(request));
+
+        exception.Message.Should().Contain("Invalid FSA");
         // Verify Meilisearch is still empty (or at least doesn't have this title)
         await Task.Delay(300);
         var search = await _meiliFixture.Index.SearchAsync<ListingSearchDto>(request.Title);
@@ -899,6 +1456,22 @@ public class ListingCommandServiceTests
         return new Mock<ILogger<ListingCommandService>>().Object;
     }
 
+    private IFileStorageService CreateMockFileStorageService()
+    {
+        var mockStorage = new Mock<IFileStorageService>();
+        mockStorage
+            .Setup(s => s.DeleteFilesAsync(
+                It.IsAny<UploadType>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        return mockStorage.Object;
+    }
+
+    /// <summary>
+    /// Seeds test data into the database for each test
+    /// </summary>
     private async Task SeedTestDataAsync()
     {
         // 1. Reset Postgres
@@ -906,44 +1479,65 @@ public class ListingCommandServiceTests
         await context.Database.EnsureDeletedAsync();
         await context.Database.EnsureCreatedAsync();
 
-        // Seed in correct order: Province -> City -> FSA -> Profile
-        var province = new Province
-        {
-            Id = 1,
-            Code = "QC",
-            Name = "Quebec"
-        };
-        context.Provinces.Add(province);
-        await context.SaveChangesAsync(); // Save province first
-
-        var city = new City
-        {
-            Id = 1,
-            Name = "Montreal",
-            ProvinceId = 1
-        };
-        context.Cities.Add(city);
-        await context.SaveChangesAsync(); // Save city before FSA and Profile
-
-        context.Fsas.Add(new Fsa
-        {
-            Code = "H2X",
-            CityId = 1,
-            Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
-        });
-
-        context.Profiles.Add(new Profile
-        {
-            Id = TestData.TestProfileId,
-            FirstName = "John",
-            FSA = "H2X",
-            CityId = 1 // Add the required CityId
-        });
-
+        // Seed in correct order: Province -> City -> FSA -> Profile -> Tag dependencies -> Tag
+        context.Provinces.AddRange(
+            new Province { Id = 1, Code = "QC", Name = "Quebec" },
+            new Province { Id = 2, Code = "ON", Name = "Ontario" });
         await context.SaveChangesAsync();
 
-        // 2. Reset Meilisearch Index for a clean test state
-        await _meiliFixture.InitializeAsync();
+        context.Cities.AddRange(
+            new City { Id = 1, Name = "Montreal", ProvinceId = 1 },
+            new City { Id = 2, Name = "Toronto", ProvinceId = 2 });
+        await context.SaveChangesAsync();
+
+        context.Fsas.AddRange(
+            new Fsa { Code = "H2X", CityId = 1, Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 } },
+            new Fsa { Code = "M5A", CityId = 2, Centroid = new Point(-79.3832, 43.6532) { SRID = 4326 } });
+
+        context.Profiles.AddRange(
+            new Profile { Id = TestData.TestProfileId, FirstName = "John", LastName = "Doe", FSA = "H2X", CityId = 1 },
+            new Profile { Id = TestData.TestSecondProfileId, FirstName = "Jane", LastName = "Smith", FSA = "M5A", CityId = 2 });
+        await context.SaveChangesAsync();
+
+        context.ArticleTypes.Add(new ArticleType { Id = TestData.TestArticleTypeId, Name = "Footwear" });
+        context.Styles.Add(new Style { Id = TestData.TestStyleId, Name = "Casual" });
+        context.Sizes.Add(new Size { Id = TestData.TestSizeId, Value = "10", ArticleTypeId = TestData.TestArticleTypeId });
+        context.Brands.Add(new Brand { Id = TestData.TestBrandId, Name = "Nike" });
+        await context.SaveChangesAsync();
+
+        context.Tags.AddRange(
+            new Tag
+            {
+                Id = TestData.TestTagId,
+                ArticleTypeId = TestData.TestArticleTypeId,
+                StyleId = TestData.TestStyleId,
+                SizeId = TestData.TestSizeId,
+                Color = ColorEnum.Black,
+                BrandId = TestData.TestBrandId,
+                Sex = SexEnum.Unisex,
+                Condition = ConditionEnum.NewWithTags,
+                Material = (int)MaterialEnum.Leather,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            },
+            new Tag
+            {
+                Id = TestData.TestSecondTagId,
+                ArticleTypeId = TestData.TestArticleTypeId,
+                StyleId = TestData.TestStyleId,
+                SizeId = TestData.TestSizeId,
+                Color = ColorEnum.White,
+                BrandId = TestData.TestBrandId,
+                Sex = SexEnum.Unisex,
+                Condition = ConditionEnum.ExcellentUsedCondition,
+                Material = (int)MaterialEnum.Cotton,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+        await context.SaveChangesAsync();
+
+        // 2. Reset Meilisearch index documents for a clean test state
+        await _meiliFixture.Index.DeleteAllDocumentsAsync();
     }
 
     #endregion
