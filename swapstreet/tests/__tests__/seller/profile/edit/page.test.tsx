@@ -194,9 +194,7 @@ describe("EditSellerProfilePage", () => {
       .closest("form");
     fireEvent.submit(form!);
 
-    expect(
-      await screen.findByText(/profile updated!/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/profile updated!/i)).toBeInTheDocument();
     expect(
       screen.getByText(/taking you back to your profile/i),
     ).toBeInTheDocument();
