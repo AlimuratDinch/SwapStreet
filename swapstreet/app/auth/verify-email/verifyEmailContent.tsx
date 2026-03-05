@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { logger } from "@/components/common/logger";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function VerifyEmailContent() {
   const router = useRouter();
+  const { login } = useAuth();
   const searchParams = useSearchParams();
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
@@ -47,12 +49,17 @@ export default function VerifyEmailContent() {
       });
 
       if (response.ok) {
+        const data = await response.json();
         setStatus("success");
         logger.info("Email verification successful");
 
-        // Redirect to sign-in page after 3 seconds
+        if (data.accessToken) {
+          login(data.accessToken);
+        }
+
+        // Redirect to onboarding after 3 seconds
         setTimeout(() => {
-          router.push("/auth/sign-in");
+          router.push("/seller/onboarding");
         }, 3000);
       } else {
         const data = await response.json();
@@ -175,7 +182,7 @@ export default function VerifyEmailContent() {
               Your email has been successfully verified.
             </p>
             <p className="text-sm text-gray-500">
-              Redirecting you to sign in...
+              Redirecting you to onboarding...
             </p>
           </div>
         )}

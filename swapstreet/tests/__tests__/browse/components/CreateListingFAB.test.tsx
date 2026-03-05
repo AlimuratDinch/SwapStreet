@@ -1,51 +1,58 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { CreateListingFAB } from "@/app/browse/components/CreateListingFAB";
 
-// Mock Next.js Link with a named component to satisfy react/display-name
-jest.mock("next/link", () => {
-  const MockLink = ({
-    children,
-    href,
-  }: {
-    children: React.ReactNode;
-    href: string;
-  }) => <a href={href}>{children}</a>;
+const mockPush = jest.fn();
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
 
-  MockLink.displayName = "NextLink"; // This is the line that clears the error
-  return MockLink;
-});
+let mockAuthState = { isAuthenticated: true, authLoaded: true };
+jest.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => mockAuthState,
+}));
 
 describe("CreateListingFAB Component", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuthState = { isAuthenticated: true, authLoaded: true };
+  });
+
   it("renders the button with the correct accessibility label", () => {
     render(<CreateListingFAB />);
-
-    // We search by the aria-label you provided in the component
     const button = screen.getByRole("button", { name: /create listing/i });
     expect(button).toBeInTheDocument();
   });
 
-  it("links to the correct seller creation page", () => {
+  it("navigates to the correct seller creation page when authenticated", () => {
     render(<CreateListingFAB />);
-
-    // Find the link wrapping the button and check its destination
-    const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", "/seller/createListing");
+    fireEvent.click(screen.getByRole("button", { name: /create listing/i }));
+    expect(mockPush).toHaveBeenCalledWith("/seller/createListing");
   });
 
   it("contains the Plus icon", () => {
     const { container } = render(<CreateListingFAB />);
-
-    // Lucide icons render as SVG tags
     const svgIcon = container.querySelector("svg");
     expect(svgIcon).toBeInTheDocument();
     expect(svgIcon).toHaveClass("lucide-plus");
   });
 
   it("has the fixed positioning classes for the layout", () => {
-    render(<CreateListingFAB />);
+    const { container } = render(<CreateListingFAB />);
+    const wrapper = container.querySelector(".fixed.bottom-6.right-6");
+    expect(wrapper).toBeInTheDocument();
+  });
 
-    // The wrapper div should have the fixed positioning classes
-    const wrapper = screen.getByRole("link").parentElement;
-    expect(wrapper).toHaveClass("fixed", "bottom-6", "right-6");
+  it("redirects to sign-in when unauthenticated (authLoaded=true, isAuthenticated=false)", () => {
+    mockAuthState = { isAuthenticated: false, authLoaded: true };
+    render(<CreateListingFAB />);
+    fireEvent.click(screen.getByRole("button", { name: /create listing/i }));
+    expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
+  });
+
+  it("navigates to createListing when authLoaded is false (guard not triggered)", () => {
+    mockAuthState = { isAuthenticated: false, authLoaded: false };
+    render(<CreateListingFAB />);
+    fireEvent.click(screen.getByRole("button", { name: /create listing/i }));
+    expect(mockPush).toHaveBeenCalledWith("/seller/createListing");
   });
 });

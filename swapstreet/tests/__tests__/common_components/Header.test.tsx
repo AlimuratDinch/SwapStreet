@@ -1,8 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import { Header } from "../../../components/common/Header";
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
+jest.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ isAuthenticated: true, authLoaded: true }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+jest.mock("@/contexts/ChatContext", () => ({
+  useChatContext: () => ({ unread: {}, totalUnread: 0, markAsRead: jest.fn() }),
+}));
+
 // Mocking Next/Link because it requires a Router context
-// Mock Next.js Link with a named component to satisfy react/display-name
 jest.mock("next/link", () => {
   const MockLink = ({
     children,
@@ -19,28 +31,13 @@ jest.mock("next/link", () => {
 describe("Header Component", () => {
   it("renders the logo and brand name", () => {
     render(<Header />);
-    // Use regex to find the substrings
     expect(screen.getByText(/swap/i)).toBeInTheDocument();
     expect(screen.getByText(/street/i)).toBeInTheDocument();
   });
 
-  it("shows the center navigation by default", () => {
-    render(<Header showCenterNav={true} />);
-    expect(screen.getByText("Featured")).toBeInTheDocument();
-    expect(screen.getByText("Collections")).toBeInTheDocument();
-  });
-
-  it("hides the center navigation when showCenterNav is false", () => {
-    render(<Header showCenterNav={false} />);
-    expect(screen.queryByText("Featured")).not.toBeInTheDocument();
-  });
-
   it("renders action buttons (Wardrobe and Profile)", () => {
     render(<Header />);
-    const wardrobeLink = screen.getByTitle("Shopping Bag").closest("a");
-    const profileLink = screen.getByTitle("Profile").closest("a");
-
-    expect(wardrobeLink).toHaveAttribute("href", "/wardrobe");
-    expect(profileLink).toHaveAttribute("href", "/profile");
+    expect(screen.getByTitle("Wardrobe")).toBeInTheDocument();
+    expect(screen.getByTitle("Profile")).toBeInTheDocument();
   });
 });

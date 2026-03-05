@@ -280,9 +280,16 @@ namespace backend.Controllers
         {
             var result = await _userService.ConfirmEmailAsync(request.Email, request.Token);
 
-            if (result) return Ok(new { message = "Email confirmed successfully!" });
+            if (!result) return BadRequest(new { Error = "Email Not Confirmed" });
 
-            return BadRequest(new { Error = "Email Not Confirmed" });
+            var user = await _userService.GetUserByEmailAsync(request.Email);
+            if (user == null) return BadRequest(new { Error = "User not found after confirmation." });
+
+            var accessToken = await _tokenService.GenerateAccessTokenAsync(user.Id);
+            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user.Id);
+            Response.Cookies.Append("refresh_token", refreshToken, GetRefreshTokenCookieOptions());
+
+            return Ok(new { message = "Email confirmed successfully!", accessToken });
         }
 
         [HttpPost("resend-verification")]
