@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, ProfileResponse } from "@/lib/api/profile";
 import { Header } from "@/components/common/Header";
-import { Phone, Mail, MapPin, Star } from "lucide-react";
+import { Phone, Mail, MapPin, Star, Pencil } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -134,25 +134,35 @@ export default function ProfilePage() {
             </div>
 
             {/* Name and Rating */}
-            <div className="mb-6">
-              <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">
-                {fullName}
-              </h1>
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`h-5 w-5 ${
-                      star <= Math.floor(profile.rating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
-                <span className="ml-2 text-sm text-gray-600">
-                  ({profile.rating.toFixed(1)})
-                </span>
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">
+                  {fullName}
+                </h1>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`h-5 w-5 ${
+                        star <= Math.floor(profile.rating)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                  <span className="ml-2 text-sm text-gray-600">
+                    ({profile.rating.toFixed(1)})
+                  </span>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => router.push("/seller/profile/edit")}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit profile
+              </button>
             </div>
 
             {/* Contact Information */}

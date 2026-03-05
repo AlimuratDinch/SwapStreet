@@ -117,7 +117,12 @@ namespace backend.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .SelectMany(x => x.Value!.Errors.Select(e => $"{x.Key}: {e.ErrorMessage}"))
+                    .ToList();
+                _logger.LogWarning("UpdateProfile ModelState validation errors: {Errors}", string.Join("; ", errors));
+                return BadRequest(new { Error = string.Join("; ", errors) });
             }
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
