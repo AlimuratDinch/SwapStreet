@@ -68,3 +68,9 @@ alpine/*
 macos/*
 
 .config/*
+
+# Ignore everything in App_Data
+backend/App_Data/**/*
+
+# But don't ignore the directory placeholders
+!backend/App_Data/**/.gitkeep
