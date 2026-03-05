@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import EditSellerProfilePage from "@/app/seller/profile/edit/page";
+import { logger } from "@/components/common/logger";
 
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
@@ -93,14 +94,14 @@ describe("EditSellerProfilePage", () => {
     });
     mockGetMyProfile.mockResolvedValue(defaultProfile);
     mockUpdateProfile.mockResolvedValue({});
-    global.fetch = jest.fn(defaultFetch) as typeof fetch;
+    global.fetch = jest.fn(defaultFetch) as unknown as typeof fetch;
   });
 
   it("redirects to profile when not authenticated", () => {
     mockUseAuth.mockReturnValue({
       accessToken: null,
       refreshToken: mockRefreshToken,
-    });
+    } as unknown as ReturnType<typeof mockUseAuth>);
     render(<EditSellerProfilePage />);
     expect(mockReplace).toHaveBeenCalledWith("/profile");
   });
@@ -122,6 +123,83 @@ describe("EditSellerProfilePage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /back to profile/i }));
     expect(mockPush).toHaveBeenCalledWith("/profile");
+  });
+
+  it("shows generic error when getMyProfile rejects with non-Error", async () => {
+    mockGetMyProfile.mockRejectedValue("string error");
+    render(<EditSellerProfilePage />);
+
+    expect(
+      await screen.findByText(/failed to load profile\./i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /back to profile/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("calls logger.error when getMyProfile fails", async () => {
+    const err = new Error("Network error");
+    mockGetMyProfile.mockRejectedValue(err);
+    render(<EditSellerProfilePage />);
+
+    await screen.findByText(/network error/i);
+    expect(logger.error).toHaveBeenCalledWith("Failed to load profile", err);
+  });
+
+  it("shows Loading when profile is loaded but form data (provinces) is still loading", async () => {
+    mockGetMyProfile.mockResolvedValue(defaultProfile);
+    const provincesNeverResolve = new Promise<never>(() => {});
+    global.fetch = jest.fn((url: string | Request) => {
+      const u = typeof url === "string" ? url : (url as Request).url;
+      if (typeof u === "string" && u.includes("location/provinces")) {
+        return provincesNeverResolve;
+      }
+      if (typeof u === "string" && u.includes("location/cities")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockCities,
+        });
+      }
+      return Promise.resolve({ ok: false });
+    }) as unknown as typeof fetch;
+
+    render(<EditSellerProfilePage />);
+
+    await waitFor(() => {
+      expect(mockGetMyProfile).toHaveBeenCalledWith("test-token");
+    });
+
+    await waitFor(
+      () => {
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+        expect(screen.getByTestId("header")).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
+  });
+
+  it("shows success screen after form submits successfully", async () => {
+    render(<EditSellerProfilePage />);
+
+    await screen.findByDisplayValue("Jane");
+    await waitFor(
+      () => {
+        expect(screen.getByLabelText(/city/i)).toHaveValue("Toronto");
+      },
+      { timeout: 3000 },
+    );
+
+    const form = screen
+      .getByRole("button", { name: /save changes/i })
+      .closest("form");
+    fireEvent.submit(form!);
+
+    expect(
+      await screen.findByText(/profile updated!/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/taking you back to your profile/i),
+    ).toBeInTheDocument();
   });
 
   it("loads profile and shows form when profile and provinces are loaded", async () => {
