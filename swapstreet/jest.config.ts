@@ -33,7 +33,6 @@ const customJestConfig = {
     "<rootDir>/.next/",
     "<rootDir>/e2e/",
     "<rootDir>/tests/__tests__/wardrobe/",
-    "<rootDir>/tests/__tests__/seller/",
     // "<rootDir>/tests/__tests__/browse/", // Stops "Your test suite must contain at least one test"
     // "<rootDir>/tests/__tests__/wardrobe/",
     // "<rootDir>/tests/__tests__/profile/", // Stops "Cannot find module user-event"

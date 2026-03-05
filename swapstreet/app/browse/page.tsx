@@ -30,7 +30,7 @@ export default async function BrowsePage({
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* 3. Global Navigation */}
-      <Header showCenterNav={true} />
+      <Header />
 
       <div className="flex-1 overflow-hidden">
         <SidebarProvider defaultOpen={true}>
@@ -40,8 +40,8 @@ export default async function BrowsePage({
           </Suspense>
 
           {/* 5. Main Content Area */}
-          <SidebarInset className="flex flex-col">
-            <div className="flex items-center gap-2 border-b p-2 pt-20">
+          <SidebarInset className="flex flex-col pt-[56px]">
+            <div className="flex h-10 items-center border-b px-2">
               <SidebarTrigger />
             </div>
             <div className="flex-1 overflow-hidden">

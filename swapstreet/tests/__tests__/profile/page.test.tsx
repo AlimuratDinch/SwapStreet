@@ -87,6 +87,32 @@ describe("ProfilePage", () => {
     expect(screen.getAllByRole("img").length).toBeGreaterThan(0);
   });
 
+  it("Edit profile button navigates to seller profile edit page", async () => {
+    mockUseAuth.mockReturnValue({ accessToken: "token-123" });
+    mockGetMyProfile.mockResolvedValue({
+      firstName: "Jane",
+      lastName: "Doe",
+      rating: 4.5,
+      cityName: "Toronto",
+      provinceCode: "ON",
+      profileImagePath: undefined,
+      bannerImagePath: undefined,
+    });
+
+    render(<ProfilePage />);
+
+    await waitFor(() => {
+      expect(mockGetMyProfile).toHaveBeenCalledWith("token-123");
+    });
+
+    const editButton = await screen.findByRole("button", {
+      name: /edit profile/i,
+    });
+    expect(editButton).toBeInTheDocument();
+    fireEvent.click(editButton);
+    expect(mockPush).toHaveBeenCalledWith("/seller/profile/edit");
+  });
+
   it("shows empty state if API fails", async () => {
     mockUseAuth.mockReturnValue({ accessToken: "token-123" });
     mockGetMyProfile.mockRejectedValue(new Error("boom"));

@@ -284,7 +284,7 @@ export default function WardrobePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header showCenterNav={false} />
+      <Header />
 
       <div className="flex pt-16">
         {/* Sidebar */}
