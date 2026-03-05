@@ -97,6 +97,25 @@ describe("EditSellerProfilePage", () => {
     global.fetch = jest.fn(defaultFetch) as unknown as typeof fetch;
   });
 
+  it("does not update state after unmount when getMyProfile resolves later", async () => {
+    let resolveGetMyProfile: (v: typeof defaultProfile) => void;
+    const profilePromise = new Promise<typeof defaultProfile>((res) => {
+      resolveGetMyProfile = res;
+    });
+    mockGetMyProfile.mockReturnValue(profilePromise);
+
+    const { unmount } = render(<EditSellerProfilePage />);
+
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    unmount();
+
+    resolveGetMyProfile!(defaultProfile);
+
+    await profilePromise;
+
+    expect(mockReplace).toHaveBeenCalledTimes(0);
+  });
+
   it("redirects to profile when not authenticated", () => {
     mockUseAuth.mockReturnValue({
       accessToken: null,
