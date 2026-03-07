@@ -9,7 +9,7 @@ export interface CreateProfileRequest {
   lastName: string;
   bio?: string;
   cityId: number; // Changed from locationId to match backend
-  fsa: string;
+  fsa?: string;
   profileImagePath?: string;
   bannerImagePath?: string;
 }

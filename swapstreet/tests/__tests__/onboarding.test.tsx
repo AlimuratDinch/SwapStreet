@@ -227,14 +227,29 @@ describe("SellerOnboardingPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows error when FSA is missing", async () => {
+  it("submits successfully when FSA is left empty", async () => {
     await ready();
     await fillValidForm();
     fireEvent.change(screen.getByPlaceholderText(/a1a/i), {
       target: { value: "" },
     });
-    submitForm();
-    expect(await screen.findByText(/FSA is required/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+    await waitFor(
+      () => {
+        expect(profileApi.createProfile).toHaveBeenCalledWith(
+          "mock-token",
+          expect.objectContaining({
+            firstName: "John",
+            lastName: "Doe",
+            cityId: 1,
+            fsa: undefined,
+          }),
+          mockRefreshToken,
+        );
+        expect(mockPush).toHaveBeenCalledWith("/profile");
+      },
+      { timeout: 3000 },
+    );
   });
 
   it("shows error for invalid FSA format", async () => {
@@ -249,10 +264,11 @@ describe("SellerOnboardingPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders FSA field with label, placeholder A1A, and maxLength 3", async () => {
+  it("renders FSA field with label (optional), placeholder A1A, and maxLength 3", async () => {
     await ready();
-    expect(screen.getByText(/^FSA$/i)).toBeInTheDocument();
-    const fsaInput = screen.getByLabelText(/^FSA$/i);
+    expect(screen.getByText(/FSA/i)).toBeInTheDocument();
+    expect(screen.getByText(/optional/i)).toBeInTheDocument();
+    const fsaInput = screen.getByLabelText(/FSA/i);
     expect(fsaInput).toHaveAttribute("id", "fsa");
     expect(fsaInput).toHaveAttribute("placeholder", "A1A");
     expect(fsaInput).toHaveAttribute("maxlength", "3");
@@ -260,9 +276,21 @@ describe("SellerOnboardingPage", () => {
 
   it("FSA input uppercases typed value", async () => {
     await ready();
-    const fsaInput = screen.getByLabelText(/^FSA$/i);
+    const fsaInput = screen.getByLabelText(/FSA/i);
     fireEvent.change(fsaInput, { target: { value: "m5v" } });
     expect(fsaInput).toHaveValue("M5V");
+  });
+
+  it("shows asterisk for required fields (First name, Last name, Province, City)", async () => {
+    await ready();
+    const form = screen.getByRole("button", { name: /save and continue/i }).closest("form");
+    expect(form).toBeInTheDocument();
+    const formText = form?.textContent ?? "";
+    expect(formText).toMatch(/\*/);
+    expect(screen.getByLabelText(/first name/i).closest("div")?.textContent).toMatch(/\*/);
+    expect(screen.getByLabelText(/last name/i).closest("div")?.textContent).toMatch(/\*/);
+    expect(screen.getByLabelText(/province/i).closest("div")?.textContent).toMatch(/\*/);
+    expect(screen.getByLabelText(/city/i).closest("div")?.textContent).toMatch(/\*/);
   });
 
   it("shows error when provinces fetch returns non-ok", async () => {

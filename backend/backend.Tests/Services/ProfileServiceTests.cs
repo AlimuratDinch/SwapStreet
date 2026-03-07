@@ -100,6 +100,42 @@ namespace backend.Tests
         }
 
         [Fact]
+        public async Task CreateProfileAsync_ShouldCreateProfileWithEmptyFSA_WhenFSAIsNull()
+        {
+            var userId = Guid.NewGuid();
+            var dto = new CreateProfileDto
+            {
+                FirstName = "No",
+                LastName = "FSA",
+                CityId = _testCityId,
+                FSA = null
+            };
+
+            var result = await _service.CreateProfileAsync(userId, dto);
+
+            result.Should().NotBeNull();
+            result.FSA.Should().Be("");
+        }
+
+        [Fact]
+        public async Task CreateProfileAsync_ShouldCreateProfileWithEmptyFSA_WhenFSAIsEmptyString()
+        {
+            var userId = Guid.NewGuid();
+            var dto = new CreateProfileDto
+            {
+                FirstName = "Empty",
+                LastName = "FSA",
+                CityId = _testCityId,
+                FSA = ""
+            };
+
+            var result = await _service.CreateProfileAsync(userId, dto);
+
+            result.Should().NotBeNull();
+            result.FSA.Should().Be("");
+        }
+
+        [Fact]
         public async Task CreateProfileAsync_ShouldThrowException_WhenProfileAlreadyExists()
         {
             // Arrange
@@ -337,6 +373,28 @@ namespace backend.Tests
 
             // Assert
             result.FSA.Should().Be("K1A"); // Should be uppercased
+        }
+
+        [Fact]
+        public async Task UpdateProfileAsync_ShouldClearFSA_WhenEmptyStringSent()
+        {
+            var createDto = new CreateProfileDto
+            {
+                FirstName = "With",
+                LastName = "FSA",
+                CityId = _testCityId,
+                FSA = "M5V"
+            };
+            await _service.CreateProfileAsync(_testUserId, createDto);
+
+            var updateDto = new UpdateProfileDto
+            {
+                FSA = ""
+            };
+
+            var result = await _service.UpdateProfileAsync(_testUserId, updateDto);
+
+            result.FSA.Should().Be("");
         }
 
         [Fact]
