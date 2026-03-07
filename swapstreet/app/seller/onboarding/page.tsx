@@ -492,7 +492,8 @@ export default function SellerOnboardingPage() {
                 htmlFor="fsa"
                 className="block text-sm font-medium text-gray-700"
               >
-                FSA <span className="text-gray-400 font-normal">(optional)</span>
+                FSA{" "}
+                <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               <input
                 type="text"

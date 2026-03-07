@@ -283,14 +283,24 @@ describe("SellerOnboardingPage", () => {
 
   it("shows asterisk for required fields (First name, Last name, Province, City)", async () => {
     await ready();
-    const form = screen.getByRole("button", { name: /save and continue/i }).closest("form");
+    const form = screen
+      .getByRole("button", { name: /save and continue/i })
+      .closest("form");
     expect(form).toBeInTheDocument();
     const formText = form?.textContent ?? "";
     expect(formText).toMatch(/\*/);
-    expect(screen.getByLabelText(/first name/i).closest("div")?.textContent).toMatch(/\*/);
-    expect(screen.getByLabelText(/last name/i).closest("div")?.textContent).toMatch(/\*/);
-    expect(screen.getByLabelText(/province/i).closest("div")?.textContent).toMatch(/\*/);
-    expect(screen.getByLabelText(/city/i).closest("div")?.textContent).toMatch(/\*/);
+    expect(
+      screen.getByLabelText(/first name/i).closest("div")?.textContent,
+    ).toMatch(/\*/);
+    expect(
+      screen.getByLabelText(/last name/i).closest("div")?.textContent,
+    ).toMatch(/\*/);
+    expect(
+      screen.getByLabelText(/province/i).closest("div")?.textContent,
+    ).toMatch(/\*/);
+    expect(screen.getByLabelText(/city/i).closest("div")?.textContent).toMatch(
+      /\*/,
+    );
   });
 
   it("shows error when provinces fetch returns non-ok", async () => {
