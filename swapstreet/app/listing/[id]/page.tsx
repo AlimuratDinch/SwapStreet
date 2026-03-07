@@ -57,7 +57,7 @@ export default function ListingPage({ params }: { params: { id: string } }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ sellerId: seller.id, buyerId: userId }),
+        body: JSON.stringify({ sellerId: seller.id, buyerId: userId, listingId: id }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

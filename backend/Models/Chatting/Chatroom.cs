@@ -21,5 +21,15 @@ public class Chatroom
     [Required]
     public Guid BuyerId { get; set; }
 
+    [ForeignKey("ListingId")]
+    public Listing? Listing { get; set; }
+
+    public Guid? ListingId { get; set; }
+
+    public bool IsDealClosed { get; set; } = false;
+
+    public DateTimeOffset? ClosedAt { get; set; }
+
     public ICollection<Message> Messages { get; set; } = new List<Message>();
+    public ICollection<ChatRating> Ratings { get; set; } = new List<ChatRating>();
 }

@@ -12,5 +12,9 @@ namespace backend.DTOs.Chat
         [Required(ErrorMessage = "Buyer ID is required")]
         [JsonPropertyName("buyerId")]
         public Guid BuyerId { get; set; }
+
+        [Required(ErrorMessage = "Listing ID is required")]
+        [JsonPropertyName("listingId")]
+        public Guid? ListingId { get; set; }
     }
 }
