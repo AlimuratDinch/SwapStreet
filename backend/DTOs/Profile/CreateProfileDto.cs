@@ -23,11 +23,10 @@ namespace backend.DTOs.Profile
         [JsonPropertyName("cityId")]
         public int CityId { get; set; }
 
-        [Required(ErrorMessage = "FSA (Forward Sortation Area) is required")]
-        [StringLength(3, MinimumLength = 3, ErrorMessage = "FSA must be exactly 3 characters")]
-        [RegularExpression(@"^[A-Z]\d[A-Z]$", ErrorMessage = "FSA must be in format: Letter-Digit-Letter (e.g., M5V)")]
+        [StringLength(3, ErrorMessage = "FSA must be at most 3 characters")]
+        [RegularExpression(@"^(|[A-Z]\d[A-Z])$", ErrorMessage = "FSA must be empty or in format: Letter-Digit-Letter (e.g., M5V)")]
         [JsonPropertyName("fsa")]
-        public string FSA { get; set; } = string.Empty;
+        public string? FSA { get; set; }
 
         [JsonPropertyName("profileImagePath")]
         public string? ProfileImagePath { get; set; }

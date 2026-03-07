@@ -271,11 +271,7 @@ export function useSellerProfileForm({
           return;
         }
         const normalizedFsa = fsa.trim().toUpperCase();
-        if (!normalizedFsa) {
-          setError("FSA is required.");
-          return;
-        }
-        if (!FSA_REGEX.test(normalizedFsa)) {
+        if (normalizedFsa && !FSA_REGEX.test(normalizedFsa)) {
           setError("Please enter a valid FSA (e.g., M5V).");
           return;
         }

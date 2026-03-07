@@ -55,7 +55,7 @@ namespace backend.Services
                 LastName = dto.LastName,
                 Bio = dto.Bio,
                 CityId = dto.CityId,
-                FSA = dto.FSA.ToUpper(),
+                FSA = (dto.FSA ?? "").Trim().ToUpper(),
                 ProfileImagePath = dto.ProfileImagePath,
                 BannerImagePath = dto.BannerImagePath,
                 Status = ProfileStatusEnum.Offline,
@@ -99,8 +99,15 @@ namespace backend.Services
                 profile.CityId = dto.CityId.Value;
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.FSA))
-                profile.FSA = dto.FSA.ToUpper();
+            if (dto.FSA != null)
+            {
+                var trimmed = dto.FSA.Trim().ToUpper();
+                if (trimmed.Length == 3 && !System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[A-Z]\d[A-Z]$"))
+                    throw new ArgumentException("FSA must be in format: Letter-Digit-Letter (e.g., M5V)");
+                if (trimmed.Length > 0 && trimmed.Length != 3)
+                    throw new ArgumentException("FSA must be exactly 3 characters when provided");
+                profile.FSA = trimmed;
+            }
 
             if (dto.ProfileImagePath != null)
                 profile.ProfileImagePath = dto.ProfileImagePath;
