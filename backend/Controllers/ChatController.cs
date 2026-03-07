@@ -124,7 +124,7 @@ namespace backend.Controllers
                     return Forbid("You can only access chatrooms where you are the seller or buyer");
                 }
 
-                var chatroom = await _chatroomService.GetOrCreateChatroomAsync(dto.SellerId, dto.BuyerId);
+                var chatroom = await _chatroomService.GetOrCreateChatroomAsync(dto.SellerId, dto.BuyerId, dto.ListingId);
                 return Ok(chatroom);
             }
             catch (ArgumentException ex)
@@ -134,6 +134,66 @@ namespace backend.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("chatrooms/{chatroomId}/close-deal")]
+        public async Task<IActionResult> CloseDeal(Guid chatroomId, [FromBody] CloseDealDto? dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var chatroom = await _chatroomService.CloseDealAsync(
+                    chatroomId,
+                    userId,
+                    dto?.Stars,
+                    dto?.Description);
+                return Ok(chatroom);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("chatrooms/{chatroomId}/ratings")]
+        public async Task<IActionResult> SubmitRating(Guid chatroomId, [FromBody] SubmitChatRatingDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .SelectMany(x => x.Value!.Errors.Select(e => e.ErrorMessage))
+                        .ToList();
+                    return BadRequest(new { Error = string.Join("; ", errors) });
+                }
+
+                var userId = GetUserId();
+                var chatroom = await _chatroomService.SubmitRatingAsync(
+                    chatroomId,
+                    userId,
+                    dto.Stars,
+                    dto.Description);
+
+                return Ok(chatroom);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
@@ -180,7 +240,7 @@ namespace backend.Controllers
 
                 if (isInChatroom)
                 {
-                    _chatroomService.DeleteChatroomAsync(chatroomId);
+                    await _chatroomService.DeleteChatroomAsync(chatroomId);
                 }
                 else
                 {
@@ -221,7 +281,7 @@ namespace backend.Controllers
 
                 if (isInChatroom && messageDTO.AuthorId == userId)
                 {
-                    _chatService.DeleteMessageByIdAsync(messageDTO.Id);
+                    await _chatService.DeleteMessageByIdAsync(messageDTO.Id);
                 }
                 else
                 {

@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     // --- DbSets for Chatting ---
     public DbSet<Chatroom> Chatrooms { get; set; } = null!;
     public DbSet<Message> Messages { get; set; } = null!;
+    public DbSet<ChatRating> ChatRatings { get; set; } = null!;
 
     // --- DbSets for Lookup/Reference Tables ---
     public DbSet<City> Cities { get; set; } = null!;
@@ -214,6 +215,36 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(c => c.BuyerId)
             .IsRequired();
+        modelBuilder.Entity<Chatroom>()
+            .HasOne(c => c.Listing)
+            .WithMany()
+            .HasForeignKey(c => c.ListingId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<Chatroom>()
+            .HasMany(c => c.Ratings)
+            .WithOne(r => r.Chatroom)
+            .HasForeignKey(r => r.ChatroomId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ChatRating>().ToTable("chat_ratings");
+        modelBuilder.Entity<ChatRating>()
+            .HasOne(r => r.Reviewer)
+            .WithMany()
+            .HasForeignKey(r => r.ReviewerId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<ChatRating>()
+            .HasOne(r => r.Reviewee)
+            .WithMany()
+            .HasForeignKey(r => r.RevieweeId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<ChatRating>()
+            .HasIndex(r => new { r.ChatroomId, r.ReviewerId })
+            .IsUnique();
+        modelBuilder.Entity<ChatRating>()
+            .HasIndex(r => r.RevieweeId);
 
         // =======================================================
         // JUNCTION/ASSOCIATION TABLES

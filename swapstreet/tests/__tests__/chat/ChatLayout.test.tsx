@@ -50,7 +50,7 @@ jest.mock("@microsoft/signalr", () => ({
     withAutomaticReconnect: jest.fn().mockReturnThis(),
     build: mockBuild,
   })),
-}));
+}), { virtual: true });
 
 // Auth mock
 let mockAuthState = {
