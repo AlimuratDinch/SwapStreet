@@ -8,21 +8,32 @@ test("sign up flow demo (for GIF)", async ({ page }) => {
   // navigate to sign-up page
   const nav = page.getByRole("navigation");
   if (await nav.count()) {
-    const navGetStarted = nav.getByRole("link", { name: "Get Started", exact: true });
+    const navGetStarted = nav.getByRole("link", {
+      name: "Get Started",
+      exact: true,
+    });
     if (await navGetStarted.count()) {
       await navGetStarted.click();
     } else {
-      await page.getByRole("link", { name: "Get Started", exact: true }).first().click();
+      await page
+        .getByRole("link", { name: "Get Started", exact: true })
+        .first()
+        .click();
     }
   } else {
-    await page.getByRole("link", { name: "Get Started", exact: true }).first().click();
+    await page
+      .getByRole("link", { name: "Get Started", exact: true })
+      .first()
+      .click();
   }
 
   // check if sign up page loaded
   await expect(page).toHaveURL(/\/auth\/sign-up/);
-  await expect(page.getByRole("heading", { name: "Create Account" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Create Account" }),
+  ).toBeVisible();
 
-  // fill form 
+  // fill form
   const unique = Date.now();
   const email = `ryad+pw${unique}@example.com`;
 
@@ -35,7 +46,9 @@ test("sign up flow demo (for GIF)", async ({ page }) => {
   await page.getByRole("button", { name: /^sign up$/i }).click();
 
   // expect to check email
-  await expect(page.getByRole("heading", { name: "Check Your Email" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Check Your Email" }),
+  ).toBeVisible();
   await expect(page.getByText(email, { exact: true })).toBeVisible();
 
   await page.waitForTimeout(2500);
