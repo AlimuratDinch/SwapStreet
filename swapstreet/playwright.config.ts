@@ -9,30 +9,27 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never" }]],
 
   use: {
-    baseURL: "http://localhost",
-
-    // ✅ GIF workflow: record video
-    video: "on", // or "retain-on-failure"
-
-    // Optional but nice for GIFs
+    baseURL: "http://localhost:3000",
+    video: "on",
     viewport: { width: 1280, height: 720 },
-
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     actionTimeout: 10_000,
   },
 
-  // ✅ Since Docker/Nginx is already running on localhost:80,
-  // you do NOT want Playwright to run `npm run dev`.
-  // Either remove webServer entirely OR keep it only if you run dev locally.
   webServer: process.env.PW_USE_DEV_SERVER
     ? {
-        command: "npm ci && npm run dev",
+        command: "npm run dev",
         url: "http://localhost:3000",
         reuseExistingServer: true,
         timeout: 120_000,
       }
-    : undefined,
+    : {
+        command: "npm run build && npm run start",
+        url: "http://localhost:3000",
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 
   projects: [
     { name: "chromium-desktop", use: { ...devices["Desktop Chrome"] } },
