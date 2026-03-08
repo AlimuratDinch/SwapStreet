@@ -4,10 +4,17 @@
 [![codecov](https://codecov.io/gh/AlimuratDinch/SwapStreet/branch/main/graph/badge.svg)](https://codecov.io/gh/AlimuratDinch/SwapStreet)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=swapstreet&metric=alert_status)](https://sonarcloud.io/dashboard?id=swapstreet)
 
+## Product Demo
+[Product Demo SWAPSTREET](https://drive.google.com/file/d/1L4cA14vKWZ4HPJrBnsa_4RdevloLQnVY/view?usp=sharing)
+
+### Deployment
+[swapstreet.ca](https://swapstreet.ca/)
+
+Note: We recently changed the access policy from a curated list of testers to public access. Due to Cloudflare’s policy, this may take up to 24 hours to fully propagate. During this time, you might be temporarily blocked when accessing the website and may be asked to log in via Google authentication. This should resolve itself within the next 24 hours.
 
 ## Release Demos
 - [Release 1](https://drive.google.com/file/d/1Fg40fxtmJ5qpnbLegLKkTHmqGPsn3B3i/view?usp=sharing)  
-- Release 2  
+- [Release 2](https://drive.google.com/file/d/1MHEXG4C85XE_gmDWyNeA2yooyW76ip4_/view?usp=sharing)  
 - Release 3  
 
 ## Project Summary
@@ -76,14 +83,14 @@ MINIO_USE_SSL=false
 ```
 - Create a `.env` file in the swapstreet directory
 ```
-NEXT_PUBLIC_API_URL=http://backend:8080
+NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
-Depending on your OS, you may need to change "backend" to "localhost". 
+Depending on your OS, you may need to change "localhost" to "backend". 
 we have found Mac/unix users need "backend" and others need "localhost"
 
 - Make sure `Docker Desktop` is running, then:
 ```
-docker compose up --build
+docker compose -f docker-compose.local.staging.yml up --build
 ```
 
 ## Wiki Table of Contents
@@ -122,7 +129,5 @@ docker compose up --build
 
 ## Additional Documentation
 https://bookstack.nekzampehomelab.org/
-
-
 
 Location data retrieved from: https://simplemaps.com/data/canada-cities

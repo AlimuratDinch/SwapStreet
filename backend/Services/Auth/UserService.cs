@@ -206,12 +206,13 @@ namespace backend.Services.Auth
         public async Task SendConfirmationEmail(User user)
         {
 
-            var frontendUrl = _config["FrontendUrl"];
+            var frontendUrl = _config["FRONTEND_URL"];
 
             if (string.IsNullOrEmpty(frontendUrl))
             {
-                frontendUrl = "http://localhost:3000";
+                frontendUrl = "http://localhost";
             }
+
             var link = $"{frontendUrl}/auth/verify-email?token={user.ConfirmationToken}&email={user.Email}";
 
             await _emailService.SendWelcomeEmailAsync(user.Email, user.Username, link);

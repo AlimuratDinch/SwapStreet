@@ -3,24 +3,84 @@ using backend.DbContexts;
 using backend.Contracts;
 using backend.DTOs;
 using backend.DTOs.Search;
+using Meilisearch;
 
 namespace backend.Services;
 
 public class ListingSearchService : IListingSearchService
-
 {
     private readonly AppDbContext _db;
     private readonly IFileStorageService _imageService;
+    private readonly MeilisearchClient _meiliClient;
 
-    public ListingSearchService(AppDbContext db, IFileStorageService imageService)
+    public ListingSearchService(AppDbContext db, IFileStorageService imageService, MeilisearchClient meiliClient)
     {
         _db = db;
         _imageService = imageService;
+        _meiliClient = meiliClient;
+    }
+
+    public async Task<(IReadOnlyList<ListingWithImagesDto> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
+        string? query,
+        int pageSize,
+        string? cursor)
+    {
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var index = _meiliClient.Index("listings");
+
+        int offset = 0;
+        if (int.TryParse(cursor, out var decodedOffset))
+        {
+            offset = decodedOffset;
+        }
+
+        var searchOptions = new SearchQuery
+        {
+            Limit = pageSize + 1,
+            Offset = offset,
+            // If query is null/empty, Meilisearch returns all documents based on Ranking Rules (Recent first)
+            Sort = string.IsNullOrWhiteSpace(query)
+                ? new[] { "createdAtTimestamp:desc" }
+                : null
+        };
+
+        // 2. Execute Search in Meilisearch
+        var searchResponse = await index.SearchAsync<ListingSearchDto>(query ?? "", searchOptions);
+
+        var hits = searchResponse.Hits.ToList();
+        var hasNextPage = hits.Count > pageSize;
+        var pageHits = hits.Take(pageSize).ToList();
+
+        // 3. Fetch Full Data from Postgres based on Search IDs
+        var listingIds = pageHits.Select(h => Guid.Parse(h.Id)).ToList();
+
+        // Use ToDictionary to preserve the order returned by Meilisearch
+        var listingsMap = await _db.Listings
+            .AsNoTracking()
+            .Include(l => l.Tag)
+            .Include(l => l.Profile)
+            .Where(l => listingIds.Contains(l.Id))
+            .ToDictionaryAsync(l => l.Id);
+
+        // 4. Map to DTOs and attach images
+        var resultDtos = new List<ListingWithImagesDto>();
+        foreach (var hit in pageHits)
+        {
+            if (listingsMap.TryGetValue(Guid.Parse(hit.Id), out var listing))
+            {
+                resultDtos.Add(await MapListingWithImagesAsync(listing));
+            }
+        }
+
+        // 5. Generate Next Cursor (using offset for simplicity, or stick to your encoding)
+        string? nextCursor = hasNextPage ? (offset + pageSize).ToString() : null;
+
+        return (resultDtos, nextCursor, hasNextPage);
     }
 
     private async Task<ListingWithImagesDto> MapListingWithImagesAsync(Listing listing)
     {
-        List<ListingImageDto>? images = await _db.ListingImages
+        var images = await _db.ListingImages
             .AsNoTracking()
             .Where(li => li.ListingId == listing.Id)
             .OrderBy(li => li.DisplayOrder)
@@ -36,140 +96,5 @@ public class ListingSearchService : IListingSearchService
             Listing = listing,
             Images = images
         };
-    }
-
-    public async Task<(IReadOnlyList<ListingWithImagesDto> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
-        string? query,
-        int pageSize,
-        string? cursor)
-    {
-        pageSize = Math.Clamp(pageSize, 1, 100);
-
-        // Blank query => "recent listings"
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            // base query: most recent first
-            IQueryable<Listing> baseRecent = _db.Listings.AsNoTracking()
-                .OrderByDescending(l => l.CreatedAt)
-                .ThenByDescending(l => l.Id);
-
-            // Cursor filter
-            if (ListingCursor.TryDecode(cursor, out var decoded) && decoded != null)
-            {
-                if (!decoded.Rank.HasValue)
-                {
-                    var ct = decoded.CreatedAt;
-                    var cid = decoded.Id;
-                    baseRecent = baseRecent.Where(l =>
-                        l.CreatedAt < ct || (l.CreatedAt == ct && l.Id.CompareTo(cid) < 0));
-                }
-            }
-
-            var rows = await baseRecent
-                .Take(pageSize + 1)
-                .ToListAsync();
-
-            var hasNext = rows.Count > pageSize;
-            var items = rows.Take(pageSize).ToList();
-
-            string? next = null;
-            if (hasNext)
-            {
-                var last = items[^1];
-                next = new ListingCursor
-                {
-                    Rank = null,              // indicates "recent mode"
-                    CreatedAt = last.CreatedAt,
-                    Id = last.Id
-                }.Encode();
-            }
-
-            // Map listings to DTOs with images
-            var dtos = new List<ListingWithImagesDto>();
-            foreach (var item in items)
-            {
-                dtos.Add(await MapListingWithImagesAsync(item));
-            }
-
-            return (dtos, next, hasNext);
-        }
-
-        query = query.Trim();
-
-        const double threshold = 0.1; // minimum similarity to consider a match
-
-
-        // baseQuery:
-        // the object containing the results of the database search.
-        // Project Rank from pg_trgm similarity(SearchText, query) [0..1]
-        var baseQuery = _db.Listings.AsNoTracking()
-            .Include(l => l.Tag)
-            .Include(l => l.Profile)
-            .Select(l => new
-            {
-                Listing = l,
-                Rank = EF.Functions.TrigramsSimilarity(
-                    EF.Property<string>(l, "SearchText"),
-                    query)
-            })
-            .Where(x => x.Rank >= threshold);
-
-        // Cursor filter (Rank DESC, CreatedAt DESC, Id DESC)
-        if (ListingCursor.TryDecode(cursor, out var c) && c != null)
-        {
-            // If cursor came from ranked mode it must have Rank
-            if (c.Rank.HasValue)
-            {
-                var cr = c.Rank.Value;
-                var ct = c.CreatedAt;
-                var cid = c.Id;
-
-                baseQuery = baseQuery.Where(x =>
-                    x.Rank < cr ||
-                    (x.Rank == cr && x.Listing.CreatedAt < ct) ||
-                    (x.Rank == cr && x.Listing.CreatedAt == ct && x.Listing.Id.CompareTo(cid) < 0));
-            }
-            else
-            {
-                // Cursor from recent mode; fall back to CreatedAt/Id cut
-                var ct = c.CreatedAt;
-                var cid = c.Id;
-
-                baseQuery = baseQuery.Where(x =>
-                    x.Listing.CreatedAt < ct ||
-                    (x.Listing.CreatedAt == ct && x.Listing.Id.CompareTo(cid) < 0));
-            }
-        }
-
-        var rowsPage = await baseQuery
-            .OrderByDescending(x => x.Rank)
-            .ThenByDescending(x => x.Listing.CreatedAt)
-            .ThenByDescending(x => x.Listing.Id)
-            .Take(pageSize + 1)
-            .ToListAsync();
-
-        var hasNextPage = rowsPage.Count > pageSize;
-        var page = rowsPage.Take(pageSize).ToList();
-
-        string? nextCursor = null;
-        if (hasNextPage)
-        {
-            var last = page[^1];
-            nextCursor = new ListingCursor
-            {
-                Rank = last.Rank,
-                CreatedAt = last.Listing.CreatedAt,
-                Id = last.Listing.Id
-            }.Encode();
-        }
-
-        // Map listings to DTOs with images
-        var resultDtos = new List<ListingWithImagesDto>();
-        foreach (var p in page)
-        {
-            resultDtos.Add(await MapListingWithImagesAsync(p.Listing));
-        }
-
-        return (resultDtos, nextCursor, hasNextPage);
     }
 }

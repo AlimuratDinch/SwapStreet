@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 import webpack from "webpack";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
@@ -15,8 +17,28 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "http",
+        hostname: "localhost",
+        port: "",
+        pathname: "/public/**",
+      },
+      {
+        protocol: "http",
         hostname: "minio",
         port: "9000",
+      },
+      {
+        protocol: "http",
+        hostname: "minio.swapstreet.ca",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "", // Empty means any port
+        pathname: "/public/**",
       },
     ],
   },
@@ -32,14 +54,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
-
   serverComponentsExternalPackages: ["tslog"],
   webpack: (config, { isServer }) => {
-    // Prevent tslog from being bundled in client-side code
     if (!isServer) {
-      // Use IgnorePlugin to completely ignore tslog in client bundles
       config.plugins.push(
         new webpack.IgnorePlugin({
           resourceRegExp: /^tslog$/,

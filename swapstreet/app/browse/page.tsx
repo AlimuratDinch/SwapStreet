@@ -1,107 +1,93 @@
-import { Sidebar, Header } from "./BrowseElements";
-import InfiniteBrowse from "./InfiniteBrowse";
+import { Suspense } from "react";
+// Adjust these import paths based on your actual folder structure
+import { Header } from "@/components/common/Header";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Sidebar } from "./components/Sidebar";
+import { CreateListingFAB } from "./components/CreateListingFAB";
+import InfiniteBrowse from "./components/InfiniteBrowse";
+import { getSearchResults, SearchParams } from "@/lib/api/browse";
 
-type SearchParams = {
-  minPrice?: string;
-  maxPrice?: string;
-  categoryId?: string;
-  conditions?: string;
-};
-
-function getApiBase() {
-  return (
-    process.env.API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8080"
-  );
-}
-
-function buildSearchUrl(
-  resolvedParams: SearchParams,
-  extras?: Record<string, string>,
-) {
-  const params = new URLSearchParams();
-  if (resolvedParams.minPrice) params.set("minPrice", resolvedParams.minPrice);
-  if (resolvedParams.maxPrice) params.set("maxPrice", resolvedParams.maxPrice);
-  if (resolvedParams.categoryId)
-    params.set("categoryId", resolvedParams.categoryId);
-  if (resolvedParams.conditions)
-    params.set("conditions", resolvedParams.conditions);
-  if (extras) {
-    Object.entries(extras).forEach(([k, v]) => params.set(k, v));
-  }
-  const apiUrl = getApiBase();
-  return `${apiUrl}/api/search/search${params.toString() ? `?${params.toString()}` : ""}`;
-}
-
-export async function fetchClothingItems(searchParams: Promise<SearchParams>) {
-  try {
-    const resolvedParams = await searchParams;
-    const url = buildSearchUrl(resolvedParams);
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    const data = await res.json();
-    if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data.items)) return data.items;
-    return [];
-  } catch (error) {
-    console.error("Failed to fetch clothing items:", error);
-    return [];
-  }
-}
-
-// helper: fetches raw search response (items + cursor)
-export async function fetchSearchPage(searchParams: Promise<SearchParams>) {
-  try {
-    const resolvedParams = await searchParams;
-    const url = buildSearchUrl(resolvedParams, { limit: "18" });
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    const data = await res.json();
-    const items = Array.isArray(data) ? data : (data.items ?? []);
-    return {
-      items,
-      nextCursor: data?.nextCursor ?? null,
-      hasNextPage: Boolean(data?.hasNextPage),
-    };
-  } catch (error) {
-    console.error("Failed to fetch search page:", error);
-    return { items: [], nextCursor: null, hasNextPage: false };
-  }
-}
-
+/**
+ * Next.js 15 Server Component
+ * This handles the initial data fetch and layout.
+ */
 export default async function BrowsePage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  // Fetch first page of items
-  const {
-    items: initialItems,
-    nextCursor,
-    hasNextPage,
-  } = await fetchSearchPage(searchParams);
+  // 1. Wait for URL search params (Next.js 15 requirement)
+  const params = await searchParams;
+
+  // 2. Pre-fetch initial data on the server
+  // This prevents the "blank page then loading spinner" effect
+  const initialData = await getSearchResults(params);
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* 3. Global Navigation */}
       <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
-        {/* @ts-ignore - dynamic client component props */}
-        <InfiniteBrowse
-          initialItems={initialItems}
-          initialCursor={nextCursor}
-          initialHasNext={hasNextPage}
-        />
-      </div>
-      <div className="fixed bottom-4 right-4">
-        <a href="/seller/createListing">
-          <button className="bg-teal-400 hover:bg-teal-500 text-white font-bold w-12 h-12 rounded-full shadow-lg transition duration-150 ease-in-out">
-            +
-          </button>
-        </a>
+
+      <div className="flex-1 overflow-hidden">
+        <SidebarProvider defaultOpen={true}>
+          {/* 4. Filter Sidebar - Wrapped in Suspense for URL param read safety */}
+          <Suspense fallback={<SidebarSkeleton />}>
+            <Sidebar />
+          </Suspense>
+
+          {/* 5. Main Content Area */}
+          <SidebarInset className="flex flex-col pt-[56px]">
+            <div className="flex h-10 items-center border-b px-2">
+              <SidebarTrigger />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <Suspense fallback={<BrowseSkeleton />}>
+                <InfiniteBrowse
+                  initialItems={initialData.items}
+                  initialCursor={initialData.nextCursor}
+                  initialHasNext={initialData.hasNextPage}
+                />
+              </Suspense>
+            </div>
+          </SidebarInset>
+
+          {/* 6. Floating Action Button */}
+          <CreateListingFAB />
+        </SidebarProvider>
       </div>
     </div>
+  );
+}
+
+/** SKELETONS FOR LOADING STATES **/
+
+function SidebarSkeleton() {
+  return (
+    <aside className="w-64 bg-[#d9d9d9] border-r p-4 pt-24 h-screen animate-pulse">
+      <div className="h-10 bg-gray-300 rounded mb-6" />
+      <div className="h-6 w-1/2 bg-gray-300 rounded mb-4" />
+      <div className="space-y-3">
+        <div className="h-4 bg-gray-300 rounded" />
+        <div className="h-4 bg-gray-300 rounded w-5/6" />
+      </div>
+    </aside>
+  );
+}
+
+function BrowseSkeleton() {
+  return (
+    <main className="pt-24 flex-1 p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+      {[...Array(12)].map((_, i) => (
+        <div key={i} className="flex flex-col gap-3">
+          <div className="aspect-square bg-gray-200 animate-pulse rounded-md" />
+          <div className="h-4 bg-gray-200 animate-pulse rounded w-3/4" />
+          <div className="h-4 bg-gray-200 animate-pulse rounded w-1/4" />
+        </div>
+      ))}
+    </main>
   );
 }

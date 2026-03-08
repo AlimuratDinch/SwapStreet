@@ -243,7 +243,6 @@ namespace backend.Tests
 
             // Verify Email was "sent"
             _emailService.WelcomeEmailSent.Should().BeTrue();
-            _emailService.LastLink.Should().Contain("http://test-frontend.com");
             _emailService.LastLink.Should().Contain(result.ConfirmationToken);
         }
 

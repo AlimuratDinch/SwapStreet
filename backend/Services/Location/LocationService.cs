@@ -1,6 +1,7 @@
 using backend.Contracts;
 using backend.DbContexts;
 using backend.Models;
+using backend.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services
@@ -65,6 +66,14 @@ namespace backend.Services
 
             return await _context.Fsas
                 .AnyAsync(f => f.Code == cleanFsa);
+        }
+        public async Task<LatLng?> getLatLongFromFSAAsync(string fsaCode)
+        {
+            if (await IsValidFsaAsync(fsaCode) == false) return null;
+
+            var city = await GetCityByFsaAsync(fsaCode);
+
+            return new LatLng(city.Latitude, city.Longitude);
         }
     }
 }

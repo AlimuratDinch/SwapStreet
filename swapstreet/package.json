@@ -10,8 +10,12 @@
     "test": "jest --coverage"
   },
   "dependencies": {
+    "@microsoft/signalr": "^8.0.17",
+    "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-navigation-menu": "^1.2.14",
-    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "enzyme": "^3.11.0",
@@ -23,6 +27,7 @@
     "posthog-node": "^5.11.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-easy-crop": "^5.5.6",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.18",
     "tailwindcss-animate": "^1.0.7",

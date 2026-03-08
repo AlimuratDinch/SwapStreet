@@ -18,6 +18,7 @@ interface AuthContextProps {
   logout: () => void;
   refreshToken: () => Promise<string | null>;
   isAuthenticated: boolean;
+  authLoaded: boolean;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -31,6 +32,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [authLoaded, setAuthLoaded] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUsername(userData.username);
       setEmail(userData.email);
     }
+    setAuthLoaded(true);
   }, []);
 
   const login = (token: string) => {
@@ -104,6 +107,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         logout,
         refreshToken,
         isAuthenticated,
+        authLoaded,
       }}
     >
       {children}

@@ -446,8 +446,8 @@ namespace backend.Tests
             var created = await _service.CreateProfileAsync(_testUserId, createDto);
             var originalUpdatedAt = created.UpdatedAt;
 
-            // Wait a bit to ensure timestamp difference
-            await Task.Delay(100);
+            // Wait long enough to avoid same-tick/second precision collisions across providers.
+            await Task.Delay(1200);
 
             var updateDto = new UpdateProfileDto
             {
@@ -458,7 +458,8 @@ namespace backend.Tests
             var result = await _service.UpdateProfileAsync(_testUserId, updateDto);
 
             // Assert
-            result.UpdatedAt.Should().BeAfter(originalUpdatedAt);
+            result.UpdatedAt.Should().NotBe(originalUpdatedAt);
+            result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         }
     }
 }

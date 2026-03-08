@@ -14,12 +14,18 @@ using Minio.DataModel.Args;
 using Microsoft.Extensions.Options;
 using backend.Data.Seed;
 using System.Security.Cryptography;
+using backend.Hubs;
+using backend.Services.Chat;
+using Microsoft.AspNetCore.HttpOverrides;
 using backend.DTOs;
 using System.Text.Json;
+using backend.Configuration;
+using backend.Extensions;
+using Meilisearch;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o => o.UseNetTopologySuite()));
@@ -41,8 +47,8 @@ ConfigureCors(builder);
 // ===============================================================================
 
 ConfigureGemini(builder);
-
 ConfigureMinio(builder);
+ConfigureMeilisearch(builder);
 
 // ===============================================================================
 // AUTHENTICATION & AUTHORIZATION
@@ -67,25 +73,40 @@ RegisterServices(builder);
 // BUILD & INITIALIZE
 // ===============================================================================
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     ConfigureDatabase(builder);
 }
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 }
 
 var app = builder.Build();
 
-if (!builder.Environment.IsEnvironment("Test"))
+app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    KnownNetworks = { new Microsoft.AspNetCore.HttpOverrides.IPNetwork(System.Net.IPAddress.Any, 0) }
+});
 
+if (builder.Environment.IsTest() || builder.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Backend API V1");
+        c.RoutePrefix = string.Empty;
+    });
+}
+
+if (!builder.Environment.IsTest())
+{
     await InitializeMinio(app);
-
-
     await InitializeDatabaseAsync(app);
+    await InitializeMeilisearchIndex(app);
+
 }
 
 // ===============================================================================
@@ -115,17 +136,25 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
 {
     builder.Configuration.AddEnvironmentVariables();
 
-    var frontendUrl = Environment.GetEnvironmentVariable("FrontendUrl") ?? "http://localhost:3000";
-    builder.Configuration["FrontendUrl"] = frontendUrl;
+    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost";
+    builder.Configuration["FRONTEND_URL"] = frontendUrl;
 }
-
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Add this to trust the Nginx proxy container
+    KnownNetworks = { new Microsoft.AspNetCore.HttpOverrides.IPNetwork(System.Net.IPAddress.Any, 0) }
+});
 static void ConfigureCors(WebApplicationBuilder builder)
 {
+    // Get URLs from environment/config for flexibility
+    var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost";
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost:3000")
+            policy.WithOrigins(frontendUrl)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -158,33 +187,86 @@ static void ConfigureDatabase(WebApplicationBuilder builder)
 
 static void ConfigureMinio(WebApplicationBuilder builder)
 {
+    // Register MinIO settings
+    builder.Services.Configure<MinioSettings>(options =>
+    {
+        options.PublicBucketName = Environment.GetEnvironmentVariable("MINIO_PUBLIC_BUCKET") ?? "swapstreet-public";
+        options.PrivateBucketName = Environment.GetEnvironmentVariable("MINIO_PRIVATE_BUCKET") ?? "swapstreet-private";
+    });
+
+    // Register MinIO client
     builder.Services.AddSingleton<IMinioClient>(sp =>
     {
-        var endpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "minio:9000";
+        var logger = sp.GetRequiredService<ILogger<Program>>();
+
+        var endpointWithPort = Environment.GetEnvironmentVariable("MINIO_ENDPOINT") ?? "minio:9000";
         var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY") ?? "minioadmin";
         var secretKey = Environment.GetEnvironmentVariable("MINIO_SECRET_KEY") ?? "minioadmin";
         var useSsl = bool.TryParse(Environment.GetEnvironmentVariable("MINIO_USE_SSL"), out var ssl) && ssl;
 
-        return new MinioClient()
-            .WithEndpoint(endpoint)
-            .WithCredentials(accessKey, secretKey)
-            .WithSSL(useSsl)
-            .Build();
+        // Parse endpoint and port from "minio:9000" format
+        string endpoint;
+        int port = 9000; // default
+
+        if (endpointWithPort.Contains(":"))
+        {
+            var parts = endpointWithPort.Split(':');
+            endpoint = parts[0];
+            if (parts.Length > 1 && int.TryParse(parts[1], out var parsedPort))
+            {
+                port = parsedPort;
+            }
+        }
+        else
+        {
+            endpoint = endpointWithPort;
+        }
+
+        logger.LogInformation("Configuring MinIO client: Endpoint={Endpoint}, Port={Port}, SSL={UseSsl}",
+            endpoint, port, useSsl);
+
+        try
+        {
+            var client = new MinioClient()
+                .WithEndpoint(endpoint, port)
+                .WithCredentials(accessKey, secretKey)
+                .WithSSL(useSsl)
+                .Build();
+
+            logger.LogInformation("MinIO client configured successfully");
+            return client;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to configure MinIO client");
+            throw;
+        }
     });
 }
 
+static void ConfigureMeilisearch(WebApplicationBuilder builder)
+{
+    var meiliHost = builder.Configuration["MEILISEARCH_HOST"] ?? "http://localhost:7700";
+    var meiliKey = builder.Configuration["MEILISEARCH_API_KEY"] ?? GenerateRandomKey(16);
+
+    builder.Services.AddSingleton<MeilisearchClient>(new MeilisearchClient(meiliHost, meiliKey));
+
+}
+
+
 static void ConfigureAuthentication(WebApplicationBuilder builder)
 {
-    var jwtSecret = builder.Configuration["JWT_SECRET"] ?? GenerateRandomKey(32);
+    var jwtSecret = builder.Configuration["JWT_SECRET"];
+
+    if (string.IsNullOrEmpty(jwtSecret))
+    {
+        if (builder.Environment.IsProduction())
+            throw new InvalidOperationException("JWT_SECRET is missing. Cannot start in Production.");
+
+        jwtSecret = GenerateRandomKey(32);
+    }
+
     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
-
-    var accessTokenMinutes = int.TryParse(
-        builder.Configuration["JWT_ACCESS_TOKEN_EXPIRATION_MINUTES"],
-        out var minutes) ? minutes : 60;
-
-    var refreshTokenDays = int.TryParse(
-        builder.Configuration["REFRESH_TOKEN_EXPIRATION_DAYS"],
-        out var days) ? days : 30;
 
     builder.Services.AddAuthentication(options =>
     {
@@ -195,6 +277,7 @@ static void ConfigureAuthentication(WebApplicationBuilder builder)
     {
         options.RequireHttpsMetadata = false;
         options.SaveToken = true;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
@@ -202,6 +285,24 @@ static void ConfigureAuthentication(WebApplicationBuilder builder)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = key
+        };
+
+        // Configure SignalR to use JWT token from query string or header
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                // If the request is for the SignalR hub, get token from query string
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -216,6 +317,9 @@ static void ConfigureControllers(WebApplicationBuilder builder)
             options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
             options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
         });
+
+    // Add SignalR
+    builder.Services.AddSignalR();
 }
 
 static void ConfigureSwagger(WebApplicationBuilder builder)
@@ -233,7 +337,6 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<IUserAccountService, UserAccountService>();
     builder.Services.AddScoped<IGenerativeService, GenerativeService>();
     builder.Services.AddScoped<ITryOnService, backend.Services.VirtualTryOn.TryOnService>();
-    builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
     builder.Services.AddScoped<IProfileService, ProfileService>();
     builder.Services.AddScoped<ILocationService, LocationService>();
     builder.Services.AddScoped<MinioFileStorageService>();
@@ -241,9 +344,14 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<ImageSeeder>();
     builder.Services.AddScoped<IListingSearchService, ListingSearchService>();
     builder.Services.AddScoped<IListingCommandService, ListingCommandService>();
+    builder.Services.AddScoped<IWishlistService, WishlistService>();
+
+    // Chat Services
+    builder.Services.AddScoped<IChatroomService, ChatroomService>();
+    builder.Services.AddScoped<IChatService, ChatService>();
 
     // Email Service (environment-dependent)
-    if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Test"))
+    if (builder.Environment.IsDevelopment() || builder.Environment.IsTest())
     {
         builder.Services.AddTransient<IEmailService, MockEmailService>();
     }
@@ -262,10 +370,6 @@ static void RegisterServices(WebApplicationBuilder builder)
 
     // HTTP Client
     builder.Services.AddHttpClient();
-
-    // TODO: Refactor these services
-    // builder.Services.AddScoped<IWishlistService, WishlistService>();
-    // builder.Services.AddScoped<ICatalogService, CatalogService>();
 }
 
 static async Task InitializeDatabaseAsync(WebApplication app)
@@ -275,8 +379,6 @@ static async Task InitializeDatabaseAsync(WebApplication app)
 
     try
     {
-        var env = app.Environment.EnvironmentName;
-
         var appDb = services.GetRequiredService<AppDbContext>();
         var authDb = services.GetRequiredService<AuthDbContext>();
         var loggerFactory = services.GetRequiredService<ILoggerFactory>();
@@ -291,16 +393,11 @@ static async Task InitializeDatabaseAsync(WebApplication app)
         {
             await authDb.Database.MigrateAsync();
         }
-
-        // Seed only in Test or Development environments
-        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
-        {
-            await DatabaseSeeder.SeedAsync(
-                appDb,
-                services,
-                loggerFactory.CreateLogger("DatabaseSeeder")
-            );
-        }
+        await DatabaseSeeder.SeedAsync(
+            appDb,
+            services,
+            loggerFactory.CreateLogger("DatabaseSeeder")
+        );
 
         app.Logger.LogInformation("Database migrations and seeding applied successfully.");
     }
@@ -369,6 +466,26 @@ static async Task InitializeMinio(WebApplication app)
     }
 }
 
+static async Task InitializeMeilisearchIndex(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var client = scope.ServiceProvider.GetRequiredService<MeilisearchClient>();
+    var index = client.Index("listings");
+
+    await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa" });
+    await index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
+    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa" });
+
+    await index.UpdateRankingRulesAsync(new[] {
+        "words",
+        "typo",
+        "proximity",
+        "attribute",
+        "sort",
+        "exactness"
+    });
+}
+
 static void ConfigureMiddleware(WebApplication app)
 {
     // Global Exception Handler - should be first in the middleware pipeline
@@ -417,23 +534,20 @@ static void ConfigureMiddleware(WebApplication app)
         c.RoutePrefix = string.Empty;
     });
 
-    // app.UseHttpsRedirection(); // Uncomment for production
     app.UseCors("AllowFrontend");
+    app.UseStaticFiles(); // Enable serving static files from wwwroot (e.g., chat-test.html)
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
+    app.MapHub<ChatHub>("/chathub");
 }
 
-// ===============================================================================
-// HELPER METHODS
-// ===============================================================================
-
-static string GenerateRandomKey(int length = 32)
+static string GenerateRandomKey(int length)
 {
+    using var rng = RandomNumberGenerator.Create();
     var bytes = new byte[length];
-    RandomNumberGenerator.Fill(bytes);
+    rng.GetBytes(bytes);
     return Convert.ToBase64String(bytes);
 }
 
-// Required for integration tests
 public partial class Program { }
