@@ -155,7 +155,9 @@ function ChatPanel({
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [hoveredCloseStar, setHoveredCloseStar] = useState<number | null>(null);
-  const [hoveredRatingStar, setHoveredRatingStar] = useState<number | null>(null);
+  const [hoveredRatingStar, setHoveredRatingStar] = useState<number | null>(
+    null,
+  );
 
   const [closeStars, setCloseStars] = useState<number | null>(null);
   const [closeDescription, setCloseDescription] = useState("");
@@ -262,7 +264,8 @@ function ChatPanel({
   const isDealClosed = !!room.isDealClosed;
   const hasRated = !!userId && roomRatings.some((r) => r.reviewerId === userId);
   const canCloseDeal = isSeller && !isDealClosed;
-  const canRate = !!userId && isDealClosed && !hasRated && (isSeller || isBuyer);
+  const canRate =
+    !!userId && isDealClosed && !hasRated && (isSeller || isBuyer);
 
   const otherRoleText = isBuyer ? "Selling" : isSeller ? "Wants to buy" : null;
   const otherRating = isBuyer
@@ -333,7 +336,9 @@ function ChatPanel({
       setIsRatingModalOpen(false);
       setHoveredRatingStar(null);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Failed to submit rating");
+      setActionError(
+        e instanceof Error ? e.message : "Failed to submit rating",
+      );
     } finally {
       setActionBusy(false);
     }
@@ -358,7 +363,10 @@ function ChatPanel({
               {otherRoleText && room.listingId ? (
                 <>
                   {otherRoleText}{" "}
-                  <Link href={`/listing/${room.listingId}`} className="text-teal-600 hover:underline">
+                  <Link
+                    href={`/listing/${room.listingId}`}
+                    className="text-teal-600 hover:underline"
+                  >
                     {room.listingTitle || "item"}
                   </Link>
                 </>
@@ -383,7 +391,9 @@ function ChatPanel({
             Leave a rating
           </button>
         ) : isDealClosed ? (
-          <span className="text-xs text-[#14b4a3] font-medium shrink-0">Deal closed</span>
+          <span className="text-xs text-[#14b4a3] font-medium shrink-0">
+            Deal closed
+          </span>
         ) : null}
       </div>
 
@@ -401,9 +411,12 @@ function ChatPanel({
       {isCloseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="w-full max-w-md mx-4 bg-white rounded-xl shadow-xl border border-gray-200 p-5">
-            <h3 className="text-base font-semibold text-gray-900">Close the deal</h3>
+            <h3 className="text-base font-semibold text-gray-900">
+              Close the deal
+            </h3>
             <p className="text-xs text-gray-500 mt-1">
-              Optionally rate your interaction with {otherName} from 1 (Poor) to 5 (Exceptional) stars before closing.
+              Optionally rate your interaction with {otherName} from 1 (Poor) to
+              5 (Exceptional) stars before closing.
             </p>
             <div className="flex items-center gap-1 mt-4">
               {[1, 2, 3, 4, 5].map((star) => {
@@ -474,13 +487,17 @@ function ChatPanel({
       {isRatingModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="w-full max-w-md mx-4 bg-white rounded-xl shadow-xl border border-gray-200 p-5">
-            <h3 className="text-base font-semibold text-gray-900">Leave a rating</h3>
+            <h3 className="text-base font-semibold text-gray-900">
+              Leave a rating
+            </h3>
             <p className="text-xs text-gray-500 mt-1">
-              Optionally rate your interaction with {otherName} from 1 (Poor) to 5 (Exceptional) stars.
+              Optionally rate your interaction with {otherName} from 1 (Poor) to
+              5 (Exceptional) stars.
             </p>
             <div className="flex items-center gap-1 mt-4">
               {[1, 2, 3, 4, 5].map((star) => {
-                const isFilled = (hoveredRatingStar ?? ratingStars ?? 0) >= star;
+                const isFilled =
+                  (hoveredRatingStar ?? ratingStars ?? 0) >= star;
                 return (
                   <button
                     key={star}
@@ -708,7 +725,9 @@ export default function ChatLayout({
         : "No ratings";
     return acc;
   }, {});
-  const otherName = activeChatroomId ? (otherNames[activeChatroomId] ?? "…") : "";
+  const otherName = activeChatroomId
+    ? (otherNames[activeChatroomId] ?? "…")
+    : "";
   const otherImage = activeChatroomId
     ? (otherImages[activeChatroomId] ?? null)
     : null;
