@@ -68,6 +68,9 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MEILISEARCH_HOST=http://meilisearch:7700
       - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY:-masterKey}
+      - LOGQUEUESETTINGS__BASEPATH=App_Data
+    volumes:
+      - app-data:/app/App_Data
     depends_on:
       postgres:
         condition: service_healthy
@@ -118,6 +121,7 @@ networks:
     driver: bridge
 
 volumes:
+  app-data:
   postgres_data_dev:
   minio_data_dev:
   meilisearch_data:
