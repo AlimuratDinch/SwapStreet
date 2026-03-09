@@ -6,7 +6,8 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, ProfileResponse } from "@/lib/api/profile";
 import { Header } from "@/components/common/Header";
-import { Phone, Mail, MapPin, Star, Pencil } from "lucide-react";
+import Link from "next/link";
+import { Phone, Mail, MapPin, Star, Pencil, Trash2 } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -204,14 +205,30 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Listings Section - Placeholder */}
+        {/* Listings Section */}
         <div className="mt-6 rounded-xl bg-white shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            My Listings
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              My Listings
+            </h2>
+            <Link
+              href="/seller/myListings"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              Manage / Delete listings
+            </Link>
+          </div>
           <div className="text-center py-12 text-gray-500">
-            <p>Your listings will appear here</p>
-            <p className="text-sm mt-2">Listing functionality coming soon</p>
+            <p>View and delete your listings from the manage page.</p>
+            <p className="text-sm mt-2">
+              <Link
+                href="/seller/myListings"
+                className="text-teal-500 hover:underline"
+              >
+                Go to Manage / Delete listings
+              </Link>
+            </p>
           </div>
         </div>
       </div>
