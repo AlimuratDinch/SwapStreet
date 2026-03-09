@@ -1,75 +1,90 @@
-import { render, screen } from "@testing-library/react";
+// tests/__tests__/browse/page.test.tsx
+import { render, screen, waitFor } from "@testing-library/react";
 import BrowsePage from "@/app/browse/page";
 import { getSearchResults } from "@/lib/api/browse";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: jest.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(), // Deprecated
-    removeListener: jest.fn(), // Deprecated
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
-// 1. Mock all dependencies strictly
+// 1. Mock Next.js navigation
+jest.mock("next/navigation", () => ({
+  useSearchParams: jest.fn(),
+  useRouter: () => ({ replace: jest.fn() }),
+}));
+
+// 2. Mock the API utility
 jest.mock("@/lib/api/browse", () => ({
   getSearchResults: jest.fn(),
 }));
 
+// 3. Mock the Header to avoid AuthContext errors
 jest.mock("@/components/common/Header", () => ({
-  Header: () => <div data-testid="header" />,
+  Header: () => <div data-testid="mock-header" />,
 }));
 
+// 4. Mock the Sidebar and FAB
 jest.mock("@/app/browse/components/Sidebar", () => ({
-  Sidebar: () => <div data-testid="sidebar" />,
-}));
-
-jest.mock("@/app/browse/components/BrowseLayout", () => ({
-  BrowseLayout: ({ initialItems }: any) => (
-    <div data-testid="layout">Items: {initialItems.length}</div>
-  ),
+  Sidebar: () => <div data-testid="mock-sidebar" />,
 }));
 
 jest.mock("@/app/browse/components/CreateListingFAB", () => ({
-  CreateListingFAB: () => <div data-testid="fab" />,
+  CreateListingFAB: () => <div data-testid="mock-fab" />,
 }));
 
+// 5. Mock InfiniteBrowse
 jest.mock("@/app/browse/components/InfiniteBrowse", () => {
-  return function MockInfiniteBrowse({
-    initialItems,
-  }: {
-    initialItems: any[];
-  }) {
-    return <div data-testid="infinite-browse">{initialItems.length}</div>;
+  return function MockInfiniteBrowse() {
+    return <div data-testid="infinite-browse" />;
   };
 });
 
-describe("BrowsePage Server Component", () => {
-  const mockItems = [{ id: "1", title: "Test Item" }];
+// 6. Mock Sidebar UI components
+jest.mock("@/components/ui/sidebar", () => ({
+  SidebarProvider: ({ children }: any) => (
+    <div data-testid="sidebar-provider">{children}</div>
+  ),
+  SidebarInset: ({ children }: any) => <div>{children}</div>,
+  SidebarTrigger: () => <button />,
+}));
 
+describe("BrowsePage Client Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Mock URL with a query: ?q=bike
+    const mockSearchParams = new URLSearchParams("q=bike");
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: (key: string) => mockSearchParams.get(key),
+      toString: () => mockSearchParams.toString(),
+    });
+
+    // Ensure the API returns a valid structure
     (getSearchResults as jest.Mock).mockResolvedValue({
-      items: mockItems,
+      items: [{ id: "1", title: "Bike" }],
       nextCursor: null,
       hasNextPage: false,
     });
   });
 
-  it("awaits searchParams and fetches data", async () => {
-    const searchParams = Promise.resolve({ q: "bike" });
+  it("renders and calls API based on URL params", async () => {
+    render(
+      <Suspense fallback={<div>Loading...</div>}>
+        <BrowsePage />
+      </Suspense>,
+    );
 
-    const PageJSX = await BrowsePage({ searchParams });
-    render(PageJSX);
+    // Verify the API was called with the correct params
+    await waitFor(() => {
+      expect(getSearchResults).toHaveBeenCalledWith(
+        expect.objectContaining({ q: "bike" }),
+      );
+    });
 
-    expect(getSearchResults).toHaveBeenCalledWith({ q: "bike" });
+    // FIX: Use findBy instead of getBy to wait for the state transition
+    // from Skeleton -> InfiniteBrowse
+    const infiniteBrowse = await screen.findByTestId("infinite-browse");
 
-    // Instead of "layout", check for the infinite-browse mock we created
-    expect(screen.getByTestId("infinite-browse")).toHaveTextContent("1");
-    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    expect(infiniteBrowse).toBeInTheDocument();
+    expect(screen.getByTestId("mock-header")).toBeInTheDocument();
+    expect(screen.getByTestId("mock-sidebar")).toBeInTheDocument();
   });
 });
