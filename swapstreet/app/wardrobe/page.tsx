@@ -20,7 +20,7 @@ export default function WardrobePage() {
   const [showOriginal, setShowOriginal] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [recentResults, setRecentResults] = useState<string[]>([]);
-  const [firstListingId, setFirstListingId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(false);
   const [isRemoving, setIsRemoving] = useState<Set<string>>(new Set());
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
@@ -29,28 +29,6 @@ export default function WardrobePage() {
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-
-  // Fetch a valid listing ID
-  useEffect(() => {
-    const fetchListingId = async () => {
-      try {
-        const response = await fetch(`${API_URL}/search/search`, {
-          credentials: "include", // Include cookies
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const items = Array.isArray(data) ? data : (data?.items ?? []);
-          if (items && items.length > 0) {
-            setFirstListingId(items[0].id);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch listing ID:", err);
-      }
-    };
-    fetchListingId();
-  }, [API_URL]);
 
   useEffect(() => {
     setWardrobeItems(readWardrobeItems());
@@ -101,6 +79,7 @@ export default function WardrobePage() {
         return;
       }
       setWardrobeItems(removeWardrobeItem(itemId));
+      setSelectedItemId((prev) => (prev === itemId ? null : prev));
     } catch (err) {
       console.error("Failed to remove from wishlist:", err);
     } finally {
@@ -203,10 +182,17 @@ export default function WardrobePage() {
         return;
       }
 
-      if (!firstListingId) {
+      if (!selectedItemId) {
         setError(
-          "No listings available. Please wait or create a listing first.",
+          "Please select an item from your wardrobe first.",
         );
+        setLoading(false);
+        return;
+      }
+
+      const selectedItem = wardrobeItems.find((item) => item.id === selectedItemId);
+      if (!selectedItem?.imageUrl) {
+        setError("Selected item has no image.");
         setLoading(false);
         return;
       }
@@ -219,8 +205,8 @@ export default function WardrobePage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          clothingImageUrl: uploadedImage,
-          listingId: firstListingId,
+          clothingImageUrl: selectedItem.imageUrl,
+          listingId: selectedItemId,
         }),
       });
 
@@ -302,8 +288,8 @@ export default function WardrobePage() {
                   <p className="mb-1">
                     1. Click the frame to upload your photo
                   </p>
-                  <p className="mb-1">2. Pick an item and click Try On</p>
-                  <p>3. Toggle Original/Result to compare</p>
+                  <p className="mb-1">2. Click a wardrobe item to select it</p>
+                  <p>3. Click Try On and toggle Original/Result to compare</p>
                 </div>
               </button>
             </div>
@@ -416,7 +402,7 @@ export default function WardrobePage() {
           <div className="mb-4">
             <button
               onClick={handleTryOn}
-              disabled={loading || !uploadedImage || uploadProgress}
+              disabled={loading || !uploadedImage || !selectedItemId || uploadProgress}
               className="w-full bg-teal-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-teal-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               {loading ? (
@@ -523,8 +509,13 @@ export default function WardrobePage() {
               return (
                 <div
                   key={item.id}
-                  className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden group ${
+                  onClick={() => setSelectedItemId(item.id === selectedItemId ? null : item.id)}
+                  className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden group cursor-pointer ${
                     viewMode === "list" ? "flex" : ""
+                  } ${
+                    selectedItemId === item.id
+                      ? "ring-2 ring-teal-500 ring-offset-2"
+                      : ""
                   }`}
                 >
                   <div
@@ -542,8 +533,11 @@ export default function WardrobePage() {
                     ) : (
                       <span className="text-gray-400 text-sm">No image</span>
                     )}
+                    {selectedItemId === item.id && (
+                      <div className="absolute inset-0 bg-teal-500/10" />
+                    )}
                     <button
-                      onClick={() => toggleFavorite(item.id)}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id); }}
                       className={`absolute top-3 left-3 p-1.5 bg-white/80 rounded-full transition-all ${
                         favorites.has(item.id)
                           ? "opacity-100"
@@ -559,7 +553,7 @@ export default function WardrobePage() {
                       />
                     </button>
                     <button
-                      onClick={() => handleRemoveFromWardrobe(item.id)}
+                      onClick={(e) => { e.stopPropagation(); handleRemoveFromWardrobe(item.id); }}
                       className="absolute top-3 right-3 p-1.5 bg-white/80 hover:bg-white rounded-full shadow-sm transition-colors opacity-0 group-hover:opacity-100"
                       title="Remove from wardrobe"
                       disabled={isRemoving.has(item.id)}
