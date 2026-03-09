@@ -20,13 +20,13 @@ export default defineConfig({
   webServer: process.env.PW_USE_DEV_SERVER
     ? {
         command: "npm run dev",
-        url: "http://localhost:3000",
+        url: "http://localhost",
         reuseExistingServer: true,
         timeout: 120_000,
       }
     : {
         command: "npm run build && npm run start",
-        url: "http://localhost:3000",
+        url: "http://localhost",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
       },
