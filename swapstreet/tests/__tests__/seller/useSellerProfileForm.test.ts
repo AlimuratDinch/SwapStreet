@@ -261,6 +261,99 @@ describe("useSellerProfileForm", () => {
     expect(result.current.showSuccess).toBe(true);
   });
 
+  it("handleSubmit calls onSubmit with empty fsa when FSA field is left empty", async () => {
+    const { result } = renderHook(() => useSellerProfileForm(defaultOptions));
+
+    await waitFor(() => {
+      expect(result.current.loadingData).toBe(false);
+    });
+
+    act(() => {
+      result.current.setFirstName("Jane");
+      result.current.setLastName("Doe");
+      result.current.setFsa("");
+      result.current.setSelectedProvinceId(1);
+    });
+
+    await waitFor(() => {
+      expect(result.current.filteredCities.length).toBeGreaterThan(0);
+    });
+
+    act(() => {
+      result.current.setSelectedCityId(10);
+      result.current.setCityInputValue("Toronto");
+    });
+
+    await act(async () => {
+      result.current.handleSubmit({
+        preventDefault: jest.fn(),
+      } as unknown as React.FormEvent);
+    });
+
+    await waitFor(() => {
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: "Jane",
+          lastName: "Doe",
+          cityId: 10,
+          fsa: "",
+        }),
+        "test-token",
+      );
+    });
+    expect(mockOnSuccess).toHaveBeenCalled();
+  });
+
+  it("in edit mode, clearing FSA and submitting sends fsa empty so change is saved", async () => {
+    const initialValues = {
+      firstName: "Jane",
+      lastName: "Doe",
+      fsa: "M5V",
+      cityId: 10,
+      cityName: "Toronto",
+      provinceCode: "ON",
+      profileImagePath: undefined as string | undefined,
+      bannerImagePath: undefined as string | undefined,
+    };
+
+    const { result } = renderHook(() =>
+      useSellerProfileForm({
+        ...defaultOptions,
+        mode: "edit",
+        initialValues,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.loadingData).toBe(false);
+    });
+    await waitFor(() => {
+      expect(result.current.fsa).toBe("M5V");
+    });
+
+    act(() => {
+      result.current.setFsa("");
+    });
+
+    await act(async () => {
+      result.current.handleSubmit({
+        preventDefault: jest.fn(),
+      } as unknown as React.FormEvent);
+    });
+
+    await waitFor(() => {
+      expect(mockOnSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: "Jane",
+          lastName: "Doe",
+          cityId: 10,
+          fsa: "",
+        }),
+        expect.any(String),
+      );
+    });
+  });
+
   it("in edit mode uses initialValues image paths when no new file", async () => {
     const initialValues = {
       firstName: "A",

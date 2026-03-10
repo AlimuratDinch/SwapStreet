@@ -221,13 +221,8 @@ export default function SellerOnboardingPage() {
           return;
         }
 
-        // Validate FSA input
         const normalizedFsa = fsa.trim().toUpperCase();
-        if (!normalizedFsa) {
-          setError("FSA is required.");
-          return;
-        }
-        if (!FSA_REGEX.test(normalizedFsa)) {
+        if (normalizedFsa && !FSA_REGEX.test(normalizedFsa)) {
           setError("Please enter a valid FSA (e.g., M5V).");
           return;
         }
@@ -270,7 +265,7 @@ export default function SellerOnboardingPage() {
           lastName: lastName.trim(),
           bio: bio.trim() || undefined,
           cityId: selectedCityId!, // Non-null assertion since we validated above
-          fsa: normalizedFsa,
+          fsa: normalizedFsa || undefined,
           profileImagePath,
           bannerImagePath,
         };
@@ -373,7 +368,7 @@ export default function SellerOnboardingPage() {
                 htmlFor="first-name"
                 className="block text-sm font-medium text-gray-700"
               >
-                First name
+                First name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -391,7 +386,7 @@ export default function SellerOnboardingPage() {
                 htmlFor="last-name"
                 className="block text-sm font-medium text-gray-700"
               >
-                Last name
+                Last name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -412,7 +407,7 @@ export default function SellerOnboardingPage() {
                 htmlFor="province"
                 className="block text-sm font-medium text-gray-700"
               >
-                Province
+                Province <span className="text-red-500">*</span>
               </label>
               <select
                 id="province"
@@ -441,7 +436,7 @@ export default function SellerOnboardingPage() {
                 htmlFor="city"
                 className="block text-sm font-medium text-gray-700"
               >
-                City
+                City <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -497,7 +492,8 @@ export default function SellerOnboardingPage() {
                 htmlFor="fsa"
                 className="block text-sm font-medium text-gray-700"
               >
-                FSA
+                FSA{" "}
+                <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               <input
                 type="text"
@@ -507,7 +503,6 @@ export default function SellerOnboardingPage() {
                 placeholder="A1A"
                 maxLength={3}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                required
                 disabled={loading}
               />
             </div>
