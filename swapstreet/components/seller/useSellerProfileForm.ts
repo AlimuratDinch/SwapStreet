@@ -5,9 +5,7 @@ import { uploadImage, City, Province } from "@/lib/api/profile";
 import { logger } from "@/components/common/logger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
-const MINIO_URL =
-  process.env.NEXT_PUBLIC_MINIO_URL || "http://localhost:9000/public";
+const FSA_REGEX = /^[A-Za-z]\d[A-Za-z] \d[A-Za-z]\d$/;
 
 export interface SellerProfileFormPayload {
   firstName: string;
@@ -272,11 +270,11 @@ export function useSellerProfileForm({
         }
         const normalizedFsa = fsa.trim().toUpperCase();
         if (!normalizedFsa) {
-          setError("FSA is required.");
+          setError("Postal code is required.");
           return;
         }
-        if (!FSA_REGEX.test(normalizedFsa)) {
-          setError("Please enter a valid FSA (e.g., M5V).");
+        if (!FSA_REGEX.test(fsa.trim())) {
+          setError("Please enter a valid Canadian postal code (e.g., A1A 1A1).");
           return;
         }
         let tokenToUse = accessToken;
@@ -377,12 +375,12 @@ export function useSellerProfileForm({
   const currentAvatarUrl =
     avatarPreview ||
     (mode === "edit" && initialValues?.profileImagePath
-      ? `${MINIO_URL}/${initialValues.profileImagePath}`
+      ? initialValues.profileImagePath
       : "/images/default-avatar-icon.jpg");
   const currentBannerUrl =
     bannerPreview ||
     (mode === "edit" && initialValues?.bannerImagePath
-      ? `${MINIO_URL}/${initialValues.bannerImagePath}`
+      ? initialValues.bannerImagePath
       : "/images/default-seller-banner.png");
 
   return {

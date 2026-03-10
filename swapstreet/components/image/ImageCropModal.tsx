@@ -109,69 +109,80 @@ export default function ImageCropModal({
   if (!open || !imageUrl) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-gray-900">
-      <div className="flex-1 relative min-h-0">
-        <Cropper
-          image={imageUrl}
-          crop={crop}
-          zoom={zoom}
-          rotation={0}
-          aspect={aspect}
-          onCropChange={setCrop}
-          onZoomChange={setZoom}
-          onCropComplete={(_area: Area, pixels: Area) =>
-            setCropAreaPixels(pixels)
-          }
-          onCropAreaChange={(_area: Area, pixels: Area) =>
-            setCropAreaPixels(pixels)
-          }
-          minZoom={1}
-          maxZoom={3}
-          cropShape={cropShape}
-          showGrid={cropShape !== "round"}
-          zoomSpeed={1}
-          restrictPosition
-          keyboardStep={0.1}
-          style={{
-            containerStyle: { backgroundColor: "inherit" },
-          }}
-          classes={{
-            containerClassName: "rounded-none",
-          }}
-          mediaProps={{}}
-          cropperProps={{}}
-        />
-      </div>
-      <div className="flex-shrink-0 p-4 bg-gray-900 border-t border-gray-700 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-300">Zoom</span>
-          <input
-            type="range"
-            min={1}
-            max={3}
-            step={0.1}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            className="flex-1 h-2 rounded-lg appearance-none cursor-pointer bg-gray-600 accent-teal-500"
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Crop image</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Drag to reposition · scroll or use the slider to zoom</p>
+        </div>
+
+        {/* Cropper area */}
+        <div className="relative h-80 bg-gray-100">
+          <Cropper
+            image={imageUrl}
+            crop={crop}
+            zoom={zoom}
+            rotation={0}
+            aspect={aspect}
+            onCropChange={setCrop}
+            onZoomChange={setZoom}
+            onCropComplete={(_area: Area, pixels: Area) =>
+              setCropAreaPixels(pixels)
+            }
+            onCropAreaChange={(_area: Area, pixels: Area) =>
+              setCropAreaPixels(pixels)
+            }
+            minZoom={1}
+            maxZoom={3}
+            cropShape={cropShape}
+            showGrid={cropShape !== "round"}
+            zoomSpeed={1}
+            restrictPosition
+            keyboardStep={0.1}
+            style={{
+              containerStyle: { backgroundColor: "inherit" },
+            }}
+            classes={{
+              containerClassName: "rounded-none",
+            }}
+            mediaProps={{}}
+            cropperProps={{}}
           />
         </div>
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={confirming}
-            className="rounded-lg border border-gray-500 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={confirming || !cropAreaPixels}
-            className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {confirming ? "Applying…" : "Apply crop"}
-          </button>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-600 w-10 shrink-0">Zoom</span>
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.1}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer bg-gray-200 accent-teal-500"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={confirming}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={confirming || !cropAreaPixels}
+              className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {confirming ? "Applying…" : "Apply crop"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -58,7 +58,7 @@ export default function SellerListingPage() {
         if (!res.ok) throw new Error("Failed to fetch profile");
         const data = await res.json();
         setProfileId(data.id);
-        setFsa(data.fsa);
+        setFsa(data.fsa ? data.fsa.replace(/\s/g, "").slice(0, 3) : "");
       } catch (error) {
         console.error(error);
         setError("Could not load profile info. Please refresh or re-login.");

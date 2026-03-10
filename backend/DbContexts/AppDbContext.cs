@@ -88,7 +88,7 @@ public class AppDbContext : DbContext
         // Define specific type for FSA
         modelBuilder.Entity<Profile>()
             .Property(p => p.FSA)
-            .HasColumnType("varchar(3)");
+            .HasColumnType("varchar(7)");
 
         // Enum Conversion: ProfileStatusEnum is stored as int
         modelBuilder.Entity<Profile>()

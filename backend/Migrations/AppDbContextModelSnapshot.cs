@@ -314,8 +314,8 @@ namespace backend.Migrations
 
                     b.Property<string>("FSA")
                         .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("varchar(3)");
+                        .HasMaxLength(7)
+                        .HasColumnType("varchar(7)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
