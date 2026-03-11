@@ -54,7 +54,9 @@ describe("RegistrationPage — branch coverage booster", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
-    expect(await screen.findByText(/email already in use/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/email already in use/i),
+    ).toBeInTheDocument();
   });
 
   it("shows error from json.errors object on failed signup", async () => {
@@ -62,7 +64,9 @@ describe("RegistrationPage — branch coverage booster", () => {
       ok: false,
       text: async () =>
         JSON.stringify({
-          errors: { Password: ["Password must be at least 8 characters long."] },
+          errors: {
+            Password: ["Password must be at least 8 characters long."],
+          },
         }),
     } as Response);
 
@@ -111,7 +115,9 @@ describe("RegistrationPage — branch coverage booster", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
-    expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/something went wrong/i),
+    ).toBeInTheDocument();
   });
 
   it("renders all form fields", () => {

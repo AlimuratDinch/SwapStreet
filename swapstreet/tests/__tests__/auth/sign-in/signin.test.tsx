@@ -55,7 +55,9 @@ describe("LoginPage", () => {
         JSON.stringify({
           status: 400,
           title: "One or more validation errors occurred.",
-          errors: { Password: ["Password must be at least 8 characters long."] },
+          errors: {
+            Password: ["Password must be at least 8 characters long."],
+          },
         }),
     } as Response);
 
