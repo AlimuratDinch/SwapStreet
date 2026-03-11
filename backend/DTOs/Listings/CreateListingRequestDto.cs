@@ -5,6 +5,7 @@ namespace backend.DTOs
 {
     public class CreateListingRequestDto
     {
+
         [Required(ErrorMessage = "Title is required")]
         [StringLength(255, MinimumLength = 3, ErrorMessage = "Title must be 3-255 characters")]
         public string Title { get; set; } = string.Empty;

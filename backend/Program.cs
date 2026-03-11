@@ -19,10 +19,15 @@ using backend.Services.Chat;
 using Microsoft.AspNetCore.HttpOverrides;
 using backend.DTOs;
 using System.Text.Json;
+using backend.Configuration;
+using backend.Extensions;
+using Meilisearch;
+using backend.Infrastructure;
+using backend.Infrastructure.LogQueue;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"), o => o.UseNetTopologySuite()));
@@ -45,6 +50,7 @@ ConfigureCors(builder);
 
 ConfigureGemini(builder);
 ConfigureMinio(builder);
+ConfigureMeilisearch(builder);
 
 // ===============================================================================
 // AUTHENTICATION & AUTHORIZATION
@@ -64,17 +70,18 @@ ConfigureSwagger(builder);
 // ===============================================================================
 
 RegisterServices(builder);
+ConfigureLogQueue(builder);
 
 // ===============================================================================
 // BUILD & INITIALIZE
 // ===============================================================================
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     ConfigureDatabase(builder);
 }
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     builder.WebHost.UseUrls("http://0.0.0.0:8080/");
 }
@@ -83,10 +90,11 @@ var app = builder.Build();
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    KnownNetworks = { new Microsoft.AspNetCore.HttpOverrides.IPNetwork(System.Net.IPAddress.Any, 0) }
 });
 
-if (!app.Environment.IsProduction())
+if (builder.Environment.IsTest() || builder.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -96,12 +104,13 @@ if (!app.Environment.IsProduction())
     });
 }
 
-if (!builder.Environment.IsEnvironment("Test"))
+if (!builder.Environment.IsTest())
 {
     await InitializeMinio(app);
     await InitializeDatabaseAsync(app);
-}
+    await InitializeMeilisearchIndex(app);
 
+}
 // ===============================================================================
 // MIDDLEWARE PIPELINE
 // ===============================================================================
@@ -132,16 +141,22 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
     var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost";
     builder.Configuration["FRONTEND_URL"] = frontendUrl;
 }
-
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Add this to trust the Nginx proxy container
+    KnownNetworks = { new Microsoft.AspNetCore.HttpOverrides.IPNetwork(System.Net.IPAddress.Any, 0) }
+});
 static void ConfigureCors(WebApplicationBuilder builder)
 {
-    var frontendUrl = builder.Configuration["FRONTEND_URL"];
+    // Get URLs from environment/config for flexibility
+    var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost";
 
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost")
+            policy.WithOrigins(frontendUrl)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -171,6 +186,50 @@ static void ConfigureDatabase(WebApplicationBuilder builder)
     builder.Services.AddDbContext<AuthDbContext>(options =>
         options.UseNpgsql(connectionString));
 }
+
+//----------------------------------------------------------------------------
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$  NEW LOGQUEUE $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+//----------------------------------------------------------------------------
+static void ConfigureLogQueue(WebApplicationBuilder builder)
+{
+    // 1. Pull the path exactly as defined in docker-compose.yml
+    // This maps to LOGQUEUESETTINGS__BASEPATH
+    var basePath = builder.Configuration["LogQueueSettings:BasePath"] ?? "App_Data";
+
+    // 2. Register the Signal
+    builder.Services.AddSingleton<TopicSignal>();
+
+    // 3. Register the OffsetManager using the raw BasePath
+    builder.Services.AddSingleton<OffsetManager>(sp =>
+    {
+        if (!Directory.Exists(basePath)) Directory.CreateDirectory(basePath);
+        return new OffsetManager(basePath);
+    });
+
+    // 4. Register the ITopicManager using the raw BasePath
+    builder.Services.AddSingleton<ITopicManager>(sp =>
+    {
+        var signal = sp.GetRequiredService<TopicSignal>();
+        var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+        var basePath = builder.Configuration["LogQueueSettings:BasePath"] ?? "App_Data";
+
+        var manager = TopicManager.InitializeAsync(basePath, signal, loggerFactory).GetAwaiter().GetResult();
+
+        // FORCE THE CREATION: If it doesn't exist, make it.
+        if (manager.GetTopic("listings") == null)
+        {
+            int maxFileSize = 64 * 1024 * 1024; // 64MB in bytes
+                                                // This is what physically creates /listings/state.json and /listings/listings-0/
+            manager.CreateTopic("listings", 1, true, maxFileSize, TimeSpan.FromMinutes(20)).GetAwaiter().GetResult();
+        }
+
+        return manager;
+    });
+
+    // 5. Add the Worker
+    builder.Services.AddHostedService<MeiliSyncWorker>();
+}
+//----------------------------------------------------------------------------
 
 static void ConfigureMinio(WebApplicationBuilder builder)
 {
@@ -229,6 +288,15 @@ static void ConfigureMinio(WebApplicationBuilder builder)
             throw;
         }
     });
+}
+
+static void ConfigureMeilisearch(WebApplicationBuilder builder)
+{
+    var meiliHost = builder.Configuration["MEILISEARCH_HOST"] ?? "http://localhost:7700";
+    var meiliKey = builder.Configuration["MEILISEARCH_API_KEY"] ?? GenerateRandomKey(16);
+
+    builder.Services.AddSingleton<MeilisearchClient>(new MeilisearchClient(meiliHost, meiliKey));
+
 }
 
 
@@ -322,13 +390,14 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<ImageSeeder>();
     builder.Services.AddScoped<IListingSearchService, ListingSearchService>();
     builder.Services.AddScoped<IListingCommandService, ListingCommandService>();
+    builder.Services.AddScoped<IWishlistService, WishlistService>();
 
     // Chat Services
     builder.Services.AddScoped<IChatroomService, ChatroomService>();
     builder.Services.AddScoped<IChatService, ChatService>();
 
     // Email Service (environment-dependent)
-    if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Test"))
+    if (builder.Environment.IsDevelopment() || builder.Environment.IsTest())
     {
         builder.Services.AddTransient<IEmailService, MockEmailService>();
     }
@@ -441,6 +510,26 @@ static async Task InitializeMinio(WebApplication app)
     {
         app.Logger.LogError(ex, "MinIO initialization failed");
     }
+}
+
+static async Task InitializeMeilisearchIndex(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var client = scope.ServiceProvider.GetRequiredService<MeilisearchClient>();
+    var index = client.Index("listings");
+
+    await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa" });
+    await index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
+    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa" });
+
+    await index.UpdateRankingRulesAsync(new[] {
+        "words",
+        "typo",
+        "proximity",
+        "attribute",
+        "sort",
+        "exactness"
+    });
 }
 
 static void ConfigureMiddleware(WebApplication app)

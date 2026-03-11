@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
+import { ChatProvider } from "../contexts/ChatContext";
 
 export const metadata = {
   title: "SwapStreet",
@@ -15,7 +16,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <AuthProvider>
-          {children} {/* Renders the content of each specific page */}
+          <ChatProvider>{children}</ChatProvider>
         </AuthProvider>
       </body>
     </html>
