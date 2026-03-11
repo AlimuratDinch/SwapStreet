@@ -58,7 +58,7 @@ namespace backend.Data.Seed
 
         public static async Task SeedAsync(AppDbContext context, IListingCommandService listingService, ILogger logger)
         {
-            
+
             var existingCount = await context.Listings.CountAsync();
 
             var profileId = ProfileSeeder.TestProfileId;
