@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import { CardItem } from "./CardItem";
+import { CardItem, ListingSize } from "./CardItem";
 import { getSearchResults, SearchParams } from "@/lib/api/browse";
 
 export interface Item {
   id: string;
   title: string;
   price: number;
+  size: ListingSize | null;
   fsa: string;
   images?: { imageUrl: string }[];
 }
@@ -90,6 +91,7 @@ export default function InfiniteBrowse({
             key={`${item.id}-${index}`} // Composite key to prevent collisions
             id={String(item.id)}
             title={item.title}
+            size={item.size}
             imgSrc={item.images?.[0]?.imageUrl}
             price={item.price ?? 0}
             fsa={item.fsa}

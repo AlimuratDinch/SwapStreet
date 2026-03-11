@@ -2,6 +2,7 @@ export type WardrobeItem = {
   id: string;
   title: string;
   price: number;
+  size: string;
   imageUrl?: string | null;
 };
 
