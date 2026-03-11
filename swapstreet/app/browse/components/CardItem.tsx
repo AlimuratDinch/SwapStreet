@@ -10,14 +10,11 @@ import {
 } from "../../wardrobe/wardrobeStorage";
 import "./CardItemStyle.css";
 
-export type ListingSize = "XXS" | "XS" | "S" | "M" | "L" | "XL" | "XXL";
-
 interface CardItemProps {
   id: string;
   title: string;
   imgSrc?: string;
   price: number;
-  size?: ListingSize | null;
   fsa: string;
   href?: string;
 }
@@ -27,7 +24,6 @@ export function CardItem({
   title,
   imgSrc,
   price,
-  size,
   fsa,
   href,
 }: CardItemProps) {
@@ -65,7 +61,12 @@ export function CardItem({
           removeWardrobeItem(id);
           setInWardrobe(false);
         } else {
-          addWardrobeItem({ id, title, price, size: size || "", imageUrl: imgSrc ?? null });
+          addWardrobeItem({
+            id,
+            title,
+            price,
+            imageUrl: imgSrc ?? null,
+          });
           setInWardrobe(true);
         }
       }
@@ -91,7 +92,6 @@ export function CardItem({
       </div>
       <div className="card-item-content">
         <h4 className="card-item-title">{title}</h4>
-        {size && <p>Size: {size}</p>}
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
           <p className="card-item-fsa">
