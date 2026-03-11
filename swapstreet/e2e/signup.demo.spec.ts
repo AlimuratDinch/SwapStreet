@@ -1,7 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-test.skip(!!process.env.CI, "Requires Docker backend");
-
 test("sign up flow demo (for GIF)", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
