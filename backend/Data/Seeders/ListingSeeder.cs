@@ -26,6 +26,17 @@ namespace backend.Data.Seed
             "Athletic Shorts", "Yoga Pants", "Leggings", "Joggers", "Sweatpants"
         };
 
+        private static readonly ListingSize[] Sizes = new[]
+        {
+            ListingSize.XXS,
+            ListingSize.XS,
+            ListingSize.S,
+            ListingSize.M,
+            ListingSize.L,
+            ListingSize.XL,
+            ListingSize.XXL
+        };
+
         private static readonly string[] Descriptions = new[]
         {
             "Gently used, excellent condition. Perfect for everyday wear.",
@@ -63,6 +74,7 @@ namespace backend.Data.Seed
                     Title = $"{ClothingItems[random.Next(ClothingItems.Length)]} #{existingCount + i + 1}",
                     Description = Descriptions[random.Next(Descriptions.Length)],
                     Price = Math.Round((decimal)(random.NextDouble() * 200 + 10), 2),
+                    Size = Sizes[random.Next(Sizes.Length)],
                     ProfileId = profileId,
                     FSA = validFsas[random.Next(validFsas.Count)]
                 };

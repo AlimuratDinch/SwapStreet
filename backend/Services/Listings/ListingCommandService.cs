@@ -117,6 +117,7 @@ namespace backend.Services
                 Title = request.Title,
                 Description = request.Description,
                 Price = request.Price,
+                Size = request.Size,
                 ProfileId = request.ProfileId,
                 TagId = null,
                 FSA = request.FSA,
@@ -139,6 +140,7 @@ namespace backend.Services
                     Id = listing.Id.ToString(),
                     Title = listing.Title,
                     Description = listing.Description,
+                    Size = listing.Size,
                     FSA = listing.FSA,
                     CreatedAtTimestamp = new DateTimeOffset(listing.CreatedAt).ToUnixTimeSeconds(),
                     _geo = latlong

@@ -21,6 +21,9 @@ public class Listing
     [Column(TypeName = "decimal(10,2)")]
     public decimal Price { get; set; } = 0.00M;
 
+    [EnumDataType(typeof(ListingSize), ErrorMessage = "Invalid size value")]
+    public ListingSize? Size { get; set; }
+
     // Foreign Key to Profile (the seller)
     [Required]
     public Guid ProfileId { get; set; }
@@ -43,4 +46,15 @@ public class Listing
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public enum ListingSize
+{
+    XXS,
+    XS,
+    S,
+    M,
+    L,
+    XL,
+    XXL
 }

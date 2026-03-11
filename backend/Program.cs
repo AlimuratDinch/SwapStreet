@@ -520,7 +520,7 @@ static async Task InitializeMeilisearchIndex(WebApplication app)
 
     await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa" });
     await index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
-    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa" });
+    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa", "size" });
 
     await index.UpdateRankingRulesAsync(new[] {
         "words",

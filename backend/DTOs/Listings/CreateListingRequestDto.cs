@@ -14,6 +14,9 @@ namespace backend.DTOs
         [StringLength(1000, MinimumLength = 10, ErrorMessage = "Description must be 10-1000 characters")]
         public string Description { get; set; } = string.Empty;
 
+        [EnumDataType(typeof(ListingSize), ErrorMessage = "Invalid size value")]
+        public ListingSize? Size { get; set; }
+
         [Required(ErrorMessage = "Price is required")]
         public decimal Price { get; set; }
 

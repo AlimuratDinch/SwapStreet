@@ -24,7 +24,6 @@ public class AppDbContext : DbContext
     public DbSet<Province> Provinces { get; set; } = null!;
     public DbSet<Fsa> Fsas { get; set; } = null!;
     public DbSet<ArticleType> ArticleTypes { get; set; } = null!;
-    public DbSet<Size> Sizes { get; set; } = null!;
     public DbSet<Style> Styles { get; set; } = null!;
     public DbSet<Brand> Brands { get; set; } = null!;
 
@@ -108,12 +107,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Style>().ToTable("styles");
         modelBuilder.Entity<Brand>().ToTable("brands");
 
-        modelBuilder.Entity<Size>().ToTable("sizes");
-        modelBuilder.Entity<Size>()
-            .HasOne(s => s.ArticleType)
-            .WithMany()
-            .HasForeignKey(s => s.ArticleTypeId);
-
         // =======================================================
         // TAG MODEL
         // =======================================================
@@ -151,6 +144,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Listing>()
             .Property(l => l.Price)
             .HasColumnType("decimal(10,2)");
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Size)
+            .HasConversion<string>();
         modelBuilder.Entity<Listing>(entity =>
             {
                 // Adds the computed column for text-search, will be recomputed on insert/update.
