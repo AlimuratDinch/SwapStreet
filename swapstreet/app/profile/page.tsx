@@ -10,7 +10,6 @@ import {
   ProfileTab,
 } from "@/components/profile/ProfileHeader";
 import { ProfileListingsTab } from "@/components/profile/ProfileListingsTab";
-import { ProfileFriendsTab } from "@/components/profile/ProfileFriendsTab";
 import { ProfileReviewsTab } from "@/components/profile/ProfileReviewsTab";
 
 function ProfileSuccessToast() {
@@ -149,7 +148,6 @@ export default function ProfilePage() {
 
         <div className="mt-4">
           {activeTab === "listings" && <ProfileListingsTab />}
-          {activeTab === "friends" && <ProfileFriendsTab />}
           {activeTab === "reviews" && <ProfileReviewsTab />}
         </div>
       </div>

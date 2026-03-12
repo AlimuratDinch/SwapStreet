@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Star, Pencil, MapPin, CalendarDays, BadgeCheck } from "lucide-react";
 import type { ProfileResponse } from "@/lib/api/profile";
 
-export type ProfileTab = "listings" | "friends" | "reviews";
+export type ProfileTab = "listings" | "reviews";
 
 interface ProfileHeaderProps {
   profile: ProfileResponse;
@@ -118,7 +118,7 @@ export function ProfileHeader({
 
         {/* Tabs */}
         <div className="flex border-t border-gray-200 mt-2">
-          {(["listings", "friends", "reviews"] as ProfileTab[]).map((tab) => (
+          {(["listings", "reviews"] as ProfileTab[]).map((tab) => (
             <button
               key={tab}
               type="button"
