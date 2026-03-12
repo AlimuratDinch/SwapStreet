@@ -6,7 +6,7 @@ import Link from "next/link";
 import * as signalR from "@microsoft/signalr";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatContext } from "@/contexts/ChatContext";
-import { Send, Star } from "lucide-react";
+import { Send, Star, Plus, Archive } from "lucide-react";
 
 type Message = {
   id: string;
@@ -35,6 +35,14 @@ type Chatroom = {
   listingImageUrl?: string | null;
   isDealClosed?: boolean;
   closedAt?: string | null;
+  isArchived?: boolean;
+  archivedAt?: string | null;
+  isFrozen?: boolean;
+  frozenReason?: string | null;
+  closeRequestedById?: string | null;
+  closeRequestedAt?: string | null;
+  closeConfirmedBySeller?: boolean;
+  closeConfirmedByBuyer?: boolean;
   sellerRatingAverage?: number | null;
   sellerRatingCount?: number;
   buyerRatingAverage?: number | null;
@@ -56,29 +64,52 @@ function Avatar({ src, size = 10 }: { src?: string | null; size?: number }) {
 
 function Sidebar({
   chatrooms,
+  archivedChatrooms,
   otherNames,
   otherImages,
   listingImages,
   activeChatroomId,
+  showArchived,
+  onToggleArchived,
 }: {
   chatrooms: Chatroom[];
+  archivedChatrooms: Chatroom[];
   otherNames: Record<string, string>;
   otherImages: Record<string, string | null>;
   listingImages: Record<string, string | null>;
   activeChatroomId: string | null;
+  showArchived: boolean;
+  onToggleArchived: () => void;
 }) {
   const router = useRouter();
   const { unread, latestMessages } = useChatContext();
+  const visibleChatrooms = showArchived ? archivedChatrooms : chatrooms;
 
   return (
     <aside className="w-72 shrink-0 bg-[#ebebeb] border-r border-gray-300 flex flex-col overflow-y-auto">
-      <div className="px-5 py-4 border-b border-gray-300">
-        <h2 className="font-semibold text-gray-800 text-base">Messages</h2>
+      <div className="px-5 py-4 border-b border-gray-300 flex items-center justify-between gap-2">
+        <h2 className="font-semibold text-gray-800 text-base">
+          {showArchived ? "Archived" : "Messages"}
+        </h2>
+        <button
+          type="button"
+          onClick={onToggleArchived}
+          className={`p-2 rounded-md transition-colors ${
+            showArchived
+              ? "bg-gray-300 text-gray-900"
+              : "text-gray-600 hover:bg-gray-200"
+          }`}
+          title={showArchived ? "Show messages" : "Show archived"}
+        >
+          <Archive className="w-4 h-4" />
+        </button>
       </div>
-      {chatrooms.length === 0 && (
-        <p className="text-sm text-gray-400 px-5 py-4">No conversations yet.</p>
+      {visibleChatrooms.length === 0 && (
+        <p className="text-sm text-gray-400 px-5 py-4">
+          {showArchived ? "No archived conversations." : "No conversations yet."}
+        </p>
       )}
-      {chatrooms.map((room) => {
+      {visibleChatrooms.map((room) => {
         const name = otherNames[room.id] ?? "…";
         const lastMsg =
           latestMessages[room.id] ??
@@ -158,17 +189,15 @@ function ChatPanel({
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
-  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-  const [hoveredCloseStar, setHoveredCloseStar] = useState<number | null>(null);
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [hoveredRatingStar, setHoveredRatingStar] = useState<number | null>(
     null,
   );
 
-  const [closeStars, setCloseStars] = useState<number | null>(null);
-  const [closeDescription, setCloseDescription] = useState("");
   const [ratingStars, setRatingStars] = useState<number | null>(null);
   const [ratingDescription, setRatingDescription] = useState("");
+  const [isConfirmCloseOpen, setIsConfirmCloseOpen] = useState(false);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -217,6 +246,12 @@ function ChatPanel({
       setMessages((prev) => [...prev, msg]);
     });
     connection.on("Error", (err: string) => setError(err));
+    connection.on("CloseDealUpdated", (updated: Chatroom) => {
+      onRoomUpdate(updated);
+      if (updated.id === room.id && updated.isDealClosed) {
+        setIsRatingModalOpen(true);
+      }
+    });
 
     connection
       .start()
@@ -249,6 +284,7 @@ function ChatPanel({
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || !connectionRef.current || !connected) return;
+    if (isArchived || isFrozen) return;
     try {
       await connectionRef.current.invoke("SendMessage", room.id, trimmed);
       setInput("");
@@ -268,10 +304,30 @@ function ChatPanel({
   const isBuyer = userId === room.buyerId;
   const roomRatings = room.ratings ?? [];
   const isDealClosed = !!room.isDealClosed;
+  const isArchived = !!room.isArchived;
+  const isFrozen = !!room.isFrozen;
   const hasRated = !!userId && roomRatings.some((r) => r.reviewerId === userId);
-  const canCloseDeal = isSeller && !isDealClosed;
-  const canRate =
-    !!userId && isDealClosed && !hasRated && (isSeller || isBuyer);
+  const closeRequestPending = !!room.closeRequestedById;
+  const needsCloseResponse =
+    closeRequestPending &&
+    !!userId &&
+    ((isSeller && !room.closeConfirmedBySeller) ||
+      (isBuyer && !room.closeConfirmedByBuyer));
+  const canCloseDeal =
+    !!userId && !isDealClosed && !isArchived && !isFrozen && !closeRequestPending;
+  const canRate = !!userId && isDealClosed && !hasRated;
+
+  useEffect(() => {
+    if (needsCloseResponse) {
+      setIsConfirmCloseOpen(true);
+    }
+  }, [needsCloseResponse]);
+
+  useEffect(() => {
+    if (isDealClosed && canRate) {
+      setIsRatingModalOpen(true);
+    }
+  }, [isDealClosed, canRate]);
 
   const otherRoleText = isBuyer ? "Selling" : isSeller ? "Wants to buy" : null;
   const otherRating = isBuyer
@@ -285,16 +341,11 @@ function ChatPanel({
     setActionBusy(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/chat/chatrooms/${room.id}/close-deal`, {
+      const res = await fetch(`/api/chat/chatrooms/${room.id}/close-request`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          stars: closeStars,
-          description: closeDescription.trim() || null,
-        }),
       });
 
       const body = await res.json().catch(() => null);
@@ -303,12 +354,10 @@ function ChatPanel({
       }
 
       onRoomUpdate(body as Chatroom);
-      setCloseStars(null);
-      setCloseDescription("");
-      setIsCloseModalOpen(false);
-      setHoveredCloseStar(null);
+      setIsConfirmCloseOpen(false);
+      setIsActionMenuOpen(false);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Failed to close deal");
+      setActionError(e instanceof Error ? e.message : "Failed to request close");
     } finally {
       setActionBusy(false);
     }
@@ -350,10 +399,40 @@ function ChatPanel({
     }
   };
 
+  const respondToCloseDeal = async (accept: boolean) => {
+    if (!accessToken) return;
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/chat/chatrooms/${room.id}/close-respond`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ accept }),
+      });
+
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(body?.error ?? body?.Error ?? `HTTP ${res.status}`);
+      }
+
+      onRoomUpdate(body as Chatroom);
+      setIsConfirmCloseOpen(false);
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : "Failed to respond to close request",
+      );
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
   if (!authLoaded || !isAuthenticated) return null;
 
   return (
-    <div className="flex flex-col flex-1 min-w-0 bg-[#f5f5f5]">
+    <div className="relative flex flex-col flex-1 min-w-0 bg-[#f5f5f5]">
       <div className="flex items-center justify-between gap-3 px-6 py-4 bg-white border-b border-gray-200">
         <div className="flex items-center gap-3 min-w-0">
           <Avatar src={otherImage} size={9} />
@@ -382,21 +461,7 @@ function ChatPanel({
             </div>
           </div>
         </div>
-        {canCloseDeal ? (
-          <button
-            onClick={() => setIsCloseModalOpen(true)}
-            className="text-xs bg-teal-500 hover:bg-teal-600 text-black font-semibold px-3 py-1.5 rounded shrink-0"
-          >
-            Close deal
-          </button>
-        ) : canRate ? (
-          <button
-            onClick={() => setIsRatingModalOpen(true)}
-            className="text-xs bg-teal-500 hover:bg-teal-600 text-black font-semibold px-3 py-1.5 rounded shrink-0"
-          >
-            Leave a rating
-          </button>
-        ) : isDealClosed ? (
+        {isDealClosed ? (
           <span className="text-xs text-[#14b4a3] font-medium shrink-0">
             Deal closed
           </span>
@@ -414,76 +479,38 @@ function ChatPanel({
         </div>
       )}
 
-      {isCloseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="w-full max-w-md mx-4 bg-white rounded-xl shadow-xl border border-gray-200 p-5">
+      {isConfirmCloseOpen && (
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-24 w-full px-6 z-10">
+          <div className="mx-auto w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <h3 className="text-base font-semibold text-gray-900">
-              Close the deal
+              Close deal
             </h3>
-            <p className="text-xs text-gray-500 mt-1">
-              Optionally rate your interaction with {otherName} from 1 (Poor) to
-              5 (Exceptional) stars before closing.
+            <p className="text-sm text-gray-600 mt-2">
+              Do you want to close your deal with {otherName}?
             </p>
-            <div className="flex items-center gap-1 mt-4">
-              {[1, 2, 3, 4, 5].map((star) => {
-                const isFilled = (hoveredCloseStar ?? closeStars ?? 0) >= star;
-                return (
-                  <button
-                    key={star}
-                    type="button"
-                    onMouseEnter={() => setHoveredCloseStar(star)}
-                    onMouseLeave={() => setHoveredCloseStar(null)}
-                    onClick={() => setCloseStars(star)}
-                    className="p-1"
-                    aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
-                  >
-                    <Star
-                      className={`w-6 h-6 ${isFilled ? "fill-[#14b4a3] text-[#14b4a3]" : "text-gray-300"}`}
-                    />
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => {
-                  setCloseStars(null);
-                  setCloseDescription("");
-                }}
-                className="ml-2 text-xs text-gray-500 hover:text-gray-700"
-              >
-                Skip
-              </button>
-            </div>
-            <textarea
-              value={closeDescription}
-              onChange={(e) => setCloseDescription(e.target.value)}
-              placeholder={
-                closeStars
-                  ? "Optional description"
-                  : "Select a star rating to add a description"
-              }
-              rows={3}
-              disabled={!closeStars}
-              className="mt-4 w-full bg-gray-50 text-gray-800 text-sm border border-gray-300 rounded px-3 py-2 resize-none focus:outline-none focus:border-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
             <div className="mt-4 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  setIsCloseModalOpen(false);
-                  setHoveredCloseStar(null);
+                  setIsConfirmCloseOpen(false);
+                  setIsActionMenuOpen(false);
+                  if (needsCloseResponse) {
+                    respondToCloseDeal(false);
+                  }
                 }}
                 className="text-xs px-3 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
               >
-                Cancel
+                No
               </button>
               <button
                 type="button"
-                onClick={submitCloseDeal}
+                onClick={() =>
+                  needsCloseResponse ? respondToCloseDeal(true) : submitCloseDeal()
+                }
                 disabled={actionBusy}
                 className="text-xs bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-black font-semibold px-3 py-2 rounded"
               >
-                {actionBusy ? "Submitting..." : "Confirm"}
+                Yes
               </button>
             </div>
           </div>
@@ -491,8 +518,8 @@ function ChatPanel({
       )}
 
       {isRatingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="w-full max-w-md mx-4 bg-white rounded-xl shadow-xl border border-gray-200 p-5">
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-28 w-full px-6 z-10">
+          <div className="mx-auto w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <h3 className="text-base font-semibold text-gray-900">
               Leave a rating
             </h3>
@@ -549,11 +576,13 @@ function ChatPanel({
                 type="button"
                 onClick={() => {
                   setIsRatingModalOpen(false);
+                  setRatingStars(null);
+                  setRatingDescription("");
                   setHoveredRatingStar(null);
                 }}
                 className="text-xs px-3 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
               >
-                Cancel
+                No rating
               </button>
               <button
                 type="button"
@@ -602,24 +631,58 @@ function ChatPanel({
         <div ref={bottomRef} />
       </div>
 
-      <div className="px-6 py-4 bg-white border-t border-gray-200 flex items-center gap-3">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type Message Here"
-          rows={1}
-          className="flex-1 bg-gray-50 text-gray-800 text-sm placeholder-gray-400 border border-gray-200 rounded-2xl px-4 py-2.5 resize-none focus:outline-none focus:border-teal-400 max-h-32 overflow-y-auto"
-          style={{ minHeight: "44px" }}
-        />
-        <button
-          onClick={sendMessage}
-          disabled={!input.trim() || !connected}
-          className="p-2.5 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-full transition-colors"
-          title="Send"
-        >
-          <Send className="w-4 h-4 text-black translate-x-[-1px] translate-y-[1px]" />
-        </button>
+      <div className="px-6 py-4 bg-white border-t border-gray-200">
+        {isFrozen && (
+          <div className="text-xs text-gray-600 mb-2">
+            {room.frozenReason ?? "The listing was sold to another buyer."}
+          </div>
+        )}
+        {isArchived && (
+          <div className="text-xs text-gray-600 mb-2">This chat is archived.</div>
+        )}
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <button
+              onClick={() => setIsActionMenuOpen((v) => !v)}
+              disabled={!canCloseDeal}
+              className="p-2.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-full transition-colors"
+              title="Actions"
+            >
+              <Plus className="w-4 h-4 text-gray-700" />
+            </button>
+            {isActionMenuOpen && canCloseDeal && (
+              <div className="absolute bottom-12 left-0 bg-white border border-gray-200 rounded-lg shadow-lg w-40 overflow-hidden z-10">
+                <button
+                  onClick={() => {
+                    setIsConfirmCloseOpen(true);
+                    setIsActionMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                >
+                  Close Deal
+                </button>
+              </div>
+            )}
+          </div>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type Message Here"
+            rows={1}
+            disabled={isArchived || isFrozen}
+            className="flex-1 bg-gray-50 text-gray-800 text-sm placeholder-gray-400 border border-gray-200 rounded-2xl px-4 py-2.5 resize-none focus:outline-none focus:border-teal-400 max-h-32 overflow-y-auto disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ minHeight: "44px" }}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!input.trim() || !connected || isArchived || isFrozen}
+            className="p-2.5 bg-teal-500 hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed rounded-full transition-colors"
+            title="Send"
+          >
+            <Send className="w-4 h-4 text-black translate-x-[-1px] translate-y-[1px]" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -651,6 +714,7 @@ export default function ChatLayout({
   const [listingImageByListingId, setListingImageByListingId] = useState<
     Record<string, string | null>
   >({});
+  const [showArchived, setShowArchived] = useState(false);
 
   const fetchChatrooms = useCallback(() => {
     if (!accessToken) return;
@@ -747,9 +811,8 @@ export default function ChatLayout({
     );
   }, []);
 
-  if (!authLoaded) return null;
-  if (!isAuthenticated) return null;
-
+  const activeChatrooms = chatrooms.filter((r) => !r.isArchived);
+  const archivedChatrooms = chatrooms.filter((r) => r.isArchived);
   const activeRoom = activeChatroomId
     ? chatrooms.find((r) => r.id === activeChatroomId)
     : null;
@@ -770,14 +833,26 @@ export default function ChatLayout({
     ? (otherImages[activeChatroomId] ?? null)
     : null;
 
+  useEffect(() => {
+    if (activeRoom?.isArchived) {
+      setShowArchived(true);
+    }
+  }, [activeRoom?.isArchived]);
+
+  if (!authLoaded) return null;
+  if (!isAuthenticated) return null;
+
   return (
     <div className="flex h-screen pt-[60px]">
       <Sidebar
-        chatrooms={chatrooms}
+        chatrooms={activeChatrooms}
+        archivedChatrooms={archivedChatrooms}
         otherNames={otherNames}
         otherImages={otherImages}
         listingImages={listingImages}
         activeChatroomId={activeChatroomId}
+        showArchived={showArchived}
+        onToggleArchived={() => setShowArchived((prev) => !prev)}
       />
       {activeRoom ? (
         <ChatPanel

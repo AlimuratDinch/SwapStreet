@@ -30,6 +30,23 @@ public class Chatroom
 
     public DateTimeOffset? ClosedAt { get; set; }
 
+    public bool IsArchived { get; set; } = false;
+
+    public DateTimeOffset? ArchivedAt { get; set; }
+
+    public bool IsFrozen { get; set; } = false;
+
+    [StringLength(255)]
+    public string? FrozenReason { get; set; }
+
+    public Guid? CloseRequestedById { get; set; }
+
+    public DateTimeOffset? CloseRequestedAt { get; set; }
+
+    public bool CloseConfirmedBySeller { get; set; } = false;
+
+    public bool CloseConfirmedByBuyer { get; set; } = false;
+
     public ICollection<Message> Messages { get; set; } = new List<Message>();
     public ICollection<ChatRating> Ratings { get; set; } = new List<ChatRating>();
 }

@@ -67,16 +67,41 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("BuyerId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("ClosedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("CloseConfirmedByBuyer")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CloseConfirmedBySeller")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("CloseRequestedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CloseRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("CreationTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("FrozenReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDealClosed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFrozen")
                         .HasColumnType("boolean");
 
                     b.Property<Guid?>("ListingId")

@@ -31,6 +31,30 @@ namespace backend.DTOs.Chat
         [JsonPropertyName("closedAt")]
         public DateTimeOffset? ClosedAt { get; set; }
 
+        [JsonPropertyName("isArchived")]
+        public bool IsArchived { get; set; }
+
+        [JsonPropertyName("archivedAt")]
+        public DateTimeOffset? ArchivedAt { get; set; }
+
+        [JsonPropertyName("isFrozen")]
+        public bool IsFrozen { get; set; }
+
+        [JsonPropertyName("frozenReason")]
+        public string? FrozenReason { get; set; }
+
+        [JsonPropertyName("closeRequestedById")]
+        public Guid? CloseRequestedById { get; set; }
+
+        [JsonPropertyName("closeRequestedAt")]
+        public DateTimeOffset? CloseRequestedAt { get; set; }
+
+        [JsonPropertyName("closeConfirmedBySeller")]
+        public bool CloseConfirmedBySeller { get; set; }
+
+        [JsonPropertyName("closeConfirmedByBuyer")]
+        public bool CloseConfirmedByBuyer { get; set; }
+
         [JsonPropertyName("sellerRatingAverage")]
         public double? SellerRatingAverage { get; set; }
 

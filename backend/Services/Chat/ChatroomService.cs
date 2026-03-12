@@ -9,11 +9,16 @@ namespace backend.Services.Chat
     {
         private readonly AppDbContext _context;
         private readonly IFileStorageService _fileStorage;
+        private readonly IListingCommandService _listingCommandService;
 
-        public ChatroomService(AppDbContext context, IFileStorageService fileStorage)
+        public ChatroomService(
+            AppDbContext context,
+            IFileStorageService fileStorage,
+            IListingCommandService listingCommandService)
         {
             _context = context;
             _fileStorage = fileStorage;
+            _listingCommandService = listingCommandService;
         }
 
         public async Task<ChatroomDto?> GetChatroomByIdAsync(Guid chatroomId)
@@ -112,6 +117,14 @@ namespace backend.Services.Chat
                     ListingImageUrl = listingImageUrl,
                     IsDealClosed = c.IsDealClosed,
                     ClosedAt = c.ClosedAt,
+                    IsArchived = c.IsArchived,
+                    ArchivedAt = c.ArchivedAt,
+                    IsFrozen = c.IsFrozen,
+                    FrozenReason = c.FrozenReason,
+                    CloseRequestedById = c.CloseRequestedById,
+                    CloseRequestedAt = c.CloseRequestedAt,
+                    CloseConfirmedBySeller = c.CloseConfirmedBySeller,
+                    CloseConfirmedByBuyer = c.CloseConfirmedByBuyer,
                     SellerRatingAverage = sellerStats.Item1,
                     SellerRatingCount = sellerStats.Item2,
                     BuyerRatingAverage = buyerStats.Item1,
@@ -317,6 +330,155 @@ namespace backend.Services.Chat
             return (await GetChatroomByIdAsync(chatroom.Id))!;
         }
 
+        public async Task<ChatroomDto> RequestCloseDealAsync(Guid chatroomId, Guid userId)
+        {
+            var chatroom = await _context.Chatrooms
+                .FirstOrDefaultAsync(c => c.Id == chatroomId);
+
+            if (chatroom == null)
+            {
+                throw new ArgumentException("Chatroom not found");
+            }
+
+            if (chatroom.SellerId != userId && chatroom.BuyerId != userId)
+            {
+                throw new UnauthorizedAccessException("User does not belong to this chatroom");
+            }
+
+            if (chatroom.IsArchived || chatroom.IsFrozen)
+            {
+                throw new InvalidOperationException("Chatroom is read-only");
+            }
+
+            chatroom.CloseRequestedById = userId;
+            chatroom.CloseRequestedAt = DateTimeOffset.UtcNow;
+            chatroom.CloseConfirmedBySeller = chatroom.SellerId == userId;
+            chatroom.CloseConfirmedByBuyer = chatroom.BuyerId == userId;
+            chatroom.IsFrozen = false;
+            chatroom.FrozenReason = null;
+
+            await _context.SaveChangesAsync();
+            return (await GetChatroomByIdAsync(chatroom.Id))!;
+        }
+
+        public async Task<ChatroomDto> RespondToCloseDealAsync(Guid chatroomId, Guid userId, bool accept)
+        {
+            var chatroom = await _context.Chatrooms
+                .FirstOrDefaultAsync(c => c.Id == chatroomId);
+
+            if (chatroom == null)
+            {
+                throw new ArgumentException("Chatroom not found");
+            }
+
+            if (chatroom.SellerId != userId && chatroom.BuyerId != userId)
+            {
+                throw new UnauthorizedAccessException("User does not belong to this chatroom");
+            }
+
+            if (chatroom.CloseRequestedById == null)
+            {
+                throw new InvalidOperationException("No close request pending");
+            }
+
+            if (!accept)
+            {
+                chatroom.CloseRequestedById = null;
+                chatroom.CloseRequestedAt = null;
+                chatroom.CloseConfirmedBySeller = false;
+                chatroom.CloseConfirmedByBuyer = false;
+                await _context.SaveChangesAsync();
+                return (await GetChatroomByIdAsync(chatroom.Id))!;
+            }
+
+            if (chatroom.SellerId == userId)
+            {
+                chatroom.CloseConfirmedBySeller = true;
+            }
+            else
+            {
+                chatroom.CloseConfirmedByBuyer = true;
+            }
+
+            if (chatroom.CloseConfirmedBySeller && chatroom.CloseConfirmedByBuyer)
+            {
+                chatroom.IsDealClosed = true;
+                chatroom.ClosedAt = DateTimeOffset.UtcNow;
+                chatroom.IsArchived = true;
+                chatroom.ArchivedAt = DateTimeOffset.UtcNow;
+                chatroom.CloseRequestedById = null;
+                chatroom.CloseRequestedAt = null;
+                chatroom.IsFrozen = false;
+                chatroom.FrozenReason = null;
+            }
+
+            await _context.SaveChangesAsync();
+
+            if (chatroom.IsDealClosed && chatroom.ListingId.HasValue)
+            {
+                var listingId = chatroom.ListingId.Value;
+                var otherChats = await _context.Chatrooms
+                    .Where(c => c.Id != chatroom.Id && c.ListingId == listingId)
+                    .ToListAsync();
+
+                foreach (var other in otherChats)
+                {
+                    other.IsFrozen = true;
+                    other.FrozenReason = "The listing was sold to another buyer.";
+                }
+
+                await _context.SaveChangesAsync();
+
+                var listing = await _context.Listings
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(l => l.Id == listingId);
+
+                if (listing != null)
+                {
+                    await _listingCommandService.DeleteListingAsync(listingId, listing.ProfileId);
+                }
+            }
+
+            return (await GetChatroomByIdAsync(chatroom.Id))!;
+        }
+
+        public async Task<List<ChatroomDto>> GetChatroomsByListingAsync(Guid listingId)
+        {
+            var chatrooms = await _context.Chatrooms
+                .Where(c => c.ListingId == listingId)
+                .Include(c => c.Listing)
+                .Include(c => c.Messages)
+                .Include(c => c.Ratings)
+                .ToListAsync();
+
+            var profileIds = chatrooms
+                .SelectMany(c => new[] { c.SellerId, c.BuyerId })
+                .Distinct()
+                .ToList();
+
+            var ratingStats = await GetRatingStatsAsync(profileIds);
+            var listingImageMap = new Dictionary<Guid, string?>();
+
+            var images = await _context.ListingImages
+                .AsNoTracking()
+                .Where(li => li.ListingId == listingId)
+                .OrderBy(li => li.DisplayOrder)
+                .ToListAsync();
+
+            listingImageMap = images
+                .GroupBy(li => li.ListingId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => _fileStorage.GetPublicFileUrl(g.FirstOrDefault()?.ImagePath)
+                );
+
+            return chatrooms.Select(c =>
+            {
+                var listingImageUrl = listingImageMap.TryGetValue(listingId, out var url) ? url : null;
+                return MapChatroomDto(c, ratingStats, listingImageUrl);
+            }).ToList();
+        }
+
         public async Task<ChatroomDto> SubmitRatingAsync(Guid chatroomId, Guid reviewerId, int stars, string? description = null)
         {
             if (stars < 1 || stars > 5)
@@ -450,6 +612,14 @@ namespace backend.Services.Chat
                 ListingImageUrl = listingImageUrl,
                 IsDealClosed = chatroom.IsDealClosed,
                 ClosedAt = chatroom.ClosedAt,
+                IsArchived = chatroom.IsArchived,
+                ArchivedAt = chatroom.ArchivedAt,
+                IsFrozen = chatroom.IsFrozen,
+                FrozenReason = chatroom.FrozenReason,
+                CloseRequestedById = chatroom.CloseRequestedById,
+                CloseRequestedAt = chatroom.CloseRequestedAt,
+                CloseConfirmedBySeller = chatroom.CloseConfirmedBySeller,
+                CloseConfirmedByBuyer = chatroom.CloseConfirmedByBuyer,
                 SellerRatingAverage = sellerStats.Item1,
                 SellerRatingCount = sellerStats.Item2,
                 BuyerRatingAverage = buyerStats.Item1,
