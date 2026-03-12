@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using backend.DbContexts;
 using backend.Services.Chat;
 using backend.DTOs.Chat;
+using backend.Contracts;
+using backend.DTOs.Image;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using Xunit;
 using AwesomeAssertions;
 
@@ -29,7 +33,7 @@ namespace backend.Tests.Services
 
             _db = new AppDbContext(options);
             _chatService = new ChatService(_db);
-            _chatroomService = new ChatroomService(_db);
+            _chatroomService = new ChatroomService(_db, new FakeFileStorageService());
 
             _sellerId = Guid.NewGuid();
             _buyerId = Guid.NewGuid();
@@ -100,6 +104,33 @@ namespace backend.Tests.Services
         {
             _db.Database.EnsureDeleted();
             _db.Dispose();
+        }
+
+        private sealed class FakeFileStorageService : IFileStorageService
+        {
+            public Task<string> UploadFileAsync(IFormFile file, UploadType type, Guid userId, Guid? listingId = null, int displayOrder = 0)
+                => Task.FromResult(string.Empty);
+
+            public Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600)
+                => Task.FromResult(string.Empty);
+
+            public string GetPublicFileUrl(string fileName)
+                => string.IsNullOrWhiteSpace(fileName) ? string.Empty : fileName;
+
+            public Task<string> UploadImageInternalAsync(IFormFile file, UploadType type)
+                => Task.FromResult(string.Empty);
+
+            public Task<bool> HasImagesInPublicBucketAsync()
+                => Task.FromResult(false);
+
+            public Task DeleteImagesAsync(UploadType type, Guid? listingId = null, Guid? profileId = null, CancellationToken cancellationToken = default)
+                => Task.CompletedTask;
+
+            public Task<IReadOnlyCollection<string>> DeleteFilesAsync(UploadType type, IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+                => Task.FromResult((IReadOnlyCollection<string>)Array.Empty<string>());
+
+            public Task<int> CleanupOrphanedFilesAsync(UploadType type, CancellationToken cancellationToken = default)
+                => Task.FromResult(0);
         }
 
         // ==========================================
@@ -318,7 +349,7 @@ namespace backend.Tests.Services
                 .Options;
 
             _db = new AppDbContext(options);
-            _service = new ChatroomService(_db);
+            _service = new ChatroomService(_db, new FakeFileStorageService());
 
             _sellerId = Guid.NewGuid();
             _buyerId = Guid.NewGuid();

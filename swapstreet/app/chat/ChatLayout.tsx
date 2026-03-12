@@ -32,6 +32,7 @@ type Chatroom = {
   buyerId: string;
   listingId?: string | null;
   listingTitle?: string | null;
+  listingImageUrl?: string | null;
   isDealClosed?: boolean;
   closedAt?: string | null;
   sellerRatingAverage?: number | null;
@@ -56,14 +57,14 @@ function Avatar({ src, size = 10 }: { src?: string | null; size?: number }) {
 function Sidebar({
   chatrooms,
   otherNames,
-  otherRatings,
   otherImages,
+  listingImages,
   activeChatroomId,
 }: {
   chatrooms: Chatroom[];
   otherNames: Record<string, string>;
-  otherRatings: Record<string, string>;
   otherImages: Record<string, string | null>;
+  listingImages: Record<string, string | null>;
   activeChatroomId: string | null;
 }) {
   const router = useRouter();
@@ -100,10 +101,6 @@ function Sidebar({
                 >
                   {name}
                 </p>
-                <div className="flex items-center gap-1 shrink-0 text-[11px] text-gray-600">
-                  <Star className="w-3 h-3 fill-[#14b4a3] text-[#14b4a3]" />
-                  <span>{otherRatings[room.id] ?? "No ratings"}</span>
-                </div>
               </div>
               {lastMsg && (
                 <p
@@ -112,6 +109,15 @@ function Sidebar({
                   {lastMsg}
                 </p>
               )}
+            </div>
+            <div className="w-9 h-9 rounded-md overflow-hidden bg-gray-200 border border-gray-300 shrink-0">
+              {listingImages[room.id] ? (
+                <img
+                  src={listingImages[room.id] ?? undefined}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : null}
             </div>
             {hasUnread && (
               <span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0" />
@@ -642,6 +648,9 @@ export default function ChatLayout({
   const [otherImages, setOtherImages] = useState<Record<string, string | null>>(
     {},
   );
+  const [listingImageByListingId, setListingImageByListingId] = useState<
+    Record<string, string | null>
+  >({});
 
   const fetchChatrooms = useCallback(() => {
     if (!accessToken) return;
@@ -703,6 +712,35 @@ export default function ChatLayout({
     });
   }, [accessToken, userId, chatrooms]);
 
+  useEffect(() => {
+    if (chatrooms.length === 0) return;
+
+    const unresolvedListingIds = new Set<string>();
+    for (const room of chatrooms) {
+      if (!room.listingId) continue;
+      if (listingImageByListingId[room.listingId] !== undefined) continue;
+      unresolvedListingIds.add(room.listingId);
+    }
+
+    unresolvedListingIds.forEach((listingId) => {
+      fetch(`/api/search/listing/${listingId}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((listing) => {
+          const firstImage = listing?.images?.[0]?.imageUrl ?? null;
+          setListingImageByListingId((prev) => ({
+            ...prev,
+            [listingId]: firstImage,
+          }));
+        })
+        .catch(() => {
+          setListingImageByListingId((prev) => ({
+            ...prev,
+            [listingId]: null,
+          }));
+        });
+    });
+  }, [chatrooms, listingImageByListingId]);
+
   const handleRoomUpdate = useCallback((updatedRoom: Chatroom) => {
     setChatrooms((prev) =>
       prev.map((room) => (room.id === updatedRoom.id ? updatedRoom : room)),
@@ -715,16 +753,16 @@ export default function ChatLayout({
   const activeRoom = activeChatroomId
     ? chatrooms.find((r) => r.id === activeChatroomId)
     : null;
-  const otherRatings = chatrooms.reduce<Record<string, string>>((acc, room) => {
-    const isCurrentUserBuyer = userId === room.buyerId;
-    const isCurrentUserSeller = userId === room.sellerId;
-    acc[room.id] = isCurrentUserBuyer
-      ? formatAverage(room.sellerRatingAverage, room.sellerRatingCount ?? 0)
-      : isCurrentUserSeller
-        ? formatAverage(room.buyerRatingAverage, room.buyerRatingCount ?? 0)
-        : "No ratings";
-    return acc;
-  }, {});
+  const listingImages = chatrooms.reduce<Record<string, string | null>>(
+    (acc, room) => {
+      const listingId = room.listingId ?? null;
+      acc[room.id] =
+        room.listingImageUrl ??
+        (listingId ? listingImageByListingId[listingId] ?? null : null);
+      return acc;
+    },
+    {},
+  );
   const otherName = activeChatroomId
     ? (otherNames[activeChatroomId] ?? "…")
     : "";
@@ -737,8 +775,8 @@ export default function ChatLayout({
       <Sidebar
         chatrooms={chatrooms}
         otherNames={otherNames}
-        otherRatings={otherRatings}
         otherImages={otherImages}
+        listingImages={listingImages}
         activeChatroomId={activeChatroomId}
       />
       {activeRoom ? (

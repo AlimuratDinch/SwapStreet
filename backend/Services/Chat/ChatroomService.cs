@@ -8,10 +8,12 @@ namespace backend.Services.Chat
     public class ChatroomService : IChatroomService
     {
         private readonly AppDbContext _context;
+        private readonly IFileStorageService _fileStorage;
 
-        public ChatroomService(AppDbContext context)
+        public ChatroomService(AppDbContext context, IFileStorageService fileStorage)
         {
             _context = context;
+            _fileStorage = fileStorage;
         }
 
         public async Task<ChatroomDto?> GetChatroomByIdAsync(Guid chatroomId)
@@ -28,7 +30,17 @@ namespace backend.Services.Chat
             }
 
             var ratingStats = await GetRatingStatsAsync(new[] { chatroom.SellerId, chatroom.BuyerId });
-            return MapChatroomDto(chatroom, ratingStats);
+            string? listingImageUrl = null;
+            if (chatroom.ListingId.HasValue)
+            {
+                var image = await _context.ListingImages
+                    .AsNoTracking()
+                    .Where(li => li.ListingId == chatroom.ListingId.Value)
+                    .OrderBy(li => li.DisplayOrder)
+                    .FirstOrDefaultAsync();
+                listingImageUrl = _fileStorage.GetPublicFileUrl(image?.ImagePath);
+            }
+            return MapChatroomDto(chatroom, ratingStats, listingImageUrl);
         }
 
         public async Task<List<ChatroomDto>> GetUserChatroomsAsync(Guid userId)
@@ -47,6 +59,29 @@ namespace backend.Services.Chat
 
             var ratingStats = await GetRatingStatsAsync(profileIds);
 
+            var listingIds = chatrooms
+                .Where(c => c.ListingId.HasValue)
+                .Select(c => c.ListingId!.Value)
+                .Distinct()
+                .ToList();
+
+            var listingImageMap = new Dictionary<Guid, string?>();
+            if (listingIds.Count > 0)
+            {
+                var images = await _context.ListingImages
+                    .AsNoTracking()
+                    .Where(li => listingIds.Contains(li.ListingId))
+                    .OrderBy(li => li.DisplayOrder)
+                    .ToListAsync();
+
+                listingImageMap = images
+                    .GroupBy(li => li.ListingId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => _fileStorage.GetPublicFileUrl(g.FirstOrDefault()?.ImagePath)
+                    );
+            }
+
             var chatroomsWithLastMessage = chatrooms
                 .Select(c => new
                 {
@@ -62,6 +97,9 @@ namespace backend.Services.Chat
                 var lastMessage = x.LastMessage;
                 var sellerStats = ratingStats.TryGetValue(c.SellerId, out var seller) ? seller : ((double?)null, 0);
                 var buyerStats = ratingStats.TryGetValue(c.BuyerId, out var buyer) ? buyer : ((double?)null, 0);
+                var listingImageUrl = c.ListingId.HasValue && listingImageMap.TryGetValue(c.ListingId.Value, out var url)
+                    ? url
+                    : null;
 
                 return new ChatroomDto
                 {
@@ -71,6 +109,7 @@ namespace backend.Services.Chat
                     BuyerId = c.BuyerId,
                     ListingId = c.ListingId,
                     ListingTitle = c.Listing?.Title,
+                    ListingImageUrl = listingImageUrl,
                     IsDealClosed = c.IsDealClosed,
                     ClosedAt = c.ClosedAt,
                     SellerRatingAverage = sellerStats.Item1,
@@ -156,6 +195,20 @@ namespace backend.Services.Chat
         {
             if (listingId.HasValue)
             {
+                var listing = await _context.Listings
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(l => l.Id == listingId.Value);
+
+                if (listing == null)
+                {
+                    throw new ArgumentException("Listing not found");
+                }
+
+                if (listing.ProfileId != sellerId)
+                {
+                    throw new ArgumentException("Listing does not belong to seller");
+                }
+
                 var existingWithListing = await _context.Chatrooms
                     .FirstOrDefaultAsync(c =>
                         c.ListingId == listingId.Value &&
@@ -177,6 +230,22 @@ namespace backend.Services.Chat
                 if (existingWithoutListing != null)
                 {
                     return await GetChatroomByIdAsync(existingWithoutListing.Id);
+                }
+            }
+
+            if (listingId.HasValue)
+            {
+                var existingChatroom = await _context.Chatrooms
+                    .FirstOrDefaultAsync(c =>
+                        c.ListingId == null &&
+                        ((c.SellerId == sellerId && c.BuyerId == buyerId) ||
+                         (c.SellerId == buyerId && c.BuyerId == sellerId)));
+
+                if (existingChatroom != null)
+                {
+                    existingChatroom.ListingId = listingId.Value;
+                    await _context.SaveChangesAsync();
+                    return await GetChatroomByIdAsync(existingChatroom.Id);
                 }
             }
 
@@ -364,7 +433,8 @@ namespace backend.Services.Chat
 
         private ChatroomDto MapChatroomDto(
             Chatroom chatroom,
-            Dictionary<Guid, (double? Average, int Count)> ratingStats)
+            Dictionary<Guid, (double? Average, int Count)> ratingStats,
+            string? listingImageUrl)
         {
             var sellerStats = ratingStats.TryGetValue(chatroom.SellerId, out var seller) ? seller : ((double?)null, 0);
             var buyerStats = ratingStats.TryGetValue(chatroom.BuyerId, out var buyer) ? buyer : ((double?)null, 0);
@@ -377,6 +447,7 @@ namespace backend.Services.Chat
                 BuyerId = chatroom.BuyerId,
                 ListingId = chatroom.ListingId,
                 ListingTitle = chatroom.Listing?.Title,
+                ListingImageUrl = listingImageUrl,
                 IsDealClosed = chatroom.IsDealClosed,
                 ClosedAt = chatroom.ClosedAt,
                 SellerRatingAverage = sellerStats.Item1,

@@ -22,6 +22,9 @@ namespace backend.DTOs.Chat
         [JsonPropertyName("listingTitle")]
         public string? ListingTitle { get; set; }
 
+        [JsonPropertyName("listingImageUrl")]
+        public string? ListingImageUrl { get; set; }
+
         [JsonPropertyName("isDealClosed")]
         public bool IsDealClosed { get; set; }
 
