@@ -21,6 +21,34 @@ jest.mock("@/lib/api/profile", () => ({
   uploadImage: jest.fn().mockResolvedValue("https://example.com/image.jpg"),
 }));
 
+jest.mock("@/components/image/ImageCropModal", () => ({
+  __esModule: true,
+  default: ({
+    open,
+    onConfirm,
+    onCancel,
+  }: {
+    open: boolean;
+    onConfirm: (file: File) => void;
+    onCancel: () => void;
+  }) =>
+    open ? (
+      <div data-testid="crop-modal">
+        <button
+          type="button"
+          onClick={() =>
+            onConfirm(new File(["img"], "cropped.jpg", { type: "image/jpeg" }))
+          }
+        >
+          Confirm Crop
+        </button>
+        <button type="button" onClick={onCancel}>
+          Cancel Crop
+        </button>
+      </div>
+    ) : null,
+}));
+
 if (typeof global.URL.revokeObjectURL !== "function") {
   (global.URL as { revokeObjectURL: (url: string) => void }).revokeObjectURL =
     jest.fn();
@@ -149,6 +177,7 @@ function submitForm() {
 describe("SellerOnboardingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (URL.createObjectURL as jest.Mock).mockImplementation(() => "blob:mock-url");
     mockRefreshToken.mockResolvedValue("new-token");
     mockSessionStorage.clear();
     mockSessionStorage.setItem("accessToken", "mock-token");
@@ -588,5 +617,116 @@ describe("SellerOnboardingPage", () => {
         ),
       { timeout: 3000 },
     );
+  });
+
+  it("revokes crop preview URL on unmount when crop is open", async () => {
+    const revokeSpy = jest.spyOn(URL, "revokeObjectURL");
+    (URL.createObjectURL as jest.Mock).mockReset();
+    (URL.createObjectURL as jest.Mock).mockImplementation(
+      () => "blob:crop-preview",
+    );
+
+    const { unmount } = render(<SellerOnboardingPage />);
+    await waitFor(() =>
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument(),
+    );
+
+    const avatarInput = screen.getByLabelText(/avatar image/i);
+    fireEvent.change(avatarInput, {
+      target: { files: [new File(["x"], "avatar.png", { type: "image/png" })] },
+    });
+
+    expect(await screen.findByTestId("crop-modal")).toBeInTheDocument();
+    unmount();
+
+    expect(revokeSpy).toHaveBeenCalledWith("blob:crop-preview");
+  });
+
+  it("revokes avatar and banner preview URLs on unmount after crop confirm", async () => {
+    const revokeSpy = jest.spyOn(URL, "revokeObjectURL");
+    (URL.createObjectURL as jest.Mock).mockReset();
+    (URL.createObjectURL as jest.Mock)
+      .mockImplementationOnce(() => "blob:crop-1")
+      .mockImplementationOnce(() => "blob:avatar-preview")
+      .mockImplementationOnce(() => "blob:crop-2")
+      .mockImplementationOnce(() => "blob:banner-preview");
+
+    const { unmount } = render(<SellerOnboardingPage />);
+    await waitFor(() =>
+      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument(),
+    );
+
+    fireEvent.change(screen.getByLabelText(/avatar image/i), {
+      target: { files: [new File(["x"], "avatar.png", { type: "image/png" })] },
+    });
+    fireEvent.click(await screen.findByRole("button", { name: /confirm crop/i }));
+
+    fireEvent.change(screen.getByLabelText(/banner image/i), {
+      target: { files: [new File(["x"], "banner.png", { type: "image/png" })] },
+    });
+    fireEvent.click(await screen.findByRole("button", { name: /confirm crop/i }));
+
+    unmount();
+
+    expect(revokeSpy).toHaveBeenCalledWith("blob:avatar-preview");
+    expect(revokeSpy).toHaveBeenCalledWith("blob:banner-preview");
+  });
+
+  it("closes crop modal when crop is canceled", async () => {
+    await ready();
+
+    fireEvent.change(screen.getByLabelText(/avatar image/i), {
+      target: { files: [new File(["x"], "avatar.png", { type: "image/png" })] },
+    });
+
+    expect(await screen.findByTestId("crop-modal")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /cancel crop/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("crop-modal")).not.toBeInTheDocument();
+    });
+  });
+
+  it("uploads avatar and banner images when provided", async () => {
+    await ready();
+    await fillValidForm();
+
+    fireEvent.change(screen.getByLabelText(/avatar image/i), {
+      target: { files: [new File(["x"], "avatar.png", { type: "image/png" })] },
+    });
+    fireEvent.click(await screen.findByRole("button", { name: /confirm crop/i }));
+
+    fireEvent.change(screen.getByLabelText(/banner image/i), {
+      target: { files: [new File(["x"], "banner.png", { type: "image/png" })] },
+    });
+    fireEvent.click(await screen.findByRole("button", { name: /confirm crop/i }));
+
+    fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
+
+    await waitFor(() => {
+      expect(profileApi.uploadImage).toHaveBeenCalledTimes(2);
+      expect(profileApi.uploadImage).toHaveBeenNthCalledWith(
+        1,
+        "mock-token",
+        expect.any(File),
+        "Profile",
+        mockRefreshToken,
+      );
+      expect(profileApi.uploadImage).toHaveBeenNthCalledWith(
+        2,
+        "mock-token",
+        expect.any(File),
+        "Banner",
+        mockRefreshToken,
+      );
+      expect(profileApi.createProfile).toHaveBeenCalledWith(
+        "mock-token",
+        expect.objectContaining({
+          profileImagePath: "https://example.com/image.jpg",
+          bannerImagePath: "https://example.com/image.jpg",
+        }),
+        mockRefreshToken,
+      );
+    });
   });
 });
