@@ -15,15 +15,25 @@ namespace backend.DTOs
         public string Description { get; set; } = string.Empty;
 
         [EnumDataType(typeof(ListingSize), ErrorMessage = "Invalid size value")]
-        public ListingSize? Size { get; set; }
+        public ListingSize Size { get; set; }
+
+        [EnumDataType(typeof(ListingCondition), ErrorMessage = "Invalid condition value")]
+        public ListingCondition Condition { get; set; }
+
+        [EnumDataType(typeof(ListingBrand), ErrorMessage = "Invalid brand value")]
+        public ListingBrand Brand { get; set; }
+
+        [EnumDataType(typeof(ListingColour), ErrorMessage = "Invalid colour value")]
+        public ListingColour Colour { get; set; }
+
+        [EnumDataType(typeof(ListingCategory), ErrorMessage = "Invalid category value")]
+        public ListingCategory Category { get; set; }
 
         [Required(ErrorMessage = "Price is required")]
         public decimal Price { get; set; }
 
         [Required(ErrorMessage = "Profile ID is required")]
         public Guid ProfileId { get; set; }
-
-        public Guid? TagId { get; set; }  // Optional
 
         [Required(ErrorMessage = "FSA is required")]
         [RegularExpression(@"^^[A-Z]\d[A-Z]$", ErrorMessage = "Invalid Canadian FSA format")]

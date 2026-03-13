@@ -118,8 +118,11 @@ namespace backend.Services
                 Description = request.Description,
                 Price = request.Price,
                 Size = request.Size,
+                Brand = request.Brand,
+                Category = request.Category,
+                Condition = request.Condition,
+                Colour = request.Colour,
                 ProfileId = request.ProfileId,
-                TagId = null,
                 FSA = request.FSA,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -141,6 +144,10 @@ namespace backend.Services
                     Title = listing.Title,
                     Description = listing.Description,
                     Size = listing.Size,
+                    Brand = listing.Brand,
+                    Category = listing.Category,
+                    Condition = listing.Condition,
+                    Colour = listing.Colour,
                     FSA = listing.FSA,
                     CreatedAtTimestamp = new DateTimeOffset(listing.CreatedAt).ToUnixTimeSeconds(),
                     _geo = latlong
