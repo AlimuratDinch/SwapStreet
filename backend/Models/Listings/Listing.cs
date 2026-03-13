@@ -40,18 +40,11 @@ public class Listing
     [ForeignKey("ProfileId")]
     public Profile? Profile { get; set; }
 
-    // Foreign Key to Tag
-    public Guid? TagId { get; set; }
-
-    [ForeignKey("TagId")]
-    public Tag? Tag { get; set; }
-
     // Full-Text Search Vector, "SearchText" (computed column in DB) and can be accessed context.Listings.Where(l => EF.Property<string>(l, "SearchText") != null)
 
     [Required(ErrorMessage = "FSA is required")]
     [StringLength(3, MinimumLength = 3)]
     public string FSA { get; set; } = string.Empty;
-
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
