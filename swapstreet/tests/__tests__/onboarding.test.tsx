@@ -177,7 +177,9 @@ function submitForm() {
 describe("SellerOnboardingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (URL.createObjectURL as jest.Mock).mockImplementation(() => "blob:mock-url");
+    (URL.createObjectURL as jest.Mock).mockImplementation(
+      () => "blob:mock-url",
+    );
     mockRefreshToken.mockResolvedValue("new-token");
     mockSessionStorage.clear();
     mockSessionStorage.setItem("accessToken", "mock-token");
@@ -659,12 +661,16 @@ describe("SellerOnboardingPage", () => {
     fireEvent.change(screen.getByLabelText(/avatar image/i), {
       target: { files: [new File(["x"], "avatar.png", { type: "image/png" })] },
     });
-    fireEvent.click(await screen.findByRole("button", { name: /confirm crop/i }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /confirm crop/i }),
+    );
 
     fireEvent.change(screen.getByLabelText(/banner image/i), {
       target: { files: [new File(["x"], "banner.png", { type: "image/png" })] },
     });
-    fireEvent.click(await screen.findByRole("button", { name: /confirm crop/i }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /confirm crop/i }),
+    );
 
     unmount();
 
@@ -694,12 +700,16 @@ describe("SellerOnboardingPage", () => {
     fireEvent.change(screen.getByLabelText(/avatar image/i), {
       target: { files: [new File(["x"], "avatar.png", { type: "image/png" })] },
     });
-    fireEvent.click(await screen.findByRole("button", { name: /confirm crop/i }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /confirm crop/i }),
+    );
 
     fireEvent.change(screen.getByLabelText(/banner image/i), {
       target: { files: [new File(["x"], "banner.png", { type: "image/png" })] },
     });
-    fireEvent.click(await screen.findByRole("button", { name: /confirm crop/i }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /confirm crop/i }),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /save and continue/i }));
 
