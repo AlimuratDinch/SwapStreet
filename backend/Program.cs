@@ -362,6 +362,7 @@ static void ConfigureControllers(WebApplicationBuilder builder)
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
             options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         });
 
     // Add SignalR
@@ -520,7 +521,7 @@ static async Task InitializeMeilisearchIndex(WebApplication app)
 
     await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa" });
     await index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
-    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa" });
+    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa", "size" });
 
     await index.UpdateRankingRulesAsync(new[] {
         "words",

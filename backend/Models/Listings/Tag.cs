@@ -20,12 +20,6 @@ public class Tag
     [ForeignKey("StyleId")]
     public Style? StyleRef { get; set; }
 
-    // Foreign Key for Size
-    public Guid SizeId { get; set; }
-
-    [ForeignKey("SizeId")]
-    public Size? SizeRef { get; set; }
-
     // Enum
     [Required]
     public ColorEnum Color { get; set; }

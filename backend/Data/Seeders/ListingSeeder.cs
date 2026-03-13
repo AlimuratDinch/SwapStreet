@@ -26,6 +26,17 @@ namespace backend.Data.Seed
             "Athletic Shorts", "Yoga Pants", "Leggings", "Joggers", "Sweatpants"
         };
 
+        private static readonly ListingSize[] Sizes = new[]
+        {
+            ListingSize.XXS,
+            ListingSize.XS,
+            ListingSize.S,
+            ListingSize.M,
+            ListingSize.L,
+            ListingSize.XL,
+            ListingSize.XXL
+        };
+
         private static readonly string[] Descriptions = new[]
         {
             "Gently used, excellent condition. Perfect for everyday wear.",
@@ -47,12 +58,28 @@ namespace backend.Data.Seed
 
         public static async Task SeedAsync(AppDbContext context, IListingCommandService listingService, ILogger logger)
         {
+
             var existingCount = await context.Listings.CountAsync();
-            if (existingCount >= 100) return;
 
             var profileId = ProfileSeeder.TestProfileId;
             var validFsas = await context.Fsas.Select(f => f.Code).ToListAsync();
             var random = new Random();
+
+            var listingsMissingSize = await context.Listings
+                .Where(l => l.Size == null)
+                .ToListAsync();
+
+            if (listingsMissingSize.Any())
+            {
+                foreach (var listing in listingsMissingSize)
+                {
+                    listing.Size = Sizes[random.Next(Sizes.Length)];
+                }
+
+                await context.SaveChangesAsync();
+                logger.LogInformation("Updated {Count} existing listings with random sizes.", listingsMissingSize.Count);
+            }
+            if (existingCount >= 100) return;
 
             logger.LogInformation("Seeding listings via Command Service to sync Meilisearch...");
 
@@ -63,6 +90,7 @@ namespace backend.Data.Seed
                     Title = $"{ClothingItems[random.Next(ClothingItems.Length)]} #{existingCount + i + 1}",
                     Description = Descriptions[random.Next(Descriptions.Length)],
                     Price = Math.Round((decimal)(random.NextDouble() * 200 + 10), 2),
+                    Size = Sizes[random.Next(Sizes.Length)],
                     ProfileId = profileId,
                     FSA = validFsas[random.Next(validFsas.Count)]
                 };

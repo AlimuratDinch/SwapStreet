@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260311201214_AddListingSize")]
+    partial class AddListingSize
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -206,8 +209,8 @@ namespace backend.Migrations
                         .HasColumnType("text")
                         .HasComputedColumnSql("COALESCE(\"Title\" || ' ' || \"Description\" || ' ', '')", true);
 
-                    b.Property<string>("Size")
-                        .HasColumnType("text");
+                    b.Property<int?>("Size")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("TagId")
                         .HasColumnType("uuid");
@@ -317,8 +320,8 @@ namespace backend.Migrations
 
                     b.Property<string>("FSA")
                         .IsRequired()
-                        .HasMaxLength(7)
-                        .HasColumnType("varchar(7)");
+                        .HasMaxLength(3)
+                        .HasColumnType("varchar(3)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
