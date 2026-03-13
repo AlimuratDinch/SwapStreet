@@ -19,9 +19,13 @@ jest.mock("next/image", () => {
 });
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
+const mockSearchParamsGet = jest.fn<string | null, [key?: string | null]>(
+  () => null,
+);
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
-  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  useSearchParams: () => ({ get: mockSearchParamsGet }),
 }));
 
 jest.mock("@/components/common/Header", () => ({
@@ -42,6 +46,11 @@ jest.mock("@/lib/api/profile", () => ({
 describe("ProfilePage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSearchParamsGet.mockReturnValue(null);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it("shows empty state when not authenticated", async () => {
@@ -117,6 +126,18 @@ describe("ProfilePage", () => {
   it("shows empty state if API fails", async () => {
     mockUseAuth.mockReturnValue({ accessToken: "token-123" });
     mockGetMyProfile.mockRejectedValue(new Error("boom"));
+
+    render(<ProfilePage />);
+
+    expect(await screen.findByText(/No Profile Found/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Create Profile/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows empty state if API fails with non-Error value", async () => {
+    mockUseAuth.mockReturnValue({ accessToken: "token-123" });
+    mockGetMyProfile.mockRejectedValue("boom");
 
     render(<ProfilePage />);
 
@@ -214,5 +235,38 @@ describe("ProfilePage", () => {
 
     expect(banner.src).toContain("/banners/jamie-hero.jpg");
     expect(avatar.src).toContain("/avatars/jamie.jpg");
+  });
+
+  it("shows update toast and clears query param when updated=true", async () => {
+    jest.useFakeTimers();
+    mockSearchParamsGet.mockImplementation((key?: string | null) =>
+      key === "updated" ? "true" : null,
+    );
+
+    mockUseAuth.mockReturnValue({ accessToken: "token-123" });
+    mockGetMyProfile.mockResolvedValue({
+      firstName: "Toast",
+      lastName: "User",
+      rating: 5,
+      cityName: "Toronto",
+      provinceCode: "ON",
+      profileImagePath: undefined,
+      bannerImagePath: undefined,
+      createdAt: new Date().toISOString(),
+    });
+
+    render(<ProfilePage />);
+
+    const toastText = await screen.findByText(/Profile updated successfully!/i);
+    expect(mockReplace).toHaveBeenCalledWith("/profile");
+
+    const toastContainer = toastText.closest("div");
+    expect(toastContainer).toHaveClass("opacity-100");
+
+    jest.advanceTimersByTime(3000);
+
+    await waitFor(() => {
+      expect(toastContainer).toHaveClass("opacity-0");
+    });
   });
 });
