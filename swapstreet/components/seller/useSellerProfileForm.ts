@@ -274,7 +274,9 @@ export function useSellerProfileForm({
           return;
         }
         if (!FSA_REGEX.test(fsa.trim())) {
-          setError("Please enter a valid Canadian postal code (e.g., A1A 1A1).");
+          setError(
+            "Please enter a valid Canadian postal code (e.g., A1A 1A1).",
+          );
           return;
         }
         let tokenToUse = accessToken;

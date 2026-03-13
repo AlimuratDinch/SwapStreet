@@ -21,6 +21,7 @@ jest.mock("next/image", () => {
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 jest.mock("@/components/common/Header", () => ({
@@ -154,7 +155,7 @@ describe("ProfilePage", () => {
     );
   });
 
-  it("shows 'Location not set' when city is missing", async () => {
+  it("does not render location text when city is missing", async () => {
     mockUseAuth.mockReturnValue({ accessToken: "token-123" });
     mockGetMyProfile.mockResolvedValue({
       firstName: "Pat",
@@ -169,7 +170,7 @@ describe("ProfilePage", () => {
     render(<ProfilePage />);
 
     expect(await screen.findByText(/Pat Lee/)).toBeInTheDocument();
-    expect(screen.getByText(/Location not set/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Location not set/i)).not.toBeInTheDocument();
   });
 
   it("renders the correct number of filled stars based on rating", async () => {
@@ -192,10 +193,7 @@ describe("ProfilePage", () => {
     expect(screen.getByText(/\(3\.2\)/)).toBeInTheDocument();
   });
 
-  it("uses MinIO URLs when image paths are provided", async () => {
-    const original = process.env.NEXT_PUBLIC_MINIO_URL;
-    process.env.NEXT_PUBLIC_MINIO_URL = "http://minio.test/public";
-
+  it("uses provided image paths when profile image paths are provided", async () => {
     mockUseAuth.mockReturnValue({ accessToken: "token-123" });
     mockGetMyProfile.mockResolvedValue({
       firstName: "Jamie",
@@ -214,11 +212,7 @@ describe("ProfilePage", () => {
     const banner = screen.getByAltText(/Profile Banner/i) as HTMLImageElement;
     const avatar = screen.getByAltText(/Jamie Fox/i) as HTMLImageElement;
 
-    expect(banner.src).toContain(
-      "http://minio.test/public/banners/jamie-hero.jpg",
-    );
-    expect(avatar.src).toContain("http://minio.test/public/avatars/jamie.jpg");
-
-    process.env.NEXT_PUBLIC_MINIO_URL = original;
+    expect(banner.src).toContain("/banners/jamie-hero.jpg");
+    expect(avatar.src).toContain("/avatars/jamie.jpg");
   });
 });

@@ -14,7 +14,7 @@ import { logger } from "@/components/common/logger";
 import ImageCropModal from "@/components/image/ImageCropModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-const FSA_REGEX = /^[A-Za-z]\d[A-Za-z] \d[A-Za-z]\d$/;;
+const FSA_REGEX = /^[A-Za-z]\d[A-Za-z] \d[A-Za-z]\d$/;
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
@@ -228,7 +228,9 @@ export default function SellerOnboardingPage() {
           return;
         }
         if (!FSA_REGEX.test(normalizedFsa)) {
-          setError("Please enter a valid Canadian postal code (e.g., A1A 1A1).");
+          setError(
+            "Please enter a valid Canadian postal code (e.g., A1A 1A1).",
+          );
           return;
         }
 
@@ -505,7 +507,10 @@ export default function SellerOnboardingPage() {
                 value={fsa}
                 onChange={(e) => {
                   const raw = e.target.value.toUpperCase().replace(/\s/g, "");
-                  const formatted = raw.length > 3 ? `${raw.slice(0, 3)} ${raw.slice(3, 6)}` : raw;
+                  const formatted =
+                    raw.length > 3
+                      ? `${raw.slice(0, 3)} ${raw.slice(3, 6)}`
+                      : raw;
                   setFsa(formatted);
                 }}
                 placeholder="A1A 1A1"

@@ -5,10 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, ProfileResponse } from "@/lib/api/profile";
 import { Header } from "@/components/common/Header";
-import {
-  ProfileHeader,
-  ProfileTab,
-} from "@/components/profile/ProfileHeader";
+import { ProfileHeader, ProfileTab } from "@/components/profile/ProfileHeader";
 import { ProfileListingsTab } from "@/components/profile/ProfileListingsTab";
 import { ProfileReviewsTab } from "@/components/profile/ProfileReviewsTab";
 
@@ -24,17 +21,27 @@ function ProfileSuccessToast() {
       const timer = setTimeout(() => setShowToast(false), 3000);
       return () => clearTimeout(timer);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div
       className={`fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 rounded-xl bg-gray-100 px-5 py-3 text-black shadow-lg z-50 transition-all duration-500 ${
-        showToast ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+        showToast
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 translate-y-4 pointer-events-none"
       }`}
     >
       <div className="flex items-center justify-center w-6 h-6 rounded-full bg-teal-500 shrink-0">
-        <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          className="w-4 h-4 text-white"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M5 13l4 4L19 7" />
         </svg>
       </div>

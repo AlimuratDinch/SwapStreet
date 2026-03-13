@@ -114,7 +114,9 @@ export default function ImageCropModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Crop image</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Drag to reposition · scroll or use the slider to zoom</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Drag to reposition · scroll or use the slider to zoom
+          </p>
         </div>
 
         {/* Cropper area */}
@@ -154,7 +156,9 @@ export default function ImageCropModal({
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-600 w-10 shrink-0">Zoom</span>
+            <span className="text-sm font-medium text-gray-600 w-10 shrink-0">
+              Zoom
+            </span>
             <input
               type="range"
               min={1}

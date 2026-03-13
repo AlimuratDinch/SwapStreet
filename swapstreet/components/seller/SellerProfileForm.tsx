@@ -217,7 +217,7 @@ export function SellerProfileForm({
               htmlFor={`${idPrefix}-fsa`}
               className="block text-sm font-medium text-gray-700"
             >
-            Postal code
+              Postal code
             </label>
             <input
               type="text"
@@ -225,7 +225,10 @@ export function SellerProfileForm({
               value={fsa}
               onChange={(e) => {
                 const raw = e.target.value.toUpperCase().replace(/\s/g, "");
-                const formatted = raw.length > 3 ? `${raw.slice(0, 3)} ${raw.slice(3, 6)}` : raw;
+                const formatted =
+                  raw.length > 3
+                    ? `${raw.slice(0, 3)} ${raw.slice(3, 6)}`
+                    : raw;
                 setFsa(formatted);
               }}
               placeholder="A1A 1A1"

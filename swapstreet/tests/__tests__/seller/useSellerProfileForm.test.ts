@@ -77,7 +77,7 @@ describe("useSellerProfileForm", () => {
       firstName: "Jane",
       lastName: "Doe",
       bio: "Hello",
-      fsa: "M5V",
+      fsa: "M5V 3A8",
       cityId: 10,
       cityName: "Toronto",
       provinceCode: "ON",
@@ -106,7 +106,7 @@ describe("useSellerProfileForm", () => {
     expect(result.current.firstName).toBe("Jane");
     expect(result.current.lastName).toBe("Doe");
     expect(result.current.bio).toBe("Hello");
-    expect(result.current.fsa).toBe("M5V");
+    expect(result.current.fsa).toBe("M5V 3A8");
 
     act(() => {
       result.current.setFirstName("Janet");
@@ -211,7 +211,9 @@ describe("useSellerProfileForm", () => {
       } as unknown as React.FormEvent);
     });
 
-    expect(result.current.error).toMatch(/valid FSA|FSA/);
+    expect(result.current.error).toMatch(
+      /valid Canadian postal code|postal code/i,
+    );
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
@@ -226,7 +228,7 @@ describe("useSellerProfileForm", () => {
       result.current.setFirstName("Jane");
       result.current.setLastName("Doe");
       result.current.setBio("Seller");
-      result.current.setFsa("M5V");
+      result.current.setFsa("M5V 3A8");
       result.current.setSelectedProvinceId(1);
     });
 
@@ -252,7 +254,7 @@ describe("useSellerProfileForm", () => {
           lastName: "Doe",
           bio: "Seller",
           cityId: 10,
-          fsa: "M5V",
+          fsa: "M5V 3A8",
         }),
         "test-token",
       );
@@ -265,7 +267,7 @@ describe("useSellerProfileForm", () => {
     const initialValues = {
       firstName: "A",
       lastName: "B",
-      fsa: "M5V",
+      fsa: "M5V 3A8",
       cityId: 10,
       cityName: "Toronto",
       provinceCode: "ON",

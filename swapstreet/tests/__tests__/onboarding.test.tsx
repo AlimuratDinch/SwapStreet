@@ -136,7 +136,7 @@ async function fillValidForm() {
   );
   await selectCity();
   fireEvent.change(screen.getByPlaceholderText(/a1a/i), {
-    target: { value: "M5V" },
+    target: { value: "M5V3A8" },
   });
 }
 
@@ -181,7 +181,7 @@ describe("SellerOnboardingPage", () => {
             firstName: "John",
             lastName: "Doe",
             cityId: 1,
-            fsa: "M5V",
+            fsa: "M5V 3A8",
           }),
           mockRefreshToken,
         );
@@ -234,7 +234,9 @@ describe("SellerOnboardingPage", () => {
       target: { value: "" },
     });
     submitForm();
-    expect(await screen.findByText(/FSA is required/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Postal code is required/i),
+    ).toBeInTheDocument();
   });
 
   it("shows error for invalid FSA format", async () => {
@@ -245,24 +247,26 @@ describe("SellerOnboardingPage", () => {
     });
     submitForm();
     expect(
-      await screen.findByText(/Please enter a valid FSA \(e\.g\., M5V\)\./i),
+      await screen.findByText(
+        /Please enter a valid Canadian postal code \(e\.g\., A1A 1A1\)\./i,
+      ),
     ).toBeInTheDocument();
   });
 
-  it("renders FSA field with label, placeholder A1A, and maxLength 3", async () => {
+  it("renders postal code field with label, placeholder A1A 1A1, and maxLength 7", async () => {
     await ready();
-    expect(screen.getByText(/^FSA$/i)).toBeInTheDocument();
-    const fsaInput = screen.getByLabelText(/^FSA$/i);
+    expect(screen.getByText(/^Postal code$/i)).toBeInTheDocument();
+    const fsaInput = screen.getByLabelText(/^Postal code$/i);
     expect(fsaInput).toHaveAttribute("id", "fsa");
-    expect(fsaInput).toHaveAttribute("placeholder", "A1A");
-    expect(fsaInput).toHaveAttribute("maxlength", "3");
+    expect(fsaInput).toHaveAttribute("placeholder", "A1A 1A1");
+    expect(fsaInput).toHaveAttribute("maxlength", "7");
   });
 
-  it("FSA input uppercases typed value", async () => {
+  it("postal code input uppercases and auto-formats typed value", async () => {
     await ready();
-    const fsaInput = screen.getByLabelText(/^FSA$/i);
-    fireEvent.change(fsaInput, { target: { value: "m5v" } });
-    expect(fsaInput).toHaveValue("M5V");
+    const fsaInput = screen.getByLabelText(/^Postal code$/i);
+    fireEvent.change(fsaInput, { target: { value: "m5v3a8" } });
+    expect(fsaInput).toHaveValue("M5V 3A8");
   });
 
   it("shows error when provinces fetch returns non-ok", async () => {
