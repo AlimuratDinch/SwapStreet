@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Globe,
   Leaf,
   Bookmark,
   MessageSquare,
@@ -40,7 +39,6 @@ function Logo() {
 function ActionButtons() {
   return (
     <div className="flex gap-2 items-center">
-      <IconButton href="/community" icon={<Globe />} title="Community" />
       <IconButton
         href="/sustainability"
         icon={<Leaf />}

@@ -14,7 +14,7 @@ import { logger } from "@/components/common/logger";
 import ImageCropModal from "@/components/image/ImageCropModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-const FSA_REGEX = /^[A-Za-z]\d[A-Za-z]$/;
+const FSA_REGEX = /^[A-Za-z]\d[A-Za-z] \d[A-Za-z]\d$/;
 
 export default function SellerOnboardingPage() {
   const router = useRouter();
@@ -224,11 +224,13 @@ export default function SellerOnboardingPage() {
         // Validate FSA input
         const normalizedFsa = fsa.trim().toUpperCase();
         if (!normalizedFsa) {
-          setError("FSA is required.");
+          setError("Postal code is required.");
           return;
         }
         if (!FSA_REGEX.test(normalizedFsa)) {
-          setError("Please enter a valid FSA (e.g., M5V).");
+          setError(
+            "Please enter a valid Canadian postal code (e.g., A1A 1A1).",
+          );
           return;
         }
 
@@ -497,15 +499,22 @@ export default function SellerOnboardingPage() {
                 htmlFor="fsa"
                 className="block text-sm font-medium text-gray-700"
               >
-                FSA
+                Postal code
               </label>
               <input
                 type="text"
                 id="fsa"
                 value={fsa}
-                onChange={(e) => setFsa(e.target.value.toUpperCase())}
-                placeholder="A1A"
-                maxLength={3}
+                onChange={(e) => {
+                  const raw = e.target.value.toUpperCase().replace(/\s/g, "");
+                  const formatted =
+                    raw.length > 3
+                      ? `${raw.slice(0, 3)} ${raw.slice(3, 6)}`
+                      : raw;
+                  setFsa(formatted);
+                }}
+                placeholder="A1A 1A1"
+                maxLength={7}
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 required
                 disabled={loading}
