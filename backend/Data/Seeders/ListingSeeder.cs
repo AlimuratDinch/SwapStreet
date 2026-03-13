@@ -7,6 +7,9 @@ using backend.Models;
 using backend.DbContexts;
 using backend.Contracts;
 using backend.DTOs;
+using Microsoft.AspNetCore.Authentication;
+using System.ComponentModel;
+using System.Drawing;
 
 namespace backend.Data.Seed
 {
@@ -28,13 +31,27 @@ namespace backend.Data.Seed
 
         private static readonly ListingSize[] Sizes = new[]
         {
-            ListingSize.XXS,
-            ListingSize.XS,
-            ListingSize.S,
-            ListingSize.M,
-            ListingSize.L,
-            ListingSize.XL,
-            ListingSize.XXL
+            ListingSize.XXS, ListingSize.XS, ListingSize.S, ListingSize.M, ListingSize.L, ListingSize.XL, ListingSize.XXL, ListingSize.NA
+        };
+
+        private static readonly ListingBrand[] Brands = new[]
+        {
+            ListingBrand.Addidas, ListingBrand.Nike, ListingBrand.Carhartt, ListingBrand.HandM, ListingBrand.Zara, ListingBrand.Dickies, ListingBrand.Puma, ListingBrand.Gap, ListingBrand.Vans, ListingBrand.NewBalance, ListingBrand.Lululemon, ListingBrand.Other
+        };
+
+        private static readonly ListingCategory[] Categories = new[]
+        {
+            ListingCategory.Accessory, ListingCategory.Bottoms, ListingCategory.Tops, ListingCategory.Footwear, ListingCategory.Outerwear, ListingCategory.Formalwear, ListingCategory.Sportswear,
+        };
+
+        private static readonly ListingCondition[] Conditions = new[]
+        {
+          ListingCondition.LikeNew, ListingCondition.New, ListingCondition.UsedExcellent, ListingCondition.UsedFair, ListingCondition.UsedGood
+        };
+
+        private static readonly ListingColour[] Colours = new[]
+        {
+            ListingColour.Beige, ListingColour.Black, ListingColour.White, ListingColour.Red, ListingColour.Blue, ListingColour.Green, ListingColour.Yellow, ListingColour.Pink, ListingColour.Purple, ListingColour.Orange, ListingColour.Brown, ListingColour.Grey, ListingColour.Silver, ListingColour.Gold, ListingColour.Clear, ListingColour.MultiColor
         };
 
         private static readonly string[] Descriptions = new[]
@@ -85,12 +102,19 @@ namespace backend.Data.Seed
 
             for (int i = 0; i < (100 - existingCount); i++)
             {
+                var category = Categories[random.Next(Categories.Length)];
+                var size = category == ListingCategory.Footwear ? ListingSize.NA : Sizes[random.Next(Sizes.Length)];
+
                 var request = new CreateListingRequestDto
                 {
                     Title = $"{ClothingItems[random.Next(ClothingItems.Length)]} #{existingCount + i + 1}",
                     Description = Descriptions[random.Next(Descriptions.Length)],
                     Price = Math.Round((decimal)(random.NextDouble() * 200 + 10), 2),
-                    Size = Sizes[random.Next(Sizes.Length)],
+                    Category = category,
+                    Size = size,
+                    Brand = Brands[random.Next(Brands.Length)],
+                    Colour = Colours[random.Next(Colours.Length)],
+                    Condition = Conditions[random.Next(Conditions.Length)],
                     ProfileId = profileId,
                     FSA = validFsas[random.Next(validFsas.Count)]
                 };

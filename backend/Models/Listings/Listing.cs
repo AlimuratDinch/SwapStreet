@@ -65,10 +65,10 @@ public enum ListingSize
 public enum ListingCondition
 {
     New,
-    LikeNew,      
+    LikeNew,
     UsedExcellent,
-    UsedGood,    
-    UsedFair,                 
+    UsedGood,
+    UsedFair,
 }
 
 public enum ListingColour
@@ -98,23 +98,23 @@ public enum ListingColour
 
 public enum ListingBrand
 {
-    Nike, 
+    Nike,
     HandM,
-    Zara, 
+    Zara,
     Addidas,
     Carhartt,
     Dickies,
     Puma,
     Gap,
     Vans,
-    NewBalance, 
-    Lululemon, 
+    NewBalance,
+    Lululemon,
     Other
 }
 
 public enum ListingCategory
 {
-    Bottoms, Tops, Footwear, Accessory, Outerwear, Formalwear, Sportswear 
+    Bottoms, Tops, Footwear, Accessory, Outerwear, Formalwear, Sportswear
 }
 // Brand (Nike, H&M, Zara, Addidas, Carhartt, Dickies, Puma, Gap, Vans, New Balance, Lululemon, Other)
 // Category (Bottoms, Tops, Footwear, Accessory, Outerwear, Formalwear, Sportswear )

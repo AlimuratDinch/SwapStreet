@@ -57,7 +57,6 @@ public class ListingSearchService : IListingSearchService
         // Use ToDictionary to preserve the order returned by Meilisearch
         var listingsMap = await _db.Listings
             .AsNoTracking()
-            .Include(l => l.Tag)
             .Include(l => l.Profile)
             .Where(l => listingIds.Contains(l.Id))
             .ToDictionaryAsync(l => l.Id);
