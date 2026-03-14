@@ -32,6 +32,7 @@ const customJestConfig = {
     "<rootDir>/node_modules/",
     "<rootDir>/.next/",
     "<rootDir>/e2e/",
+    "<rootDir>/gifs/",
     "<rootDir>/tests/__tests__/wardrobe/",
     // "<rootDir>/tests/__tests__/browse/", // Stops "Your test suite must contain at least one test"
     // "<rootDir>/tests/__tests__/wardrobe/",
