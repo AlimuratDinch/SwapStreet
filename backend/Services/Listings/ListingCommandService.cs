@@ -53,9 +53,17 @@ namespace backend.Services
                 .Where(li => li.ListingId == listingId)
                 .ToListAsync(cancellationToken);
 
+            var retainedPaths = await _context.Chatrooms
+                .AsNoTracking()
+                .Where(c => c.ListingId == listingId && c.ListingImageSnapshotPath != null)
+                .Select(c => c.ListingImageSnapshotPath!)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
             var imagePaths = listingImages
                 .Select(li => li.ImagePath)
                 .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Where(path => !retainedPaths.Contains(path))
                 .ToList();
 
             // 2. Delete images from MinIO first to avoid DB deletes if storage fails
@@ -94,6 +102,18 @@ namespace backend.Services
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Failed to delete listing {ListingId}", listingId);
                 throw;
+            }
+
+            // 4. Remove from Meilisearch index (best effort)
+            try
+            {
+                var index = _meiliClient.Index("listings");
+                await index.DeleteOneDocumentAsync(listingId.ToString(), cancellationToken: cancellationToken);
+                _logger.LogInformation("Removed listing {ListingId} from Meilisearch", listingId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to remove listing {ListingId} from Meilisearch", listingId);
             }
         }
 
