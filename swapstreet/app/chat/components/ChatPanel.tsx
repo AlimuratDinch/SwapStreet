@@ -313,7 +313,7 @@ export default function ChatPanel({
                   </Link>
                 </>
               ) : (
-                "Conversation"
+                "Archived conversation"
               )}
             </div>
           </div>

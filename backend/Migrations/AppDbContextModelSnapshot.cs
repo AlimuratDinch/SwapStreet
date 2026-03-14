@@ -107,6 +107,10 @@ namespace backend.Migrations
                     b.Property<Guid?>("ListingId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ListingImageSnapshotPath")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
                     b.Property<Guid>("SellerId")
                         .HasColumnType("uuid");
 

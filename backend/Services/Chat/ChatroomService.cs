@@ -45,6 +45,11 @@ namespace backend.Services.Chat
                     .FirstOrDefaultAsync();
                 listingImageUrl = _fileStorage.GetPublicFileUrl(image?.ImagePath);
             }
+            if (string.IsNullOrWhiteSpace(listingImageUrl) &&
+                !string.IsNullOrWhiteSpace(chatroom.ListingImageSnapshotPath))
+            {
+                listingImageUrl = _fileStorage.GetPublicFileUrl(chatroom.ListingImageSnapshotPath);
+            }
             return MapChatroomDto(chatroom, ratingStats, listingImageUrl);
         }
 
@@ -105,6 +110,11 @@ namespace backend.Services.Chat
                 var listingImageUrl = c.ListingId.HasValue && listingImageMap.TryGetValue(c.ListingId.Value, out var url)
                     ? url
                     : null;
+                if (string.IsNullOrWhiteSpace(listingImageUrl) &&
+                    !string.IsNullOrWhiteSpace(c.ListingImageSnapshotPath))
+                {
+                    listingImageUrl = _fileStorage.GetPublicFileUrl(c.ListingImageSnapshotPath);
+                }
 
                 return new ChatroomDto
                 {
@@ -402,6 +412,17 @@ namespace backend.Services.Chat
 
             if (chatroom.CloseConfirmedBySeller && chatroom.CloseConfirmedByBuyer)
             {
+                if (chatroom.ListingId.HasValue &&
+                    string.IsNullOrWhiteSpace(chatroom.ListingImageSnapshotPath))
+                {
+                    var firstImage = await _context.ListingImages
+                        .AsNoTracking()
+                        .Where(li => li.ListingId == chatroom.ListingId.Value)
+                        .OrderBy(li => li.DisplayOrder)
+                        .FirstOrDefaultAsync();
+                    chatroom.ListingImageSnapshotPath = firstImage?.ImagePath;
+                }
+
                 chatroom.IsDealClosed = true;
                 chatroom.ClosedAt = DateTimeOffset.UtcNow;
                 chatroom.IsArchived = true;
@@ -600,6 +621,12 @@ namespace backend.Services.Chat
         {
             var sellerStats = ratingStats.TryGetValue(chatroom.SellerId, out var seller) ? seller : ((double?)null, 0);
             var buyerStats = ratingStats.TryGetValue(chatroom.BuyerId, out var buyer) ? buyer : ((double?)null, 0);
+            var resolvedListingImageUrl = listingImageUrl;
+            if (string.IsNullOrWhiteSpace(resolvedListingImageUrl) &&
+                !string.IsNullOrWhiteSpace(chatroom.ListingImageSnapshotPath))
+            {
+                resolvedListingImageUrl = _fileStorage.GetPublicFileUrl(chatroom.ListingImageSnapshotPath);
+            }
 
             return new ChatroomDto
             {
@@ -609,7 +636,7 @@ namespace backend.Services.Chat
                 BuyerId = chatroom.BuyerId,
                 ListingId = chatroom.ListingId,
                 ListingTitle = chatroom.Listing?.Title,
-                ListingImageUrl = listingImageUrl,
+                ListingImageUrl = resolvedListingImageUrl,
                 IsDealClosed = chatroom.IsDealClosed,
                 ClosedAt = chatroom.ClosedAt,
                 IsArchived = chatroom.IsArchived,

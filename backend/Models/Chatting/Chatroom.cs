@@ -26,6 +26,9 @@ public class Chatroom
 
     public Guid? ListingId { get; set; }
 
+    [StringLength(512)]
+    public string? ListingImageSnapshotPath { get; set; }
+
     public bool IsDealClosed { get; set; } = false;
 
     public DateTimeOffset? ClosedAt { get; set; }
