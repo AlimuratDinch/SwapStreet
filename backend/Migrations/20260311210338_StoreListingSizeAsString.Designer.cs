@@ -13,8 +13,8 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260208205914_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260311210338_StoreListingSizeAsString")]
+    partial class StoreListingSizeAsString
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -209,6 +209,9 @@ namespace backend.Migrations
                         .HasColumnType("text")
                         .HasComputedColumnSql("COALESCE(\"Title\" || ' ' || \"Description\" || ' ', '')", true);
 
+                    b.Property<string>("Size")
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("TagId")
                         .HasColumnType("uuid");
 
@@ -317,8 +320,8 @@ namespace backend.Migrations
 
                     b.Property<string>("FSA")
                         .IsRequired()
-                        .HasMaxLength(7)
-                        .HasColumnType("varchar(7)");
+                        .HasMaxLength(3)
+                        .HasColumnType("varchar(3)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -378,30 +381,6 @@ namespace backend.Migrations
                     b.ToTable("provinces", (string)null);
                 });
 
-            modelBuilder.Entity("Size", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ArticleTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ArticleTypeId");
-
-                    b.ToTable("sizes", (string)null);
-                });
-
             modelBuilder.Entity("Style", b =>
                 {
                     b.Property<Guid>("Id")
@@ -449,9 +428,6 @@ namespace backend.Migrations
                     b.Property<int>("Sex")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("SizeId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("StyleId")
                         .HasColumnType("uuid");
 
@@ -465,8 +441,6 @@ namespace backend.Migrations
                     b.HasIndex("ArticleTypeId");
 
                     b.HasIndex("BrandId");
-
-                    b.HasIndex("SizeId");
 
                     b.HasIndex("StyleId");
 
@@ -641,17 +615,6 @@ namespace backend.Migrations
                     b.Navigation("City");
                 });
 
-            modelBuilder.Entity("Size", b =>
-                {
-                    b.HasOne("ArticleType", "ArticleType")
-                        .WithMany()
-                        .HasForeignKey("ArticleTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ArticleType");
-                });
-
             modelBuilder.Entity("Tag", b =>
                 {
                     b.HasOne("ArticleType", "ArticleTypeRef")
@@ -666,12 +629,6 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Size", "SizeRef")
-                        .WithMany()
-                        .HasForeignKey("SizeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Style", "StyleRef")
                         .WithMany()
                         .HasForeignKey("StyleId")
@@ -681,8 +638,6 @@ namespace backend.Migrations
                     b.Navigation("ArticleTypeRef");
 
                     b.Navigation("BrandRef");
-
-                    b.Navigation("SizeRef");
 
                     b.Navigation("StyleRef");
                 });
