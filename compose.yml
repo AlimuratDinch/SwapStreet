@@ -68,6 +68,7 @@ services:
       - MINIO_ENDPOINT=minio:9000
       - MEILISEARCH_HOST=http://meilisearch:7700
       - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY:-masterKey}
+      - GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcloud/application_default_credentials.json
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,6 +78,8 @@ services:
         condition: service_healthy
     networks:
       - app-net
+    volumes:
+      - ~/.config/gcloud:/app/config/gcloud:ro
 
   swapstreet:
     build:

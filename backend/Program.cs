@@ -164,13 +164,13 @@ static void ConfigureCors(WebApplicationBuilder builder)
 
 static void ConfigureGemini(WebApplicationBuilder builder)
 {
-    var geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+    var vertexProjectId = Environment.GetEnvironmentVariable("VERTEX_AI_PROJECT_ID")
                        ?? GenerateRandomKey(32);
-    var geminiApiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL")
-                       ?? "https://generativelanguage.googleapis.com/v1beta/models/";
+    var vertexLocation = Environment.GetEnvironmentVariable("VERTEX_AI_LOCATION")
+                       ?? "us-central1";
 
-    builder.Configuration["Gemini:ApiKey"] = geminiApiKey;
-    builder.Configuration["Gemini:ApiUrl"] = geminiApiUrl;
+    builder.Configuration["VertexAI:ProjectId"] = vertexProjectId;
+    builder.Configuration["VertexAI:Location"] = vertexLocation;
 }
 
 static void ConfigureDatabase(WebApplicationBuilder builder)
