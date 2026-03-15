@@ -29,9 +29,12 @@ export function useInfiniteSearch<T>(
         const params: SearchParams = {
           q: searchParams.get("q") || undefined,
           cursor: currentCursor || undefined,
+          lat: searchParams.get("lat") ? parseFloat(searchParams.get("lat")!) : undefined,
+          lng: searchParams.get("lng") ? parseFloat(searchParams.get("lng")!) : undefined,
+          radiusKm: searchParams.get("radiusKm") ? parseFloat(searchParams.get("radiusKm")!) : undefined,
         };
 
-        // Use the centralized fetcher from browse.ts
+        // Use the centralized fetcher from browse.ts (it will call locationFilter when lat/lng present)
         const data = await getSearchResults(params);
 
         setItems((prev) => (isReset ? data.items : [...prev, ...data.items]));

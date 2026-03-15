@@ -2,6 +2,9 @@
 export type SearchParams = {
   q?: string;
   cursor?: string;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
 };
 
 const API_BASE = (
@@ -10,6 +13,25 @@ const API_BASE = (
 
 export async function getSearchResults(params: SearchParams) {
   try {
+    // If location params provided, call the locationFilter endpoint
+    if (typeof params.lat === "number" && typeof params.lng === "number") {
+      const lat = params.lat;
+      const lng = params.lng;
+      const radius = params.radiusKm ?? 20;
+
+      const res = await fetch(
+        `${API_BASE}/locationFilter?userLat=${lat}&userLon=${lng}&radiusKm=${radius}`,
+        { cache: "no-store" },
+      );
+
+      if (!res.ok) return { items: [], nextCursor: null, hasNextPage: false };
+
+      const data = await res.json();
+
+      // locationFilter returns a simple list; no pagination
+      return { items: data ?? [], nextCursor: null, hasNextPage: false };
+    }
+
     const q = new URLSearchParams();
 
     if (params.q) q.set("Query", params.q); // The C# code uses request.Query
