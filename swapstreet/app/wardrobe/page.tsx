@@ -1,34 +1,87 @@
 "use client";
 export const dynamic = "force-dynamic";
 import { Header } from "@/components/common/Header";
-import { useState, useRef, useEffect } from "react";
-import { Star, X, Download, Grid, List, Info, Upload } from "lucide-react";
-import Image from "next/image";
+import { useState, useRef, useEffect, useCallback } from "react";
+import type { Area } from "react-easy-crop";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   readWardrobeItems,
   removeWardrobeItem,
   WARDROBE_STORAGE_KEY,
   type WardrobeItem,
 } from "./wardrobeStorage";
+import { CropModal } from "@/components/wardrobe/CropModal";
+import { Sidebar } from "@/components/wardrobe/Sidebar";
+import { WardrobeGrid } from "@/components/wardrobe/WardrobeGrid";
 
 export default function WardrobePage() {
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showOriginal, setShowOriginal] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [recentResults, setRecentResults] = useState<string[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isViewingRecentResult, setIsViewingRecentResult] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(false);
   const [isRemoving, setIsRemoving] = useState<Set<string>>(new Set());
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
+  const [photoMode, setPhotoMode] = useState<"upload" | "model">("upload");
+  const [selectedGender, setSelectedGender] = useState<"male" | "female" | null>(null);
+  const [selectedSkinTone, setSelectedSkinTone] = useState<"light" | "medium" | "dark" | null>(null);
+  const [selectedBodyType, setSelectedBodyType] = useState<"slim" | "average" | "plus" | null>(null);
+
+  // Crop state
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
+    setCroppedAreaPixels(croppedPixels);
+  }, []);
 
   const mainImageInputRef = useRef<HTMLInputElement>(null);
+  const imageFrameRef = useRef<HTMLDivElement>(null);
+  const [frameAspect, setFrameAspect] = useState<number>(2 / 3);
+  const { accessToken: ctxToken, refreshToken } = useAuth();
+
+  useEffect(() => {
+    const el = imageFrameRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width > 0 && height > 0) setFrameAspect(width / height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
+  const authedFetch = useCallback(async (url: string, options: RequestInit): Promise<Response> => {
+    const token = ctxToken || sessionStorage.getItem("accessToken");
+    if (!token) throw new Error("Please log in to continue");
+    const res = await fetch(url, {
+      ...options,
+      headers: { ...(options.headers as Record<string, string>), Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 401) {
+      const newToken = await refreshToken();
+      if (!newToken) throw new Error("Session expired. Please log in again.");
+      return fetch(url, {
+        ...options,
+        headers: { ...(options.headers as Record<string, string>), Authorization: `Bearer ${newToken}` },
+      });
+    }
+    return res;
+  }, [ctxToken, refreshToken]);
+
+  const modelImagePath =
+    selectedGender && selectedSkinTone && selectedBodyType
+      ? `/images/wardrobe/${selectedGender}-${selectedSkinTone}-${selectedBodyType}.png`
+      : null;
 
   useEffect(() => {
     setWardrobeItems(readWardrobeItems());
@@ -49,6 +102,12 @@ export default function WardrobePage() {
       } else {
         newSet.add(itemId);
       }
+      // Reorder items: favorited items at top, unfavorited at bottom
+      setWardrobeItems((items) => {
+        const favorited = items.filter((i) => newSet.has(i.id));
+        const unfavorited = items.filter((i) => !newSet.has(i.id));
+        return [...favorited, ...unfavorited];
+      });
       return newSet;
     });
   };
@@ -57,19 +116,9 @@ export default function WardrobePage() {
     if (isRemoving.has(itemId)) return;
     setIsRemoving((prev) => new Set(prev).add(itemId));
     try {
-      const token = sessionStorage.getItem("accessToken");
-      if (!token) {
-        console.error("Missing access token for wishlist request.");
-        return;
-      }
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-      const res = await fetch(`${apiUrl}/wishlist/${itemId}`, {
+      const res = await authedFetch(`${API_URL}/wishlist/${itemId}`, {
         method: "DELETE",
         credentials: "include",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
       if (!res.ok && res.status !== 404) {
         const errBody = await res
@@ -96,85 +145,88 @@ export default function WardrobePage() {
     if (!file) return;
 
     setError(null);
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be smaller than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
+
+    if (mainImageInputRef.current) mainImageInputRef.current.value = "";
+  };
+
+  const getCroppedImage = async (src: string, pixelCrop: Area): Promise<Blob> => {
+    const img = document.createElement("img");
+    img.src = src;
+    await new Promise((res) => { img.onload = res; });
+    const canvas = document.createElement("canvas");
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+    return new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+  };
+
+  const handleCropConfirm = async () => {
+    if (!cropSrc || !croppedAreaPixels) return;
     setUploadProgress(true);
-
+    setCropSrc(null);
     try {
-      const token = sessionStorage.getItem("accessToken");
-
-      if (!token) {
-        setError("Please log in to upload images");
-        setUploadProgress(false);
-        return;
-      }
-
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        setError("Please upload an image file");
-        setUploadProgress(false);
-        return;
-      }
-
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        setError("Image must be smaller than 5MB");
-        setUploadProgress(false);
-        return;
-      }
-
+      const blob = await getCroppedImage(cropSrc, croppedAreaPixels);
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", blob, "photo.jpg");
       formData.append("type", "TryOn");
 
-      const response = await fetch(`${API_URL}/images/upload`, {
+      const response = await authedFetch(`${API_URL}/images/upload`, {
         method: "POST",
-        credentials: "include", // Include cookies
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
         body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: "Upload failed" }));
-        throw new Error(
-          errorData.error || errorData.message || "Upload failed",
-        );
+        const errorData = await response.json().catch(() => ({ error: "Upload failed" }));
+        throw new Error(errorData.error || errorData.message || "Upload failed");
       }
 
       const data = await response.json();
-
-      // The backend returns the URL with the presigned URL
       setUploadedImage(data.url);
       setShowOriginal(true);
-      setGeneratedImage(null); // Reset generated image when uploading new photo
-
-      // Reset file input
-      if (mainImageInputRef.current) {
-        mainImageInputRef.current.value = "";
-      }
+      setGeneratedImage(null);
+      setIsViewingRecentResult(false);
     } catch (err: unknown) {
-      console.error("Upload error:", err);
       const errorMessage = err instanceof Error ? err.message : "Upload failed";
       setError(errorMessage);
     } finally {
       setUploadProgress(false);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
     }
   };
 
   const handleTryOn = async () => {
-    if (!uploadedImage) {
+    if (photoMode === "upload" && !uploadedImage) {
       setError("Please upload a personal photo first");
+      return;
+    }
+    if (photoMode === "model" && !modelImagePath) {
+      setError("Please complete model selection first");
       return;
     }
 
     setLoading(true);
     setError(null);
     setGeneratedImage(null);
+    setIsViewingRecentResult(false);
 
     try {
-      const token = sessionStorage.getItem("accessToken");
+      const token = ctxToken || sessionStorage.getItem("accessToken");
 
       if (!token) {
         setError("Please log in to use try-on feature");
@@ -188,6 +240,34 @@ export default function WardrobePage() {
         );
         setLoading(false);
         return;
+      }
+
+      if (photoMode === "model" && modelImagePath) {
+        setUploadProgress(true);
+        try {
+          const modelResponse = await fetch(modelImagePath);
+          const blob = await modelResponse.blob();
+          const file = new File(
+            [blob],
+            `model-${selectedGender}-${selectedSkinTone}-${selectedBodyType}.png`,
+            { type: "image/png" },
+          );
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("type", "TryOn");
+          const uploadResponse = await authedFetch(`${API_URL}/images/upload`, {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+          });
+          if (!uploadResponse.ok) {
+            throw new Error("Failed to upload model image");
+          }
+          const uploadData = await uploadResponse.json();
+          setUploadedImage(uploadData.url);
+        } finally {
+          setUploadProgress(false);
+        }
       }
 
       const selectedItem = wardrobeItems.find((item) => item.id === selectedItemId);
@@ -222,6 +302,7 @@ export default function WardrobePage() {
       const data = await response.json();
       setGeneratedImage(data.url);
       setShowOriginal(false); // Automatically show result
+      setIsViewingRecentResult(false);
 
       // Add to recent results (keep only last 4)
       setRecentResults((prev) => [data.url, ...prev].slice(0, 4));
@@ -236,7 +317,9 @@ export default function WardrobePage() {
   };
 
   const handleDownload = async () => {
-    const imageToDownload = showOriginal ? uploadedImage : generatedImage;
+    const imageToDownload = showOriginal
+      ? (photoMode === "model" ? modelImagePath : uploadedImage)
+      : generatedImage;
 
     if (!imageToDownload) {
       setError("No image to download");
@@ -261,320 +344,90 @@ export default function WardrobePage() {
   };
 
   const handleReupload = () => {
+    if (photoMode === "model") {
+      setSelectedGender(null);
+      setSelectedSkinTone(null);
+      setSelectedBodyType(null);
+    }
     setUploadedImage(null);
     setGeneratedImage(null);
     setShowOriginal(true);
     setError(null);
-    mainImageInputRef.current?.click();
+    setIsViewingRecentResult(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="flex pt-16">
-        {/* Sidebar */}
-        <aside className="w-[420px] bg-white border-r border-gray-200 h-screen fixed top-16 left-0 p-6 overflow-y-auto">
-          {/* Info tooltip */}
-          <div className="mb-4">
-            <div className="flex justify-start mb-2">
-              <button
-                className="text-gray-600 hover:text-gray-800 relative group"
-                aria-label="Upload instructions"
-              >
-                <Info className="w-4 h-4" />
-                <div className="absolute left-0 top-6 z-20 w-72 bg-white text-sm text-gray-700 text-left border border-gray-200 rounded shadow-lg p-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
-                  <p className="mb-2 font-medium">How to use:</p>
-                  <p className="mb-1">
-                    1. Click the frame to upload your photo
-                  </p>
-                  <p className="mb-1">2. Click a wardrobe item to select it</p>
-                  <p>3. Click Try On and toggle Original/Result to compare</p>
-                </div>
-              </button>
-            </div>
+      <CropModal
+        cropSrc={cropSrc}
+        crop={crop}
+        zoom={zoom}
+        frameAspect={frameAspect}
+        onCropChange={setCrop}
+        onZoomChange={setZoom}
+        onCropComplete={setCroppedAreaPixels}
+        onConfirm={handleCropConfirm}
+        onClose={() => setCropSrc(null)}
+      />
 
-            {/* Main image - Upload/Result display */}
-            <div
-              role="button"
-              tabIndex={!uploadedImage ? 0 : -1}
-              onClick={() =>
-                !uploadedImage && mainImageInputRef.current?.click()
-              }
-              onKeyDown={(e) => {
-                if (!uploadedImage && (e.key === "Enter" || e.key === " ")) {
-                  e.preventDefault();
-                  mainImageInputRef.current?.click();
-                }
-              }}
-              className={`w-full aspect-[2/3] bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative ${
-                !uploadedImage
-                  ? "cursor-pointer hover:bg-gray-200 border-4 border-dashed border-gray-300 hover:border-teal-500 transition-colors"
-                  : ""
-              }`}
-            >
-              {uploadProgress ? (
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-600">Uploading...</p>
-                </div>
-              ) : uploadedImage || generatedImage ? (
-                <>
-                  <Image
-                    src={
-                      (showOriginal
-                        ? uploadedImage
-                        : generatedImage || uploadedImage) ?? ""
-                    }
-                    alt={showOriginal ? "Uploaded photo" : "AI Result"}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                  {/* Re-upload button overlay */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleReupload();
-                    }}
-                    className="absolute top-3 right-3 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-colors"
-                    title="Upload new photo"
-                  >
-                    <Upload className="w-5 h-5 text-gray-700" />
-                  </button>
-                </>
-              ) : (
-                <div className="text-center">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium">Upload Your Photo</p>
-                  <p className="text-sm text-gray-500 mt-1">Click to browse</p>
-                </div>
-              )}
-            </div>
+      <Sidebar
+        photoMode={photoMode}
+        uploadedImage={uploadedImage}
+        generatedImage={generatedImage}
+        modelImagePath={modelImagePath}
+        showOriginal={showOriginal}
+        uploadProgress={uploadProgress}
+        loading={loading}
+        isViewingRecentResult={isViewingRecentResult}
+        selectedItemId={selectedItemId}
+        selectedGender={selectedGender}
+        selectedSkinTone={selectedSkinTone}
+        selectedBodyType={selectedBodyType}
+        recentResults={recentResults}
+        error={error}
+        imageFrameRef={imageFrameRef}
+        mainImageInputRef={mainImageInputRef}
+        onPhotoModeUpload={() => { setPhotoMode("upload"); setGeneratedImage(null); setShowOriginal(true); }}
+        onPhotoModeModel={() => { setPhotoMode("model"); setUploadedImage(null); setGeneratedImage(null); setShowOriginal(true); }}
+        onUploadClick={() => mainImageInputRef.current?.click()}
+        onRemoveClick={handleReupload}
+        onImageKeyDown={(e) => {
+          if (photoMode === "upload" && !uploadedImage && !generatedImage && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            mainImageInputRef.current?.click();
+          }
+        }}
+        onImageUpload={handleImageUpload}
+        onGenderChange={setSelectedGender}
+        onSkinToneChange={setSelectedSkinTone}
+        onBodyTypeChange={setSelectedBodyType}
+        onResetGender={() => { setSelectedGender(null); setSelectedSkinTone(null); setSelectedBodyType(null); }}
+        onResetSkinTone={() => { setSelectedSkinTone(null); setSelectedBodyType(null); }}
+        onResetBodyType={() => setSelectedBodyType(null)}
+        onShowOriginal={() => setShowOriginal(true)}
+        onShowResult={() => setShowOriginal(false)}
+        onSelectRecentResult={(img) => { setGeneratedImage(img); setShowOriginal(false); setUploadedImage(null); setIsViewingRecentResult(true); }}
+        onTryOn={handleTryOn}
+        onDownload={handleDownload}
+      />
 
-            <input
-              ref={mainImageInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+      <main className="flex-1 p-8 ml-[420px]">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Your Wardrobe</h2>
+        </div>
 
-            {/* Toggle between original and result */}
-            {uploadedImage && generatedImage && (
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={() => setShowOriginal(true)}
-                  className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-colors ${
-                    showOriginal
-                      ? "bg-teal-500 text-white shadow-sm"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  Original
-                </button>
-                <button
-                  onClick={() => setShowOriginal(false)}
-                  className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-colors ${
-                    !showOriginal
-                      ? "bg-teal-500 text-white shadow-sm"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  Result
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Error message display */}
-          {error && (
-            <div
-              role="alert"
-              aria-live="polite"
-              className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
-            >
-              {error}
-            </div>
-          )}
-
-          {/* Try-On Button */}
-          <div className="mb-4">
-            <button
-              onClick={handleTryOn}
-              disabled={loading || !uploadedImage || !selectedItemId || uploadProgress}
-              className="w-full bg-teal-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-teal-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-sm"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Processing...
-                </span>
-              ) : (
-                "Try On"
-              )}
-            </button>
-          </div>
-
-          {/* Download button */}
-          <div className="flex justify-center mb-6 pb-6 border-b border-gray-200">
-            <button
-              onClick={handleDownload}
-              disabled={!uploadedImage && !generatedImage}
-              className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Download image"
-            >
-              <Download className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-
-          {/* Recent AI Results */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Recent Results
-            </h3>
-            <div className="flex gap-3">
-              {[0, 1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className={`relative flex-1 aspect-[2/3] rounded-lg overflow-hidden ${
-                    recentResults[i] ? "bg-gray-100" : "bg-gray-200"
-                  }`}
-                >
-                  {recentResults[i] ? (
-                    <Image
-                      src={recentResults[i]}
-                      alt={`Try-on result ${i + 1}`}
-                      fill
-                      className="object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => {
-                        setGeneratedImage(recentResults[i]);
-                        setShowOriginal(false);
-                      }}
-                      unoptimized
-                    />
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-8 ml-[420px]">
-          {/* Header with View Toggle */}
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Your Wardrobe</h2>
-
-            {/* View Mode Toggle */}
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === "list"
-                    ? "bg-white shadow-sm"
-                    : "hover:bg-gray-200"
-                }`}
-                title="List view"
-              >
-                <List className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-white shadow-sm"
-                    : "hover:bg-gray-200"
-                }`}
-                title="Grid view"
-              >
-                <Grid className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Wardrobe Items Grid */}
-          <div
-            className={`grid gap-6 mb-12 ${
-              viewMode === "grid" ? "grid-cols-4" : "grid-cols-1"
-            }`}
-          >
-            {wardrobeItems.length === 0 && (
-              <div className="col-span-full text-center text-gray-500">
-                Your wardrobe is empty. Add items from Browse.
-              </div>
-            )}
-            {wardrobeItems.map((item) => {
-              const safePrice = Number.isFinite(item.price) ? item.price : 0;
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => setSelectedItemId(item.id === selectedItemId ? null : item.id)}
-                  className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden group cursor-pointer ${
-                    viewMode === "list" ? "flex" : ""
-                  } ${
-                    selectedItemId === item.id
-                      ? "ring-2 ring-teal-500 ring-offset-2"
-                      : ""
-                  }`}
-                >
-                  <div
-                    className={`relative bg-gray-100 flex items-center justify-center ${
-                      viewMode === "grid" ? "aspect-square" : "w-32 h-32"
-                    }`}
-                  >
-                    {item.imageUrl ? (
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.title}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <span className="text-gray-400 text-sm">No image</span>
-                    )}
-                    {selectedItemId === item.id && (
-                      <div className="absolute inset-0 bg-teal-500/10" />
-                    )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id); }}
-                      className={`absolute top-3 left-3 p-1.5 bg-white/80 rounded-full transition-all ${
-                        favorites.has(item.id)
-                          ? "opacity-100"
-                          : "opacity-0 group-hover:opacity-100"
-                      }`}
-                    >
-                      <Star
-                        className={`w-5 h-5 ${
-                          favorites.has(item.id)
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-400"
-                        }`}
-                      />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleRemoveFromWardrobe(item.id); }}
-                      className="absolute top-3 right-3 p-1.5 bg-white/80 hover:bg-white rounded-full shadow-sm transition-colors opacity-0 group-hover:opacity-100"
-                      title="Remove from wardrobe"
-                      disabled={isRemoving.has(item.id)}
-                    >
-                      <X className="w-5 h-5 text-gray-600" />
-                    </button>
-                  </div>
-                  <div className="p-4 flex-1">
-                    <div className="font-medium text-gray-900 mb-1 line-clamp-2">
-                      {item.title}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      ${safePrice.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </main>
-      </div>
+        <WardrobeGrid
+          items={wardrobeItems}
+          selectedItemId={selectedItemId}
+          favorites={favorites}
+          isRemoving={isRemoving}
+          onSelectItem={(id) => setSelectedItemId(id === selectedItemId ? null : id)}
+          onToggleFavorite={toggleFavorite}
+          onRemoveItem={handleRemoveFromWardrobe}
+        />
+      </main>
     </div>
   );
 }
