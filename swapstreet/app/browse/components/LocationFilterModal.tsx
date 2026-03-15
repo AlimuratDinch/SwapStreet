@@ -7,6 +7,7 @@ type LocationResult = {
   lng: number;
   radiusKm: number;
   name: string;
+  listings?: any[]; 
 };
 
 type Props = {
@@ -41,19 +42,24 @@ export function LocationFilterModal({ onClose, onApply }: Readonly<Props>) {
     setError(null);
 
     try {
+      // Step 1: Lookup FSA to get lat/lng
       const res = await fetch(`${apiUrl}/location/lookup/${fsa}`);
-
-      if (!res.ok) {
-        throw new Error("Postal code not supported");
-      }
-
+      if (!res.ok) throw new Error("Postal code not supported");
+      
       const data = await res.json();
+      
+      // Step 2: Now fetch listings within radius using those coordinates
+      const radiusRes = await fetch(
+        `${apiUrl}/locationFilter?userLat=${data.lat}&userLon=${data.lng}&radiusKm=${radius}`
+      );
+      const listings = await radiusRes.json();
 
       onApply({
         lat: data.lat,
         lng: data.lng,
         radiusKm: radius,
         name: data.name,
+        listings, // Include results so parent can display them
       });
 
       onClose();
