@@ -24,7 +24,8 @@ export function TryOnControls({
   onDownload,
 }: TryOnControlsProps) {
   const canTryOn = photoMode === "upload" ? uploadedImage : modelImagePath;
-  const canDownload = (photoMode === "model" ? modelImagePath : uploadedImage) || generatedImage;
+  const canDownload =
+    (photoMode === "model" ? modelImagePath : uploadedImage) || generatedImage;
 
   if (!canTryOn && !canDownload) return null;
 

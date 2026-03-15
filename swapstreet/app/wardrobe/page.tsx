@@ -28,9 +28,15 @@ export default function WardrobePage() {
   const [isRemoving, setIsRemoving] = useState<Set<string>>(new Set());
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
   const [photoMode, setPhotoMode] = useState<"upload" | "model">("upload");
-  const [selectedGender, setSelectedGender] = useState<"male" | "female" | null>(null);
-  const [selectedSkinTone, setSelectedSkinTone] = useState<"light" | "medium" | "dark" | null>(null);
-  const [selectedBodyType, setSelectedBodyType] = useState<"slim" | "average" | "plus" | null>(null);
+  const [selectedGender, setSelectedGender] = useState<
+    "male" | "female" | null
+  >(null);
+  const [selectedSkinTone, setSelectedSkinTone] = useState<
+    "light" | "medium" | "dark" | null
+  >(null);
+  const [selectedBodyType, setSelectedBodyType] = useState<
+    "slim" | "average" | "plus" | null
+  >(null);
 
   // Crop state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -60,23 +66,32 @@ export default function WardrobePage() {
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
-  const authedFetch = useCallback(async (url: string, options: RequestInit): Promise<Response> => {
-    const token = ctxToken || sessionStorage.getItem("accessToken");
-    if (!token) throw new Error("Please log in to continue");
-    const res = await fetch(url, {
-      ...options,
-      headers: { ...(options.headers as Record<string, string>), Authorization: `Bearer ${token}` },
-    });
-    if (res.status === 401) {
-      const newToken = await refreshToken();
-      if (!newToken) throw new Error("Session expired. Please log in again.");
-      return fetch(url, {
+  const authedFetch = useCallback(
+    async (url: string, options: RequestInit): Promise<Response> => {
+      const token = ctxToken || sessionStorage.getItem("accessToken");
+      if (!token) throw new Error("Please log in to continue");
+      const res = await fetch(url, {
         ...options,
-        headers: { ...(options.headers as Record<string, string>), Authorization: `Bearer ${newToken}` },
+        headers: {
+          ...(options.headers as Record<string, string>),
+          Authorization: `Bearer ${token}`,
+        },
       });
-    }
-    return res;
-  }, [ctxToken, refreshToken]);
+      if (res.status === 401) {
+        const newToken = await refreshToken();
+        if (!newToken) throw new Error("Session expired. Please log in again.");
+        return fetch(url, {
+          ...options,
+          headers: {
+            ...(options.headers as Record<string, string>),
+            Authorization: `Bearer ${newToken}`,
+          },
+        });
+      }
+      return res;
+    },
+    [ctxToken, refreshToken],
+  );
 
   const modelImagePath =
     selectedGender && selectedSkinTone && selectedBodyType
@@ -162,16 +177,33 @@ export default function WardrobePage() {
     if (mainImageInputRef.current) mainImageInputRef.current.value = "";
   };
 
-  const getCroppedImage = async (src: string, pixelCrop: Area): Promise<Blob> => {
+  const getCroppedImage = async (
+    src: string,
+    pixelCrop: Area,
+  ): Promise<Blob> => {
     const img = document.createElement("img");
     img.src = src;
-    await new Promise((res) => { img.onload = res; });
+    await new Promise((res) => {
+      img.onload = res;
+    });
     const canvas = document.createElement("canvas");
     canvas.width = pixelCrop.width;
     canvas.height = pixelCrop.height;
     const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
-    return new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+    ctx.drawImage(
+      img,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height,
+    );
+    return new Promise((res) =>
+      canvas.toBlob((b) => res(b!), "image/jpeg", 0.92),
+    );
   };
 
   const handleCropConfirm = async () => {
@@ -191,8 +223,12 @@ export default function WardrobePage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Upload failed" }));
-        throw new Error(errorData.error || errorData.message || "Upload failed");
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Upload failed" }));
+        throw new Error(
+          errorData.error || errorData.message || "Upload failed",
+        );
       }
 
       const data = await response.json();
@@ -235,9 +271,7 @@ export default function WardrobePage() {
       }
 
       if (!selectedItemId) {
-        setError(
-          "Please select an item from your wardrobe first.",
-        );
+        setError("Please select an item from your wardrobe first.");
         setLoading(false);
         return;
       }
@@ -270,7 +304,9 @@ export default function WardrobePage() {
         }
       }
 
-      const selectedItem = wardrobeItems.find((item) => item.id === selectedItemId);
+      const selectedItem = wardrobeItems.find(
+        (item) => item.id === selectedItemId,
+      );
       if (!selectedItem?.imageUrl) {
         setError("Selected item has no image.");
         setLoading(false);
@@ -318,7 +354,9 @@ export default function WardrobePage() {
 
   const handleDownload = async () => {
     const imageToDownload = showOriginal
-      ? (photoMode === "model" ? modelImagePath : uploadedImage)
+      ? photoMode === "model"
+        ? modelImagePath
+        : uploadedImage
       : generatedImage;
 
     if (!imageToDownload) {
@@ -389,12 +427,26 @@ export default function WardrobePage() {
         error={error}
         imageFrameRef={imageFrameRef}
         mainImageInputRef={mainImageInputRef}
-        onPhotoModeUpload={() => { setPhotoMode("upload"); setGeneratedImage(null); setShowOriginal(true); }}
-        onPhotoModeModel={() => { setPhotoMode("model"); setUploadedImage(null); setGeneratedImage(null); setShowOriginal(true); }}
+        onPhotoModeUpload={() => {
+          setPhotoMode("upload");
+          setGeneratedImage(null);
+          setShowOriginal(true);
+        }}
+        onPhotoModeModel={() => {
+          setPhotoMode("model");
+          setUploadedImage(null);
+          setGeneratedImage(null);
+          setShowOriginal(true);
+        }}
         onUploadClick={() => mainImageInputRef.current?.click()}
         onRemoveClick={handleReupload}
         onImageKeyDown={(e) => {
-          if (photoMode === "upload" && !uploadedImage && !generatedImage && (e.key === "Enter" || e.key === " ")) {
+          if (
+            photoMode === "upload" &&
+            !uploadedImage &&
+            !generatedImage &&
+            (e.key === "Enter" || e.key === " ")
+          ) {
             e.preventDefault();
             mainImageInputRef.current?.click();
           }
@@ -403,12 +455,24 @@ export default function WardrobePage() {
         onGenderChange={setSelectedGender}
         onSkinToneChange={setSelectedSkinTone}
         onBodyTypeChange={setSelectedBodyType}
-        onResetGender={() => { setSelectedGender(null); setSelectedSkinTone(null); setSelectedBodyType(null); }}
-        onResetSkinTone={() => { setSelectedSkinTone(null); setSelectedBodyType(null); }}
+        onResetGender={() => {
+          setSelectedGender(null);
+          setSelectedSkinTone(null);
+          setSelectedBodyType(null);
+        }}
+        onResetSkinTone={() => {
+          setSelectedSkinTone(null);
+          setSelectedBodyType(null);
+        }}
         onResetBodyType={() => setSelectedBodyType(null)}
         onShowOriginal={() => setShowOriginal(true)}
         onShowResult={() => setShowOriginal(false)}
-        onSelectRecentResult={(img) => { setGeneratedImage(img); setShowOriginal(false); setUploadedImage(null); setIsViewingRecentResult(true); }}
+        onSelectRecentResult={(img) => {
+          setGeneratedImage(img);
+          setShowOriginal(false);
+          setUploadedImage(null);
+          setIsViewingRecentResult(true);
+        }}
         onTryOn={handleTryOn}
         onDownload={handleDownload}
       />
@@ -423,7 +487,9 @@ export default function WardrobePage() {
           selectedItemId={selectedItemId}
           favorites={favorites}
           isRemoving={isRemoving}
-          onSelectItem={(id) => setSelectedItemId(id === selectedItemId ? null : id)}
+          onSelectItem={(id) =>
+            setSelectedItemId(id === selectedItemId ? null : id)
+          }
           onToggleFavorite={toggleFavorite}
           onRemoveItem={handleRemoveFromWardrobe}
         />

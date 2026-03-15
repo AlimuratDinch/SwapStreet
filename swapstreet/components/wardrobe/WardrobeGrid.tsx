@@ -35,9 +35,13 @@ export function WardrobeGrid({
         return (
           <div
             key={item.id}
-            onClick={() => onSelectItem(item.id === selectedItemId ? null : item.id)}
+            onClick={() =>
+              onSelectItem(item.id === selectedItemId ? null : item.id)
+            }
             className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden group cursor-pointer ${
-              selectedItemId === item.id ? "ring-2 ring-teal-500 ring-offset-2" : ""
+              selectedItemId === item.id
+                ? "ring-2 ring-teal-500 ring-offset-2"
+                : ""
             }`}
           >
             <div className="relative bg-gray-100 flex items-center justify-center aspect-square">
@@ -51,14 +55,18 @@ export function WardrobeGrid({
               ) : (
                 <span className="text-gray-400 text-sm">No image</span>
               )}
-              {selectedItemId === item.id && <div className="absolute inset-0 bg-teal-500/10" />}
+              {selectedItemId === item.id && (
+                <div className="absolute inset-0 bg-teal-500/10" />
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleFavorite(item.id);
                 }}
                 className={`absolute top-3 left-3 p-1.5 bg-white/80 rounded-full transition-all ${
-                  favorites.has(item.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  favorites.has(item.id)
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100"
                 }`}
               >
                 <Star
@@ -92,8 +100,12 @@ export function WardrobeGrid({
               </button>
             </div>
             <div className="p-4 flex-1">
-              <div className="font-medium text-gray-900 mb-1 line-clamp-2">{item.title}</div>
-              <div className="text-sm text-gray-600">${safePrice.toFixed(2)}</div>
+              <div className="font-medium text-gray-900 mb-1 line-clamp-2">
+                {item.title}
+              </div>
+              <div className="text-sm text-gray-600">
+                ${safePrice.toFixed(2)}
+              </div>
             </div>
           </div>
         );

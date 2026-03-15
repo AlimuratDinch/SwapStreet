@@ -26,9 +26,12 @@ export function ImageDisplay({
   onRemoveClick,
   onKeyDown,
 }: ImageDisplayProps) {
-  const isClickable = photoMode === "upload" && !uploadedImage && !generatedImage;
+  const isClickable =
+    photoMode === "upload" && !uploadedImage && !generatedImage;
   const hasImage =
-    photoMode === "upload" ? uploadedImage || generatedImage : modelImagePath || generatedImage;
+    photoMode === "upload"
+      ? uploadedImage || generatedImage
+      : modelImagePath || generatedImage;
 
   return (
     <div
@@ -56,17 +59,19 @@ export function ImageDisplay({
         <>
           <Image
             src={
-              (
-                showOriginal
-                  ? photoMode === "model"
-                    ? modelImagePath
-                    : uploadedImage
-                  : generatedImage || (photoMode === "model" ? modelImagePath : uploadedImage)
-              ) || ""
+              (showOriginal
+                ? photoMode === "model"
+                  ? modelImagePath
+                  : uploadedImage
+                : generatedImage ||
+                  (photoMode === "model" ? modelImagePath : uploadedImage)) ||
+              ""
             }
             alt={showOriginal ? "Person photo" : "AI Result"}
             fill
-            className={photoMode === "model" ? "object-cover object-top" : "object-cover"}
+            className={
+              photoMode === "model" ? "object-cover object-top" : "object-cover"
+            }
             unoptimized
           />
           {photoMode === "upload" && (
@@ -90,7 +95,9 @@ export function ImageDisplay({
         </div>
       ) : (
         <div className="text-center px-4">
-          <p className="text-gray-500 text-sm">Select options below to preview model</p>
+          <p className="text-gray-500 text-sm">
+            Select options below to preview model
+          </p>
         </div>
       )}
     </div>

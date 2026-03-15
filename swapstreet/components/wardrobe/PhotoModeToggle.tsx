@@ -4,7 +4,11 @@ interface PhotoModeToggleProps {
   onModel: () => void;
 }
 
-export function PhotoModeToggle({ photoMode, onUpload, onModel }: PhotoModeToggleProps) {
+export function PhotoModeToggle({
+  photoMode,
+  onUpload,
+  onModel,
+}: PhotoModeToggleProps) {
   return (
     <div className="flex bg-gray-100 rounded-lg p-1 shrink-0">
       <button

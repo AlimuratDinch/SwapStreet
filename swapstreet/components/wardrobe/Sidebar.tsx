@@ -97,7 +97,13 @@ export function Sidebar({
         onKeyDown={onImageKeyDown}
       />
 
-      <input ref={mainImageInputRef} type="file" accept="image/*" onChange={onImageUpload} className="hidden" />
+      <input
+        ref={mainImageInputRef}
+        type="file"
+        accept="image/*"
+        onChange={onImageUpload}
+        className="hidden"
+      />
 
       {photoMode === "model" && (
         <ModelSelector
@@ -133,7 +139,10 @@ export function Sidebar({
         onDownload={onDownload}
       />
 
-      <RecentResults results={recentResults} onSelectResult={onSelectRecentResult} />
+      <RecentResults
+        results={recentResults}
+        onSelectResult={onSelectRecentResult}
+      />
     </aside>
   );
 }

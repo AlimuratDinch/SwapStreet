@@ -32,7 +32,10 @@ export function CropModal({
       <div className="bg-white rounded-xl shadow-2xl w-[420px] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
           <h2 className="font-semibold text-gray-800">Crop your photo</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full">
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-full"
+          >
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
