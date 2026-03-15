@@ -10,7 +10,9 @@ jest.mock("@/components/ui/sidebar", () => ({
     <div data-testid="sidebar-provider">{children}</div>
   ),
   SidebarInset: ({ children, className }: any) => (
-    <div className={className}>{children}</div>
+    <div data-testid="sidebar-inset" className={className}>
+      {children}
+    </div>
   ),
   SidebarTrigger: () => <button data-testid="sidebar-trigger">Trigger</button>,
 }));
@@ -39,30 +41,34 @@ describe("BrowseLayout Component", () => {
     ],
     initialCursor: "next-page-123",
     initialHasNext: true,
+    // Added params to match the new component signature
+    params: { q: "" },
   };
 
-  it("renders the full layout structure (Coverage for Lines 18-42)", () => {
+  it("renders the full layout structure", () => {
     render(<BrowseLayout {...mockProps} />);
 
-    // Check if the Provider and Inset are present
     expect(screen.getByTestId("sidebar-provider")).toBeInTheDocument();
-
-    // Check if child components are rendered
     expect(screen.getByTestId("mock-sidebar")).toBeInTheDocument();
     expect(screen.getByTestId("sidebar-trigger")).toBeInTheDocument();
     expect(screen.getByTestId("infinite-browse")).toBeInTheDocument();
     expect(screen.getByTestId("fab")).toBeInTheDocument();
 
-    // Verify props are passed down correctly to InfiniteBrowse
+    // Verify props flow to InfiniteBrowse
     expect(screen.getByText("Items: 2")).toBeInTheDocument();
   });
 
-  it("renders the skeleton (Coverage for Lines 45-58)", () => {
+  it("renders the skeleton correctly", () => {
     const { container } = render(<BrowseSkeleton />);
 
+    // 3 Pulse elements per card * 12 cards = 36 pulse elements
     const skeletonItems = container.querySelectorAll(".animate-pulse");
-
     expect(skeletonItems.length).toBe(36);
-    expect(container.querySelector("main")).toHaveClass("grid-cols-1");
+
+    // FIX: Look for the grid container instead of a 'main' tag
+    const gridContainer = container.querySelector(".grid");
+
+    expect(gridContainer).not.toBeNull();
+    expect(gridContainer).toHaveClass("grid-cols-1");
   });
 });

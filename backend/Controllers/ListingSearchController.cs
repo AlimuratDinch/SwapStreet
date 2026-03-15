@@ -75,6 +75,11 @@ public class ListingSearchController : ControllerBase
                 l.Listing.Title,
                 l.Listing.Description,
                 l.Listing.Price,
+                l.Listing.Size,
+                l.Listing.Brand,
+                l.Listing.Category,
+                l.Listing.Colour,
+                l.Listing.Condition,
                 l.Listing.FSA,
                 createdAt = l.Listing.CreatedAt,
                 seller = seller == null ? null : new

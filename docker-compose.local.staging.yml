@@ -82,6 +82,9 @@ services:
       - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY:-masterKey}
       - GOOGLE_APPLICATION_CREDENTIALS=/app/config/gcloud/application_default_credentials.json
       - FrontendUrl=http://localhost
+      - LOGQUEUESETTINGS__BASEPATH=App_Data
+    volumes:
+      - app-data:/app/App_Data
     depends_on:
       postgres:
         condition: service_healthy
@@ -132,6 +135,7 @@ networks:
     driver: bridge
 
 volumes:
+  app-data:
   postgres_data_local_staging:
   minio_data_local_staging:
   meilisearch_data_local_staging:

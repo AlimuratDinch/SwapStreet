@@ -82,9 +82,14 @@ namespace backend.Controllers
             CancellationToken cancellationToken = default)
         {
             _logger.LogDebug(
-                "Received CreateListingRequestDto: Title={Title}, Price={Price}, ProfileId={ProfileId}, FSA={FSA}",
+                "Received CreateListingRequestDto: Title={Title}, Price={Price}, Size={Size}, Brand={Brand}, Category={Category}, Condition={Condition}, Colour={Colour}, ProfileId={ProfileId}, FSA={FSA}",
                 dto?.Title,
                 dto?.Price,
+                dto?.Size,
+                dto?.Brand,
+                dto?.Category,
+                dto?.Condition,
+                dto?.Colour,
                 dto?.ProfileId,
                 dto?.FSA);
 
@@ -114,10 +119,15 @@ namespace backend.Controllers
                 var listingId = await _listingCommandService.CreateListingAsync(dto, cancellationToken);
 
                 _logger.LogInformation(
-                    "Listing created successfully: Id={ListingId}, Title={Title}, ProfileId={ProfileId}, FSA={FSA}",
+                    "Listing created successfully: Id={ListingId}, Title={Title}, Size={Size}, Brand={Brand}, Category={Category}, Condition={Condition}, Colour={Colour}, ProfileId={ProfileId}, FSA={FSA}",
                     listingId,
                     dto.Title,
                     dto.ProfileId,
+                    dto.Size,
+                    dto.Brand,
+                    dto.Category,
+                    dto.Colour,
+                    dto.Condition,
                     dto.FSA
                     );
 
