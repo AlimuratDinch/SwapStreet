@@ -26,7 +26,7 @@ public class GenerativeService : IGenerativeService
         // Pulling Vertex AI specific configs instead of direct API keys
         var projectId = _configuration["VertexAI:ProjectId"];
         var location = _configuration["VertexAI:Location"] ?? "us-central1";
-        const string ModelId = "gemini-3.1-flash"; // Using 3.1 Flash for Nano Banana 2 capabilities
+        var modelId = _configuration["VertexAI:ModelId"] ?? "gemini-2.5-flash-image";
 
         if (string.IsNullOrEmpty(projectId))
             throw new InvalidOperationException("Vertex AI ProjectId not configured");
@@ -42,7 +42,7 @@ public class GenerativeService : IGenerativeService
                 Endpoint = $"{location}-aiplatform.googleapis.com"
             }.BuildAsync();
 
-            var endpoint = $"projects/{projectId}/locations/{location}/publishers/google/models/{ModelId}";
+            var endpoint = $"projects/{projectId}/locations/{location}/publishers/google/models/{modelId}";
 
             const string promptText = "Create a photorealistic image of the person wearing the provided clothing item. Precisely maintain the person's facial features, hairstyle, skin tone, and original pose. Adapt the clothing to fit naturally on the person's body, respecting proper draping, shadows, and fabric textures. Preserve the original lighting conditions and background. Ensure seamless integration of the clothing while maintaining the image's original resolution and quality.";
 

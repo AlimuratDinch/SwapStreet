@@ -168,9 +168,12 @@ static void ConfigureGemini(WebApplicationBuilder builder)
                        ?? GenerateRandomKey(32);
     var vertexLocation = Environment.GetEnvironmentVariable("VERTEX_AI_LOCATION")
                        ?? "us-central1";
+    var vertexModelId = Environment.GetEnvironmentVariable("VERTEX_AI_MODEL_ID")
+                       ?? "gemini-2.5-flash-image";
 
     builder.Configuration["VertexAI:ProjectId"] = vertexProjectId;
     builder.Configuration["VertexAI:Location"] = vertexLocation;
+    builder.Configuration["VertexAI:ModelId"] = vertexModelId;
 }
 
 static void ConfigureDatabase(WebApplicationBuilder builder)

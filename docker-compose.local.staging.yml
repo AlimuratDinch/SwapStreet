@@ -80,6 +80,7 @@ services:
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MEILISEARCH_HOST=http://meilisearch:7700
       - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY:-masterKey}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/config/gcloud/application_default_credentials.json
       - FrontendUrl=http://localhost
     depends_on:
       postgres:
@@ -90,6 +91,8 @@ services:
         condition: service_healthy
     networks:
       - app-net
+    volumes:
+      - "${GOOGLE_ADC_FILE_PATH:-./gcloud/application_default_credentials.json}:/app/config/gcloud/application_default_credentials.json:ro"
 
   swapstreet: # Frontend
     build:
