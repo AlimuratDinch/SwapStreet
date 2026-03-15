@@ -43,8 +43,23 @@ export default function RegistrationPage() {
       });
 
       if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(errText || "Failed to create account");
+        const text = await response.text();
+        let message = "Failed to create account. Please try again.";
+        try {
+          const json = JSON.parse(text);
+          if (json.error) {
+            message = json.error;
+          } else if (json.errors) {
+            message = Object.values(json.errors as Record<string, string[]>)
+              .flat()
+              .join(" ");
+          } else if (json.title) {
+            message = json.title;
+          }
+        } catch {
+          if (text) message = text;
+        }
+        throw new Error(message);
       }
 
       await response.json();

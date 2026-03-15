@@ -7,6 +7,9 @@ using backend.Models;
 using backend.DbContexts;
 using backend.Contracts;
 using backend.DTOs;
+using Microsoft.AspNetCore.Authentication;
+using System.ComponentModel;
+using System.Drawing;
 
 namespace backend.Data.Seed
 {
@@ -24,6 +27,31 @@ namespace backend.Data.Seed
             "Anorak", "Windbreaker", "Fleece Jacket", "Tank Top", "Crop Top",
             "Maxi Dress", "Midi Skirt", "High-Waisted Jeans", "Cargo Shorts",
             "Athletic Shorts", "Yoga Pants", "Leggings", "Joggers", "Sweatpants"
+        };
+
+        private static readonly ListingSize[] Sizes = new[]
+        {
+            ListingSize.XXS, ListingSize.XS, ListingSize.S, ListingSize.M, ListingSize.L, ListingSize.XL, ListingSize.XXL, ListingSize.NA
+        };
+
+        private static readonly ListingBrand[] Brands = new[]
+        {
+            ListingBrand.Addidas, ListingBrand.Nike, ListingBrand.Carhartt, ListingBrand.HandM, ListingBrand.Zara, ListingBrand.Dickies, ListingBrand.Puma, ListingBrand.Gap, ListingBrand.Vans, ListingBrand.NewBalance, ListingBrand.Lululemon, ListingBrand.Other
+        };
+
+        private static readonly ListingCategory[] Categories = new[]
+        {
+            ListingCategory.Accessory, ListingCategory.Bottoms, ListingCategory.Tops, ListingCategory.Footwear, ListingCategory.Outerwear, ListingCategory.Formalwear, ListingCategory.Sportswear,
+        };
+
+        private static readonly ListingCondition[] Conditions = new[]
+        {
+          ListingCondition.LikeNew, ListingCondition.New, ListingCondition.UsedExcellent, ListingCondition.UsedFair, ListingCondition.UsedGood
+        };
+
+        private static readonly ListingColour[] Colours = new[]
+        {
+            ListingColour.Beige, ListingColour.Black, ListingColour.White, ListingColour.Red, ListingColour.Blue, ListingColour.Green, ListingColour.Yellow, ListingColour.Pink, ListingColour.Purple, ListingColour.Orange, ListingColour.Brown, ListingColour.Grey, ListingColour.Silver, ListingColour.Gold, ListingColour.Clear, ListingColour.MultiColor
         };
 
         private static readonly string[] Descriptions = new[]
@@ -47,22 +75,46 @@ namespace backend.Data.Seed
 
         public static async Task SeedAsync(AppDbContext context, IListingCommandService listingService, ILogger logger)
         {
+
             var existingCount = await context.Listings.CountAsync();
-            if (existingCount >= 100) return;
 
             var profileId = ProfileSeeder.TestProfileId;
             var validFsas = await context.Fsas.Select(f => f.Code).ToListAsync();
             var random = new Random();
 
+            var listingsMissingSize = await context.Listings
+                .Where(l => l.Size == null)
+                .ToListAsync();
+
+            if (listingsMissingSize.Any())
+            {
+                foreach (var listing in listingsMissingSize)
+                {
+                    listing.Size = Sizes[random.Next(Sizes.Length)];
+                }
+
+                await context.SaveChangesAsync();
+                logger.LogInformation("Updated {Count} existing listings with random sizes.", listingsMissingSize.Count);
+            }
+            if (existingCount >= 100) return;
+
             logger.LogInformation("Seeding listings via Command Service to sync Meilisearch...");
 
             for (int i = 0; i < (100 - existingCount); i++)
             {
+                var category = Categories[random.Next(Categories.Length)];
+                var size = category == ListingCategory.Footwear ? ListingSize.NA : Sizes[random.Next(Sizes.Length)];
+
                 var request = new CreateListingRequestDto
                 {
                     Title = $"{ClothingItems[random.Next(ClothingItems.Length)]} #{existingCount + i + 1}",
                     Description = Descriptions[random.Next(Descriptions.Length)],
                     Price = Math.Round((decimal)(random.NextDouble() * 200 + 10), 2),
+                    Category = category,
+                    Size = size,
+                    Brand = Brands[random.Next(Brands.Length)],
+                    Colour = Colours[random.Next(Colours.Length)],
+                    Condition = Conditions[random.Next(Conditions.Length)],
                     ProfileId = profileId,
                     FSA = validFsas[random.Next(validFsas.Count)]
                 };
