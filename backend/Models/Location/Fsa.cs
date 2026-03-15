@@ -27,4 +27,6 @@ public class Fsa
     // Navigation Property linking back to the City
     [ForeignKey("CityId")]
     public City? City { get; set; }
+
+    public ICollection<Listing> Listings { get; set; } = new List<Listing>();
 }

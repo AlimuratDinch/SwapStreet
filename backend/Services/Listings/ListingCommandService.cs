@@ -120,7 +120,7 @@ namespace backend.Services
                 Size = request.Size,
                 ProfileId = request.ProfileId,
                 TagId = null,
-                FSA = request.FSA,
+                FSAId = fsa.Id,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -141,7 +141,7 @@ namespace backend.Services
                     Title = listing.Title,
                     Description = listing.Description,
                     Size = listing.Size,
-                    FSA = listing.FSA,
+                    FSA = fsa?.Code ?? string.Empty,
                     CreatedAtTimestamp = new DateTimeOffset(listing.CreatedAt).ToUnixTimeSeconds(),
                     _geo = latlong
                 };

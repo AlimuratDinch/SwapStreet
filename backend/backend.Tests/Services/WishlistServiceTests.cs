@@ -156,7 +156,7 @@ namespace backend.Tests.Services
                 Description = "Valid listing description for tests.",
                 Price = 10.00m,
                 ProfileId = Guid.NewGuid(),
-                FSA = "M5V"
+                FSA = new Fsa { Code = "M5V", CityId = 1, Centroid = new NetTopologySuite.Geometries.Point(0, 0) { SRID = 4326 } }
             };
         }
     }

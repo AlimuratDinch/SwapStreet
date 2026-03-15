@@ -69,29 +69,29 @@ public class ListingSearchController : ControllerBase
                 img.ForTryon
             }).ToList();
 
-            return new
-            {
-                l.Listing.Id,
-                l.Listing.Title,
-                l.Listing.Description,
-                l.Listing.Price,
-                l.Listing.Size,
-                l.Listing.FSA,
-                createdAt = l.Listing.CreatedAt,
-                seller = seller == null ? null : new
+                return new
                 {
-                    seller.Id,
-                    seller.FirstName,
-                    seller.LastName,
-                    seller.VerifiedSeller,
-                    seller.Rating,
-                    seller.Bio,
-                    profileImageUrl = _minio.GetPublicFileUrl(seller.ProfileImagePath),
-                    bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath),
-                    seller.CreatedAt
-                },
-                images = listingImages
-            };
+                	l.Listing.Id,
+                	l.Listing.Title,
+                	l.Listing.Description,
+                	l.Listing.Price,
+                	l.Listing.Size,
+                	FSA = l.Listing.FSA == null ? null : l.Listing.FSA.Code,
+                	createdAt = l.Listing.CreatedAt,
+                	seller = seller == null ? null : new
+                	{
+                    	seller.Id,
+                    	seller.FirstName,
+                    	seller.LastName,
+                    	seller.VerifiedSeller,
+                    	seller.Rating,
+                    	seller.Bio,
+                    	profileImageUrl = _minio.GetPublicFileUrl(seller.ProfileImagePath),
+                    	bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath),
+                    	seller.CreatedAt
+                	},
+                	images = listingImages
+            	};
         }).ToList();
 
         return Ok(new

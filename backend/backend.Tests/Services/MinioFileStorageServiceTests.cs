@@ -162,6 +162,7 @@ namespace backend.Tests.Services
             // Create listing to satisfy FK constraint
             using (var context = new AppDbContext(_fixture.DbOptions))
             {
+                var fsa = await context.Fsas.FirstOrDefaultAsync(f => f.Code == "H2X");
                 context.Listings.Add(new Listing
                 {
                     Id = listingId,
@@ -169,7 +170,8 @@ namespace backend.Tests.Services
                     Description = "Test Description",
                     Price = 10.00m,
                     ProfileId = userId,
-                    FSA = "H2X",
+                    FSAId = fsa?.Id ?? 0,
+                    FSA = fsa,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
@@ -235,6 +237,7 @@ namespace backend.Tests.Services
             // Create listing to satisfy FK constraint (even though the test will fail validation)
             using (var context = new AppDbContext(_fixture.DbOptions))
             {
+                var fsa = await context.Fsas.FirstOrDefaultAsync(f => f.Code == "H2X");
                 context.Listings.Add(new Listing
                 {
                     Id = listingId,
@@ -242,7 +245,8 @@ namespace backend.Tests.Services
                     Description = "Test Description",
                     Price = 10.00m,
                     ProfileId = userId,
-                    FSA = "H2X",
+                    FSAId = fsa?.Id ?? 0,
+                    FSA = fsa,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
@@ -291,6 +295,7 @@ namespace backend.Tests.Services
             // Create listing to satisfy FK constraint
             using (var context = new AppDbContext(_fixture.DbOptions))
             {
+                var fsa = await context.Fsas.FirstOrDefaultAsync(f => f.Code == "H2X");
                 context.Listings.Add(new Listing
                 {
                     Id = listingId,
@@ -298,7 +303,8 @@ namespace backend.Tests.Services
                     Description = "Test Description",
                     Price = 10.00m,
                     ProfileId = userId,
-                    FSA = "H2X",
+                    FSAId = fsa?.Id ?? 0,
+                    FSA = fsa,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
@@ -337,6 +343,7 @@ namespace backend.Tests.Services
             using (var context = new AppDbContext(_fixture.DbOptions))
             {
                 // Create listing first to satisfy FK constraint
+                var fsa = await context.Fsas.FirstOrDefaultAsync(f => f.Code == "H2X");
                 context.Listings.Add(new Listing
                 {
                     Id = listingId,
@@ -344,7 +351,8 @@ namespace backend.Tests.Services
                     Description = "Test Description",
                     Price = 10.00m,
                     ProfileId = profileId,
-                    FSA = "H2X",
+                    FSAId = fsa?.Id ?? 0,
+                    FSA = fsa,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
@@ -390,6 +398,7 @@ namespace backend.Tests.Services
             using (var context = new AppDbContext(_fixture.DbOptions))
             {
                 // Create listing first to satisfy FK constraint
+                var fsa = await context.Fsas.FirstOrDefaultAsync(f => f.Code == "H2X");
                 context.Listings.Add(new Listing
                 {
                     Id = listingId,
@@ -397,7 +406,8 @@ namespace backend.Tests.Services
                     Description = "Test Description",
                     Price = 10.00m,
                     ProfileId = profileId,
-                    FSA = "H2X",
+                    FSAId = fsa?.Id ?? 0,
+                    FSA = fsa,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });

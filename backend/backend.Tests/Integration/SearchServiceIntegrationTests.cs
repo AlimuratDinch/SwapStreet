@@ -452,11 +452,15 @@ public class SearchServiceIntegrationTests
         await pgDb.Database.EnsureCreatedAsync();
         await _meiliFx.InitializeAsync(); // Wipes and recreates the "listings" index
 
-        // 2. Setup Relational Data (Province, City, Profile)
+        // 2. Setup Relational Data (Province, City, Profile, FSA)
         var province = new Province { Id = 1, Name = "Quebec", Code = "QC" };
         pgDb.Provinces.Add(province);
         var city = new City { Id = 1, Name = "Montreal", ProvinceId = 1 };
         pgDb.Cities.Add(city);
+
+        // Seed an FSA row so Listings can reference it by FK
+        var fsa = new Fsa { Code = "H2X", CityId = 1, Centroid = new NetTopologySuite.Geometries.Point(-73.5673, 45.5017) { SRID = 4326 } };
+        pgDb.Fsas.Add(fsa);
 
         var profileId = Guid.NewGuid();
         pgDb.Profiles.Add(new Profile
@@ -473,9 +477,9 @@ public class SearchServiceIntegrationTests
         var now = DateTime.UtcNow;
         var listings = new List<Listing>
         {
-            new Listing { Id = Guid.NewGuid(), Title = "Nike Air Max shoes", Description = "Great running sneakers", Price = 80m, FSA = "H2X", ProfileId = profileId, CreatedAt = now.AddMinutes(-3) },
-            new Listing { Id = Guid.NewGuid(), Title = "Adidas sweatshirt", Description = "Cozy hoodie", Price = 35m, FSA = "H2X", ProfileId = profileId, CreatedAt = now.AddMinutes(-2) },
-            new Listing { Id = Guid.NewGuid(), Title = "Converse sneakers", Description = "Classic shoes", Price = 50m, FSA = "H2X", ProfileId = profileId, CreatedAt = now.AddMinutes(-1) }
+            new Listing { Id = Guid.NewGuid(), Title = "Nike Air Max shoes", Description = "Great running sneakers", Price = 80m, FSAId = fsa.Id, FSA = fsa, ProfileId = profileId, CreatedAt = now.AddMinutes(-3) },
+            new Listing { Id = Guid.NewGuid(), Title = "Adidas sweatshirt", Description = "Cozy hoodie", Price = 35m, FSAId = fsa.Id, FSA = fsa, ProfileId = profileId, CreatedAt = now.AddMinutes(-2) },
+            new Listing { Id = Guid.NewGuid(), Title = "Converse sneakers", Description = "Classic shoes", Price = 50m, FSAId = fsa.Id, FSA = fsa, ProfileId = profileId, CreatedAt = now.AddMinutes(-1) }
         };
         pgDb.Listings.AddRange(listings);
         await pgDb.SaveChangesAsync();
@@ -486,7 +490,7 @@ public class SearchServiceIntegrationTests
             Id = l.Id.ToString(),
             Title = l.Title,
             Description = l.Description,
-            FSA = l.FSA,
+            FSA = l.FSA == null ? string.Empty : l.FSA.Code,
             CreatedAtTimestamp = new DateTimeOffset(l.CreatedAt).ToUnixTimeSeconds()
         }).ToList();
 

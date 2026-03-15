@@ -34,16 +34,17 @@ public sealed class PostgresFixture : IAsyncLifetime
             .UseNpgsql(connectionString)
             .Options;
 
-        // Delete and recreate AppDbContext database
+        // Delete and recreate AppDbContext database for tests
         using (var db = new AppDbContext(DbOptions))
         {
             await db.Database.EnsureDeletedAsync();
-            await db.Database.MigrateAsync();
+            // Use EnsureCreated in tests to avoid requiring EF migrations during model changes
+            await db.Database.EnsureCreatedAsync();
         }
 
-        // Ensure AuthDbContext schema is created (don't delete since it shares the same database)
+        // Ensure AuthDbContext schema is created for tests
         using var authDb = new AuthDbContext(AuthDbOptions);
-        await authDb.Database.MigrateAsync();
+        await authDb.Database.EnsureCreatedAsync();
     }
 
     public async Task DisposeAsync() => await Container.DisposeAsync();
