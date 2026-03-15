@@ -84,6 +84,7 @@ services:
       - FrontendUrl=http://localhost
       - LOGQUEUESETTINGS__BASEPATH=App_Data
     volumes:
+      - "${GOOGLE_ADC_FILE_PATH:-./gcloud/application_default_credentials.json}:/app/config/gcloud/application_default_credentials.json:ro"
       - app-data:/app/App_Data
     depends_on:
       postgres:
@@ -94,8 +95,7 @@ services:
         condition: service_healthy
     networks:
       - app-net
-    volumes:
-      - "${GOOGLE_ADC_FILE_PATH:-./gcloud/application_default_credentials.json}:/app/config/gcloud/application_default_credentials.json:ro"
+
 
   swapstreet: # Frontend
     build:
