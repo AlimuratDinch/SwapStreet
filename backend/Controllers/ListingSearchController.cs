@@ -55,6 +55,12 @@ public class ListingSearchController : ControllerBase
         // 5. Group images by ListingId for O(1) lookup in the loop
         var imagesByListing = images.ToLookup(img => img.ListingId);
 
+        // 6. Load FSA codes for the listings returned by the search
+        var fsaMap = await _db.Listings.AsNoTracking()
+            .Where(x => listingIds.Contains(x.Id))
+            .Include(x => x.FSA)
+            .ToDictionaryAsync(x => x.Id, x => x.FSA == null ? null : x.FSA.Code);
+
         // 6. Map to the final result
         var mapped = items.Select(l =>
         {
@@ -76,7 +82,7 @@ public class ListingSearchController : ControllerBase
                 l.Listing.Description,
                 l.Listing.Price,
                 l.Listing.Size,
-                FSA = l.Listing.FSA == null ? null : l.Listing.FSA.Code,
+                fsa = fsaMap.TryGetValue(l.Listing.Id, out var fsaCode) ? fsaCode : null,
                 createdAt = l.Listing.CreatedAt,
                 seller = seller == null ? null : new
                 {
@@ -106,7 +112,7 @@ public class ListingSearchController : ControllerBase
     [HttpGet("listing/{id:guid}")]
     public async Task<IActionResult> GetListing([FromRoute] Guid id)
     {
-        var listing = await _db.Listings.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
+        var listing = await _db.Listings.AsNoTracking().Include(l => l.FSA).FirstOrDefaultAsync(l => l.Id == id);
         if (listing == null) return NotFound();
 
         var seller = await _db.Profiles.AsNoTracking().FirstOrDefaultAsync(p => p.Id == listing.ProfileId);
@@ -121,6 +127,7 @@ public class ListingSearchController : ControllerBase
             listing.Title,
             listing.Description,
             listing.Price,
+            fsa = listing.FSA?.Code,
             createdAt = listing.CreatedAt,
             seller = seller == null ? null : new
             {
@@ -160,7 +167,7 @@ public class CatalogController : ControllerBase
         [FromQuery] decimal? minPrice = null,
         [FromQuery] decimal? maxPrice = null)
     {
-        var query = _db.Listings.AsNoTracking();
+        IQueryable<Listing> query = _db.Listings.AsNoTracking().Include(l => l.FSA);
 
         if (minPrice.HasValue) query = query.Where(l => l.Price >= minPrice.Value);
         if (maxPrice.HasValue) query = query.Where(l => l.Price <= maxPrice.Value);
@@ -184,6 +191,7 @@ public class CatalogController : ControllerBase
             item.Listing.Title,
             item.Listing.Description,
             item.Listing.Price,
+            fsa = item.Listing.FSA?.Code,
             // Fallback to a placeholder if no image exists
             imageUrl = _minio.GetPublicFileUrl(item.Image?.ImagePath) ?? "https://images.pexels.com/photos/29562692/pexels-photo-29562692.jpeg?_gl=1*1tn66e8*_ga*MTg0MzQ2NDU3Mi4xNzcxMTcxODUx*_ga_8JE65Q40S6*czE3NzExNzE4NTEkbzEkZzEkdDE3NzExNzE4NTgkajUzJGwwJGgw",
             item.Listing.CreatedAt,
