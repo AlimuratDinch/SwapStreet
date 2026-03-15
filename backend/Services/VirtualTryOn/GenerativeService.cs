@@ -58,22 +58,22 @@ public class GenerativeService : IGenerativeService
                         Parts =
                         {
                             new Part { Text = promptText },
-                            new Part 
-                            { 
-                                InlineData = new Blob 
-                                { 
+                            new Part
+                            {
+                                InlineData = new Blob
+                                {
                                     MimeType = "image/jpeg", 
                                     // SDK handles the byte payload directly
-                                    Data = ByteString.CopyFrom(userImage) 
-                                } 
+                                    Data = ByteString.CopyFrom(userImage)
+                                }
                             },
-                            new Part 
-                            { 
-                                InlineData = new Blob 
-                                { 
-                                    MimeType = "image/jpeg", 
-                                    Data = ByteString.CopyFrom(clothingImage) 
-                                } 
+                            new Part
+                            {
+                                InlineData = new Blob
+                                {
+                                    MimeType = "image/jpeg",
+                                    Data = ByteString.CopyFrom(clothingImage)
+                                }
                             }
                         }
                     }
@@ -84,7 +84,7 @@ public class GenerativeService : IGenerativeService
                     TopK = 32,
                     TopP = 0.8f
                 },
-                SafetySettings = 
+                SafetySettings =
                 {
                     new SafetySetting { Category = HarmCategory.Harassment, Threshold = SafetySetting.Types.HarmBlockThreshold.BlockMediumAndAbove },
                     new SafetySetting { Category = HarmCategory.HateSpeech, Threshold = SafetySetting.Types.HarmBlockThreshold.BlockMediumAndAbove },
@@ -94,13 +94,13 @@ public class GenerativeService : IGenerativeService
             };
 
             _logger.LogInformation("Sending request to Vertex AI: {Endpoint}", endpoint);
-            
+
             // 3. Execute the request
             var response = await predictionServiceClient.GenerateContentAsync(request);
 
             // 4. Extract the generated image from the response payload
             var responsePart = response.Candidates?[0]?.Content?.Parts?[0];
-            
+
             if (responsePart?.InlineData?.Data == null)
             {
                 _logger.LogError("Vertex AI response did not contain inline image data. Raw response text: {Text}", responsePart?.Text);
