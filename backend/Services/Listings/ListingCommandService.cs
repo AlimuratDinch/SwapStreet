@@ -104,16 +104,16 @@ namespace backend.Services
                 throw;
             }
 
-            // 4. Remove from Meilisearch index (best effort)
+            // 4. Publish deletion event (best effort)
             try
             {
-                var index = _meiliClient.Index("listings");
-                await index.DeleteOneDocumentAsync(listingId.ToString(), cancellationToken: cancellationToken);
-                _logger.LogInformation("Removed listing {ListingId} from Meilisearch", listingId);
+                var deleteEvent = JsonSerializer.Serialize(new { listingId });
+                await _topicManager.PublishAsync("listing-deleted", deleteEvent, cancellationToken);
+                _logger.LogInformation("Published listing deletion event for {ListingId}", listingId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to remove listing {ListingId} from Meilisearch", listingId);
+                _logger.LogError(ex, "Failed to publish listing deletion event for {ListingId}", listingId);
             }
         }
 
