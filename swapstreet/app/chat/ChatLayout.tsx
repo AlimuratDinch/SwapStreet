@@ -132,7 +132,7 @@ export default function ChatLayout({
       const listingId = room.listingId ?? null;
       acc[room.id] =
         room.listingImageUrl ??
-        (listingId ? listingImageByListingId[listingId] ?? null : null);
+        (listingId ? (listingImageByListingId[listingId] ?? null) : null);
       return acc;
     },
     {},

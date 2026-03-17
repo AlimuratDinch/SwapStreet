@@ -151,7 +151,11 @@ export default function ChatPanel({
     ((isSeller && !room.closeConfirmedBySeller) ||
       (isBuyer && !room.closeConfirmedByBuyer));
   const canCloseDeal =
-    !!userId && !isDealClosed && !isArchived && !isFrozen && !closeRequestPending;
+    !!userId &&
+    !isDealClosed &&
+    !isArchived &&
+    !isFrozen &&
+    !closeRequestPending;
   const canRate = !!userId && isDealClosed && !hasRated;
 
   const sendMessage = useCallback(async () => {
@@ -213,7 +217,9 @@ export default function ChatPanel({
       setIsConfirmCloseOpen(false);
       setIsActionMenuOpen(false);
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Failed to request close");
+      setActionError(
+        e instanceof Error ? e.message : "Failed to request close",
+      );
     } finally {
       setActionBusy(false);
     }
@@ -300,8 +306,7 @@ export default function ChatPanel({
                 <span>{otherRating}</span>
               </span>
             </div>
-            <div className={styles.chatHeaderSub}
-            >
+            <div className={styles.chatHeaderSub}>
               {otherRoleText && room.listingId ? (
                 <>
                   {otherRoleText}{" "}
