@@ -15,21 +15,56 @@ namespace backend.Services
         private readonly AppDbContext _context;
         private readonly ILogger<ListingCommandService> _logger;
         private readonly IFileStorageService _fileStorageService;
-        private readonly ILocationService _locationService;
 
+        private readonly ILocationService _locationService;
+        private readonly MeilisearchClient _meiliClient;
         private readonly ITopicManager _topicManager;
+
+        public ListingCommandService(AppDbContext context, MeilisearchClient client)
+        {
+            _context = context;
+            _meiliClient = client;
+        }
+
+        public ListingCommandService(
+            AppDbContext context,
+            ILogger<ListingCommandService> logger,
+            ILocationService locationService,
+            MeilisearchClient client)
+        {
+            _context = context;
+            _logger = logger;
+            _locationService = locationService;
+            _meiliClient = client;
+        }
 
         public ListingCommandService(
             AppDbContext context,
             ILogger<ListingCommandService> logger,
             IFileStorageService fileStorageService,
             ILocationService locationService,
+            MeilisearchClient client)
+        {
+            _context = context;
+            _logger = logger;
+            _fileStorageService = fileStorageService;
+            _locationService = locationService;
+            _meiliClient = client;
+        }
+
+        public ListingCommandService(
+            AppDbContext context,
+            ILogger<ListingCommandService> logger,
+            IFileStorageService fileStorageService,
+            ILocationService locationService,
+            MeilisearchClient client,
             ITopicManager topicManager)
         {
             _context = context;
             _logger = logger;
             _fileStorageService = fileStorageService;
             _locationService = locationService;
+            _meiliClient = client;
             _topicManager = topicManager;
         }
 
@@ -104,16 +139,16 @@ namespace backend.Services
                 throw;
             }
 
-            // 4. Publish deletion event (best effort)
+            // 4. Remove from Meilisearch index (best effort)
             try
             {
-                var deleteEvent = JsonSerializer.Serialize(new { listingId });
-                await _topicManager.PublishAsync("listing-deleted", deleteEvent, cancellationToken);
-                _logger.LogInformation("Published listing deletion event for {ListingId}", listingId);
+                var index = _meiliClient.Index("listings");
+                await index.DeleteOneDocumentAsync(listingId.ToString(), cancellationToken: cancellationToken);
+                _logger.LogInformation("Removed listing {ListingId} from Meilisearch", listingId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to publish listing deletion event for {ListingId}", listingId);
+                _logger.LogError(ex, "Failed to remove listing {ListingId} from Meilisearch", listingId);
             }
         }
 
