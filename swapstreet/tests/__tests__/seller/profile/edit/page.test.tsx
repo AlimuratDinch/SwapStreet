@@ -71,7 +71,7 @@ const defaultProfile = {
   firstName: "Jane",
   lastName: "Doe",
   bio: "Hello",
-  fsa: "M5V",
+  fsa: "M5V 3A8",
   cityId: 10,
   cityName: "Toronto",
   provinceCode: "ON",
@@ -197,7 +197,7 @@ describe("EditSellerProfilePage", () => {
     );
   });
 
-  it("shows success screen after form submits successfully", async () => {
+  it("redirects to profile with updated flag after successful submit", async () => {
     render(<EditSellerProfilePage />);
 
     await screen.findByDisplayValue("Jane");
@@ -213,10 +213,10 @@ describe("EditSellerProfilePage", () => {
       .closest("form");
     fireEvent.submit(form!);
 
-    expect(await screen.findByText(/profile updated!/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/taking you back to your profile/i),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockUpdateProfile).toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith("/profile?updated=true");
+    });
   });
 
   it("loads profile and shows form when profile and provinces are loaded", async () => {
@@ -226,12 +226,10 @@ describe("EditSellerProfilePage", () => {
       expect(mockGetMyProfile).toHaveBeenCalledWith("test-token");
     });
 
-    expect(
-      await screen.findByText(/edit your seller profile/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/edit your profile/i)).toBeInTheDocument();
     expect(await screen.findByDisplayValue("Jane")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Doe")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("M5V")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("M5V 3A8")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /save changes/i }),
     ).toBeInTheDocument();
@@ -277,7 +275,7 @@ describe("EditSellerProfilePage", () => {
           expect.objectContaining({
             firstName: "Jane",
             lastName: "Doe",
-            fsa: "M5V",
+            fsa: "M5V 3A8",
             cityId: 10,
           }),
         );

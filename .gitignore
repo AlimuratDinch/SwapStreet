@@ -11,3 +11,9 @@ node_modules/
 # Batch Scripts
 *.bat
 coverage.xml
+
+# Ignore everything in App_Data
+backend/App_Data/**/*
+
+# But don't ignore the directory placeholders
+!backend/App_Data/**/.gitkeep

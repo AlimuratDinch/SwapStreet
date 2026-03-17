@@ -61,7 +61,12 @@ export function CardItem({
           removeWardrobeItem(id);
           setInWardrobe(false);
         } else {
-          addWardrobeItem({ id, title, price, imageUrl: imgSrc ?? null });
+          addWardrobeItem({
+            id,
+            title,
+            price,
+            imageUrl: imgSrc ?? null,
+          });
           setInWardrobe(true);
         }
       }

@@ -1,111 +1,176 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import InfiniteBrowse from "@/app/browse/components/InfiniteBrowse";
-import { useInfiniteSearch } from "@/app/browse/hooks/useInfiniteSearch";
-import { useScrollListener } from "@/app/browse/hooks/useScrollListener";
+import * as api from "@/lib/api/browse";
 
-// 1. Mock the custom hooks
-jest.mock("@/app/browse/hooks/useInfiniteSearch");
-jest.mock("@/app/browse/hooks/useScrollListener");
+// 1. Mock the API Utility
+jest.mock("@/lib/api/browse", () => ({
+  getSearchResults: jest.fn(),
+}));
 
-// 2. Mock CardItem to avoid deep rendering complexity
+// 2. Mock CardItem
 jest.mock("@/app/browse/components/CardItem", () => ({
   CardItem: ({ title }: { title: string }) => (
     <div data-testid="card-item">{title}</div>
   ),
 }));
 
-describe("InfiniteBrowse Component", () => {
-  const mockFetchPage = jest.fn();
+// 3. Robust IntersectionObserver Mock
+let observerCallback: (entries: any[]) => void;
+
+class MockIntersectionObserver {
+  readonly root: Element | null = null;
+  readonly rootMargin: string = "";
+  readonly thresholds: ReadonlyArray<number> = [];
+
+  constructor(callback: (entries: any[]) => void) {
+    observerCallback = callback;
+  }
+
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+  takeRecords = jest.fn(() => []);
+}
+
+Object.defineProperty(window, "IntersectionObserver", {
+  writable: true,
+  configurable: true,
+  value: MockIntersectionObserver,
+});
+
+describe("InfiniteBrowse Component - High Coverage", () => {
+  const mockItems = [{ id: "1", title: "Item 1", price: 10, fsa: "H0H" }];
+
+  const nextBatch = {
+    items: [{ id: "2", title: "Item 2", price: 20, fsa: "J4K" }],
+    nextCursor: "cursor-2",
+    hasNextPage: false,
+  };
+
+  const defaultProps = {
+    initialItems: mockItems,
+    initialCursor: "cursor-1",
+    initialHasNext: true,
+    params: { q: "test" },
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("renders a list of items returned by the hook", () => {
-    // Setup hook to return mock items
-    (useInfiniteSearch as jest.Mock).mockReturnValue({
-      items: [
-        { id: "1", title: "Navy Jacket", price: 50 },
-        { id: "2", title: "Wool Scarf", price: 25 },
-      ],
-      loading: false,
-      hasNext: true,
-      fetchPage: mockFetchPage,
-    });
-
-    render(<InfiniteBrowse />);
-
-    const cards = screen.getAllByTestId("card-item");
-    expect(cards).toHaveLength(2);
-    expect(screen.getByText("Navy Jacket")).toBeInTheDocument();
-    expect(screen.getByText("Wool Scarf")).toBeInTheDocument();
+  it("renders initial items and setup intersection observer", () => {
+    render(<InfiniteBrowse {...defaultProps} />);
+    expect(screen.getByText("Item 1")).toBeInTheDocument();
   });
 
-  it("displays the empty state message when no items exist", () => {
-    (useInfiniteSearch as jest.Mock).mockReturnValue({
-      items: [],
-      loading: false,
-      hasNext: false,
-      fetchPage: mockFetchPage,
+  it("loads more items when intersection occurs", async () => {
+    (api.getSearchResults as jest.Mock).mockResolvedValue(nextBatch);
+
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
     });
 
-    render(<InfiniteBrowse />);
-
-    expect(screen.getByText(/no items available/i)).toBeInTheDocument();
-    expect(screen.queryByText(/loading more items/i)).not.toBeInTheDocument();
-  });
-
-  it("displays the loading status when fetching data", () => {
-    (useInfiniteSearch as jest.Mock).mockReturnValue({
-      items: [{ id: "1", title: "Existing Item", price: 10 }],
-      loading: true,
-      hasNext: true,
-      fetchPage: mockFetchPage,
-    });
-
-    render(<InfiniteBrowse />);
-
-    expect(screen.getByText(/loading more items/i)).toBeInTheDocument();
-    // Should still show existing items while loading more
-    expect(screen.getByText("Existing Item")).toBeInTheDocument();
-  });
-
-  it("initializes the scroll listener with the correct parameters", () => {
-    (useInfiniteSearch as jest.Mock).mockReturnValue({
-      items: [],
-      loading: false,
-      hasNext: true,
-      fetchPage: mockFetchPage,
-    });
-
-    render(<InfiniteBrowse />);
-
-    // useScrollListener should be called with:
-    // 1. A ref (the main element)
-    // 2. The fetchPage function
-    // 3. enabled boolean (hasNext && !loading)
-    expect(useScrollListener).toHaveBeenCalledWith(
-      expect.any(Object), // the ref
-      mockFetchPage,
-      true, // hasNext(true) && !loading(false)
+    expect(api.getSearchResults).toHaveBeenCalledWith(
+      expect.objectContaining({ q: "test", cursor: "cursor-1" }),
     );
+
+    expect(await screen.findByText("Item 2")).toBeInTheDocument();
+    expect(screen.getByText("Item 1")).toBeInTheDocument();
   });
 
-  it("disables the scroll listener when loading is true", () => {
-    (useInfiniteSearch as jest.Mock).mockReturnValue({
-      items: [],
-      loading: true,
-      hasNext: true,
-      fetchPage: mockFetchPage,
+  it("displays 'reached the end' message when hasNext is false", () => {
+    render(
+      <InfiniteBrowse
+        {...defaultProps}
+        initialHasNext={false}
+        initialCursor={null}
+      />,
+    );
+
+    expect(
+      screen.getByText(/You've reached the end of the list/i),
+    ).toBeInTheDocument();
+  });
+
+  it("resets state when initialItems prop changes (Filter Synchronization)", () => {
+    const { rerender } = render(<InfiniteBrowse {...defaultProps} />);
+    expect(screen.getByText("Item 1")).toBeInTheDocument();
+
+    const newItems = [
+      { id: "100", title: "New Result", price: 50, fsa: "A1A" },
+    ];
+
+    rerender(
+      <InfiniteBrowse
+        {...defaultProps}
+        initialItems={newItems}
+        initialCursor="new-cursor"
+      />,
+    );
+
+    expect(screen.getByText("New Result")).toBeInTheDocument();
+    expect(screen.queryByText("Item 1")).not.toBeInTheDocument();
+  });
+
+  it("handles API errors gracefully during loadMore", async () => {
+    console.error = jest.fn();
+    (api.getSearchResults as jest.Mock).mockRejectedValue(
+      new Error("Network Fail"),
+    );
+
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
     });
 
-    render(<InfiniteBrowse />);
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading more/i)).not.toBeInTheDocument();
+    });
 
-    // enabled should be false because loading is true
-    expect(useScrollListener).toHaveBeenCalledWith(
-      expect.any(Object),
-      mockFetchPage,
-      false,
+    expect(console.error).toHaveBeenCalled();
+  });
+
+  it("prevents multiple simultaneous fetches using the isLoading lock", async () => {
+    let resolvePromise: any;
+    const pendingPromise = new Promise((resolve) => {
+      resolvePromise = resolve;
+    });
+    (api.getSearchResults as jest.Mock).mockReturnValue(pendingPromise);
+
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    // Trigger first call
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    // Trigger second call - isLoading is true, so this should return early
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(api.getSearchResults).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolvePromise(nextBatch);
+    });
+  });
+
+  it("renders empty state when items length is zero", () => {
+    render(
+      <InfiniteBrowse
+        {...defaultProps}
+        initialItems={[]}
+        initialHasNext={false}
+        initialCursor={null}
+      />,
     );
+
+    expect(
+      screen.getByText(/No items found matching your criteria/i),
+    ).toBeInTheDocument();
   });
 });

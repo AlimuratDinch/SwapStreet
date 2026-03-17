@@ -7,7 +7,6 @@ public class AppDbContext : DbContext
     // --- DbSets for Core Models ---
     public DbSet<Profile> Profiles { get; set; } = null!;
     public DbSet<Listing> Listings { get; set; } = null!;
-    public DbSet<Tag> Tags { get; set; } = null!;
     public DbSet<WishList> WishLists { get; set; } = null!;
 
     // --- DbSets for Related/Junction Tables ---
@@ -25,10 +24,6 @@ public class AppDbContext : DbContext
     public DbSet<Province> Provinces { get; set; } = null!;
     public DbSet<Fsa> Fsas { get; set; } = null!;
     public DbSet<ArticleType> ArticleTypes { get; set; } = null!;
-    public DbSet<Size> Sizes { get; set; } = null!;
-    public DbSet<Style> Styles { get; set; } = null!;
-    public DbSet<Brand> Brands { get; set; } = null!;
-
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -89,7 +84,7 @@ public class AppDbContext : DbContext
         // Define specific type for FSA
         modelBuilder.Entity<Profile>()
             .Property(p => p.FSA)
-            .HasColumnType("varchar(3)");
+            .HasColumnType("varchar(7)");
 
         // Enum Conversion: ProfileStatusEnum is stored as int
         modelBuilder.Entity<Profile>()
@@ -106,43 +101,7 @@ public class AppDbContext : DbContext
         // =======================================================
 
         modelBuilder.Entity<ArticleType>().ToTable("article_types");
-        modelBuilder.Entity<Style>().ToTable("styles");
         modelBuilder.Entity<Brand>().ToTable("brands");
-
-        modelBuilder.Entity<Size>().ToTable("sizes");
-        modelBuilder.Entity<Size>()
-            .HasOne(s => s.ArticleType)
-            .WithMany()
-            .HasForeignKey(s => s.ArticleTypeId);
-
-        // =======================================================
-        // TAG MODEL
-        // =======================================================
-
-        modelBuilder.Entity<Tag>().ToTable("tags");
-
-        // Enum Conversions: Store all Tag enums as integers
-        modelBuilder.Entity<Tag>()
-            .Property(t => t.Color)
-            .HasConversion<int>();
-
-        modelBuilder.Entity<Tag>()
-            .Property(t => t.Sex)
-            .HasConversion<int>();
-
-        modelBuilder.Entity<Tag>()
-            .Property(t => t.Condition)
-            .HasConversion<int>();
-
-        // Bit Vector Conversion: MaterialEnum is stored as int
-        modelBuilder.Entity<Tag>()
-            .Property(t => t.Material)
-            .HasConversion<int>();
-
-        modelBuilder.Entity<Tag>()
-            .Property(l => l.UpdatedAt)
-            .HasDefaultValueSql("NOW()")
-            .ValueGeneratedOnAddOrUpdate(); // database sets UpdatedAt on insert/update
 
         // =======================================================
         // LISTING MODELS
@@ -152,6 +111,21 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Listing>()
             .Property(l => l.Price)
             .HasColumnType("decimal(10,2)");
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Size)
+            .HasConversion<string>();
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Brand)
+            .HasConversion<string>();
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Category)
+            .HasConversion<string>();
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Condition)
+            .HasConversion<string>();
+        modelBuilder.Entity<Listing>()
+            .Property(l => l.Colour)
+            .HasConversion<string>();
         modelBuilder.Entity<Listing>(entity =>
             {
                 // Adds the computed column for text-search, will be recomputed on insert/update.
@@ -172,11 +146,6 @@ public class AppDbContext : DbContext
             .HasOne(l => l.Profile) // Seller
             .WithMany()
             .HasForeignKey(l => l.ProfileId);
-
-        modelBuilder.Entity<Listing>()
-            .HasOne(l => l.Tag) // Characteristics
-            .WithMany()
-            .HasForeignKey(l => l.TagId);
 
         // =======================================================
         // CHATTING

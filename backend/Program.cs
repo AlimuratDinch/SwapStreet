@@ -22,6 +22,8 @@ using System.Text.Json;
 using backend.Configuration;
 using backend.Extensions;
 using Meilisearch;
+using backend.Infrastructure;
+using backend.Infrastructure.LogQueue;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,6 +70,7 @@ ConfigureSwagger(builder);
 // ===============================================================================
 
 RegisterServices(builder);
+ConfigureLogQueue(builder);
 
 // ===============================================================================
 // BUILD & INITIALIZE
@@ -108,7 +111,6 @@ if (!builder.Environment.IsTest())
     await InitializeMeilisearchIndex(app);
 
 }
-
 // ===============================================================================
 // MIDDLEWARE PIPELINE
 // ===============================================================================
@@ -184,6 +186,50 @@ static void ConfigureDatabase(WebApplicationBuilder builder)
     builder.Services.AddDbContext<AuthDbContext>(options =>
         options.UseNpgsql(connectionString));
 }
+
+//----------------------------------------------------------------------------
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$  NEW LOGQUEUE $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+//----------------------------------------------------------------------------
+static void ConfigureLogQueue(WebApplicationBuilder builder)
+{
+    // 1. Pull the path exactly as defined in docker-compose.yml
+    // This maps to LOGQUEUESETTINGS__BASEPATH
+    var basePath = builder.Configuration["LogQueueSettings:BasePath"] ?? "App_Data";
+
+    // 2. Register the Signal
+    builder.Services.AddSingleton<TopicSignal>();
+
+    // 3. Register the OffsetManager using the raw BasePath
+    builder.Services.AddSingleton<OffsetManager>(sp =>
+    {
+        if (!Directory.Exists(basePath)) Directory.CreateDirectory(basePath);
+        return new OffsetManager(basePath);
+    });
+
+    // 4. Register the ITopicManager using the raw BasePath
+    builder.Services.AddSingleton<ITopicManager>(sp =>
+    {
+        var signal = sp.GetRequiredService<TopicSignal>();
+        var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+        var basePath = builder.Configuration["LogQueueSettings:BasePath"] ?? "App_Data";
+
+        var manager = TopicManager.InitializeAsync(basePath, signal, loggerFactory).GetAwaiter().GetResult();
+
+        // FORCE THE CREATION: If it doesn't exist, make it.
+        if (manager.GetTopic("listings") == null)
+        {
+            int maxFileSize = 64 * 1024 * 1024; // 64MB in bytes
+                                                // This is what physically creates /listings/state.json and /listings/listings-0/
+            manager.CreateTopic("listings", 1, true, maxFileSize, TimeSpan.FromMinutes(20)).GetAwaiter().GetResult();
+        }
+
+        return manager;
+    });
+
+    // 5. Add the Worker
+    builder.Services.AddHostedService<MeiliSyncWorker>();
+}
+//----------------------------------------------------------------------------
 
 static void ConfigureMinio(WebApplicationBuilder builder)
 {
@@ -316,6 +362,7 @@ static void ConfigureControllers(WebApplicationBuilder builder)
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
             options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         });
 
     // Add SignalR
@@ -472,9 +519,9 @@ static async Task InitializeMeilisearchIndex(WebApplication app)
     var client = scope.ServiceProvider.GetRequiredService<MeilisearchClient>();
     var index = client.Index("listings");
 
-    await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa" });
+    await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa", "size", "brand", "category", "colour", "condition" });
     await index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
-    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa" });
+    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa", "size", "brand", "category", "colour", "condition" });
 
     await index.UpdateRankingRulesAsync(new[] {
         "words",
