@@ -147,7 +147,6 @@ namespace backend.Services
                     Brand = listing.Brand,
                     Category = listing.Category,
                     Condition = listing.Condition,
-                    Colour = listing.Colour,
                     FSA = listing.FSA,
                     CreatedAtTimestamp = new DateTimeOffset(listing.CreatedAt).ToUnixTimeSeconds(),
                     _geo = latlong
