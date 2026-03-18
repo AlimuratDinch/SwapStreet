@@ -1,23 +1,97 @@
 "use client";
 
+import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, MapPin, Search } from "lucide-react";
+import { Filter, MapPin, Search, Tag, Layers, Star, Box } from "lucide-react";
+
+// --- Shadcn UI Imports ---
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// --- Custom Components ---
 import { SearchBar } from "./SearchBar";
 import { LocationFilterModal } from "./LocationFilterModal";
 import { Portal } from "./Portal";
+
+// --- Fix: Re-type shadcn Select sub-components to accept children ---
+const SafeSelectTrigger = SelectTrigger as React.ComponentType<
+  React.ComponentPropsWithoutRef<typeof SelectTrigger> & {
+    children?: React.ReactNode;
+    className?: string;
+  }
+>;
+
+const SafeSelectContent = SelectContent as React.ComponentType<
+  React.ComponentPropsWithoutRef<typeof SelectContent> & {
+    children?: React.ReactNode;
+  }
+>;
+
+const SafeSelectItem = SelectItem as React.ComponentType<
+  React.ComponentPropsWithoutRef<typeof SelectItem> & {
+    children?: React.ReactNode;
+    key?: string;
+    value: string;
+  }
+>;
+
+// --- Constant Data (Matched to C# Enums) ---
+const CATEGORIES = [
+  "Bottoms",
+  "Tops",
+  "Footwear",
+  "Accessory",
+  "Outerwear",
+  "Formalwear",
+  "Sportswear",
+];
+const CONDITIONS = [
+  "New",
+  "LikeNew",
+  "UsedExcellent",
+  "UsedGood",
+  "UsedFair",
+];
+const SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "NA"];
+const BRANDS = [
+  "Nike",
+  "HandM",
+  "Zara",
+  "Addidas",
+  "Carhartt",
+  "Dickies",
+  "Puma",
+  "Gap",
+  "Vans",
+  "NewBalance",
+  "Lululemon",
+  "Other",
+];
+
+const plurals: Record<string, string> = {
+  Category: "Categories",
+  Brand: "Brands",
+  Condition: "Conditions",
+  Size: "Sizes",
+};
 
 interface LocationResult {
   lat: number;
@@ -31,13 +105,23 @@ export function BrowseSidebar() {
   const isInitialized = useRef(false);
   const { setOpen, state } = useSidebar();
 
+  // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState("");
-  const [showLocationModal, setShowLocationModal] = useState(false);
   const [location, setLocation] = useState<LocationResult | null>(null);
+  const [category, setCategory] = useState<string>("all");
+  const [condition, setCondition] = useState<string>("all");
+  const [size, setSize] = useState<string>("all");
+  const [brand, setBrand] = useState<string>("all");
+
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   // 1. Initialize state from URL on mount
   useEffect(() => {
     setSearchQuery(searchParams.get("q") || "");
+    setCategory(searchParams.get("category") || "all");
+    setCondition(searchParams.get("condition") || "all");
+    setSize(searchParams.get("size") || "all");
+    setBrand(searchParams.get("brand") || "all");
 
     const lat = searchParams.get("lat");
     const lng = searchParams.get("lng");
@@ -54,12 +138,17 @@ export function BrowseSidebar() {
     isInitialized.current = true;
   }, [searchParams]);
 
-  // 2. Sync state to URL
+  // 2. Sync state to URL when filters change
   useEffect(() => {
     if (!isInitialized.current) return;
 
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
+    if (category !== "all") params.set("category", category);
+    if (condition !== "all") params.set("condition", condition);
+    if (size !== "all") params.set("size", size);
+    if (brand !== "all") params.set("brand", brand);
+
     if (location) {
       params.set("lat", location.lat.toString());
       params.set("lng", location.lng.toString());
@@ -70,17 +159,21 @@ export function BrowseSidebar() {
     router.replace(`/browse${queryString ? `?${queryString}` : ""}`, {
       scroll: false,
     });
-  }, [searchQuery, location, router]);
+  }, [searchQuery, location, category, condition, size, brand, router]);
 
   const handleClear = () => {
     setSearchQuery("");
     setLocation(null);
+    setCategory("all");
+    setCondition("all");
+    setSize("all");
+    setBrand("all");
   };
 
   return (
     <>
       <ShadcnSidebar collapsible="icon" side="left" className="border-r">
-        <SidebarHeader className="pt-20">
+        <SidebarHeader className="pt-4">
           <div className="px-2 group-data-[collapsible=icon]:px-0">
             {/* Search Input - Hidden when collapsed */}
             <div className="group-data-[collapsible=icon]:hidden">
@@ -100,32 +193,33 @@ export function BrowseSidebar() {
           </div>
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarContent className="px-2">
           <SidebarGroup>
-            <div className="flex items-center justify-between px-2 mb-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-              <SidebarGroupLabel className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+            <div className="flex items-center justify-between px-2 mb-4 group-data-[collapsible=icon]:hidden">
+              <div className="flex items-center gap-2 text-sm font-semibold">
                 <Filter className="h-4 w-4" />
                 <span>Filters</span>
-              </SidebarGroupLabel>
+              </div>
               <button
                 onClick={handleClear}
-                className="text-xs text-gray-400 hover:text-teal-500 transition-colors group-data-[collapsible=icon]:hidden"
+                className="text-xs text-teal-600 hover:text-teal-700 font-medium"
               >
-                Clear
+                Clear All
               </button>
             </div>
 
             <SidebarGroupContent>
-              <SidebarMenu>
-                {/* Location Filter */}
+              <SidebarMenu className="gap-4">
+
+                {/* Location Button */}
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => setShowLocationModal(true)}
                     tooltip="Location"
-                    className="w-full justify-between"
+                    className="w-full justify-between border bg-secondary/50"
                   >
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
+                      <MapPin className="h-4 w-4 text-teal-600" />
                       <span className="group-data-[collapsible=icon]:hidden">
                         Location
                       </span>
@@ -135,13 +229,46 @@ export function BrowseSidebar() {
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                {/* Filter Dropdowns */}
+                <FilterSelect
+                  label="Category"
+                  icon={<Layers className="h-3.5 w-3.5" />}
+                  value={category}
+                  onValueChange={setCategory}
+                  options={CATEGORIES}
+                />
+
+                <FilterSelect
+                  label="Brand"
+                  icon={<Tag className="h-3.5 w-3.5" />}
+                  value={brand}
+                  onValueChange={setBrand}
+                  options={BRANDS}
+                />
+
+                <FilterSelect
+                  label="Condition"
+                  icon={<Star className="h-3.5 w-3.5" />}
+                  value={condition}
+                  onValueChange={setCondition}
+                  options={CONDITIONS}
+                />
+
+                <FilterSelect
+                  label="Size"
+                  icon={<Box className="h-3.5 w-3.5" />}
+                  value={size}
+                  onValueChange={setSize}
+                  options={SIZES}
+                />
+
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
       </ShadcnSidebar>
 
-      {/* Modals */}
       {showLocationModal && (
         <Portal>
           <LocationFilterModal
@@ -157,5 +284,46 @@ export function BrowseSidebar() {
   );
 }
 
-// Export as Sidebar for backward compatibility
+// --- FilterSelect Helper Component ---
+interface FilterSelectProps {
+  label: string;
+  icon: React.ReactNode;
+  value: string;
+  onValueChange: (val: string) => void;
+  options: string[];
+}
+
+function FilterSelect({
+  label,
+  icon,
+  value,
+  onValueChange,
+  options,
+}: FilterSelectProps) {
+  return (
+    <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+      <div className="px-2 space-y-1.5">
+        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+          {icon}
+          <span>{label}</span>
+        </label>
+        <Select value={value} onValueChange={onValueChange}>
+          <SafeSelectTrigger className="h-9 w-full bg-background border-input focus:ring-1 focus:ring-teal-500">
+            <SelectValue placeholder={`Select ${label}`} />
+          </SafeSelectTrigger>
+          <SafeSelectContent>
+            <SafeSelectItem value="all">All {plurals[label] ?? label}</SafeSelectItem>
+            {options.map((opt) => (
+              <SafeSelectItem key={opt} value={opt}>
+                {/* Visual cleanup: "HandM" -> "H and M", "UsedExcellent" -> "Used Excellent" */}
+                {opt.replace(/([A-Z])/g, " $1").trim()}
+              </SafeSelectItem>
+            ))}
+          </SafeSelectContent>
+        </Select>
+      </div>
+    </SidebarMenuItem>
+  );
+}
+
 export const Sidebar = BrowseSidebar;

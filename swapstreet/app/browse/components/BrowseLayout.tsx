@@ -16,7 +16,7 @@ interface BrowseLayoutProps {
   initialItems: Item[];
   initialCursor: string | null;
   initialHasNext: boolean;
-  params: SearchParams; // 1. Accept real params from the Server Component
+  params: SearchParams;
 }
 
 export function BrowseLayout({
@@ -26,24 +26,24 @@ export function BrowseLayout({
   params,
 }: BrowseLayoutProps) {
   return (
-    <SidebarProvider>
+    // pt-16 pushes the entire sidebar layout below the fixed navbar (adjust if your navbar is taller/shorter)
+    <SidebarProvider className="pt-16 min-h-[calc(100vh-4rem)] ">
       <BrowseSidebar />
-      {/* 2. SidebarInset needs h-screen to establish the viewport height */}
-      <SidebarInset className="flex flex-col h-screen overflow-hidden">
-        {/* Sticky/Fixed Header Area */}
-        <div className="flex items-center gap-2 border-b p-2 bg-white/80 backdrop-blur-sm z-10">
-          <SidebarTrigger />
-          <h1 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-            Browse Listings
-          </h1>
-        </div>
 
-        {/* 3. The Scroll Container */}
-        {/* We give this flex-1 and overflow-hidden so InfiniteBrowse can manage its own scroll internally */}
+      <SidebarInset className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+        {/* Sticky header with trigger — sits just below the navbar */}
+<div className="sticky top-16 z-10 flex items-center gap-2 border-b px-3 py-2 bg-white/80 backdrop-blur-sm">
+  <SidebarTrigger className="h-8 w-8 flex items-center justify-center border rounded-md hover:bg-gray-100 transition-colors" />
+  <h1 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+    Browse Listings
+  </h1>
+</div>
+
+        {/* Scroll container */}
         <div className="flex-1 relative overflow-hidden">
           <Suspense fallback={<BrowseSkeleton />}>
             <InfiniteBrowse
-              key={JSON.stringify(params)} // 4. Key reset: Forces fresh state when filters change
+              key={JSON.stringify(params)}
               initialItems={initialItems}
               initialCursor={initialCursor}
               initialHasNext={initialHasNext}
@@ -52,14 +52,12 @@ export function BrowseLayout({
           </Suspense>
         </div>
       </SidebarInset>
+
       <CreateListingFAB />
     </SidebarProvider>
   );
 }
 
-/** * Keep the skeleton here, but ensure it matches the
- * grid layout of the actual InfiniteBrowse component
- **/
 export function BrowseSkeleton() {
   return (
     <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
