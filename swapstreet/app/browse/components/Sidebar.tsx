@@ -63,13 +63,7 @@ const CATEGORIES = [
   "Formalwear",
   "Sportswear",
 ];
-const CONDITIONS = [
-  "New",
-  "LikeNew",
-  "UsedExcellent",
-  "UsedGood",
-  "UsedFair",
-];
+const CONDITIONS = ["New", "LikeNew", "UsedExcellent", "UsedGood", "UsedFair"];
 const SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "NA"];
 const BRANDS = [
   "Nike",
@@ -210,7 +204,6 @@ export function BrowseSidebar() {
 
             <SidebarGroupContent>
               <SidebarMenu className="gap-4">
-
                 {/* Location Button */}
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -262,7 +255,6 @@ export function BrowseSidebar() {
                   onValueChange={setSize}
                   options={SIZES}
                 />
-
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -312,7 +304,9 @@ function FilterSelect({
             <SelectValue placeholder={`Select ${label}`} />
           </SafeSelectTrigger>
           <SafeSelectContent>
-            <SafeSelectItem value="all">All {plurals[label] ?? label}</SafeSelectItem>
+            <SafeSelectItem value="all">
+              All {plurals[label] ?? label}
+            </SafeSelectItem>
             {options.map((opt) => (
               <SafeSelectItem key={opt} value={opt}>
                 {/* Visual cleanup: "HandM" -> "H and M", "UsedExcellent" -> "Used Excellent" */}

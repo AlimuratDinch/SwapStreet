@@ -25,14 +25,20 @@ function BrowseContent() {
 
   const currentParams: SearchParams = useMemo(
     () => ({
-      q:         searchParams.get("q")         || undefined,
-      category:  searchParams.get("category")  || undefined,
+      q: searchParams.get("q") || undefined,
+      category: searchParams.get("category") || undefined,
       condition: searchParams.get("condition") || undefined,
-      size:      searchParams.get("size")      || undefined,
-      brand:     searchParams.get("brand")     || undefined,
-      lat:       searchParams.get("lat")       ? parseFloat(searchParams.get("lat")!)       : undefined,
-      lng:       searchParams.get("lng")       ? parseFloat(searchParams.get("lng")!)       : undefined,
-      radiusKm:  searchParams.get("radiusKm")  ? parseFloat(searchParams.get("radiusKm")!)  : undefined,
+      size: searchParams.get("size") || undefined,
+      brand: searchParams.get("brand") || undefined,
+      lat: searchParams.get("lat")
+        ? parseFloat(searchParams.get("lat")!)
+        : undefined,
+      lng: searchParams.get("lng")
+        ? parseFloat(searchParams.get("lng")!)
+        : undefined,
+      radiusKm: searchParams.get("radiusKm")
+        ? parseFloat(searchParams.get("radiusKm")!)
+        : undefined,
     }),
     [searchParams],
   );
@@ -53,7 +59,9 @@ function BrowseContent() {
     }
 
     fetchInitial();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [currentParams]);
 
   return (

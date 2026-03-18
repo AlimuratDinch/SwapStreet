@@ -30,7 +30,7 @@ public class ListingSearchController : ControllerBase
         // 1. Sanitize input and cap the limit
         var cappedLimit = Math.Min(request.PageSize > 0 ? request.PageSize : 18, 50);
         var searchTerms = request.Query ?? string.Empty;
- 
+
         // 2. Call the search service with all filters
         var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(
             searchTerms,
@@ -44,29 +44,29 @@ public class ListingSearchController : ControllerBase
             request.Lng,
             request.RadiusKm
         );
- 
+
         // 3. Extract IDs for batch hydration
         var listingIds = items.Select(i => i.Listing.Id).ToList();
         var profileIds = items.Select(i => i.Listing.ProfileId).Distinct().ToList();
- 
+
         // 4. Batch Query Profiles and Images
         var profiles = await _db.Profiles.AsNoTracking()
             .Where(p => profileIds.Contains(p.Id))
             .ToListAsync();
- 
+
         var images = await _db.ListingImages.AsNoTracking()
             .Where(li => listingIds.Contains(li.ListingId))
             .OrderBy(li => li.DisplayOrder)
             .ToListAsync();
- 
+
         // 5. Group images by ListingId for O(1) lookup in the loop
         var imagesByListing = images.ToLookup(img => img.ListingId);
- 
+
         // 6. Map to the final result
         var mapped = items.Select(l =>
         {
             var seller = profiles.FirstOrDefault(p => p.Id == l.Listing.ProfileId);
- 
+
             var listingImages = imagesByListing[l.Listing.Id].Select(img => new
             {
                 img.Id,
@@ -74,7 +74,7 @@ public class ListingSearchController : ControllerBase
                 img.DisplayOrder,
                 img.ForTryon
             }).ToList();
- 
+
             return new
             {
                 l.Listing.Id,
@@ -103,7 +103,7 @@ public class ListingSearchController : ControllerBase
                 images = listingImages
             };
         }).ToList();
- 
+
         return Ok(new
         {
             items = mapped,
@@ -112,19 +112,19 @@ public class ListingSearchController : ControllerBase
             hasNextPage
         });
     }
- 
+
     [HttpGet("listing/{id:guid}")]
     public async Task<IActionResult> GetListing([FromRoute] Guid id)
     {
         var listing = await _db.Listings.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
         if (listing == null) return NotFound();
- 
+
         var seller = await _db.Profiles.AsNoTracking().FirstOrDefaultAsync(p => p.Id == listing.ProfileId);
         var images = await _db.ListingImages.AsNoTracking()
             .Where(li => li.ListingId == listing.Id)
             .OrderBy(li => li.DisplayOrder)
             .ToListAsync();
- 
+
         var mapped = new
         {
             listing.Id,
@@ -147,7 +147,7 @@ public class ListingSearchController : ControllerBase
                 img.DisplayOrder
             })
         };
- 
+
         return Ok(mapped);
     }
 }

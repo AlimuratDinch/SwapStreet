@@ -32,12 +32,12 @@ export function BrowseLayout({
 
       <SidebarInset className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
         {/* Sticky header with trigger — sits just below the navbar */}
-<div className="sticky top-16 z-10 flex items-center gap-2 border-b px-3 py-2 bg-white/80 backdrop-blur-sm">
-  <SidebarTrigger className="h-8 w-8 flex items-center justify-center border rounded-md hover:bg-gray-100 transition-colors" />
-  <h1 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-    Browse Listings
-  </h1>
-</div>
+        <div className="sticky top-16 z-10 flex items-center gap-2 border-b px-3 py-2 bg-white/80 backdrop-blur-sm">
+          <SidebarTrigger className="h-8 w-8 flex items-center justify-center border rounded-md hover:bg-gray-100 transition-colors" />
+          <h1 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+            Browse Listings
+          </h1>
+        </div>
 
         {/* Scroll container */}
         <div className="flex-1 relative overflow-hidden">

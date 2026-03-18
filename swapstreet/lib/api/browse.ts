@@ -19,14 +19,14 @@ export async function getSearchResults(params: SearchParams) {
   try {
     const q = new URLSearchParams();
 
-    if (params.q)        q.set("Query", params.q);
-    if (params.cursor)   q.set("Cursor", params.cursor);
+    if (params.q) q.set("Query", params.q);
+    if (params.cursor) q.set("Cursor", params.cursor);
     if (params.category) q.set("Category", params.category);
     if (params.condition) q.set("Condition", params.condition);
-    if (params.size)     q.set("Size", params.size);
-    if (params.brand)    q.set("Brand", params.brand);
-    if (params.lat != null)      q.set("Lat", params.lat.toString());
-    if (params.lng != null)      q.set("Lng", params.lng.toString());
+    if (params.size) q.set("Size", params.size);
+    if (params.brand) q.set("Brand", params.brand);
+    if (params.lat != null) q.set("Lat", params.lat.toString());
+    if (params.lng != null) q.set("Lng", params.lng.toString());
     if (params.radiusKm != null) q.set("RadiusKm", params.radiusKm.toString());
 
     q.set("PageSize", "18");

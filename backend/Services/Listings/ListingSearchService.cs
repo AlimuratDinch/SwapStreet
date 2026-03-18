@@ -20,57 +20,57 @@ public class ListingSearchService : IListingSearchService
         _meiliClient = meiliClient;
     }
 
-public async Task<(IReadOnlyList<ListingWithImagesDto> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
-    string? query,
-    int pageSize,
-    string? cursor,
-    string? category = null,
-    string? condition = null,
-    string? size = null,
-    string? brand = null,
-    double? lat = null,
-    double? lng = null,
-    double? radiusKm = null)
-{
-    pageSize = Math.Clamp(pageSize, 1, 100);
-    var index = _meiliClient.Index("listings");
-
-    int offset = 0;
-    if (int.TryParse(cursor, out var decodedOffset))
-        offset = decodedOffset;
-
-    // Build filter string for Meilisearch
-    var filters = new List<string>();
-
-    if (!string.IsNullOrWhiteSpace(category))
-        filters.Add($"category = \"{category}\"");
-
-    if (!string.IsNullOrWhiteSpace(condition))
-        filters.Add($"condition = \"{condition}\"");
-
-    if (!string.IsNullOrWhiteSpace(size))
-        filters.Add($"size = \"{size}\"");
-
-    if (!string.IsNullOrWhiteSpace(brand))
-        filters.Add($"brand = \"{brand}\"");
-
-    // Location filter using Meilisearch geo filtering
-    if (lat.HasValue && lng.HasValue && radiusKm.HasValue)
-        filters.Add($"_geoRadius({lat.Value}, {lng.Value}, {radiusKm.Value * 1000})");
-
-    var searchOptions = new SearchQuery
+    public async Task<(IReadOnlyList<ListingWithImagesDto> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
+        string? query,
+        int pageSize,
+        string? cursor,
+        string? category = null,
+        string? condition = null,
+        string? size = null,
+        string? brand = null,
+        double? lat = null,
+        double? lng = null,
+        double? radiusKm = null)
     {
-        Limit = pageSize + 1,
-        Offset = offset,
-        Filter = filters.Count > 0 ? string.Join(" AND ", filters) : null,
-        Sort = string.IsNullOrWhiteSpace(query)
-            ? new[] { "createdAtTimestamp:desc" }
-            : null
-    };
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var index = _meiliClient.Index("listings");
 
-    
+        int offset = 0;
+        if (int.TryParse(cursor, out var decodedOffset))
+            offset = decodedOffset;
 
-    var searchResponse = await index.SearchAsync<ListingSearchDto>(query ?? "", searchOptions);
+        // Build filter string for Meilisearch
+        var filters = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(category))
+            filters.Add($"category = \"{category}\"");
+
+        if (!string.IsNullOrWhiteSpace(condition))
+            filters.Add($"condition = \"{condition}\"");
+
+        if (!string.IsNullOrWhiteSpace(size))
+            filters.Add($"size = \"{size}\"");
+
+        if (!string.IsNullOrWhiteSpace(brand))
+            filters.Add($"brand = \"{brand}\"");
+
+        // Location filter using Meilisearch geo filtering
+        if (lat.HasValue && lng.HasValue && radiusKm.HasValue)
+            filters.Add($"_geoRadius({lat.Value}, {lng.Value}, {radiusKm.Value * 1000})");
+
+        var searchOptions = new SearchQuery
+        {
+            Limit = pageSize + 1,
+            Offset = offset,
+            Filter = filters.Count > 0 ? string.Join(" AND ", filters) : null,
+            Sort = string.IsNullOrWhiteSpace(query)
+                ? new[] { "createdAtTimestamp:desc" }
+                : null
+        };
+
+
+
+        var searchResponse = await index.SearchAsync<ListingSearchDto>(query ?? "", searchOptions);
 
         var hits = searchResponse.Hits.ToList();
         var hasNextPage = hits.Count > pageSize;
