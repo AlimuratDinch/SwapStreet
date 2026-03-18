@@ -186,7 +186,7 @@ function ProfileButton() {
             },
             {
               label: "Settings & Preferences",
-              href: "/settings",
+              href: "/profile/settings",
               icon: <Settings className="w-4 h-4" />,
             },
           ].map(({ label, href, icon }) => (
