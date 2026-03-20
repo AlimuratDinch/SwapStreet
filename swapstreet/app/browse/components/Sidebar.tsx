@@ -3,7 +3,17 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, MapPin, Search, Tag, Layers, Star, Box, Palette, PiggyBank } from "lucide-react";
+import {
+  Filter,
+  MapPin,
+  Search,
+  Tag,
+  Layers,
+  Star,
+  Box,
+  Palette,
+  PiggyBank,
+} from "lucide-react";
 
 // --- Shadcn UI Imports ---
 import {
@@ -63,8 +73,7 @@ const CATEGORIES = [
   "Formalwear",
   "Sportswear",
 ];
-const COLOURS = 
-[
+const COLOURS = [
   // Basic Colors
   "Black",
   "White",
@@ -85,7 +94,7 @@ const COLOURS =
 
   // Patterns / Other
   "Clear",
-  "MultiColor"
+  "MultiColor",
 ];
 const CONDITIONS = ["New", "LikeNew", "UsedExcellent", "UsedGood", "UsedFair"];
 const SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "NA"];
@@ -144,8 +153,16 @@ export function BrowseSidebar() {
     setSize(searchParams.get("size") || "all");
     setBrand(searchParams.get("brand") || "all");
     setColour(searchParams.get("colour") || "all");
-    setMaxPrice(searchParams.get("maxPrice") ? parseFloat(searchParams.get("maxPrice")!) : null);
-    setMinPrice(searchParams.get("minPrice") ? parseFloat(searchParams.get("minPrice")!) : null);
+    setMaxPrice(
+      searchParams.get("maxPrice")
+        ? parseFloat(searchParams.get("maxPrice")!)
+        : null,
+    );
+    setMinPrice(
+      searchParams.get("minPrice")
+        ? parseFloat(searchParams.get("minPrice")!)
+        : null,
+    );
 
     const lat = searchParams.get("lat");
     const lng = searchParams.get("lng");
@@ -186,7 +203,18 @@ export function BrowseSidebar() {
     router.replace(`/browse${queryString ? `?${queryString}` : ""}`, {
       scroll: false,
     });
-  }, [searchQuery, location, category, condition, size, brand, colour, maxPrice, minPrice, router]);
+  }, [
+    searchQuery,
+    location,
+    category,
+    condition,
+    size,
+    brand,
+    colour,
+    maxPrice,
+    minPrice,
+    router,
+  ]);
 
   const handleClear = () => {
     setSearchQuery("");
@@ -307,14 +335,18 @@ export function BrowseSidebar() {
                       <PiggyBank className="h-3.5 w-3.5" />
                       <span>Price Range</span>
                     </label>
-                    
+
                     {/* Min Price Input */}
                     <div>
                       <input
                         type="number"
                         placeholder="Min price"
                         value={minPrice ?? ""}
-                        onChange={(e) => setMinPrice(e.target.value ? parseFloat(e.target.value) : null)}
+                        onChange={(e) =>
+                          setMinPrice(
+                            e.target.value ? parseFloat(e.target.value) : null,
+                          )
+                        }
                         className="w-full h-9 px-3 text-sm border rounded bg-background border-input focus:ring-1 focus:ring-teal-500"
                       />
                     </div>
@@ -325,7 +357,11 @@ export function BrowseSidebar() {
                         type="number"
                         placeholder="Max price"
                         value={maxPrice ?? ""}
-                        onChange={(e) => setMaxPrice(e.target.value ? parseFloat(e.target.value) : null)}
+                        onChange={(e) =>
+                          setMaxPrice(
+                            e.target.value ? parseFloat(e.target.value) : null,
+                          )
+                        }
                         className="w-full h-9 px-3 text-sm border rounded bg-background border-input focus:ring-1 focus:ring-teal-500"
                       />
                     </div>
