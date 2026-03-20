@@ -42,9 +42,6 @@ jest.mock("@/components/ui/select", () => ({
   SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
 }));
 
-// Mock Radix UI (imported directly in Sidebar.tsx)
-jest.mock("@radix-ui/react-select", () => ({}));
-
 jest.mock("@/app/browse/components/Portal", () => ({
   Portal: ({ children }: any) => (
     <div data-testid="portal-root">{children}</div>
