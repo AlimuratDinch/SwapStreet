@@ -4,6 +4,7 @@ using backend.Contracts;
 using backend.DTOs;
 using backend.DTOs.Search;
 using Meilisearch;
+using System.Globalization;
 
 namespace backend.Services;
 
@@ -29,6 +30,8 @@ public class ListingSearchService : IListingSearchService
         string? colour = null,
         string? size = null,
         string? brand = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
         double? lat = null,
         double? lng = null,
         double? radiusKm = null)
@@ -57,6 +60,15 @@ public class ListingSearchService : IListingSearchService
 
         if (!string.IsNullOrWhiteSpace(brand))
             filters.Add($"brand = \"{brand}\"");
+
+        if (minPrice.HasValue && maxPrice.HasValue && minPrice > maxPrice)
+            (minPrice, maxPrice) = (maxPrice, minPrice);
+
+        if (minPrice.HasValue)
+            filters.Add($"price >= {minPrice.Value.ToString(CultureInfo.InvariantCulture)}");
+
+        if (maxPrice.HasValue)
+            filters.Add($"price <= {maxPrice.Value.ToString(CultureInfo.InvariantCulture)}");
 
         // Location filter using Meilisearch geo filtering
         if (lat.HasValue && lng.HasValue && radiusKm.HasValue)

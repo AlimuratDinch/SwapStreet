@@ -14,6 +14,8 @@ public class SearchRequestDto
     public string? Size { get; set; }
     public string? Brand { get; set; }
     public string? Colour { get; set; }
+    public decimal? maxPrice { get; set; }
+    public decimal? minPrice { get; set; }
 
     // Location
     public double? Lat { get; set; }
