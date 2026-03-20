@@ -6,6 +6,7 @@ export type SearchParams = {
   condition?: string;
   size?: string;
   brand?: string;
+  colour?: string;
   lat?: number;
   lng?: number;
   radiusKm?: number;
@@ -25,6 +26,7 @@ export async function getSearchResults(params: SearchParams) {
     if (params.condition) q.set("Condition", params.condition);
     if (params.size) q.set("Size", params.size);
     if (params.brand) q.set("Brand", params.brand);
+    if (params.colour) q.set("Colour", params.colour);
     if (params.lat != null) q.set("Lat", params.lat.toString());
     if (params.lng != null) q.set("Lng", params.lng.toString());
     if (params.radiusKm != null) q.set("RadiusKm", params.radiusKm.toString());

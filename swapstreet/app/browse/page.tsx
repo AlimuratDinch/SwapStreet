@@ -30,6 +30,7 @@ function BrowseContent() {
       condition: searchParams.get("condition") || undefined,
       size: searchParams.get("size") || undefined,
       brand: searchParams.get("brand") || undefined,
+      colour: searchParams.get("colour") || undefined,
       lat: searchParams.get("lat")
         ? parseFloat(searchParams.get("lat")!)
         : undefined,

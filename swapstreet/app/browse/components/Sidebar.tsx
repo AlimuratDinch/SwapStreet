@@ -17,7 +17,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import * as SelectPrimitive from "@radix-ui/react-select";
 import {
   Select,
   SelectContent,
@@ -63,6 +62,30 @@ const CATEGORIES = [
   "Formalwear",
   "Sportswear",
 ];
+const COLOURS = 
+[
+  // Basic Colors
+  "Black",
+  "White",
+  "Red",
+  "Blue",
+  "Green",
+  "Yellow",
+  "Pink",
+  "Purple",
+  "Orange",
+  "Brown",
+  "Grey",
+
+  // Metallics / Neutrals
+  "Beige",
+  "Silver",
+  "Gold",
+
+  // Patterns / Other
+  "Clear",
+  "MultiColor"
+];
 const CONDITIONS = ["New", "LikeNew", "UsedExcellent", "UsedGood", "UsedFair"];
 const SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "NA"];
 const BRANDS = [
@@ -85,6 +108,7 @@ const plurals: Record<string, string> = {
   Brand: "Brands",
   Condition: "Conditions",
   Size: "Sizes",
+  Colour: "Colours",
 };
 
 interface LocationResult {
@@ -106,6 +130,7 @@ export function BrowseSidebar() {
   const [condition, setCondition] = useState<string>("all");
   const [size, setSize] = useState<string>("all");
   const [brand, setBrand] = useState<string>("all");
+  const [colour, setColour] = useState<string>("all");
 
   const [showLocationModal, setShowLocationModal] = useState(false);
 
@@ -116,6 +141,8 @@ export function BrowseSidebar() {
     setCondition(searchParams.get("condition") || "all");
     setSize(searchParams.get("size") || "all");
     setBrand(searchParams.get("brand") || "all");
+    setColour(searchParams.get("colour") || "all");
+
 
     const lat = searchParams.get("lat");
     const lng = searchParams.get("lng");
@@ -142,6 +169,7 @@ export function BrowseSidebar() {
     if (condition !== "all") params.set("condition", condition);
     if (size !== "all") params.set("size", size);
     if (brand !== "all") params.set("brand", brand);
+    if (colour !== "all") params.set("colour", colour);
 
     if (location) {
       params.set("lat", location.lat.toString());
@@ -153,7 +181,7 @@ export function BrowseSidebar() {
     router.replace(`/browse${queryString ? `?${queryString}` : ""}`, {
       scroll: false,
     });
-  }, [searchQuery, location, category, condition, size, brand, router]);
+  }, [searchQuery, location, category, condition, size, brand, colour,router]);
 
   const handleClear = () => {
     setSearchQuery("");
@@ -162,6 +190,7 @@ export function BrowseSidebar() {
     setCondition("all");
     setSize("all");
     setBrand("all");
+    setColour("all");
   };
 
   return (
@@ -254,6 +283,14 @@ export function BrowseSidebar() {
                   value={size}
                   onValueChange={setSize}
                   options={SIZES}
+                />
+
+                <FilterSelect
+                  label="Colour"
+                  icon={<Layers className="h-3.5 w-3.5" />}
+                  value={colour}
+                  onValueChange={setColour}
+                  options={COLOURS}
                 />
               </SidebarMenu>
             </SidebarGroupContent>
