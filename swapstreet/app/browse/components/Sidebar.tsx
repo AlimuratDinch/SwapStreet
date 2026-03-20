@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, MapPin, Search, Tag, Layers, Star, Box } from "lucide-react";
+import { Filter, MapPin, Search, Tag, Layers, Star, Box, Palette } from "lucide-react";
 
 // --- Shadcn UI Imports ---
 import {
@@ -287,7 +287,7 @@ export function BrowseSidebar() {
 
                 <FilterSelect
                   label="Colour"
-                  icon={<Layers className="h-3.5 w-3.5" />}
+                  icon={<Palette className="h-3.5 w-3.5" />}
                   value={colour}
                   onValueChange={setColour}
                   options={COLOURS}
