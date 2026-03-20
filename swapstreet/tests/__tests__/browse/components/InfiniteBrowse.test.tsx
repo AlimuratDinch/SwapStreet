@@ -235,9 +235,7 @@ describe("InfiniteBrowse Component - High Coverage", () => {
   it("disconnects intersection observer on unmount", () => {
     const { unmount } = render(<InfiniteBrowse {...defaultProps} />);
 
-    const observerInstance = new (window as any).IntersectionObserver(
-      () => {},
-    );
+    const observerInstance = new (window as any).IntersectionObserver(() => {});
     const disconnectSpy = jest.spyOn(observerInstance, "disconnect");
 
     unmount();

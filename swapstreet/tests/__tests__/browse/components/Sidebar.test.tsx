@@ -217,8 +217,12 @@ describe("BrowseSidebar Component", () => {
 
     render(<BrowseSidebar />);
 
-    const minInput = screen.getByPlaceholderText("Min price") as HTMLInputElement;
-    const maxInput = screen.getByPlaceholderText("Max price") as HTMLInputElement;
+    const minInput = screen.getByPlaceholderText(
+      "Min price",
+    ) as HTMLInputElement;
+    const maxInput = screen.getByPlaceholderText(
+      "Max price",
+    ) as HTMLInputElement;
 
     expect(minInput.value).toBe("50");
     expect(maxInput.value).toBe("150");

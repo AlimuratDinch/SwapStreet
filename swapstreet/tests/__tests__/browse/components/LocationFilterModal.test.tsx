@@ -531,7 +531,9 @@ describe("LocationFilterModal Component", () => {
       const slider = screen.getByRole("slider") as HTMLInputElement;
       fireEvent.change(slider, { target: { value: "0" } });
 
-      const radiusValue = parseInt(screen.getByText(/\d+ km/).textContent || "20");
+      const radiusValue = parseInt(
+        screen.getByText(/\d+ km/).textContent || "20",
+      );
       expect(radiusValue).toBeGreaterThan(0);
     });
   });
@@ -550,12 +552,8 @@ describe("LocationFilterModal Component", () => {
         <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
       );
 
-      expect(
-        screen.getByPlaceholderText("H3Z"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText("Use my current location"),
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("H3Z")).toBeInTheDocument();
+      expect(screen.getByText("Use my current location")).toBeInTheDocument();
     });
   });
 
@@ -567,7 +565,7 @@ describe("LocationFilterModal Component", () => {
 
       const input = screen.getByPlaceholderText("H3Z") as HTMLInputElement;
       const applyButton = screen.getByText("Apply") as HTMLButtonElement;
-      
+
       fireEvent.change(input, { target: { value: "   " } });
 
       // After normalization, whitespace-only becomes empty string, so Apply should remain disabled

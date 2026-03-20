@@ -289,9 +289,7 @@ describe("CardItem Component", () => {
     const consoleSpy = jest
       .spyOn(console, "error")
       .mockImplementation(() => {});
-    (global.fetch as jest.Mock).mockRejectedValueOnce(
-      new Error("API Error"),
-    );
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"));
 
     render(<CardItem {...mockProps} />);
     const button = screen.getByRole("button") as HTMLButtonElement;

@@ -421,7 +421,9 @@ describe("BrowsePage Client Component", () => {
     );
 
     const { container } = render(
-      <Suspense fallback={<div data-testid="suspense-fallback">Loading...</div>}>
+      <Suspense
+        fallback={<div data-testid="suspense-fallback">Loading...</div>}
+      >
         <BrowsePage />
       </Suspense>,
     );
