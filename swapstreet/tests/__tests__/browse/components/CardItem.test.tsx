@@ -215,4 +215,93 @@ describe("CardItem Component", () => {
     resolveFetch({ ok: true });
     await waitFor(() => expect(button).not.toBeDisabled());
   });
+
+  it("renders link with correct href when provided", () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+    const { container } = render(<CardItem {...mockProps} />);
+
+    const link = container.querySelector("a");
+    expect(link).toHaveAttribute("href", mockProps.href);
+  });
+
+  it("displays location badge with FSA code", () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+    render(<CardItem {...mockProps} />);
+
+    expect(screen.getByText("J4J")).toBeInTheDocument();
+  });
+
+  it("uses correct authorization header with bearer token", async () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+    render(<CardItem {...mockProps} />);
+
+    fireEvent.click(screen.getByRole("button"));
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: { Authorization: "Bearer fake-token" },
+        }),
+      );
+    });
+  });
+
+  it("updates API URL from environment variable", async () => {
+    const originalEnv = process.env.NEXT_PUBLIC_API_URL;
+    process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";
+
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} />);
+    fireEvent.click(screen.getByRole("button"));
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("https://api.example.com"),
+        expect.any(Object),
+      );
+    });
+
+    process.env.NEXT_PUBLIC_API_URL = originalEnv;
+  });
+
+  it("handles successful toggle from not-in-wardrobe to in-wardrobe", async () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+    render(<CardItem {...mockProps} />);
+
+    const button = screen.getByRole("button");
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(wardrobeStorage.addWardrobeItem).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: mockProps.id,
+          title: mockProps.title,
+          price: mockProps.price,
+          imageUrl: mockProps.imgSrc,
+        }),
+      );
+    });
+  });
+
+  it("re-enables button after API error", async () => {
+    const consoleSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error("API Error"),
+    );
+
+    render(<CardItem {...mockProps} />);
+    const button = screen.getByRole("button") as HTMLButtonElement;
+
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(button).not.toBeDisabled();
+    });
+
+    consoleSpy.mockRestore();
+  });
 });
