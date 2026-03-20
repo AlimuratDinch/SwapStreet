@@ -10,6 +10,7 @@ namespace backend.Contracts
             string? cursor,
             string? category = null,
             string? condition = null,
+            string? colour = null,
             string? size = null,
             string? brand = null,
             double? lat = null,

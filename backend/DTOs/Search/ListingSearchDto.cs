@@ -22,6 +22,10 @@ public class ListingSearchDto
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ListingCondition Condition { get; set; }
 
+    [JsonPropertyName("colour")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ListingColour Colour { get; set; }
+
     [JsonPropertyName("brand")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ListingBrand Brand { get; set; }

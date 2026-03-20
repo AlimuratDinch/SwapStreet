@@ -26,6 +26,7 @@ public class ListingSearchService : IListingSearchService
         string? cursor,
         string? category = null,
         string? condition = null,
+        string? colour = null,
         string? size = null,
         string? brand = null,
         double? lat = null,
@@ -41,6 +42,9 @@ public class ListingSearchService : IListingSearchService
 
         // Build filter string for Meilisearch
         var filters = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(colour))
+            filters.Add($"colour = \"{colour}\"");
 
         if (!string.IsNullOrWhiteSpace(category))
             filters.Add($"category = \"{category}\"");
