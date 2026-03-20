@@ -41,8 +41,8 @@ public class ListingSearchController : ControllerBase
             request.Colour,
             request.Size,
             request.Brand,
-            request.minPrice,
-            request.maxPrice,
+            request.MinPrice,
+            request.MaxPrice,
             request.Lat,
             request.Lng,
             request.RadiusKm

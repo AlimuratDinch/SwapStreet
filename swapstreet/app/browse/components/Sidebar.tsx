@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, MapPin, Search, Tag, Layers, Star, Box, Palette } from "lucide-react";
+import { Filter, MapPin, Search, Tag, Layers, Star, Box, Palette, PiggyBank } from "lucide-react";
 
 // --- Shadcn UI Imports ---
 import {
@@ -131,7 +131,8 @@ export function BrowseSidebar() {
   const [size, setSize] = useState<string>("all");
   const [brand, setBrand] = useState<string>("all");
   const [colour, setColour] = useState<string>("all");
-
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [minPrice, setMinPrice] = useState<number | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
 
   // 1. Initialize state from URL on mount
@@ -142,7 +143,8 @@ export function BrowseSidebar() {
     setSize(searchParams.get("size") || "all");
     setBrand(searchParams.get("brand") || "all");
     setColour(searchParams.get("colour") || "all");
-
+    setMaxPrice(searchParams.get("maxPrice") ? parseFloat(searchParams.get("maxPrice")!) : null);
+    setMinPrice(searchParams.get("minPrice") ? parseFloat(searchParams.get("minPrice")!) : null);
 
     const lat = searchParams.get("lat");
     const lng = searchParams.get("lng");
@@ -170,6 +172,8 @@ export function BrowseSidebar() {
     if (size !== "all") params.set("size", size);
     if (brand !== "all") params.set("brand", brand);
     if (colour !== "all") params.set("colour", colour);
+    if (maxPrice !== null) params.set("maxPrice", maxPrice.toString());
+    if (minPrice !== null) params.set("minPrice", minPrice.toString());
 
     if (location) {
       params.set("lat", location.lat.toString());
@@ -181,7 +185,7 @@ export function BrowseSidebar() {
     router.replace(`/browse${queryString ? `?${queryString}` : ""}`, {
       scroll: false,
     });
-  }, [searchQuery, location, category, condition, size, brand, colour,router]);
+  }, [searchQuery, location, category, condition, size, brand, colour, maxPrice, minPrice, router]);
 
   const handleClear = () => {
     setSearchQuery("");
@@ -191,6 +195,8 @@ export function BrowseSidebar() {
     setSize("all");
     setBrand("all");
     setColour("all");
+    setMaxPrice(null);
+    setMinPrice(null);
   };
 
   return (
@@ -292,6 +298,38 @@ export function BrowseSidebar() {
                   onValueChange={setColour}
                   options={COLOURS}
                 />
+
+                {/* Price Range Slider */}
+                <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+                  <div className="px-2 space-y-3">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                      <PiggyBank className="h-3.5 w-3.5" />
+                      <span>Price Range</span>
+                    </label>
+                    
+                    {/* Min Price Input */}
+                    <div>
+                      <input
+                        type="number"
+                        placeholder="Min price"
+                        value={minPrice ?? ""}
+                        onChange={(e) => setMinPrice(e.target.value ? parseFloat(e.target.value) : null)}
+                        className="w-full h-9 px-3 text-sm border rounded bg-background border-input focus:ring-1 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    {/* Max Price Input */}
+                    <div>
+                      <input
+                        type="number"
+                        placeholder="Max price"
+                        value={maxPrice ?? ""}
+                        onChange={(e) => setMaxPrice(e.target.value ? parseFloat(e.target.value) : null)}
+                        className="w-full h-9 px-3 text-sm border rounded bg-background border-input focus:ring-1 focus:ring-teal-500"
+                      />
+                    </div>
+                  </div>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
