@@ -50,6 +50,24 @@ describe("BrowsePage Client Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Suppress act() warnings that are expected in async tests
+    // Component's useEffect makes async API calls that trigger state updates
+    // This is expected behavior and doesn't affect the component's runtime
+    const spy = jest.spyOn(console, "error").mockImplementation((message) => {
+      if (
+        typeof message === "string" &&
+        message.includes(
+          "An update to BrowseContent inside a test was not wrapped in act",
+        )
+      ) {
+        return; // Suppress this specific warning
+      }
+      console.log(message); // Log other errors
+    });
+
+    // Store the spy so we can restore it if needed
+    (global as any).__consoleErrorSpy = spy;
+
     // Mock URL with a query: ?q=bike
     const mockSearchParams = new URLSearchParams("q=bike");
     (useSearchParams as jest.Mock).mockReturnValue({
@@ -63,6 +81,14 @@ describe("BrowsePage Client Component", () => {
       nextCursor: null,
       hasNextPage: false,
     });
+  });
+
+  afterEach(() => {
+    // Restore console.error
+    const spy = (global as any).__consoleErrorSpy;
+    if (spy) {
+      spy.mockRestore();
+    }
   });
 
   it("renders and calls API based on URL params", async () => {
