@@ -30,6 +30,13 @@ function BrowseContent() {
       condition: searchParams.get("condition") || undefined,
       size: searchParams.get("size") || undefined,
       brand: searchParams.get("brand") || undefined,
+      colour: searchParams.get("colour") || undefined,
+      maxPrice: searchParams.get("maxPrice")
+        ? parseFloat(searchParams.get("maxPrice")!)
+        : undefined,
+      minPrice: searchParams.get("minPrice")
+        ? parseFloat(searchParams.get("minPrice")!)
+        : undefined,
       lat: searchParams.get("lat")
         ? parseFloat(searchParams.get("lat")!)
         : undefined,

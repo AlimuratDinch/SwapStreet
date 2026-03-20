@@ -143,10 +143,12 @@ namespace backend.Services
                     Id = listing.Id.ToString(),
                     Title = listing.Title,
                     Description = listing.Description,
+                    Price = listing.Price,
                     Size = listing.Size,
                     Brand = listing.Brand,
                     Category = listing.Category,
                     Condition = listing.Condition,
+                    Colour = listing.Colour,
                     FSA = listing.FSA,
                     CreatedAtTimestamp = new DateTimeOffset(listing.CreatedAt).ToUnixTimeSeconds(),
                     _geo = latlong

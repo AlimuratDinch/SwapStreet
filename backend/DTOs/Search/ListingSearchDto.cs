@@ -14,6 +14,10 @@ public class ListingSearchDto
     [JsonPropertyName("fsa")]
     public string FSA { get; set; } = string.Empty;
 
+    [JsonPropertyName("price")]
+    public decimal Price { get; set; }
+
+
     [JsonPropertyName("size")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ListingSize Size { get; set; }
@@ -21,6 +25,10 @@ public class ListingSearchDto
     [JsonPropertyName("condition")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ListingCondition Condition { get; set; }
+
+    [JsonPropertyName("colour")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ListingColour Colour { get; set; }
 
     [JsonPropertyName("brand")]
     [JsonConverter(typeof(JsonStringEnumConverter))]

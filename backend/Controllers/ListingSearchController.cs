@@ -38,8 +38,11 @@ public class ListingSearchController : ControllerBase
             request.Cursor,
             request.Category,
             request.Condition,
+            request.Colour,
             request.Size,
             request.Brand,
+            request.MinPrice,
+            request.MaxPrice,
             request.Lat,
             request.Lng,
             request.RadiusKm
