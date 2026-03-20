@@ -41,6 +41,7 @@ const SafeSelectTrigger = SelectTrigger as React.ComponentType<
 const SafeSelectContent = SelectContent as React.ComponentType<
   React.ComponentPropsWithoutRef<typeof SelectContent> & {
     children?: React.ReactNode;
+    className?: string;
   }
 >;
 
@@ -378,7 +379,7 @@ function FilterSelect({
           <SafeSelectTrigger className="h-9 w-full bg-background border-input focus:ring-1 focus:ring-teal-500">
             <SelectValue placeholder={`Select ${label}`} />
           </SafeSelectTrigger>
-          <SafeSelectContent>
+          <SafeSelectContent className="max-h-[250px] overflow-y-auto">
             <SafeSelectItem value="all">
               All {plurals[label] ?? label}
             </SafeSelectItem>
