@@ -87,6 +87,16 @@ export function CardItem({
           onSelectListing(id);
         }
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (onSelectListing) {
+            onSelectListing(id);
+          }
+        }
+      }}
+      role="button"
+      tabIndex={0}
     >
       <div className="card-item-image-container">
         {imgSrc ? (
