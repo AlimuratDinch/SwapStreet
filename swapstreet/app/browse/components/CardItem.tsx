@@ -87,6 +87,16 @@ export function CardItem({
           onSelectListing(id);
         }
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (onSelectListing) {
+            onSelectListing(id);
+          }
+        }
+      }}
+      role="button"
+      tabIndex={0}
     >
       <div className="card-item-image-container">
         {imgSrc ? (
@@ -111,6 +121,7 @@ export function CardItem({
             onClick={handleAddToWardrobe}
             disabled={isSaving}
             className="card-item-wardrobe-btn"
+            aria-label={inWardrobe ? "Remove from wardrobe" : "Add to wardrobe"}
           >
             <Bookmark
               className="w-5 h-5"

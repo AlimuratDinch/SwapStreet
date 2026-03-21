@@ -92,7 +92,7 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
 
     render(<CardItem {...mockProps} />);
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("button", { name: /add to wardrobe/i });
     await act(async () => {
       fireEvent.click(button);
     });
@@ -113,7 +113,7 @@ describe("CardItem Component", () => {
 
     render(<CardItem {...mockProps} />);
     await act(async () => {
-      fireEvent.click(screen.getByRole("button"));
+      fireEvent.click(screen.getByRole("button", { name: /add to wardrobe/i }));
     });
 
     await waitFor(() => {
@@ -124,7 +124,7 @@ describe("CardItem Component", () => {
     });
 
     // Ensure button is re-enabled via 'finally' block
-    expect(screen.getByRole("button")).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /add to wardrobe|remove from wardrobe/i })).not.toBeDisabled();
     consoleSpy.mockRestore();
   });
 
@@ -133,12 +133,10 @@ describe("CardItem Component", () => {
     (global.fetch as jest.Mock).mockReturnValueOnce(new Promise(() => {}));
 
     render(<CardItem {...mockProps} />);
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("button", { name: /add to wardrobe|remove from wardrobe/i });
 
-    // First click should trigger fetch
     fireEvent.click(button);
     
-    // Second click should NOT trigger fetch (button should be disabled)
     fireEvent.click(button);
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -149,7 +147,7 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(true);
     render(<CardItem {...mockProps} />);
 
-    const icon = screen.getByRole("button").querySelector("svg");
+    const icon = screen.getByRole("button", { name: /remove from wardrobe/i }).querySelector("svg");
     expect(icon).toHaveAttribute("fill", "#14b8a6");
   });
 
@@ -157,7 +155,7 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
     render(<CardItem {...mockProps} />);
 
-    const icon = screen.getByRole("button").querySelector("svg");
+    const icon = screen.getByRole("button", { name: /add to wardrobe/i }).querySelector("svg");
     expect(icon).toHaveAttribute("fill", "none");
   });
 
@@ -165,7 +163,7 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
     render(<CardItem {...mockProps} />);
 
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("button", { name: /add to wardrobe/i });
     await act(async () => {
       fireEvent.click(button);
     });
@@ -183,7 +181,7 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(true);
     render(<CardItem {...mockProps} />);
 
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("button", { name: /remove from wardrobe/i });
     await act(async () => {
       fireEvent.click(button);
     });
@@ -209,7 +207,7 @@ describe("CardItem Component", () => {
     render(<CardItem {...mockProps} />);
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button"));
+      fireEvent.click(screen.getByRole("button", { name: /add to wardrobe/i }));
     });
 
     await waitFor(() => {
@@ -226,7 +224,7 @@ describe("CardItem Component", () => {
     );
 
     render(<CardItem {...mockProps} />);
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("button", { name: /add to wardrobe/i });
 
     await act(async () => {
       fireEvent.click(button);
@@ -251,7 +249,7 @@ describe("CardItem Component", () => {
     render(<CardItem {...mockProps} />);
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button"));
+      fireEvent.click(screen.getByRole("button", { name: /add to wardrobe/i }));
     });
 
     await waitFor(() => {
@@ -271,7 +269,7 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
 
     render(<CardItem {...mockProps} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: /add to wardrobe/i }));
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -287,7 +285,7 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
     render(<CardItem {...mockProps} />);
 
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("button", { name: /add to wardrobe/i });
     await act(async () => {
       fireEvent.click(button);
     });
@@ -311,7 +309,7 @@ describe("CardItem Component", () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"));
 
     render(<CardItem {...mockProps} />);
-    const button = screen.getByRole("button") as HTMLButtonElement;
+    const button = screen.getByRole("button", { name: /add to wardrobe/i }) as HTMLButtonElement;
 
     await act(async () => {
       fireEvent.click(button);
@@ -353,7 +351,7 @@ describe("CardItem Component", () => {
 
     render(<CardItem {...mockProps} onSelectListing={mockOnSelectListing} />);
 
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("button", { name: /add to wardrobe/i });
     fireEvent.click(button);
 
     expect(mockOnSelectListing).not.toHaveBeenCalled();
@@ -365,7 +363,7 @@ describe("CardItem Component", () => {
     render(<CardItem {...mockProps} />);
     
     await act(async () => {
-      fireEvent.click(screen.getByRole("button"));
+      fireEvent.click(screen.getByRole("button", { name: /add to wardrobe/i }));
     });
 
     await waitFor(() => {
@@ -406,7 +404,7 @@ describe("CardItem Component", () => {
 
     render(<CardItem {...mockProps} imgSrc={undefined} />);
 
-    const button = screen.getByRole("button");
+    const button = screen.getByRole("button", { name: /add to wardrobe/i });
     await act(async () => {
       fireEvent.click(button);
     });
