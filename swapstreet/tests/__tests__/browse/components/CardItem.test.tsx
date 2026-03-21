@@ -299,9 +299,7 @@ describe("CardItem Component", () => {
     const mockOnSelectListing = jest.fn();
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
 
-    render(
-      <CardItem {...mockProps} onSelectListing={mockOnSelectListing} />
-    );
+    render(<CardItem {...mockProps} onSelectListing={mockOnSelectListing} />);
 
     const cardElement = screen.getByText("Navy Parka").closest(".card-item");
     fireEvent.click(cardElement!);
@@ -324,9 +322,7 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
     const mockOnSelectListing = jest.fn();
 
-    render(
-      <CardItem {...mockProps} onSelectListing={mockOnSelectListing} />
-    );
+    render(<CardItem {...mockProps} onSelectListing={mockOnSelectListing} />);
 
     const button = screen.getByRole("button");
     fireEvent.click(button);

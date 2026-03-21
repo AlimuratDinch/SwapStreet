@@ -257,9 +257,7 @@ describe("InfiniteBrowse Component - High Coverage", () => {
   });
 
   it("displays loading state while fetching", async () => {
-    (api.getSearchResults as jest.Mock).mockReturnValue(
-      new Promise(() => {}),
-    );
+    (api.getSearchResults as jest.Mock).mockReturnValue(new Promise(() => {}));
 
     render(<InfiniteBrowse {...defaultProps} />);
 

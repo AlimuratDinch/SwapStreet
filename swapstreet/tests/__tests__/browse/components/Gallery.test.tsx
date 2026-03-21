@@ -66,9 +66,7 @@ describe("Gallery Component", () => {
   });
 
   it("normalizes minio image URLs correctly", () => {
-    const minioImages = [
-      { imageUrl: "http://minio:9000/bucket/image.jpg" },
-    ];
+    const minioImages = [{ imageUrl: "http://minio:9000/bucket/image.jpg" }];
     render(<Gallery images={minioImages} />);
     expect(screen.queryByText("No images")).not.toBeInTheDocument();
   });

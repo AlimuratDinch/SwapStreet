@@ -35,25 +35,41 @@ describe("SearchBar", () => {
   });
 
   it.each([
-    { input: "   Navy Jacket   ", expected: "Navy Jacket", key: "Enter", shouldCall: true },
+    {
+      input: "   Navy Jacket   ",
+      expected: "Navy Jacket",
+      key: "Enter",
+      shouldCall: true,
+    },
     { input: "Denim", expected: "Denim", key: "Enter", shouldCall: true },
     { input: "", expected: "", key: "Enter", shouldCall: true },
-    { input: "Gucci & Prada", expected: "Gucci & Prada", key: "Enter", shouldCall: true },
+    {
+      input: "Gucci & Prada",
+      expected: "Gucci & Prada",
+      key: "Enter",
+      shouldCall: true,
+    },
     { input: "Test", expected: null, key: " ", shouldCall: false },
-  ])("handles search input correctly", ({ input, expected, key, shouldCall }) => {
-    const mockSearch = jest.fn();
-    render(<SearchBar onSearch={mockSearch} />);
-    const searchInput = screen.getByPlaceholderText("Search...");
+  ])(
+    "handles search input correctly",
+    ({ input, expected, key, shouldCall }) => {
+      const mockSearch = jest.fn();
+      render(<SearchBar onSearch={mockSearch} />);
+      const searchInput = screen.getByPlaceholderText("Search...");
 
-    fireEvent.change(searchInput, { target: { value: input } });
-    fireEvent.keyDown(searchInput, { key, code: key === "Enter" ? "Enter" : "Space" });
+      fireEvent.change(searchInput, { target: { value: input } });
+      fireEvent.keyDown(searchInput, {
+        key,
+        code: key === "Enter" ? "Enter" : "Space",
+      });
 
-    if (shouldCall) {
-      expect(mockSearch).toHaveBeenCalledWith(expected);
-    } else {
-      expect(mockSearch).not.toHaveBeenCalled();
-    }
-  });
+      if (shouldCall) {
+        expect(mockSearch).toHaveBeenCalledWith(expected);
+      } else {
+        expect(mockSearch).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   it("does not call onSearch multiple times for single Enter press", () => {
     const mockSearch = jest.fn();

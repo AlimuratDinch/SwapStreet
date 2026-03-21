@@ -56,9 +56,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("renders header component", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -67,7 +65,7 @@ describe("Seller Profile Page", () => {
 
   it("renders loading state initially", () => {
     (profileApi.getProfileById as jest.Mock).mockReturnValueOnce(
-      new Promise(() => {})
+      new Promise(() => {}),
     );
 
     render(<SellerProfilePage />);
@@ -76,9 +74,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("fetches profile data with correct seller ID", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -88,9 +84,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("displays seller profile information", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -101,9 +95,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("displays seller bio", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -113,9 +105,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("formats profile creation date correctly", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -138,7 +128,7 @@ describe("Seller Profile Page", () => {
 
   it("handles API error", async () => {
     (profileApi.getProfileById as jest.Mock).mockRejectedValueOnce(
-      new Error("Failed to load seller profile.")
+      new Error("Failed to load seller profile."),
     );
 
     render(<SellerProfilePage />);
@@ -151,7 +141,7 @@ describe("Seller Profile Page", () => {
   it("handles profile fetch error with correct error message", async () => {
     const errorMessage = "Seller not found";
     (profileApi.getProfileById as jest.Mock).mockRejectedValueOnce(
-      new Error(errorMessage)
+      new Error(errorMessage),
     );
 
     render(<SellerProfilePage />);
@@ -162,9 +152,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("constructs full name from first and last name", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -174,9 +162,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("constructs location from city and province", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -192,7 +178,7 @@ describe("Seller Profile Page", () => {
     };
 
     (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      profileWithoutProvince
+      profileWithoutProvince,
     );
 
     render(<SellerProfilePage />);
@@ -210,7 +196,7 @@ describe("Seller Profile Page", () => {
     };
 
     (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      profileWithoutLocation
+      profileWithoutLocation,
     );
 
     render(<SellerProfilePage />);
@@ -221,9 +207,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("passes correct props to ProfilePageContent", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -234,9 +218,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("cleans up on unmount", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     const { unmount } = render(<SellerProfilePage />);
 
@@ -250,9 +232,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("calculates member since date correctly", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -262,9 +242,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("has default active tab set to listings", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -274,9 +252,7 @@ describe("Seller Profile Page", () => {
   });
 
   it("displays profile image and banner URLs", async () => {
-    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(
-      mockProfile
-    );
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
 
     render(<SellerProfilePage />);
 
@@ -290,7 +266,7 @@ describe("Seller Profile Page", () => {
     (profileApi.getProfileById as jest.Mock).mockReturnValueOnce(
       new Promise((resolve) => {
         resolveProfile = resolve;
-      })
+      }),
     );
 
     render(<SellerProfilePage />);
@@ -307,7 +283,7 @@ describe("Seller Profile Page", () => {
   it("passes error state to ProfilePageContent", async () => {
     const errorMsg = "Network error";
     (profileApi.getProfileById as jest.Mock).mockRejectedValueOnce(
-      new Error(errorMsg)
+      new Error(errorMsg),
     );
 
     render(<SellerProfilePage />);
