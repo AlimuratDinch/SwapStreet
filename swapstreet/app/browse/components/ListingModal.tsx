@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { X, Bookmark } from "lucide-react";
-import Gallery from "../../listing/[id]/Gallery";
+import Gallery from "./Gallery";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import {

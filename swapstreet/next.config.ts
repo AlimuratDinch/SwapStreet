@@ -55,7 +55,6 @@ const nextConfig: NextConfig = {
     ];
   },
   skipTrailingSlashRedirect: true,
-  serverComponentsExternalPackages: ["tslog"],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.plugins.push(

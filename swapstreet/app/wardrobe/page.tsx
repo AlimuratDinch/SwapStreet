@@ -13,6 +13,7 @@ import {
 import { CropModal } from "@/components/wardrobe/CropModal";
 import { Sidebar } from "@/components/wardrobe/Sidebar";
 import { WardrobeGrid } from "@/components/wardrobe/WardrobeGrid";
+import { ListingModal } from "@/app/browse/components/ListingModal";
 
 export default function WardrobePage() {
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,9 @@ export default function WardrobePage() {
   const [selectedBodyType, setSelectedBodyType] = useState<
     "slim" | "average" | "plus" | null
   >(null);
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(
+    null
+  );
 
   // Crop state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -492,7 +496,14 @@ export default function WardrobePage() {
           }
           onToggleFavorite={toggleFavorite}
           onRemoveItem={handleRemoveFromWardrobe}
+          onViewDetails={(id) => setSelectedListingId(id)}
         />
+        {selectedListingId && (
+          <ListingModal
+            listingId={selectedListingId}
+            onClose={() => setSelectedListingId(null)}
+          />
+        )}
       </main>
     </div>
   );

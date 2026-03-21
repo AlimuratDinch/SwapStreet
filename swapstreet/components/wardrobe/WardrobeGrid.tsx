@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { Star, X, FileText } from "lucide-react";
-import { useRouter } from "next/navigation";
 import type { WardrobeItem } from "@/app/wardrobe/wardrobeStorage";
 
 interface WardrobeGridProps {
@@ -11,6 +10,7 @@ interface WardrobeGridProps {
   onSelectItem: (itemId: string | null) => void;
   onToggleFavorite: (itemId: string) => void;
   onRemoveItem: (itemId: string) => void;
+  onViewDetails: (itemId: string) => void;
 }
 
 export function WardrobeGrid({
@@ -21,8 +21,8 @@ export function WardrobeGrid({
   onSelectItem,
   onToggleFavorite,
   onRemoveItem,
+  onViewDetails,
 }: WardrobeGridProps) {
-  const router = useRouter();
   return (
     <div className="grid grid-cols-4 gap-6 mb-12">
       {items.length === 0 && (
@@ -91,13 +91,14 @@ export function WardrobeGrid({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  router.push(`/listing/${item.id}`);
+                  onViewDetails(item.id);
                 }}
                 className="absolute bottom-3 right-3 p-1.5 bg-white/80 hover:bg-white rounded-full shadow-sm transition-colors opacity-0 group-hover:opacity-100"
                 title="View details"
               >
                 <FileText className="w-5 h-5 text-gray-600" />
               </button>
+
             </div>
             <div className="p-4 flex-1">
               <div className="font-medium text-gray-900 mb-1 line-clamp-2">
