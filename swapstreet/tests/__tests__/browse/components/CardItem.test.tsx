@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import { CardItem } from "@/app/browse/components/CardItem";
 import * as wardrobeStorage from "@/app/wardrobe/wardrobeStorage";
 
@@ -47,17 +53,18 @@ describe("CardItem Component", () => {
     });
 
     // Setup global fetch mock
-    global.fetch = jest.fn(() =>
-      new Promise((resolve) =>
-        setTimeout(
-          () =>
-            resolve({
-              ok: true,
-              json: () => Promise.resolve({}),
-            }),
-          0,
+    global.fetch = jest.fn(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: () => Promise.resolve({}),
+              }),
+            0,
+          ),
         ),
-      ),
     ) as jest.Mock;
   });
 
@@ -124,7 +131,11 @@ describe("CardItem Component", () => {
     });
 
     // Ensure button is re-enabled via 'finally' block
-    expect(screen.getByRole("button", { name: /add to wardrobe|remove from wardrobe/i })).not.toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: /add to wardrobe|remove from wardrobe/i,
+      }),
+    ).not.toBeDisabled();
     consoleSpy.mockRestore();
   });
 
@@ -133,10 +144,12 @@ describe("CardItem Component", () => {
     (global.fetch as jest.Mock).mockReturnValueOnce(new Promise(() => {}));
 
     render(<CardItem {...mockProps} />);
-    const button = screen.getByRole("button", { name: /add to wardrobe|remove from wardrobe/i });
+    const button = screen.getByRole("button", {
+      name: /add to wardrobe|remove from wardrobe/i,
+    });
 
     fireEvent.click(button);
-    
+
     fireEvent.click(button);
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -147,7 +160,9 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(true);
     render(<CardItem {...mockProps} />);
 
-    const icon = screen.getByRole("button", { name: /remove from wardrobe/i }).querySelector("svg");
+    const icon = screen
+      .getByRole("button", { name: /remove from wardrobe/i })
+      .querySelector("svg");
     expect(icon).toHaveAttribute("fill", "#14b8a6");
   });
 
@@ -155,7 +170,9 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
     render(<CardItem {...mockProps} />);
 
-    const icon = screen.getByRole("button", { name: /add to wardrobe/i }).querySelector("svg");
+    const icon = screen
+      .getByRole("button", { name: /add to wardrobe/i })
+      .querySelector("svg");
     expect(icon).toHaveAttribute("fill", "none");
   });
 
@@ -181,7 +198,9 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(true);
     render(<CardItem {...mockProps} />);
 
-    const button = screen.getByRole("button", { name: /remove from wardrobe/i });
+    const button = screen.getByRole("button", {
+      name: /remove from wardrobe/i,
+    });
     await act(async () => {
       fireEvent.click(button);
     });
@@ -309,7 +328,9 @@ describe("CardItem Component", () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("API Error"));
 
     render(<CardItem {...mockProps} />);
-    const button = screen.getByRole("button", { name: /add to wardrobe/i }) as HTMLButtonElement;
+    const button = screen.getByRole("button", {
+      name: /add to wardrobe/i,
+    }) as HTMLButtonElement;
 
     await act(async () => {
       fireEvent.click(button);
@@ -361,7 +382,7 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
 
     render(<CardItem {...mockProps} />);
-    
+
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /add to wardrobe/i }));
     });
