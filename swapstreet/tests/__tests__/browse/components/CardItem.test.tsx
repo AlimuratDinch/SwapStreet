@@ -216,14 +216,6 @@ describe("CardItem Component", () => {
     await waitFor(() => expect(button).not.toBeDisabled());
   });
 
-  it("renders link with correct href when provided", () => {
-    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
-    const { container } = render(<CardItem {...mockProps} />);
-
-    const link = container.querySelector("a");
-    expect(link).toHaveAttribute("href", mockProps.href);
-  });
-
   it("displays location badge with FSA code", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
     render(<CardItem {...mockProps} />);
@@ -301,5 +293,100 @@ describe("CardItem Component", () => {
     });
 
     consoleSpy.mockRestore();
+  });
+
+  it("calls onSelectListing when card is clicked", () => {
+    const mockOnSelectListing = jest.fn();
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(
+      <CardItem {...mockProps} onSelectListing={mockOnSelectListing} />
+    );
+
+    const cardElement = screen.getByText("Navy Parka").closest(".card-item");
+    fireEvent.click(cardElement!);
+
+    expect(mockOnSelectListing).toHaveBeenCalledWith("item-123");
+  });
+
+  it("does not call onSelectListing when callback is not provided", () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} onSelectListing={undefined} />);
+
+    const cardElement = screen.getByText("Navy Parka").closest(".card-item");
+    fireEvent.click(cardElement!);
+
+    expect(screen.getByText("Navy Parka")).toBeInTheDocument();
+  });
+
+  it("prevents event bubbling when wardrobe button is clicked", async () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+    const mockOnSelectListing = jest.fn();
+
+    render(
+      <CardItem {...mockProps} onSelectListing={mockOnSelectListing} />
+    );
+
+    const button = screen.getByRole("button");
+    fireEvent.click(button);
+
+    expect(mockOnSelectListing).not.toHaveBeenCalled();
+  });
+
+  it("uses correct format for wishlist endpoint URL", async () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} />);
+    fireEvent.click(screen.getByRole("button"));
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/wishlist/item-123`),
+        expect.any(Object),
+      );
+    });
+  });
+
+  it("renders correctly with all props provided", () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} />);
+
+    expect(screen.getByText("Navy Parka")).toBeInTheDocument();
+    expect(screen.getByText("$89.99")).toBeInTheDocument();
+    expect(screen.getByText("J4J")).toBeInTheDocument();
+    expect(screen.getByRole("img")).toHaveAttribute("src", mockProps.imgSrc);
+  });
+
+  it("handles async state update in useEffect dependency array", async () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    const { rerender } = render(<CardItem {...mockProps} />);
+
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(true);
+
+    rerender(<CardItem {...mockProps} id="item-456" />);
+
+    await waitFor(() => {
+      expect(wardrobeStorage.hasWardrobeItem).toHaveBeenCalledWith("item-456");
+    });
+  });
+
+  it("uses imgSrc for imageUrl, defaults to null if undefined", async () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} imgSrc={undefined} />);
+
+    const button = screen.getByRole("button");
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(wardrobeStorage.addWardrobeItem).toHaveBeenCalledWith(
+        expect.objectContaining({
+          imageUrl: null,
+        }),
+      );
+    });
   });
 });

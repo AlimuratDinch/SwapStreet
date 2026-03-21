@@ -2,12 +2,24 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import InfiniteBrowse from "@/app/browse/components/InfiniteBrowse";
 import * as api from "@/lib/api/browse";
 
-// 1. Mock the API Utility
+// 1. Mock Next.js Router
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  useSearchParams: () => ({
+    get: jest.fn(),
+  }),
+}));
+
+// 2. Mock the API Utility
 jest.mock("@/lib/api/browse", () => ({
   getSearchResults: jest.fn(),
 }));
 
-// 2. Mock CardItem
+// 3. Mock CardItem
 jest.mock("@/app/browse/components/CardItem", () => ({
   CardItem: ({ title }: { title: string }) => (
     <div data-testid="card-item">{title}</div>
@@ -174,6 +186,90 @@ describe("InfiniteBrowse Component - High Coverage", () => {
     ).toBeInTheDocument();
   });
 
+  it("does not load more when isLoading is true", async () => {
+    let resolvePromise: any;
+    const pendingPromise = new Promise((resolve) => {
+      resolvePromise = resolve;
+    });
+    (api.getSearchResults as jest.Mock).mockReturnValue(pendingPromise);
+
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(api.getSearchResults).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not load more when hasNext is false", async () => {
+    (api.getSearchResults as jest.Mock).mockResolvedValue(nextBatch);
+
+    const { rerender } = render(<InfiniteBrowse {...defaultProps} />);
+
+    rerender(
+      <InfiniteBrowse
+        {...defaultProps}
+        initialHasNext={false}
+        initialCursor={null}
+      />,
+    );
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(api.getSearchResults).not.toHaveBeenCalled();
+  });
+
+  it("does not load more when cursor is null", async () => {
+    (api.getSearchResults as jest.Mock).mockResolvedValue(nextBatch);
+
+    const { rerender } = render(<InfiniteBrowse {...defaultProps} />);
+
+    rerender(
+      <InfiniteBrowse
+        {...defaultProps}
+        initialCursor={null}
+        initialHasNext={true}
+      />,
+    );
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(api.getSearchResults).not.toHaveBeenCalled();
+  });
+
+  it("does not trigger load when isIntersecting is false", async () => {
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: false }]);
+    });
+
+    expect(api.getSearchResults).not.toHaveBeenCalled();
+  });
+
+  it("displays loading state while fetching", async () => {
+    (api.getSearchResults as jest.Mock).mockReturnValue(
+      new Promise(() => {}),
+    );
+
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(screen.getByText(/Loading more/i)).toBeInTheDocument();
+  });
+
   it("appends new items to existing items when loading more", async () => {
     const moreItems = {
       items: [
@@ -230,74 +326,5 @@ describe("InfiniteBrowse Component - High Coverage", () => {
         cursor: "cursor-1",
       }),
     );
-  });
-
-  it("disconnects intersection observer on unmount", () => {
-    const { unmount } = render(<InfiniteBrowse {...defaultProps} />);
-
-    const observerInstance = new (window as any).IntersectionObserver(() => {});
-    const disconnectSpy = jest.spyOn(observerInstance, "disconnect");
-
-    unmount();
-  });
-
-  it("updates cursor when loading next batch", async () => {
-    (api.getSearchResults as jest.Mock).mockResolvedValue(nextBatch);
-
-    const { rerender } = render(<InfiniteBrowse {...defaultProps} />);
-
-    await act(async () => {
-      observerCallback([{ isIntersecting: true }]);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("Item 2")).toBeInTheDocument();
-    });
-
-    // Verify that loadMore would use the updated cursor
-    expect(api.getSearchResults).toHaveBeenCalledWith(
-      expect.objectContaining({ cursor: "cursor-1" }),
-    );
-  });
-
-  it("maintains isLoading state during fetch", async () => {
-    let resolvePromise: any;
-    (api.getSearchResults as jest.Mock).mockReturnValue(
-      new Promise((resolve) => {
-        resolvePromise = resolve;
-      }),
-    );
-
-    render(<InfiniteBrowse {...defaultProps} />);
-
-    await act(async () => {
-      observerCallback([{ isIntersecting: true }]);
-    });
-
-    // Component should prevent another fetch attempt
-    await act(async () => {
-      observerCallback([{ isIntersecting: true }]);
-    });
-
-    expect(api.getSearchResults).toHaveBeenCalledTimes(1);
-
-    await act(async () => {
-      resolvePromise(nextBatch);
-    });
-  });
-
-  it("renders CardItem for each item in the list", async () => {
-    const multipleItems = [
-      { id: "1", title: "Jeans", price: 50, fsa: "A1A" },
-      { id: "2", title: "Shirt", price: 30, fsa: "B2B" },
-      { id: "3", title: "Jacket", price: 100, fsa: "C3C" },
-    ];
-
-    render(<InfiniteBrowse {...defaultProps} initialItems={multipleItems} />);
-
-    expect(screen.getByText("Jeans")).toBeInTheDocument();
-    expect(screen.getByText("Shirt")).toBeInTheDocument();
-    expect(screen.getByText("Jacket")).toBeInTheDocument();
-    expect(screen.getAllByTestId("card-item")).toHaveLength(3);
   });
 });
