@@ -33,7 +33,9 @@ export default function InfiniteBrowse({
   const [hasNext, setHasNext] = useState(initialHasNext);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(
+    null,
+  );
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -155,7 +157,10 @@ export default function InfiniteBrowse({
 
       {/* Listing Modal */}
       {selectedListingId && (
-        <ListingModal listingId={selectedListingId} onClose={handleCloseModal} />
+        <ListingModal
+          listingId={selectedListingId}
+          onClose={handleCloseModal}
+        />
       )}
     </main>
   );

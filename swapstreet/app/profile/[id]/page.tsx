@@ -34,7 +34,8 @@ export default function SellerProfilePage() {
       })
       .catch((e) => {
         if (mounted) {
-          const msg = e instanceof Error ? e.message : "Failed to load seller profile.";
+          const msg =
+            e instanceof Error ? e.message : "Failed to load seller profile.";
           setError(msg);
         }
       })
@@ -47,7 +48,9 @@ export default function SellerProfilePage() {
     };
   }, [sellerId]);
 
-  const fullName = profile ? `${profile.firstName} ${profile.lastName}` : "Seller";
+  const fullName = profile
+    ? `${profile.firstName} ${profile.lastName}`
+    : "Seller";
   const location = profile?.cityName
     ? `${profile.cityName}${profile.provinceCode ? `, ${profile.provinceCode}` : ""}`
     : null;

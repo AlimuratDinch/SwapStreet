@@ -39,7 +39,7 @@ export default function WardrobePage() {
     "slim" | "average" | "plus" | null
   >(null);
   const [selectedListingId, setSelectedListingId] = useState<string | null>(
-    null
+    null,
   );
 
   // Crop state

@@ -77,7 +77,10 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
   const [chatError, setChatError] = useState<string | null>(null);
   const [noProfile, setNoProfile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [locationData, setLocationData] = useState<{ city: string; province: string } | null>(null);
+  const [locationData, setLocationData] = useState<{
+    city: string;
+    province: string;
+  } | null>(null);
 
   const [inWardrobe, setInWardrobe] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -103,7 +106,8 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
   // Location from FSA
   useEffect(() => {
     if (!listing) return;
-    const fsa = listing.FSA || listing.fsa || listing.seller?.FSA || listing.seller?.fsa;
+    const fsa =
+      listing.FSA || listing.fsa || listing.seller?.FSA || listing.seller?.fsa;
     if (!fsa) return;
 
     fetch(`/api/location/lookup/${encodeURIComponent(fsa)}`)
@@ -131,7 +135,8 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
         router.push("/auth/sign-in");
         return;
       }
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const method = inWardrobe ? "DELETE" : "POST";
 
       const res = await fetch(`${apiUrl}/wishlist/${listingId}`, {
@@ -244,7 +249,9 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
     return (
       <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm text-center">
-          <p className="text-gray-800 font-medium mb-6">Failed to load listing</p>
+          <p className="text-gray-800 font-medium mb-6">
+            Failed to load listing
+          </p>
           <button
             onClick={onClose}
             className="bg-teal-500 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-teal-600 transition-colors w-full"
@@ -292,138 +299,181 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
         <div className="w-[380px] md:w-[460px] h-full bg-white text-gray-900 flex flex-col shrink-0 relative">
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <div className="p-5 flex flex-col space-y-3.5">
-            {/* Title & Price */}
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-                {listing.title}
-              </h1>
-              <div className="text-[22px] font-bold mt-2 text-teal-600">
-                ${Number(listing.price ?? 0).toFixed(2)}
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-3">
-                <div className="text-sm">
-                  <span className="text-gray-500">Listed </span>
-                  <span className="font-medium text-gray-700">{listedAtText}</span>
-                  <span className="text-gray-400 mx-1">•</span>
-                  <span className="font-medium text-gray-700">
-                    {locationData
-                      ? `${locationData.city}, ${locationData.province}`
-                      : location}
-                  </span>
+              {/* Title & Price */}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+                  {listing.title}
+                </h1>
+                <div className="text-[22px] font-bold mt-2 text-teal-600">
+                  ${Number(listing.price ?? 0).toFixed(2)}
                 </div>
-                <button
-                  onClick={handleAddToWardrobe}
-                  disabled={isSaving}
-                  className="shrink-0 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold px-3 py-1.5 rounded-md flex items-center justify-center gap-2 text-sm transition-colors border border-gray-200"
-                >
-                  <Bookmark className="w-4 h-4" fill={inWardrobe ? "#14b8a6" : "none"} stroke={inWardrobe ? "#14b8a6" : "currentColor"} />
-                  {inWardrobe ? "Saved" : "Save"}
-                </button>
-              </div>
-            </div>
-            <div className="h-px bg-gray-200 w-[94%] mx-auto" />
-
-            {/* Description */}
-            <div className="pt-1">
-              <h2 className="text-[17px] font-bold mb-1 text-gray-900">Description</h2>
-              <div className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">
-                {listing.description || "No description provided."}
-              </div>
-            </div>
-            <div className="h-px bg-gray-200 w-[94%] mx-auto" />
-
-            {/* Item details */}
-            <div className="pt-1">
-              <h2 className="text-[17px] font-bold mb-1 text-gray-900">Details</h2>
-              <div className="space-y-1.5 text-sm">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-1">
-                  <span className="text-gray-500">Category</span>
-                  <span className="font-medium text-gray-800">{listing.category ?? "-"}</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-gray-100 pb-1">
-                  <span className="text-gray-500">Brand</span>
-                  <span className="font-medium text-gray-800">{listing.brand ?? "-"}</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-gray-100 pb-1">
-                  <span className="text-gray-500">Condition</span>
-                  <span className="font-medium text-gray-800">{listing.condition ?? "-"}</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-gray-100 pb-1">
-                  <span className="text-gray-500">Size</span>
-                  <span className="font-medium text-gray-800">{listing.size ?? "-"}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Color</span>
-                  <span className="font-medium text-gray-800">{listing.colour ?? "-"}</span>
-                </div>
-              </div>
-            </div>
-            <div className="h-px bg-gray-200 w-[94%] mx-auto" />
-
-            {/* Location */}
-            <div className="pt-2 mt-1">
-              <h2 className="text-[17px] font-bold mb-1 text-gray-900">
-                Location
-              </h2>
-              <div className="w-full h-[200px] bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500 text-sm">
-                <div className="text-center">
-                  <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <p>Google Maps</p>
-                  <p className="text-xs mt-1">{locationData ? `${locationData.city}, ${locationData.province}` : location}</p>
-                </div>
-              </div>
-            </div>
-            <div className="h-px bg-gray-200 w-[94%] mx-auto" />
-
-            {/* Seller information */}
-            <div className="pt-1 mt-1">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-[16px] font-bold text-gray-900">Seller information</h2>
-                {seller?.id && (
-                  <a
-                    href={`/profile/${seller.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-teal-600 hover:text-teal-700"
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <div className="text-sm">
+                    <span className="text-gray-500">Listed </span>
+                    <span className="font-medium text-gray-700">
+                      {listedAtText}
+                    </span>
+                    <span className="text-gray-400 mx-1">•</span>
+                    <span className="font-medium text-gray-700">
+                      {locationData
+                        ? `${locationData.city}, ${locationData.province}`
+                        : location}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleAddToWardrobe}
+                    disabled={isSaving}
+                    className="shrink-0 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold px-3 py-1.5 rounded-md flex items-center justify-center gap-2 text-sm transition-colors border border-gray-200"
                   >
-                    Seller Details
-                  </a>
-                )}
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-[52px] h-[52px] rounded-full bg-gray-200 overflow-hidden flex-shrink-0 border border-gray-300 shadow-sm">
-                  {seller?.profileImageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={seller.profileImageUrl}
-                      alt={`${seller.firstName} ${seller.lastName}`}
-                      className="w-full h-full object-cover"
+                    <Bookmark
+                      className="w-4 h-4"
+                      fill={inWardrobe ? "#14b8a6" : "none"}
+                      stroke={inWardrobe ? "#14b8a6" : "currentColor"}
                     />
-                  ) : null}
+                    {inWardrobe ? "Saved" : "Save"}
+                  </button>
                 </div>
-                <div>
-                  <div className="font-bold text-[16px] text-gray-900">
-                    {seller
-                      ? `${seller.firstName} ${seller.lastName}`
-                      : "Unknown Seller"}
+              </div>
+              <div className="h-px bg-gray-200 w-[94%] mx-auto" />
+
+              {/* Description */}
+              <div className="pt-1">
+                <h2 className="text-[17px] font-bold mb-1 text-gray-900">
+                  Description
+                </h2>
+                <div className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed">
+                  {listing.description || "No description provided."}
+                </div>
+              </div>
+              <div className="h-px bg-gray-200 w-[94%] mx-auto" />
+
+              {/* Item details */}
+              <div className="pt-1">
+                <h2 className="text-[17px] font-bold mb-1 text-gray-900">
+                  Details
+                </h2>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                    <span className="text-gray-500">Category</span>
+                    <span className="font-medium text-gray-800">
+                      {listing.category ?? "-"}
+                    </span>
                   </div>
-                  <div className="text-amber-500 text-sm mt-0.5">
-                    {seller?.rating != null ? `★ ${Number(seller.rating).toFixed(1)}` : "No rating yet"}
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                    <span className="text-gray-500">Brand</span>
+                    <span className="font-medium text-gray-800">
+                      {listing.brand ?? "-"}
+                    </span>
                   </div>
-                  <div className="text-gray-500 text-sm mt-0.5">
-                    Joined SWAPSTREET {joinedYear ? `in ${joinedYear}` : ""}
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                    <span className="text-gray-500">Condition</span>
+                    <span className="font-medium text-gray-800">
+                      {listing.condition ?? "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-1">
+                    <span className="text-gray-500">Size</span>
+                    <span className="font-medium text-gray-800">
+                      {listing.size ?? "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Color</span>
+                    <span className="font-medium text-gray-800">
+                      {listing.colour ?? "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="h-px bg-gray-200 w-[94%] mx-auto" />
+
+              {/* Location */}
+              <div className="pt-2 mt-1">
+                <h2 className="text-[17px] font-bold mb-1 text-gray-900">
+                  Location
+                </h2>
+                <div className="w-full h-[200px] bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500 text-sm">
+                  <div className="text-center">
+                    <svg
+                      className="w-8 h-8 mx-auto mb-2 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <p>Google Maps</p>
+                    <p className="text-xs mt-1">
+                      {locationData
+                        ? `${locationData.city}, ${locationData.province}`
+                        : location}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="h-px bg-gray-200 w-[94%] mx-auto" />
+
+              {/* Seller information */}
+              <div className="pt-1 mt-1">
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-[16px] font-bold text-gray-900">
+                    Seller information
+                  </h2>
+                  {seller?.id && (
+                    <a
+                      href={`/profile/${seller.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-semibold text-teal-600 hover:text-teal-700"
+                    >
+                      Seller Details
+                    </a>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-[52px] h-[52px] rounded-full bg-gray-200 overflow-hidden flex-shrink-0 border border-gray-300 shadow-sm">
+                    {seller?.profileImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={seller.profileImageUrl}
+                        alt={`${seller.firstName} ${seller.lastName}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <div>
+                    <div className="font-bold text-[16px] text-gray-900">
+                      {seller
+                        ? `${seller.firstName} ${seller.lastName}`
+                        : "Unknown Seller"}
+                    </div>
+                    <div className="text-amber-500 text-sm mt-0.5">
+                      {seller?.rating != null
+                        ? `★ ${Number(seller.rating).toFixed(1)}`
+                        : "No rating yet"}
+                    </div>
+                    <div className="text-gray-500 text-sm mt-0.5">
+                      Joined SWAPSTREET {joinedYear ? `in ${joinedYear}` : ""}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Message */}
-          <div className="border-t border-gray-200 bg-white p-5 flex-1 flex flex-col items-center justify-center shadow-[0_-10px_10px_-10px_rgba(0,0,0,0.05)]">
+            {/* Message */}
+            <div className="border-t border-gray-200 bg-white p-5 flex-1 flex flex-col items-center justify-center shadow-[0_-10px_10px_-10px_rgba(0,0,0,0.05)]">
               {noProfile && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800 mb-3">
                   <p className="mb-2 font-medium">
@@ -437,19 +487,27 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
                   </button>
                 </div>
               )}
-              
+
               {chatError && (
-                <div className="text-red-500 text-sm px-2 mb-2 font-medium bg-red-50 p-2 rounded">{chatError}</div>
+                <div className="text-red-500 text-sm px-2 mb-2 font-medium bg-red-50 p-2 rounded">
+                  {chatError}
+                </div>
               )}
 
               <div className="space-y-2.5 w-full max-w-sm">
                 <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
-                  <svg viewBox="0 0 28 28" fill="currentColor" height="20" width="20" className="text-teal-500">
+                  <svg
+                    viewBox="0 0 28 28"
+                    fill="currentColor"
+                    height="20"
+                    width="20"
+                    className="text-teal-500"
+                  >
                     <path d="M14 2.042c-6.76 0-12.242 5.084-12.242 11.36 0 3.553 1.832 6.72 4.71 8.847v4.618a.75.75 0 0 0 1.154.63l4.316-2.82c.66.115 1.344.175 2.05.175 6.76 0 12.242-5.084 12.242-11.36S20.76 2.042 14 2.042z"></path>
                   </svg>
                   Send a message
                 </div>
-                
+
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -462,7 +520,9 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
                   disabled={chatLoading}
                   className="w-full bg-teal-500 hover:bg-teal-600 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors text-[15px] shadow-sm flex justify-center items-center gap-2"
                 >
-                  {chatLoading && <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+                  {chatLoading && (
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  )}
                   {chatLoading ? "Opening chat..." : "Send Message"}
                 </button>
               </div>
