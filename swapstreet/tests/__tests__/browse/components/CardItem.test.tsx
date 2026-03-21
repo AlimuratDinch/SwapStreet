@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { CardItem } from "@/app/browse/components/CardItem";
 import * as wardrobeStorage from "@/app/wardrobe/wardrobeStorage";
 
@@ -48,10 +48,16 @@ describe("CardItem Component", () => {
 
     // Setup global fetch mock
     global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({}),
-      }),
+      new Promise((resolve) =>
+        setTimeout(
+          () =>
+            resolve({
+              ok: true,
+              json: () => Promise.resolve({}),
+            }),
+          0,
+        ),
+      ),
     ) as jest.Mock;
   });
 
@@ -87,7 +93,9 @@ describe("CardItem Component", () => {
 
     render(<CardItem {...mockProps} />);
     const button = screen.getByRole("button");
-    fireEvent.click(button);
+    await act(async () => {
+      fireEvent.click(button);
+    });
 
     await waitFor(() => {
       // Should NOT call storage update if API failed
@@ -104,7 +112,9 @@ describe("CardItem Component", () => {
     );
 
     render(<CardItem {...mockProps} />);
-    fireEvent.click(screen.getByRole("button"));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button"));
+    });
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -120,13 +130,16 @@ describe("CardItem Component", () => {
 
   it("prevents multiple concurrent API calls if clicked twice", async () => {
     // Mock fetch to stay pending for a bit
-    (global.fetch as jest.Mock).mockReturnValue(new Promise(() => {}));
+    (global.fetch as jest.Mock).mockReturnValueOnce(new Promise(() => {}));
 
     render(<CardItem {...mockProps} />);
     const button = screen.getByRole("button");
 
-    fireEvent.click(button); // First click
-    fireEvent.click(button); // Second click (should be ignored)
+    // First click should trigger fetch
+    fireEvent.click(button);
+    
+    // Second click should NOT trigger fetch (button should be disabled)
+    fireEvent.click(button);
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
@@ -153,7 +166,9 @@ describe("CardItem Component", () => {
     render(<CardItem {...mockProps} />);
 
     const button = screen.getByRole("button");
-    fireEvent.click(button);
+    await act(async () => {
+      fireEvent.click(button);
+    });
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -169,7 +184,9 @@ describe("CardItem Component", () => {
     render(<CardItem {...mockProps} />);
 
     const button = screen.getByRole("button");
-    fireEvent.click(button);
+    await act(async () => {
+      fireEvent.click(button);
+    });
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -191,7 +208,9 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
     render(<CardItem {...mockProps} />);
 
-    fireEvent.click(screen.getByRole("button"));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button"));
+    });
 
     await waitFor(() => {
       expect(global.fetch).not.toHaveBeenCalled();
@@ -209,10 +228,14 @@ describe("CardItem Component", () => {
     render(<CardItem {...mockProps} />);
     const button = screen.getByRole("button");
 
-    fireEvent.click(button);
+    await act(async () => {
+      fireEvent.click(button);
+    });
     expect(button).toBeDisabled();
 
-    resolveFetch({ ok: true });
+    await act(async () => {
+      resolveFetch({ ok: true });
+    });
     await waitFor(() => expect(button).not.toBeDisabled());
   });
 
@@ -227,7 +250,9 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
     render(<CardItem {...mockProps} />);
 
-    fireEvent.click(screen.getByRole("button"));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button"));
+    });
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -263,7 +288,9 @@ describe("CardItem Component", () => {
     render(<CardItem {...mockProps} />);
 
     const button = screen.getByRole("button");
-    fireEvent.click(button);
+    await act(async () => {
+      fireEvent.click(button);
+    });
 
     await waitFor(() => {
       expect(wardrobeStorage.addWardrobeItem).toHaveBeenCalledWith(
@@ -286,7 +313,9 @@ describe("CardItem Component", () => {
     render(<CardItem {...mockProps} />);
     const button = screen.getByRole("button") as HTMLButtonElement;
 
-    fireEvent.click(button);
+    await act(async () => {
+      fireEvent.click(button);
+    });
 
     await waitFor(() => {
       expect(button).not.toBeDisabled();
@@ -334,7 +363,10 @@ describe("CardItem Component", () => {
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
 
     render(<CardItem {...mockProps} />);
-    fireEvent.click(screen.getByRole("button"));
+    
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button"));
+    });
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -375,7 +407,9 @@ describe("CardItem Component", () => {
     render(<CardItem {...mockProps} imgSrc={undefined} />);
 
     const button = screen.getByRole("button");
-    fireEvent.click(button);
+    await act(async () => {
+      fireEvent.click(button);
+    });
 
     await waitFor(() => {
       expect(wardrobeStorage.addWardrobeItem).toHaveBeenCalledWith(
