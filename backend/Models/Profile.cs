@@ -32,7 +32,7 @@ public class Profile
     public City? City { get; set; }
 
     [Required]
-    [StringLength(3)]
+    [StringLength(7)]
     public string FSA { get; set; } = string.Empty;
 
     [StringLength(255)]

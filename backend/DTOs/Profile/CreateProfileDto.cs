@@ -23,9 +23,9 @@ namespace backend.DTOs.Profile
         [JsonPropertyName("cityId")]
         public int CityId { get; set; }
 
-        [Required(ErrorMessage = "FSA (Forward Sortation Area) is required")]
-        [StringLength(3, MinimumLength = 3, ErrorMessage = "FSA must be exactly 3 characters")]
-        [RegularExpression(@"^[A-Z]\d[A-Z]$", ErrorMessage = "FSA must be in format: Letter-Digit-Letter (e.g., M5V)")]
+        [Required(ErrorMessage = "Postal code is required")]
+        [StringLength(7, MinimumLength = 7, ErrorMessage = "Postal code must be exactly 7 characters")]
+        [RegularExpression(@"^[A-Z]\d[A-Z] \d[A-Z]\d$", ErrorMessage = "Postal code must be in format A1A 1A1")]
         [JsonPropertyName("fsa")]
         public string FSA { get; set; } = string.Empty;
 

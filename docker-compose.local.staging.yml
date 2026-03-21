@@ -80,7 +80,12 @@ services:
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MEILISEARCH_HOST=http://meilisearch:7700
       - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY:-masterKey}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/config/gcloud/application_default_credentials.json
       - FrontendUrl=http://localhost
+      - LOGQUEUESETTINGS__BASEPATH=App_Data
+    volumes:
+      - "${GOOGLE_ADC_FILE_PATH:-./gcloud/application_default_credentials.json}:/app/config/gcloud/application_default_credentials.json:ro"
+      - app-data:/app/App_Data
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,6 +95,7 @@ services:
         condition: service_healthy
     networks:
       - app-net
+
 
   swapstreet: # Frontend
     build:
@@ -129,6 +135,7 @@ networks:
     driver: bridge
 
 volumes:
+  app-data:
   postgres_data_local_staging:
   minio_data_local_staging:
   meilisearch_data_local_staging:

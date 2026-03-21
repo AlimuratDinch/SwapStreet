@@ -182,6 +182,22 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Colour")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Condition")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -206,8 +222,9 @@ namespace backend.Migrations
                         .HasColumnType("text")
                         .HasComputedColumnSql("COALESCE(\"Title\" || ' ' || \"Description\" || ' ', '')", true);
 
-                    b.Property<Guid?>("TagId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Size")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -228,8 +245,6 @@ namespace backend.Migrations
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchText"), "gin");
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("SearchText"), new[] { "gin_trgm_ops" });
-
-                    b.HasIndex("TagId");
 
                     b.ToTable("listings", (string)null);
                 });
@@ -314,8 +329,8 @@ namespace backend.Migrations
 
                     b.Property<string>("FSA")
                         .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("varchar(3)");
+                        .HasMaxLength(7)
+                        .HasColumnType("varchar(7)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -373,101 +388,6 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("provinces", (string)null);
-                });
-
-            modelBuilder.Entity("Size", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ArticleTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ArticleTypeId");
-
-                    b.ToTable("sizes", (string)null);
-                });
-
-            modelBuilder.Entity("Style", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("styles", (string)null);
-                });
-
-            modelBuilder.Entity("Tag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ArticleTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BrandId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Color")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Condition")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Material")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Sex")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SizeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("StyleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ArticleTypeId");
-
-                    b.HasIndex("BrandId");
-
-                    b.HasIndex("SizeId");
-
-                    b.HasIndex("StyleId");
-
-                    b.ToTable("tags", (string)null);
                 });
 
             modelBuilder.Entity("TryOnImage", b =>
@@ -588,13 +508,7 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Tag", "Tag")
-                        .WithMany()
-                        .HasForeignKey("TagId");
-
                     b.Navigation("Profile");
-
-                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("ListingImage", b =>
@@ -636,52 +550,6 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.Navigation("City");
-                });
-
-            modelBuilder.Entity("Size", b =>
-                {
-                    b.HasOne("ArticleType", "ArticleType")
-                        .WithMany()
-                        .HasForeignKey("ArticleTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ArticleType");
-                });
-
-            modelBuilder.Entity("Tag", b =>
-                {
-                    b.HasOne("ArticleType", "ArticleTypeRef")
-                        .WithMany()
-                        .HasForeignKey("ArticleTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Brand", "BrandRef")
-                        .WithMany()
-                        .HasForeignKey("BrandId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Size", "SizeRef")
-                        .WithMany()
-                        .HasForeignKey("SizeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Style", "StyleRef")
-                        .WithMany()
-                        .HasForeignKey("StyleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ArticleTypeRef");
-
-                    b.Navigation("BrandRef");
-
-                    b.Navigation("SizeRef");
-
-                    b.Navigation("StyleRef");
                 });
 
             modelBuilder.Entity("TryOnImage", b =>

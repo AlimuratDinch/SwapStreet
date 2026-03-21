@@ -18,7 +18,7 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   bio?: string;
-  locationId?: number;
+  cityId?: number;
   fsa?: string;
   profileImagePath?: string;
   bannerImagePath?: string;
@@ -33,7 +33,9 @@ export interface ProfileResponse {
   lastName: string;
   rating: number;
   bio?: string;
-  locationId: number;
+  /** @deprecated Use cityId. Backend returns cityId. */
+  locationId?: number;
+  cityId: number;
   cityName?: string;
   provinceName?: string;
   provinceCode?: string;
@@ -311,10 +313,38 @@ export async function updateProfile(
   });
 
   if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ Error: "Failed to update profile" }));
-    throw new Error(error.Error || "Failed to update profile");
+    let errorMessage = `Failed to update profile (HTTP ${response.status})`;
+    try {
+      const responseText = await response.text();
+      let errorData: Record<string, unknown>;
+      try {
+        errorData = JSON.parse(responseText);
+      } catch {
+        throw new Error(responseText || errorMessage);
+      }
+      if (errorData.Error && typeof errorData.Error === "string") {
+        errorMessage = errorData.Error;
+      } else if (errorData.error && typeof errorData.error === "string") {
+        errorMessage = errorData.error;
+      } else if (errorData.message && typeof errorData.message === "string") {
+        errorMessage = errorData.message;
+      } else if (errorData.errors && typeof errorData.errors === "object") {
+        const validationErrors = Object.entries(
+          errorData.errors as Record<string, unknown>,
+        )
+          .map(([key, value]) => {
+            if (Array.isArray(value)) {
+              return `${key}: ${value.join(", ")}`;
+            }
+            return `${key}: ${value}`;
+          })
+          .join("; ");
+        errorMessage = validationErrors || errorMessage;
+      }
+    } catch (parseErr) {
+      if (parseErr instanceof Error) throw parseErr;
+    }
+    throw new Error(errorMessage);
   }
 
   return response.json();

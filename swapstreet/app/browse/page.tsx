@@ -1,72 +1,124 @@
-import { Suspense } from "react";
-// Adjust these import paths based on your actual folder structure
+"use client";
+
+import { Suspense, useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/common/Header";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Sidebar } from "./components/Sidebar";
 import { CreateListingFAB } from "./components/CreateListingFAB";
-import InfiniteBrowse from "./components/InfiniteBrowse";
+import InfiniteBrowse, { Item } from "./components/InfiniteBrowse";
 import { getSearchResults, SearchParams } from "@/lib/api/browse";
 
-/**
- * Next.js 15 Server Component
- * This handles the initial data fetch and layout.
- */
-export default async function BrowsePage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
-  // 1. Wait for URL search params (Next.js 15 requirement)
-  const params = await searchParams;
+function BrowseContent() {
+  const searchParams = useSearchParams();
 
-  // 2. Pre-fetch initial data on the server
-  // This prevents the "blank page then loading spinner" effect
-  const initialData = await getSearchResults(params);
+  const [initialData, setInitialData] = useState<{
+    items: Item[];
+    nextCursor: string | null;
+    hasNextPage: boolean;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const currentParams: SearchParams = useMemo(
+    () => ({
+      q: searchParams.get("q") || undefined,
+      category: searchParams.get("category") || undefined,
+      condition: searchParams.get("condition") || undefined,
+      size: searchParams.get("size") || undefined,
+      brand: searchParams.get("brand") || undefined,
+      colour: searchParams.get("colour") || undefined,
+      maxPrice: searchParams.get("maxPrice")
+        ? parseFloat(searchParams.get("maxPrice")!)
+        : undefined,
+      minPrice: searchParams.get("minPrice")
+        ? parseFloat(searchParams.get("minPrice")!)
+        : undefined,
+      lat: searchParams.get("lat")
+        ? parseFloat(searchParams.get("lat")!)
+        : undefined,
+      lng: searchParams.get("lng")
+        ? parseFloat(searchParams.get("lng")!)
+        : undefined,
+      radiusKm: searchParams.get("radiusKm")
+        ? parseFloat(searchParams.get("radiusKm")!)
+        : undefined,
+    }),
+    [searchParams],
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchInitial() {
+      setIsLoading(true);
+      try {
+        const data = await getSearchResults(currentParams);
+        if (isMounted) setInitialData(data);
+      } catch (error) {
+        console.error("Initial fetch failed:", error);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchInitial();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentParams]);
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* 3. Global Navigation */}
-      <Header showCenterNav={true} />
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* 4. Filter Sidebar - Wrapped in Suspense for URL param read safety */}
-        <Suspense fallback={<SidebarSkeleton />}>
-          <Sidebar />
-        </Suspense>
-
-        {/* 5. Main Content Area */}
-        <Suspense fallback={<BrowseSkeleton />}>
-          <InfiniteBrowse
-            initialItems={initialData.items}
-            initialCursor={initialData.nextCursor}
-            initialHasNext={initialData.hasNextPage}
-          />
-        </Suspense>
+    <SidebarInset className="flex flex-col flex-1 overflow-hidden">
+      <div className="sticky top-0 z-10 flex h-10 items-center border-b px-2 bg-white shrink-0">
+        <SidebarTrigger />
       </div>
 
-      {/* 6. Floating Action Button */}
-      <CreateListingFAB />
-    </div>
+      <div className="flex-1 relative overflow-hidden">
+        {isLoading ? (
+          <BrowseSkeleton />
+        ) : (
+          <InfiniteBrowse
+            key={searchParams.toString()}
+            initialItems={initialData?.items || []}
+            initialCursor={initialData?.nextCursor || null}
+            initialHasNext={initialData?.hasNextPage || false}
+            params={currentParams}
+          />
+        )}
+      </div>
+    </SidebarInset>
   );
 }
 
-/** SKELETONS FOR LOADING STATES **/
-
-function SidebarSkeleton() {
+export default function BrowsePage() {
   return (
-    <aside className="w-64 bg-[#d9d9d9] border-r p-4 pt-24 h-screen animate-pulse">
-      <div className="h-10 bg-gray-300 rounded mb-6" />
-      <div className="h-6 w-1/2 bg-gray-300 rounded mb-4" />
-      <div className="space-y-3">
-        <div className="h-4 bg-gray-300 rounded" />
-        <div className="h-4 bg-gray-300 rounded w-5/6" />
+    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+      <Header />
+
+      <div className="flex-1 flex overflow-hidden pt-16">
+        <SidebarProvider defaultOpen={true}>
+          <Suspense fallback={<div className="w-64 border-r bg-white" />}>
+            <Sidebar />
+          </Suspense>
+
+          <Suspense fallback={<BrowseSkeleton />}>
+            <BrowseContent />
+          </Suspense>
+
+          <CreateListingFAB />
+        </SidebarProvider>
       </div>
-    </aside>
+    </div>
   );
 }
 
 function BrowseSkeleton() {
   return (
-    <main className="pt-24 flex-1 p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+    <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 overflow-hidden">
       {[...Array(12)].map((_, i) => (
         <div key={i} className="flex flex-col gap-3">
           <div className="aspect-square bg-gray-200 animate-pulse rounded-md" />
@@ -74,6 +126,6 @@ function BrowseSkeleton() {
           <div className="h-4 bg-gray-200 animate-pulse rounded w-1/4" />
         </div>
       ))}
-    </main>
+    </div>
   );
 }

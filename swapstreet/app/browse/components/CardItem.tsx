@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShoppingBag, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bookmark, MapPin } from "lucide-react";
 import {
   addWardrobeItem,
   hasWardrobeItem,
@@ -28,6 +29,7 @@ export function CardItem({
 }: CardItemProps) {
   const [inWardrobe, setInWardrobe] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setInWardrobe(hasWardrobeItem(id));
@@ -41,6 +43,10 @@ export function CardItem({
     setIsSaving(true);
     try {
       const token = sessionStorage.getItem("accessToken");
+      if (!token) {
+        router.push("/auth/sign-in");
+        return;
+      }
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const method = inWardrobe ? "DELETE" : "POST";
@@ -55,7 +61,12 @@ export function CardItem({
           removeWardrobeItem(id);
           setInWardrobe(false);
         } else {
-          addWardrobeItem({ id, title, price, imageUrl: imgSrc ?? null });
+          addWardrobeItem({
+            id,
+            title,
+            price,
+            imageUrl: imgSrc ?? null,
+          });
           setInWardrobe(true);
         }
       }
@@ -92,7 +103,7 @@ export function CardItem({
             disabled={isSaving}
             className="card-item-wardrobe-btn"
           >
-            <ShoppingBag
+            <Bookmark
               className="w-5 h-5"
               fill={inWardrobe ? "#14b8a6" : "none"}
             />

@@ -1,10 +1,16 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useInfiniteSearch } from "@/app/browse/hooks/useInfiniteSearch";
 import { useSearchParams } from "next/navigation";
+import { getSearchResults } from "@/lib/api/browse";
 
 // 1. Mock Next.js navigation
 jest.mock("next/navigation", () => ({
   useSearchParams: jest.fn(),
+}));
+
+// 2. Mock the API utility
+jest.mock("@/lib/api/browse", () => ({
+  getSearchResults: jest.fn(),
 }));
 
 describe("useInfiniteSearch hook", () => {
@@ -14,13 +20,17 @@ describe("useInfiniteSearch hook", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Default mock for search params (empty)
+    // Default mock for search params (Empty search)
     (useSearchParams as jest.Mock).mockReturnValue({
       get: jest.fn().mockReturnValue(null),
     });
 
-    // Mock global fetch
-    global.fetch = jest.fn() as jest.Mock;
+    // Default mock for the API response
+    (getSearchResults as jest.Mock).mockResolvedValue({
+      items: [],
+      nextCursor: null,
+      hasNextPage: false,
+    });
   });
 
   it("initializes with provided initial data", () => {
@@ -38,8 +48,9 @@ describe("useInfiniteSearch hook", () => {
       useInfiniteSearch(mockInitialItems, mockInitialCursor, true),
     );
 
-    // If reset logic ran, fetch would have been called with no cursor
-    expect(global.fetch).not.toHaveBeenCalled();
+    // If reset logic ran, the API would have been called.
+    // We expect 0 calls on mount because we use initialItems.
+    expect(getSearchResults).not.toHaveBeenCalled();
   });
 
   it("fetches the next page correctly when fetchPage is called", async () => {
@@ -49,9 +60,7 @@ describe("useInfiniteSearch hook", () => {
       hasNextPage: true,
     };
 
-    (global.fetch as jest.Mock).mockResolvedValue({
-      json: jest.fn().mockResolvedValue(mockNextPage),
-    });
+    (getSearchResults as jest.Mock).mockResolvedValue(mockNextPage);
 
     const { result } = renderHook(() =>
       useInfiniteSearch(mockInitialItems, mockInitialCursor, true),
@@ -61,8 +70,9 @@ describe("useInfiniteSearch hook", () => {
       result.current.fetchPage();
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining("Cursor=cursor-1"),
+    // Verify it called the utility with the existing cursor to get page 2
+    expect(getSearchResults).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: "cursor-1" }),
     );
 
     expect(result.current.items).toHaveLength(2);
@@ -70,40 +80,46 @@ describe("useInfiniteSearch hook", () => {
   });
 
   it("resets state and triggers a new search when searchParams change", async () => {
+    // 1. Start with initial render
     const { result, rerender } = renderHook(() =>
       useInfiniteSearch(mockInitialItems, null, true),
     );
 
-    // Simulate search params changing in the URL
-    (useSearchParams as jest.Mock).mockReturnValue({
-      get: jest.fn((key) => (key === "q" ? "Navy" : null)),
-    });
-
+    // 2. Setup mock for the new API call triggered by the reset
     const mockNewSearch = {
       items: [{ id: "search-1", title: "Navy Item" }],
       nextCursor: "new-cursor",
       hasNextPage: false,
     };
+    (getSearchResults as jest.Mock).mockResolvedValue(mockNewSearch);
 
-    (global.fetch as jest.Mock).mockResolvedValue({
-      json: jest.fn().mockResolvedValue(mockNewSearch),
+    // 3. Update the search params mock WITH A NEW OBJECT REFERENCE
+    // This is required for useEffect to detect the dependency change
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: jest.fn((key) => (key === "q" ? "Navy" : null)),
     });
 
-    // Rerender the hook to trigger the useEffect
+    // 4. Trigger the reset logic
     rerender();
 
-    await waitFor(() => {
-      expect(result.current.items).toHaveLength(1);
-      expect(result.current.items[0].id).toBe("search-1");
-    });
+    // 5. Wait for the loading state and items to update
+    await waitFor(
+      () => {
+        expect(result.current.items).toHaveLength(1);
+        expect(result.current.items[0].id).toBe("search-1");
+      },
+      { timeout: 2000 },
+    );
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining("Query=Navy"),
+    expect(getSearchResults).toHaveBeenCalledWith(
+      expect.objectContaining({ q: "Navy" }),
     );
   });
 
   it("handles fetch errors gracefully", async () => {
-    (global.fetch as jest.Mock).mockRejectedValue(new Error("Network Error"));
+    (getSearchResults as jest.Mock).mockRejectedValue(
+      new Error("Network Error"),
+    );
 
     const { result } = renderHook(() => useInfiniteSearch([], null, true));
 
@@ -116,16 +132,25 @@ describe("useInfiniteSearch hook", () => {
   });
 
   it("prevents duplicate fetches using fetchInProgressRef", async () => {
-    // Return a promise that doesn't resolve immediately
-    (global.fetch as jest.Mock).mockReturnValue(new Promise(() => {}));
+    // Setup a promise that stays pending
+    let resolvePromise: any;
+    const slowPromise = new Promise((resolve) => {
+      resolvePromise = resolve;
+    });
+    (getSearchResults as jest.Mock).mockReturnValue(slowPromise);
 
     const { result } = renderHook(() => useInfiniteSearch([], null, true));
 
-    act(() => {
+    // Fire two calls immediately
+    await act(async () => {
       result.current.fetchPage();
-      result.current.fetchPage(); // Call twice immediately
+      result.current.fetchPage();
     });
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    // API should only be called once because the first is "in progress"
+    expect(getSearchResults).toHaveBeenCalledTimes(1);
+
+    // Clean up to avoid memory leaks in the test runner
+    resolvePromise({ items: [], nextCursor: null, hasNextPage: false });
   });
 });

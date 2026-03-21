@@ -1,26 +1,43 @@
 // lib/api/browse.ts
 export type SearchParams = {
   q?: string;
-  minPrice?: string;
-  maxPrice?: string;
   cursor?: string;
+  category?: string;
+  condition?: string;
+  size?: string;
+  brand?: string;
+  colour?: string;
+  maxPrice?: number;
+  minPrice?: number;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
 };
 
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost"
 ).replace(/\/$/, "");
 
 export async function getSearchResults(params: SearchParams) {
   try {
     const q = new URLSearchParams();
 
-    if (params.q) q.set("Query", params.q); // The C# code uses request.Query
+    if (params.q) q.set("Query", params.q);
     if (params.cursor) q.set("Cursor", params.cursor);
-    if (params.minPrice) q.set("MinPrice", params.minPrice);
-    if (params.maxPrice) q.set("MaxPrice", params.maxPrice);
+    if (params.category) q.set("Category", params.category);
+    if (params.condition) q.set("Condition", params.condition);
+    if (params.size) q.set("Size", params.size);
+    if (params.brand) q.set("Brand", params.brand);
+    if (params.colour) q.set("Colour", params.colour);
+    if (params.maxPrice) q.set("MaxPrice", params.maxPrice.toString());
+    if (params.minPrice) q.set("MinPrice", params.minPrice.toString());
+    if (params.lat != null) q.set("Lat", params.lat.toString());
+    if (params.lng != null) q.set("Lng", params.lng.toString());
+    if (params.radiusKm != null) q.set("RadiusKm", params.radiusKm.toString());
+
     q.set("PageSize", "18");
 
-    const res = await fetch(`${API_BASE}/api/search/search?${q.toString()}`, {
+    const res = await fetch(`${API_BASE}/search/search?${q.toString()}`, {
       cache: "no-store",
     });
 
@@ -28,7 +45,6 @@ export async function getSearchResults(params: SearchParams) {
 
     const data = await res.json();
 
-    // The C# code returns an object with { items, nextCursor, hasNextPage }
     return {
       items: data.items ?? [],
       nextCursor: data.nextCursor ?? null,

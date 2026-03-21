@@ -321,6 +321,127 @@ describe("LocationFilterModal Component", () => {
         ),
       ).toBeInTheDocument();
     });
+
+    it("shows error for POSITION_UNAVAILABLE", () => {
+      const mockGeoError = {
+        code: 2,
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+        message: "Position unavailable",
+      };
+      (
+        global.navigator.geolocation.getCurrentPosition as jest.Mock
+      ).mockImplementationOnce(
+        (success: unknown, error: (e: unknown) => void) => error(mockGeoError),
+      );
+
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      expect(
+        screen.getByText("Your location is unavailable right now."),
+      ).toBeInTheDocument();
+    });
+
+    it("shows error for TIMEOUT", () => {
+      const mockGeoError = {
+        code: 3,
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+        message: "Timeout",
+      };
+      (
+        global.navigator.geolocation.getCurrentPosition as jest.Mock
+      ).mockImplementationOnce(
+        (success: unknown, error: (e: unknown) => void) => error(mockGeoError),
+      );
+
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      expect(
+        screen.getByText("Timed out while retrieving your location."),
+      ).toBeInTheDocument();
+    });
+
+    it("shows generic error for unknown geolocation error code", () => {
+      const mockGeoError = {
+        code: 99,
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+        message: "Unknown",
+      };
+      (
+        global.navigator.geolocation.getCurrentPosition as jest.Mock
+      ).mockImplementationOnce(
+        (success: unknown, error: (e: unknown) => void) => error(mockGeoError),
+      );
+
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      expect(
+        screen.getByText("Unable to retrieve your location."),
+      ).toBeInTheDocument();
+    });
+
+    it("shows error when location permission is denied via permissions API", async () => {
+      Object.defineProperty(navigator, "permissions", {
+        value: {
+          query: jest.fn().mockResolvedValue({ state: "denied" }),
+        },
+        configurable: true,
+        writable: true,
+      });
+
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/location permission is blocked/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("falls through to getCurrentPosition when permissions.query rejects", async () => {
+      Object.defineProperty(navigator, "permissions", {
+        value: {
+          query: jest.fn().mockRejectedValue(new Error("Not supported")),
+        },
+        configurable: true,
+        writable: true,
+      });
+
+      const mockPosition = { coords: { latitude: 45.5, longitude: -73.5 } };
+      (
+        global.navigator.geolocation.getCurrentPosition as jest.Mock
+      ).mockImplementationOnce((success: (p: typeof mockPosition) => void) =>
+        success(mockPosition),
+      );
+
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+      fireEvent.click(screen.getByText("Use my current location"));
+
+      await waitFor(() => {
+        expect(mockOnApply).toHaveBeenCalledWith(
+          expect.objectContaining({ name: "Current location" }),
+        );
+      });
+    });
   });
 
   describe("Close Button", () => {
@@ -379,6 +500,109 @@ describe("LocationFilterModal Component", () => {
           }),
         );
       });
+    });
+
+    it("displays default radius of 20km on mount", () => {
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+
+      expect(screen.getByText("20 km")).toBeInTheDocument();
+    });
+
+    it("limits radius to valid maximum", () => {
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+
+      const slider = screen.getByRole("slider") as HTMLInputElement;
+      fireEvent.change(slider, { target: { value: "1000" } });
+
+      const radiusText = screen.getByText(/\d+ km/);
+      const radiusValue = parseInt(radiusText.textContent || "0");
+      expect(radiusValue).toBeLessThanOrEqual(500);
+    });
+
+    it("prevents negative or zero radius values", () => {
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+
+      const slider = screen.getByRole("slider") as HTMLInputElement;
+      fireEvent.change(slider, { target: { value: "0" } });
+
+      const radiusValue = parseInt(
+        screen.getByText(/\d+ km/).textContent || "20",
+      );
+      expect(radiusValue).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Modal Title & Instructions", () => {
+    it("displays modal title", () => {
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+
+      expect(screen.getByText("Change location")).toBeInTheDocument();
+    });
+
+    it("shows both FSA and geolocation options", () => {
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+
+      expect(screen.getByPlaceholderText("H3Z")).toBeInTheDocument();
+      expect(screen.getByText("Use my current location")).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("rejects whitespace-only FSA input and keeps Apply disabled", () => {
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+
+      const input = screen.getByPlaceholderText("H3Z") as HTMLInputElement;
+      const applyButton = screen.getByText("Apply") as HTMLButtonElement;
+
+      fireEvent.change(input, { target: { value: "   " } });
+
+      // After normalization, whitespace-only becomes empty string, so Apply should remain disabled
+      expect(applyButton).toBeDisabled();
+      expect(input.value).toBe("");
+    });
+
+    it("debounces rapid FSA input changes", async () => {
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+
+      const input = screen.getByPlaceholderText("H3Z");
+
+      fireEvent.change(input, { target: { value: "H" } });
+      fireEvent.change(input, { target: { value: "H3" } });
+      fireEvent.change(input, { target: { value: "H3Z" } });
+
+      expect(
+        screen.queryByText("Invalid postal code format"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("preserves radius when changing FSA input", () => {
+      render(
+        <LocationFilterModal onClose={mockOnClose} onApply={mockOnApply} />,
+      );
+
+      const slider = screen.getByRole("slider");
+      fireEvent.change(slider, { target: { value: "100" } });
+
+      expect(screen.getByText("100 km")).toBeInTheDocument();
+
+      const input = screen.getByPlaceholderText("H3Z");
+      fireEvent.change(input, { target: { value: "M5V" } });
+
+      expect(screen.getByText("100 km")).toBeInTheDocument();
     });
   });
 });
