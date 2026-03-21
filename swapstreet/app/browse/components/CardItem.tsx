@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bookmark, MapPin } from "lucide-react";
 import {
@@ -17,6 +16,7 @@ interface CardItemProps {
   price: number;
   fsa: string;
   href?: string;
+  onSelectListing?: (id: string) => void;
 }
 
 export function CardItem({
@@ -26,6 +26,7 @@ export function CardItem({
   price,
   fsa,
   href,
+  onSelectListing,
 }: CardItemProps) {
   const [inWardrobe, setInWardrobe] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -78,7 +79,15 @@ export function CardItem({
   };
 
   const content = (
-    <div className="card-item">
+    <div
+      className="card-item cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={(e) => {
+        e.preventDefault();
+        if (onSelectListing) {
+          onSelectListing(id);
+        }
+      }}
+    >
       <div className="card-item-image-container">
         {imgSrc ? (
           <img
@@ -113,11 +122,5 @@ export function CardItem({
     </div>
   );
 
-  return href ? (
-    <Link href={href} className="block">
-      {content}
-    </Link>
-  ) : (
-    content
-  );
+  return content;
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { CardItem } from "./CardItem";
+import { ListingModal } from "./ListingModal";
 import { getSearchResults, SearchParams } from "@/lib/api/browse";
 
 export interface Item {
@@ -31,8 +33,36 @@ export default function InfiniteBrowse({
   const [hasNext, setHasNext] = useState(initialHasNext);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   // 2. Refs for the observer
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const listingId = searchParams.get("listing");
+    setSelectedListingId(listingId);
+  }, [searchParams]);
+
+  const handleSelectListing = useCallback(
+    (id: string) => {
+      setSelectedListingId(id);
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.set("listing", id);
+      router.push(`?${newParams.toString()}`, { scroll: false });
+    },
+    [searchParams, router],
+  );
+
+  const handleCloseModal = useCallback(() => {
+    setSelectedListingId(null);
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.delete("listing");
+    const newUrl =
+      newParams.toString() === "" ? "?" : `?${newParams.toString()}`;
+    router.push(newUrl, { scroll: false });
+  }, [searchParams, router]);
 
   // 3. Reset state when server-side search params change (Filters)
   useEffect(() => {
@@ -93,7 +123,7 @@ export default function InfiniteBrowse({
             imgSrc={item.images?.[0]?.imageUrl}
             price={item.price ?? 0}
             fsa={item.fsa}
-            href={`/listing/${item.id}`}
+            onSelectListing={handleSelectListing}
           />
         ))}
       </div>
@@ -122,6 +152,11 @@ export default function InfiniteBrowse({
           </p>
         )}
       </div>
+
+      {/* Listing Modal */}
+      {selectedListingId && (
+        <ListingModal listingId={selectedListingId} onClose={handleCloseModal} />
+      )}
     </main>
   );
 }
