@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { 
   Cloud, Droplets, Shirt, Zap, Pipette, Mountain, 
@@ -10,6 +12,7 @@ import {
 } from 'recharts';
 import { TooltipProps } from 'recharts';
 import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
+import { Header } from '@/components/common/Header';
 
 // This matches the structure of your DATA array
 interface CustomTooltipProps extends TooltipProps<ValueType, NameType> {
@@ -69,8 +72,9 @@ export default function SustainabilityDashboard() {
   const [view, setView] = useState<'bar' | 'trend'>('bar');
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
-      <header className="mb-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-20 md:pt-24 font-sans">
+      <Header />
+      <header className="mb-12">
         <h1 className="text-2xl font-bold text-gray-900">Sustainability Overview</h1>
         <p className="text-gray-500">Detailed insights into your impact</p>
       </header>

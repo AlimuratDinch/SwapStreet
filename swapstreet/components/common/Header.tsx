@@ -80,7 +80,11 @@ function ActionButtons() {
   return (
     <div className="flex gap-2 items-center">
       <Globe className="w-6 h-6 text-gray-400" />
-      <Leaf className="w-6 h-6 text-gray-400" />
+      <IconButton
+        href="/sustainability"
+        icon={<Leaf />}
+        title="Sustainability"
+      />
       <IconButton
         href="/wardrobe"
         icon={<ShoppingBag />}
