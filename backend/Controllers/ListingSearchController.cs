@@ -134,14 +134,22 @@ public class ListingSearchController : ControllerBase
             listing.Title,
             listing.Description,
             listing.Price,
+            listing.FSA,
+            listing.Category,
+            listing.Brand,
+            listing.Condition,
+            listing.Size,
+            listing.Colour,
             createdAt = listing.CreatedAt,
             seller = seller == null ? null : new
             {
                 seller.Id,
                 seller.FirstName,
                 seller.LastName,
+                seller.Rating,
                 profileImageUrl = _minio.GetPublicFileUrl(seller.ProfileImagePath),
-                bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath)
+                bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath),
+                seller.CreatedAt
             },
             images = images.Select(img => new
             {

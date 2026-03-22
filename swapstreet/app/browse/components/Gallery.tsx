@@ -48,38 +48,50 @@ export default function Gallery({
   }
 
   return (
-    <div className="w-full h-full flex flex-col">
-      <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-        <button
-          onClick={prev}
-          aria-label="previous"
-          className="absolute left-2 z-20 bg-white/80 hover:bg-white p-2 rounded-full"
-        >
-          ◀
-        </button>
-        <div className="h-full w-full relative flex items-center justify-center">
+    <div className="w-full h-full flex flex-col relative overflow-visible">
+      {/* Blurred background image */}
+      {safeUrls[index] ? (
+        <Image
+          src={safeUrls[index] ?? images[index]?.imageUrl ?? ""}
+          alt={`background-${index}`}
+          fill
+          sizes="(max-width: 1024px) 100vw, 800px"
+          className="absolute -top-96 -left-96 -right-96 object-cover blur-2xl scale-300 z-0"
+        />
+      ) : null}
+
+      <div className="flex-1 bg-black/0 overflow-hidden flex items-center justify-center relative pt-2 z-10">
+        {/* Main image on top */}
+        <div className="absolute inset-0 flex items-center justify-center">
           {safeUrls[index] ? (
             <Image
               src={safeUrls[index] ?? images[index]?.imageUrl ?? ""}
               alt={`image-${index}`}
               fill
               sizes="(max-width: 1024px) 100vw, 800px"
-              className="max-h-[78vh] max-w-full mx-auto object-contain"
+              className="max-h-full max-w-full object-contain"
             />
           ) : (
-            <div className="max-h-[78vh] max-w-full mx-auto object-contain" />
+            <div className="max-h-full max-w-full" />
           )}
         </div>
         <button
+          onClick={prev}
+          aria-label="previous"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white p-2 rounded-full"
+        >
+          ◀
+        </button>
+        <button
           onClick={next}
           aria-label="next"
-          className="absolute right-2 z-20 bg-white/80 hover:bg-white p-2 rounded-full"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white p-2 rounded-full"
         >
           ▶
         </button>
       </div>
 
-      <div className="mt-2 flex gap-2 overflow-x-auto py-1">
+      <div className="flex gap-2 overflow-x-auto py-2 justify-center bg-black/0 z-10">
         {safeUrls.map((src, i) => (
           <button
             key={i}

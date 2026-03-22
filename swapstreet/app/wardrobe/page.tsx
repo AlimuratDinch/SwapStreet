@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 import { Header } from "@/components/common/Header";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { Area } from "react-easy-crop";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -15,6 +16,7 @@ import { Sidebar } from "@/components/wardrobe/Sidebar";
 import { WardrobeGrid } from "@/components/wardrobe/WardrobeGrid";
 
 export default function WardrobePage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -492,6 +494,7 @@ export default function WardrobePage() {
           }
           onToggleFavorite={toggleFavorite}
           onRemoveItem={handleRemoveFromWardrobe}
+          onViewDetails={(id) => router.push(`/listing?id=${id}`)}
         />
       </main>
     </div>

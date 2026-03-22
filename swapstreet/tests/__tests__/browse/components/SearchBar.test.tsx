@@ -34,49 +34,42 @@ describe("SearchBar", () => {
     expect(mockSearch).not.toHaveBeenCalled();
   });
 
-  it("calls onSearch with trimmed whitespace", () => {
-    const mockSearch = jest.fn();
-    render(<SearchBar onSearch={mockSearch} />);
-    const input = screen.getByPlaceholderText("Search...");
+  it.each([
+    {
+      input: "   Navy Jacket   ",
+      expected: "Navy Jacket",
+      key: "Enter",
+      shouldCall: true,
+    },
+    { input: "Denim", expected: "Denim", key: "Enter", shouldCall: true },
+    { input: "", expected: "", key: "Enter", shouldCall: true },
+    {
+      input: "Gucci & Prada",
+      expected: "Gucci & Prada",
+      key: "Enter",
+      shouldCall: true,
+    },
+    { input: "Test", expected: null, key: " ", shouldCall: false },
+  ])(
+    "handles search input correctly",
+    ({ input, expected, key, shouldCall }) => {
+      const mockSearch = jest.fn();
+      render(<SearchBar onSearch={mockSearch} />);
+      const searchInput = screen.getByPlaceholderText("Search...");
 
-    fireEvent.change(input, { target: { value: "   Navy Jacket   " } });
-    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+      fireEvent.change(searchInput, { target: { value: input } });
+      fireEvent.keyDown(searchInput, {
+        key,
+        code: key === "Enter" ? "Enter" : "Space",
+      });
 
-    expect(mockSearch).toHaveBeenCalledWith("Navy Jacket");
-  });
-
-  it("calls onSearch when Enter key is pressed", () => {
-    const mockSearch = jest.fn();
-    render(<SearchBar onSearch={mockSearch} />);
-    const input = screen.getByPlaceholderText("Search...");
-
-    fireEvent.change(input, { target: { value: "Denim" } });
-    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
-
-    expect(mockSearch).toHaveBeenCalledWith("Denim");
-  });
-
-  it("handles empty search input", () => {
-    const mockSearch = jest.fn();
-    render(<SearchBar onSearch={mockSearch} />);
-    const input = screen.getByPlaceholderText("Search...");
-
-    fireEvent.change(input, { target: { value: "" } });
-    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
-
-    expect(mockSearch).toHaveBeenCalledWith("");
-  });
-
-  it("handles search with special characters", () => {
-    const mockSearch = jest.fn();
-    render(<SearchBar onSearch={mockSearch} />);
-    const input = screen.getByPlaceholderText("Search...");
-
-    fireEvent.change(input, { target: { value: "Gucci & Prada" } });
-    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
-
-    expect(mockSearch).toHaveBeenCalledWith("Gucci & Prada");
-  });
+      if (shouldCall) {
+        expect(mockSearch).toHaveBeenCalledWith(expected);
+      } else {
+        expect(mockSearch).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   it("does not call onSearch multiple times for single Enter press", () => {
     const mockSearch = jest.fn();
