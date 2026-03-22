@@ -7,8 +7,7 @@ jest.mock("@/app/chat/ChatLayout.module.css", () => ({
 import Avatar from "@/app/chat/components/Avatar";
 
 describe("Avatar Component", () => {
-  const getImg = () =>
-    document.querySelector("img") as HTMLImageElement | null;
+  const getImg = () => document.querySelector("img") as HTMLImageElement | null;
 
   it("renders with provided src", () => {
     render(<Avatar src="http://example.com/avatar.jpg" />);

@@ -93,7 +93,12 @@ describe("ChatPanel Component", () => {
     consoleErrorSpy = jest
       .spyOn(console, "error")
       .mockImplementation((message: unknown) => {
-        if (typeof message === "string" && !message.includes("An update to ChatPanel inside a test was not wrapped in act")) {
+        if (
+          typeof message === "string" &&
+          !message.includes(
+            "An update to ChatPanel inside a test was not wrapped in act",
+          )
+        ) {
           process.stderr.write(String(message) + "\n");
         }
       });
@@ -137,7 +142,7 @@ describe("ChatPanel Component", () => {
     });
 
     const { container } = render(<ChatPanel {...mockProps} />);
-    
+
     await waitFor(() => {
       expect(container.firstChild).toBeNull();
     });
@@ -235,7 +240,10 @@ describe("ChatPanel Component", () => {
 
     await waitFor(() => {
       const link = screen.getByRole("link");
-      expect(link).toHaveAttribute("href", expect.stringContaining("listing-456"));
+      expect(link).toHaveAttribute(
+        "href",
+        expect.stringContaining("listing-456"),
+      );
       expect(link).toHaveTextContent("Test Item");
     });
   });
@@ -286,9 +294,7 @@ describe("ChatPanel Component", () => {
   });
 
   it("disables send button when not connected", async () => {
-    mockConnection.start.mockRejectedValueOnce(
-      new Error("Connection failed"),
-    );
+    mockConnection.start.mockRejectedValueOnce(new Error("Connection failed"));
 
     render(<ChatPanel {...mockProps} />);
 
@@ -296,7 +302,9 @@ describe("ChatPanel Component", () => {
     fireEvent.change(textarea, { target: { value: "Test message" } });
 
     await waitFor(() => {
-      const sendButton = screen.getByRole("button", { name: "Send" }) as HTMLButtonElement;
+      const sendButton = screen.getByRole("button", {
+        name: "Send",
+      }) as HTMLButtonElement;
       expect(sendButton).toBeDisabled();
     });
   });
@@ -386,9 +394,7 @@ describe("ChatPanel Component", () => {
   });
 
   it("displays error when SignalR connection fails", async () => {
-    mockConnection.start.mockRejectedValueOnce(
-      new Error("Connection failed"),
-    );
+    mockConnection.start.mockRejectedValueOnce(new Error("Connection failed"));
 
     render(<ChatPanel {...mockProps} />);
 
@@ -473,20 +479,22 @@ describe("ChatPanel Component", () => {
   it("submits close deal request on Yes when initiating close", async () => {
     render(<ChatPanel {...mockProps} />);
 
-    const actionButton = screen.getByRole("button", { name: "Actions" }) as HTMLButtonElement;
-    
+    const actionButton = screen.getByRole("button", {
+      name: "Actions",
+    }) as HTMLButtonElement;
+
     await act(async () => {
       fireEvent.click(actionButton);
     });
 
     const closeButton = screen.getByText("Close Deal");
-    
+
     await act(async () => {
       fireEvent.click(closeButton);
     });
 
     const yesButton = screen.getAllByText("Yes")[0];
-    
+
     await act(async () => {
       fireEvent.click(yesButton);
     });
@@ -525,13 +533,13 @@ describe("ChatPanel Component", () => {
     const ratingButtons = screen.getAllByRole("button", {
       name: /Rate \d+ star/,
     });
-    
+
     await act(async () => {
       fireEvent.click(ratingButtons[2]);
     });
 
     const submitButton = screen.getByText("Submit rating");
-    
+
     await act(async () => {
       fireEvent.click(submitButton);
     });
@@ -590,13 +598,13 @@ describe("ChatPanel Component", () => {
     const ratingButtons = screen.getAllByRole("button", {
       name: /Rate \d+ star/,
     });
-    
+
     await act(async () => {
       fireEvent.click(ratingButtons[0]);
     });
 
     const submitButton = screen.getByText("Submit rating");
-    
+
     await act(async () => {
       fireEvent.click(submitButton);
     });
@@ -622,13 +630,13 @@ describe("ChatPanel Component", () => {
     const ratingButtons = screen.getAllByRole("button", {
       name: /Rate \d+ star/,
     });
-    
+
     await act(async () => {
       fireEvent.click(ratingButtons[2]);
     });
 
     const noRatingButton = screen.getByText("No rating");
-    
+
     await act(async () => {
       fireEvent.click(noRatingButton);
     });
@@ -644,7 +652,9 @@ describe("ChatPanel Component", () => {
       isDealClosed: true,
     };
 
-    const { container } = render(<ChatPanel {...mockProps} room={closedRoom} />);
+    const { container } = render(
+      <ChatPanel {...mockProps} room={closedRoom} />,
+    );
 
     expect(container.querySelector("div")).toBeInTheDocument();
   });
@@ -656,7 +666,9 @@ describe("ChatPanel Component", () => {
       sellerRatingCount: 5,
     };
 
-    const { container } = render(<ChatPanel {...mockProps} room={customRoom} />);
+    const { container } = render(
+      <ChatPanel {...mockProps} room={customRoom} />,
+    );
 
     expect(container.querySelector("div")).toBeInTheDocument();
   });
@@ -668,7 +680,9 @@ describe("ChatPanel Component", () => {
       buyerRatingCount: 0,
     };
 
-    const { container } = render(<ChatPanel {...mockProps} room={customRoom} />);
+    const { container } = render(
+      <ChatPanel {...mockProps} room={customRoom} />,
+    );
 
     expect(container.querySelector("div")).toBeInTheDocument();
   });
@@ -680,7 +694,9 @@ describe("ChatPanel Component", () => {
       sellerRatingCount: 5,
     };
 
-    const { container } = render(<ChatPanel {...mockProps} room={customRoom} />);
+    const { container } = render(
+      <ChatPanel {...mockProps} room={customRoom} />,
+    );
 
     expect(container.querySelector("div")).toBeInTheDocument();
   });
@@ -693,7 +709,9 @@ describe("ChatPanel Component", () => {
       closeConfirmedByBuyer: true,
     };
 
-    const { container } = render(<ChatPanel {...mockProps} room={respondingRoom} />);
+    const { container } = render(
+      <ChatPanel {...mockProps} room={respondingRoom} />,
+    );
 
     expect(container.querySelector("div")).toBeInTheDocument();
   });
@@ -706,7 +724,9 @@ describe("ChatPanel Component", () => {
       closeConfirmedByBuyer: true,
     };
 
-    const { container } = render(<ChatPanel {...mockProps} room={respondingRoom} />);
+    const { container } = render(
+      <ChatPanel {...mockProps} room={respondingRoom} />,
+    );
 
     expect(container.querySelector("div")).toBeInTheDocument();
   });
@@ -726,7 +746,9 @@ describe("ChatPanel Component", () => {
       ratings: [],
     };
 
-    const { container } = render(<ChatPanel {...mockProps} room={closedRoom} />);
+    const { container } = render(
+      <ChatPanel {...mockProps} room={closedRoom} />,
+    );
 
     expect(container.querySelector("div")).toBeInTheDocument();
   });
@@ -808,7 +830,9 @@ describe("ChatPanel Component", () => {
   });
 
   it("handles fetch failure when loading messages", async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Fetch failed"));
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error("Fetch failed"),
+    );
     const consoleSpy = jest
       .spyOn(console, "error")
       .mockImplementation(() => {});

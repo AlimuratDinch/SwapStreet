@@ -37,12 +37,9 @@ export default function InfiniteBrowse({
   // 2. Refs for the observer
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  const handleSelectListing = useCallback(
-    (id: string) => {
-      window.open(`/listing?id=${id}`, "_blank");
-    },
-    [],
-  );
+  const handleSelectListing = useCallback((id: string) => {
+    window.open(`/listing?id=${id}`, "_blank");
+  }, []);
 
   // 3. Reset state when server-side search params change (Filters)
   useEffect(() => {

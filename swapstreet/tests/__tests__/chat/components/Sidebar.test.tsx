@@ -285,7 +285,10 @@ describe("Chat Sidebar Component", () => {
     });
 
     it("does not highlight inactive chatroom", () => {
-      const anotherRoom = { ...mockChatroom, id: "room-2" } as unknown as Chatroom;
+      const anotherRoom = {
+        ...mockChatroom,
+        id: "room-2",
+      } as unknown as Chatroom;
       const { container } = render(
         <Sidebar
           chatrooms={[mockChatroom, anotherRoom]}
@@ -329,7 +332,9 @@ describe("Chat Sidebar Component", () => {
         />,
       );
 
-      const chatroomButtons = container.querySelectorAll("button[class*='chatroom']");
+      const chatroomButtons = container.querySelectorAll(
+        "button[class*='chatroom']",
+      );
       expect(chatroomButtons.length).toBeGreaterThan(0);
     });
 
@@ -352,7 +357,9 @@ describe("Chat Sidebar Component", () => {
         />,
       );
 
-      const chatroomButtons = container.querySelectorAll("button[class*='chatroom']");
+      const chatroomButtons = container.querySelectorAll(
+        "button[class*='chatroom']",
+      );
       expect(chatroomButtons.length).toBeGreaterThan(0);
     });
   });
@@ -377,7 +384,9 @@ describe("Chat Sidebar Component", () => {
         />,
       );
 
-      expect(screen.getByText("This is the latest message")).toBeInTheDocument();
+      expect(
+        screen.getByText("This is the latest message"),
+      ).toBeInTheDocument();
     });
 
     it("falls back to room messages when context doesn't have latest", () => {
@@ -409,7 +418,12 @@ describe("Chat Sidebar Component", () => {
         ...mockChatroom,
         id: "room-2",
         messages: [
-          { id: "msg-2", author: "seller-1", content: "Hi there!", sendDate: new Date().toISOString() },
+          {
+            id: "msg-2",
+            author: "seller-1",
+            content: "Hi there!",
+            sendDate: new Date().toISOString(),
+          },
         ],
       } as unknown as Chatroom;
 

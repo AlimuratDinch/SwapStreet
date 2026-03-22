@@ -54,20 +54,20 @@ describe("Listing Page", () => {
     });
 
     (useSearchParams as jest.Mock).mockReturnValue(
-      new URLSearchParams("id=listing-1")
+      new URLSearchParams("id=listing-1"),
     );
 
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
     (wardrobeStorage.addWardrobeItem as jest.Mock).mockImplementation(() => {});
     (wardrobeStorage.removeWardrobeItem as jest.Mock).mockImplementation(
-      () => {}
+      () => {},
     );
 
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockListing),
-      } as any)
+      } as any),
     );
   });
 
@@ -145,7 +145,7 @@ describe("Listing Page", () => {
     render(<ListingPage />);
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("listing-1")
+        expect.stringContaining("listing-1"),
       );
     });
   });
@@ -242,7 +242,9 @@ describe("Listing Page", () => {
   it("renders send button", async () => {
     render(<ListingPage />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /send message/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /send message/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -251,7 +253,9 @@ describe("Listing Page", () => {
     await waitFor(() => {
       expect(screen.getByText("Vintage Jacket")).toBeInTheDocument();
     });
-    const textarea = screen.getByPlaceholderText(/hi, is this available/i) as HTMLTextAreaElement;
+    const textarea = screen.getByPlaceholderText(
+      /hi, is this available/i,
+    ) as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: "Test" } });
     expect(textarea.value).toBe("Test");
   });
@@ -356,7 +360,9 @@ describe("Listing Page", () => {
   });
 
   it("displays error when listing fetch fails", async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error("Network error"),
+    );
     render(<ListingPage />);
     await waitFor(() => {
       expect(screen.getByText("Failed to load listing")).toBeInTheDocument();
@@ -419,7 +425,7 @@ describe("Listing Page", () => {
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         "/api/chat/chatrooms/get-or-create",
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -439,7 +445,9 @@ describe("Listing Page", () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByText(/Cannot message this seller/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Cannot message this seller/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -524,7 +532,7 @@ describe("Listing Page", () => {
       expect(screen.getByText("Vintage Jacket")).toBeInTheDocument();
     });
 
-    const button =screen.getByRole("button", { name: /send message/i });
+    const button = screen.getByRole("button", { name: /send message/i });
     fireEvent.click(button);
 
     await waitFor(() => {
@@ -632,7 +640,9 @@ describe("Listing Page", () => {
   });
 
   it("removes item from wardrobe successfully", async () => {
-    (wardrobeStorage.removeWardrobeItem as jest.Mock).mockImplementation(() => {});
+    (wardrobeStorage.removeWardrobeItem as jest.Mock).mockImplementation(
+      () => {},
+    );
     (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(true);
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
@@ -652,7 +662,9 @@ describe("Listing Page", () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(wardrobeStorage.removeWardrobeItem).toHaveBeenCalledWith("listing-1");
+      expect(wardrobeStorage.removeWardrobeItem).toHaveBeenCalledWith(
+        "listing-1",
+      );
     });
   });
 
@@ -821,7 +833,9 @@ describe("Listing Page", () => {
 
     render(<ListingPage />);
     await waitFor(() => {
-      expect(screen.queryByRole("link", { name: /seller details/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", { name: /seller details/i }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -944,7 +958,7 @@ describe("Listing Page", () => {
                 json: () => Promise.resolve({}),
               } as Response);
             }, 100);
-          })
+          }),
       );
 
     render(<ListingPage />);
@@ -952,7 +966,9 @@ describe("Listing Page", () => {
       expect(screen.getByText("Save")).toBeInTheDocument();
     });
 
-    const saveButton = screen.getByRole("button", { name: /save/i }) as HTMLButtonElement;
+    const saveButton = screen.getByRole("button", {
+      name: /save/i,
+    }) as HTMLButtonElement;
     fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -975,7 +991,7 @@ describe("Listing Page", () => {
                 json: () => Promise.resolve({ id: "chatroom-1" }),
               } as Response);
             }, 100);
-          })
+          }),
       );
 
     render(<ListingPage />);
@@ -983,7 +999,9 @@ describe("Listing Page", () => {
       expect(screen.getByText("Vintage Jacket")).toBeInTheDocument();
     });
 
-    const button = screen.getByRole("button", { name: /send message/i }) as HTMLButtonElement;
+    const button = screen.getByRole("button", {
+      name: /send message/i,
+    }) as HTMLButtonElement;
     fireEvent.click(button);
 
     await waitFor(() => {
@@ -1017,7 +1035,7 @@ describe("Listing Page", () => {
 
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith(
-        expect.stringContaining("msg=Hi%2C%20is%20this%20available")
+        expect.stringContaining("msg=Hi%2C%20is%20this%20available"),
       );
     });
   });
@@ -1043,8 +1061,8 @@ describe("Listing Page", () => {
     const initialCallCount = (global.fetch as jest.Mock).mock.calls.length;
     fireEvent.click(button);
 
-    expect((global.fetch as jest.Mock).mock.calls.length).toBe(initialCallCount);
+    expect((global.fetch as jest.Mock).mock.calls.length).toBe(
+      initialCallCount,
+    );
   });
 });
-
-

@@ -517,7 +517,13 @@ function ListingContent() {
 
 export default function ListingPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="text-gray-500">Loading...</div></div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-gray-500">Loading...</div>
+        </div>
+      }
+    >
       <ListingContent />
     </Suspense>
   );
