@@ -71,6 +71,7 @@ describe("ChatPanel Component", () => {
 
   let mockConnection: any;
   let mockHubBuilder: any;
+  let consoleErrorSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -87,6 +88,16 @@ describe("ChatPanel Component", () => {
     (useChatContext as jest.Mock).mockReturnValue({
       markAsRead: jest.fn(),
     });
+
+    // Suppress act warnings for SignalR async operations
+    consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation((message: string) => {
+        if (!message?.includes("An update to ChatPanel inside a test was not wrapped in act")) {
+          // Only log if it's not our expected warning
+          process.stderr.write(String(message) + "\n");
+        }
+      });
 
     mockConnection = {
       on: jest.fn(),
@@ -112,6 +123,10 @@ describe("ChatPanel Component", () => {
         json: () => Promise.resolve([]),
       }),
     ) as jest.Mock;
+  });
+
+  afterEach(() => {
+    consoleErrorSpy?.mockRestore();
   });
 
   it("renders null when not authenticated", async () => {
