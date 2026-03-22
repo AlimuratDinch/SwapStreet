@@ -9,6 +9,7 @@ import ChatPanel from "@/app/chat/components/ChatPanel";
 import * as signalR from "@microsoft/signalr";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatContext } from "@/contexts/ChatContext";
+import { useSearchParams } from "next/navigation";
 import type { Chatroom, Message } from "@/app/chat/components/types";
 
 jest.mock("@microsoft/signalr");
@@ -89,12 +90,10 @@ describe("ChatPanel Component", () => {
       markAsRead: jest.fn(),
     });
 
-    // Suppress act warnings for SignalR async operations
     consoleErrorSpy = jest
       .spyOn(console, "error")
-      .mockImplementation((message: string) => {
-        if (!message?.includes("An update to ChatPanel inside a test was not wrapped in act")) {
-          // Only log if it's not our expected warning
+      .mockImplementation((message: unknown) => {
+        if (typeof message === "string" && !message.includes("An update to ChatPanel inside a test was not wrapped in act")) {
           process.stderr.write(String(message) + "\n");
         }
       });
@@ -371,8 +370,7 @@ describe("ChatPanel Component", () => {
   });
 
   it("auto-sends pending message from URL parameter on connection", async () => {
-    const mockUseSearchParams = require("next/navigation").useSearchParams;
-    mockUseSearchParams.mockReturnValue(
+    (useSearchParams as jest.Mock).mockReturnValue(
       new URLSearchParams("msg=Auto+send+this"),
     );
 

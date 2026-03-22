@@ -2,7 +2,7 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import ListingPage from "@/app/listing/page";
 import * as wardrobeStorage from "@/app/wardrobe/wardrobeStorage";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 jest.mock("@/contexts/AuthContext");
 jest.mock("@/app/wardrobe/wardrobeStorage");
@@ -271,8 +271,14 @@ describe("Listing Page", () => {
       isAuthenticated: false,
       authLoaded: true,
     });
+    (useRouter as jest.Mock).mockImplementation(() => ({
+      push: jest.fn(),
+      back: jest.fn(),
+    }));
     render(<ListingPage />);
-    expect(require("next/navigation").useRouter()).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText("Vintage Jacket")).toBeInTheDocument();
+    });
   });
 
   it("waits for auth loading", async () => {
@@ -374,7 +380,7 @@ describe("Listing Page", () => {
       status: 500,
     } as Response);
     const mockBack = jest.fn();
-    require("next/navigation").useRouter = jest.fn(() => ({
+    (useRouter as jest.Mock).mockImplementation(() => ({
       push: jest.fn(),
       back: mockBack,
     }));
@@ -388,7 +394,7 @@ describe("Listing Page", () => {
 
   it("sends message with Enter key in textarea", async () => {
     const mockPush = jest.fn();
-    require("next/navigation").useRouter = jest.fn(() => ({
+    (useRouter as jest.Mock).mockImplementation(() => ({
       push: mockPush,
       back: jest.fn(),
     }));
@@ -439,7 +445,7 @@ describe("Listing Page", () => {
 
   it("redirects to sign-in when starting chat unauthenticated", async () => {
     const mockPush = jest.fn();
-    require("next/navigation").useRouter = jest.fn(() => ({
+    (useRouter as jest.Mock).mockImplementation(() => ({
       push: mockPush,
       back: jest.fn(),
     }));
@@ -494,7 +500,7 @@ describe("Listing Page", () => {
 
   it("handles chat API error response", async () => {
     const mockPush = jest.fn();
-    require("next/navigation").useRouter = jest.fn(() => ({
+    (useRouter as jest.Mock).mockImplementation(() => ({
       push: mockPush,
       back: jest.fn(),
     }));
@@ -987,7 +993,7 @@ describe("Listing Page", () => {
 
   it("handles empty message trimming", async () => {
     const mockPush = jest.fn();
-    require("next/navigation").useRouter = jest.fn(() => ({
+    (useRouter as jest.Mock).mockImplementation(() => ({
       push: mockPush,
       back: jest.fn(),
     }));
