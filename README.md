@@ -5,12 +5,10 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=swapstreet&metric=alert_status)](https://sonarcloud.io/dashboard?id=swapstreet)
 
 ## Product Demo
-[Product Demo SWAPSTREET](https://drive.google.com/file/d/1L4cA14vKWZ4HPJrBnsa_4RdevloLQnVY/view?usp=sharing)
+[SWAPSTREET Video Demo](https://drive.google.com/file/d/1L4cA14vKWZ4HPJrBnsa_4RdevloLQnVY/view?usp=sharing)
 
-### Deployment
+## Deployment
 [swapstreet.ca](https://swapstreet.ca/)
-
-Note: We recently changed the access policy from a curated list of testers to public access. Due to Cloudflare’s policy, this may take up to 24 hours to fully propagate. During this time, you might be temporarily blocked when accessing the website and may be asked to log in via Google authentication. This should resolve itself within the next 24 hours.
 
 ## Release Demos
 - [Release 1](https://drive.google.com/file/d/1Fg40fxtmJ5qpnbLegLKkTHmqGPsn3B3i/view?usp=sharing)  
@@ -29,7 +27,7 @@ By combining convenience, personalization and eco-conscious values, the platform
 1- Prerequisites
 - Docker Desktop (running)
 - Git
-- Noed.js 20+
+- Node.js 20+
 
 2- Clone & Change to the Project Directory
 ```
@@ -42,9 +40,7 @@ git clone https://github.com/AlimuratDinch/SwapStreet
 # ================================
 # Frontend
 # ================================
-NODE_ENV=development
-NEXT_PUBLIC_API_URL=http://localhost:8080
-API_URL=http://backend:8080
+FRONTEND_URL=http://localhost
 
 # ================================
 # PostgreSQL Database Configuration
@@ -71,6 +67,18 @@ MINIO_SECRET_KEY=minioadmin
 JWT_SECRET=13d0a95d51d9e78934cfba29210183a90620c23d
 REFRESH_TOKEN_EXPIRATION_DAYS=30
 JWT_ACCESS_TOKEN_EXPIRATION_MINUTES=60
+VERTEX_AI_PROJECT_ID=project_id
+VERTEX_AI_LOCATION=us-central1
+VERTEX_AI_MODEL_ID=gemini-2.5-flash-image
+MEILI_MASTER_KEY=MelliSearch_key_1234567890_place_holder_001
+GOOGLE_ADC_FILE_PATH=./gcloud/application_default_credentials.json
+
+# ================================
+# Email Service (Brevo API)
+# ================================
+BREVO_API_KEY=API_KEY_HERE
+EMAIL_SENDER_NAME="SwapStreet"
+EMAIL_SENDER_ADDRESS=no-reply@swapstreet.ca
 
 # ================================
 # Minio
@@ -81,14 +89,44 @@ MINIO_PUBLIC_BUCKET=public
 MINIO_PRIVATE_BUCKET=private
 MINIO_USE_SSL=false
 ```
-- Create a `.env` file in the swapstreet directory
-```
-NEXT_PUBLIC_API_URL=http://localhost:8080
-```
-Depending on your OS, you may need to change "localhost" to "backend". 
-we have found Mac/unix users need "backend" and others need "localhost"
 
-- Make sure `Docker Desktop` is running, then:
+4- Vertex AI Setup
+To use virtual try-on with Vertex AI:
+
+- 4.1. Create or select a Google Cloud project
+  - Open Google Cloud Console and create a project (or reuse one).
+  - Copy your project ID (not project name), then set it in your root `.env`:
+
+- 4.2. Install Google Cloud CLI (`gcloud`)
+
+- 4.3. Authenticate Application Default Credentials (ADC) from the project folder
+  - From the repository root, run:
+
+    ```bash
+    gcloud auth application-default login
+    ```
+
+
+- 4.4. Set your active project and enable Vertex AI API
+  - From the same terminal:
+
+    ```bash
+    gcloud config set project your-project-id
+    gcloud services enable aiplatform.googleapis.com
+    ```
+
+- 4.5. Point Docker to your ADC file in root `.env` (examples)
+
+  ```bash
+  # Windows
+  GOOGLE_ADC_FILE_PATH=C:/Users/<your-user>/AppData/Roaming/gcloud/application_default_credentials.json
+
+  # macOS / Linux
+  GOOGLE_ADC_FILE_PATH=/Users/<your-user>/.config/gcloud/application_default_credentials.json
+  ```  
+
+5- Start the app
+- Make sure Docker Desktop is running, then:
 ```
 docker compose -f docker-compose.local.staging.yml up --build
 ```
