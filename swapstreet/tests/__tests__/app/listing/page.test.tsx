@@ -12,10 +12,10 @@ jest.mock("@/app/browse/components/Gallery", () => {
   };
 });
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({
+  useRouter: jest.fn(() => ({
     push: jest.fn(),
     back: jest.fn(),
-  }),
+  })),
   useSearchParams: jest.fn(),
 }));
 
