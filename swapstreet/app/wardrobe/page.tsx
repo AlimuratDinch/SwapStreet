@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 import { Header } from "@/components/common/Header";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { Area } from "react-easy-crop";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -13,9 +14,9 @@ import {
 import { CropModal } from "@/components/wardrobe/CropModal";
 import { Sidebar } from "@/components/wardrobe/Sidebar";
 import { WardrobeGrid } from "@/components/wardrobe/WardrobeGrid";
-import { ListingModal } from "@/app/browse/components/ListingModal";
 
 export default function WardrobePage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +39,6 @@ export default function WardrobePage() {
   const [selectedBodyType, setSelectedBodyType] = useState<
     "slim" | "average" | "plus" | null
   >(null);
-  const [selectedListingId, setSelectedListingId] = useState<string | null>(
-    null,
-  );
 
   // Crop state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -496,14 +494,8 @@ export default function WardrobePage() {
           }
           onToggleFavorite={toggleFavorite}
           onRemoveItem={handleRemoveFromWardrobe}
-          onViewDetails={(id) => setSelectedListingId(id)}
+          onViewDetails={(id) => router.push(`/listing?id=${id}`)}
         />
-        {selectedListingId && (
-          <ListingModal
-            listingId={selectedListingId}
-            onClose={() => setSelectedListingId(null)}
-          />
-        )}
       </main>
     </div>
   );

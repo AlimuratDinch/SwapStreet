@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { X, Bookmark } from "lucide-react";
-import Gallery from "./Gallery";
+import React, { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Bookmark } from "lucide-react";
+import Gallery from "@/app/browse/components/Gallery";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import {
   addWardrobeItem,
   hasWardrobeItem,
   removeWardrobeItem,
-} from "../../wardrobe/wardrobeStorage";
+} from "@/app/wardrobe/wardrobeStorage";
 
 type Seller = {
   id?: string;
@@ -40,11 +41,6 @@ type Listing = {
   FSA?: string;
 };
 
-interface ListingModalProps {
-  listingId: string;
-  onClose: () => void;
-}
-
 function formatListedAt(iso?: string) {
   if (!iso) return "recently";
   const d = new Date(iso);
@@ -67,7 +63,9 @@ function formatJoinYear(iso?: string) {
   return d.getFullYear();
 }
 
-export function ListingModal({ listingId, onClose }: ListingModalProps) {
+function ListingContent() {
+  const searchParams = useSearchParams();
+  const listingId = searchParams.get("id");
   const { userId, accessToken, authLoaded } = useAuth();
   const router = useRouter();
   const [listing, setListing] = useState<Listing | null>(null);
@@ -86,10 +84,12 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    if (!listingId) return;
     setInWardrobe(hasWardrobeItem(listingId));
   }, [listingId]);
 
   useEffect(() => {
+    if (!listingId) return;
     fetch(`/api/search/listing/${listingId}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -146,11 +146,11 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
 
       if (res.ok) {
         if (inWardrobe) {
-          removeWardrobeItem(listingId);
+          removeWardrobeItem(listingId!);
           setInWardrobe(false);
         } else {
           addWardrobeItem({
-            id: listingId,
+            id: listingId!,
             title: listing.title || "Untitled",
             price: Number(listing.price || 0),
             imageUrl: listing.images?.[0]?.imageUrl ?? null,
@@ -189,7 +189,7 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ sellerId, buyerId: userId }),
+        body: JSON.stringify({ sellerId, buyerId: userId, listingId }),
       });
 
       if (!res.ok) {
@@ -216,23 +216,13 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
     }
   };
 
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [onClose]);
-
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  if (!listingId) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">No listing specified</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -247,16 +237,16 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
 
   if (error || !listing) {
     return (
-      <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm text-center">
           <p className="text-gray-800 font-medium mb-6">
             Failed to load listing
           </p>
           <button
-            onClick={onClose}
+            onClick={() => router.back()}
             className="bg-teal-500 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-teal-600 transition-colors w-full"
           >
-            Close
+            Go Back
           </button>
         </div>
       </div>
@@ -276,18 +266,9 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
   const joinedYear = formatJoinYear(seller?.createdAt);
 
   return (
-    <div className="fixed inset-0 w-[100vw] h-[100dvh] bg-black z-[9999] overflow-hidden">
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 left-4 z-50 bg-black/50 hover:bg-black/70 backdrop-blur-md text-white p-2 rounded-full transition-colors shadow-lg flex items-center justify-center w-10 h-10 border border-white/20"
-        aria-label="Close"
-      >
-        <X size={20} />
-      </button>
-
+    <div className="w-screen h-screen bg-white overflow-hidden">
       {/* Main content */}
-      <div className="flex w-[100vw] h-[100dvh] min-w-[100vw] bg-white">
+      <div className="flex w-screen h-screen bg-white">
         {/* Left: Gallery */}
         <div className="flex-1 bg-transparent flex flex-col relative border-r border-gray-200 min-w-0 overflow-visible">
           <div className="flex-1 min-h-0 w-full overflow-visible mt-2">
@@ -296,7 +277,7 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
         </div>
 
         {/* Right: Details panel */}
-        <div className="w-[380px] md:w-[460px] h-full bg-white text-gray-900 flex flex-col shrink-0 relative">
+        <div className="w-[380px] md:w-[460px] bg-white text-gray-900 flex flex-col shrink-0 relative">
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <div className="p-5 flex flex-col space-y-3.5">
               {/* Title & Price */}
@@ -531,5 +512,13 @@ export function ListingModal({ listingId, onClose }: ListingModalProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ListingPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="text-gray-500">Loading...</div></div>}>
+      <ListingContent />
+    </Suspense>
   );
 }
