@@ -98,6 +98,19 @@ namespace backend.Hubs
                     return;
                 }
 
+                var chatroom = await _chatroomService.GetChatroomByIdAsync(chatroomId);
+                if (chatroom == null)
+                {
+                    await Clients.Caller.SendAsync("Error", "Chatroom not found");
+                    return;
+                }
+
+                if (chatroom.IsArchived || chatroom.IsFrozen)
+                {
+                    await Clients.Caller.SendAsync("Error", "Chatroom is read-only");
+                    return;
+                }
+
                 // Validate content
                 if (string.IsNullOrWhiteSpace(content))
                 {
