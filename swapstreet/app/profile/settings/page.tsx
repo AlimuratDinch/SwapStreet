@@ -1,22 +1,34 @@
 "use client";
 
-import { useState } from "react";
 import { Header } from "@/components/common/Header";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const { accessToken } = useAuth();
   const [sustainabilityTracking, setSustainabilityTracking] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [confirmText, setConfirmText] = useState("");
-
-  const handleDeleteAccount = () => {
-    if (confirmText !== "DELETE") return;
-
-    // TODO: Call your API here
-    // console.log("Account deleted");
-
-    // Optional: redirect after deletion
-    // router.push("/");
-  };
+  
+  async function deleteAcount() {
+    const res = await fetch(`${API_URL}/profile/delete`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(errorText || "Could not delete user.");
+    } else {
+      router.push("/");
+    }
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
@@ -81,7 +93,7 @@ export default function SettingsPage() {
 
                 <div className="flex gap-3">
                   <button
-                    onClick={handleDeleteAccount}
+                    onClick={deleteAcount}
                     disabled={confirmText !== "DELETE"}
                     className={`px-4 py-2 rounded-lg font-medium text-white ${
                       confirmText === "DELETE"

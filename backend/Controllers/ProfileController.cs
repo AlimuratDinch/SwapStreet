@@ -154,7 +154,7 @@ namespace backend.Controllers
         /// Delete the authenticated user's profile
         /// </summary>
         [Authorize]
-        [HttpDelete]
+        [HttpDelete("delete")]
         public async Task<IActionResult> DeleteProfile()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
