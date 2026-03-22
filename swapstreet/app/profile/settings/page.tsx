@@ -15,7 +15,7 @@ export default function SettingsPage() {
   const [confirmText, setConfirmText] = useState("");
   
   async function deleteAcount() {
-    const res = await fetch(`${API_URL}/profile/delete`, {
+    const res = await fetch(`${API_URL}/auth/deleteUser`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,
