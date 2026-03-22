@@ -311,7 +311,7 @@ export default function ChatPanel({
                 <>
                   {otherRoleText}{" "}
                   <Link
-                    href={`/listing/${room.listingId}`}
+                    href={`/listing?id=${room.listingId}`}
                     className={styles.chatHeaderLink}
                   >
                     {room.listingTitle || "item"}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { CardItem } from "./CardItem";
 import { getSearchResults, SearchParams } from "@/lib/api/browse";
 
@@ -31,8 +32,14 @@ export default function InfiniteBrowse({
   const [hasNext, setHasNext] = useState(initialHasNext);
   const [isLoading, setIsLoading] = useState(false);
 
+  const router = useRouter();
+
   // 2. Refs for the observer
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  const handleSelectListing = useCallback((id: string) => {
+    window.open(`/listing?id=${id}`, "_blank");
+  }, []);
 
   // 3. Reset state when server-side search params change (Filters)
   useEffect(() => {
@@ -93,7 +100,7 @@ export default function InfiniteBrowse({
             imgSrc={item.images?.[0]?.imageUrl}
             price={item.price ?? 0}
             fsa={item.fsa}
-            href={`/listing/${item.id}`}
+            onSelectListing={handleSelectListing}
           />
         ))}
       </div>
