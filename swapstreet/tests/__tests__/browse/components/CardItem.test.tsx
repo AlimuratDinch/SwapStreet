@@ -438,4 +438,120 @@ describe("CardItem Component", () => {
       );
     });
   });
+
+  it("triggers onSelectListing when Enter key is pressed on card", () => {
+    const mockOnSelectListing = jest.fn();
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} onSelectListing={mockOnSelectListing} />);
+
+    const cardElement = screen.getByText("Navy Parka").closest(".card-item");
+    expect(cardElement).toBeInTheDocument();
+
+    const enterKeyEvent = new KeyboardEvent("keydown", {
+      key: "Enter",
+      bubbles: true,
+    });
+    const preventDefaultSpy = jest.spyOn(enterKeyEvent, "preventDefault");
+
+    cardElement?.dispatchEvent(enterKeyEvent);
+
+    expect(preventDefaultSpy).toHaveBeenCalled();
+    expect(mockOnSelectListing).toHaveBeenCalledWith("item-123");
+  });
+
+  it("triggers onSelectListing when Space key is pressed on card", () => {
+    const mockOnSelectListing = jest.fn();
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} onSelectListing={mockOnSelectListing} />);
+
+    const cardElement = screen.getByText("Navy Parka").closest(".card-item");
+    expect(cardElement).toBeInTheDocument();
+
+    const spaceKeyEvent = new KeyboardEvent("keydown", {
+      key: " ",
+      bubbles: true,
+    });
+    const preventDefaultSpy = jest.spyOn(spaceKeyEvent, "preventDefault");
+
+    cardElement?.dispatchEvent(spaceKeyEvent);
+
+    expect(preventDefaultSpy).toHaveBeenCalled();
+    expect(mockOnSelectListing).toHaveBeenCalledWith("item-123");
+  });
+
+  it("does not trigger onSelectListing for other keys (ArrowUp)", () => {
+    const mockOnSelectListing = jest.fn();
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} onSelectListing={mockOnSelectListing} />);
+
+    const cardElement = screen.getByText("Navy Parka").closest(".card-item");
+    expect(cardElement).toBeInTheDocument();
+
+    const arrowKeyEvent = new KeyboardEvent("keydown", {
+      key: "ArrowUp",
+      bubbles: true,
+    });
+
+    cardElement?.dispatchEvent(arrowKeyEvent);
+
+    expect(mockOnSelectListing).not.toHaveBeenCalled();
+  });
+
+  it("does not trigger onSelectListing for other keys (Escape)", () => {
+    const mockOnSelectListing = jest.fn();
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} onSelectListing={mockOnSelectListing} />);
+
+    const cardElement = screen.getByText("Navy Parka").closest(".card-item");
+    expect(cardElement).toBeInTheDocument();
+
+    const escapeKeyEvent = new KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+    });
+
+    cardElement?.dispatchEvent(escapeKeyEvent);
+
+    expect(mockOnSelectListing).not.toHaveBeenCalled();
+  });
+
+  it("does not trigger onSelectListing when no callback is provided for Enter key", () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} />);
+
+    const cardElement = screen.getByText("Navy Parka").closest(".card-item");
+    expect(cardElement).toBeInTheDocument();
+
+    const enterKeyEvent = new KeyboardEvent("keydown", {
+      key: "Enter",
+      bubbles: true,
+    });
+
+    expect(() => {
+      cardElement?.dispatchEvent(enterKeyEvent);
+    }).not.toThrow();
+  });
+
+  it("does not trigger onSelectListing when no callback is provided for Space key", () => {
+    (wardrobeStorage.hasWardrobeItem as jest.Mock).mockReturnValue(false);
+
+    render(<CardItem {...mockProps} />);
+
+    const cardElement = screen.getByText("Navy Parka").closest(".card-item");
+    expect(cardElement).toBeInTheDocument();
+
+    const spaceKeyEvent = new KeyboardEvent("keydown", {
+      key: " ",
+      bubbles: true,
+    });
+
+    expect(() => {
+      cardElement?.dispatchEvent(spaceKeyEvent);
+    }).not.toThrow();
+  });
 });
