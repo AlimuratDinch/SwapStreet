@@ -2,6 +2,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import LoginPage from "@/app/auth/sign-in/page";
 
+const loginMock = jest.fn();
+
 // Mock logger
 jest.mock("@/components/common/logger", () => ({
   logger: {
@@ -17,6 +19,12 @@ const pushMock = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: pushMock,
+  }),
+}));
+
+jest.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    login: loginMock,
   }),
 }));
 
@@ -143,7 +151,7 @@ describe("LoginPage", () => {
       expect(pushMock).toHaveBeenCalledWith("/browse");
     });
 
-    expect(window.sessionStorage.getItem("accessToken")).toBe(mockToken);
+    expect(loginMock).toHaveBeenCalledWith(mockToken);
   });
 
   it("shows error message when login fails (non-ok response)", async () => {

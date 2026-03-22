@@ -67,11 +67,49 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("BuyerId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("CloseConfirmedByBuyer")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CloseConfirmedBySeller")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("CloseRequestedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CloseRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("CreationTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FrozenReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDealClosed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFrozen")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("ListingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ListingImageSnapshotPath")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<Guid>("SellerId")
                         .HasColumnType("uuid");
@@ -80,9 +118,48 @@ namespace backend.Migrations
 
                     b.HasIndex("BuyerId");
 
+                    b.HasIndex("ListingId");
+
                     b.HasIndex("SellerId");
 
                     b.ToTable("chatrooms", (string)null);
+                });
+
+            modelBuilder.Entity("ChatRating", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChatroomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RevieweeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReviewerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Stars")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatroomId", "ReviewerId")
+                        .IsUnique();
+
+                    b.HasIndex("RevieweeId");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.ToTable("chat_ratings", (string)null);
                 });
 
             modelBuilder.Entity("City", b =>
@@ -442,6 +519,11 @@ namespace backend.Migrations
 
             modelBuilder.Entity("Chatroom", b =>
                 {
+                    b.HasOne("Listing", "Listing")
+                        .WithMany()
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Profile", "Buyer")
                         .WithMany()
                         .HasForeignKey("BuyerId")
@@ -454,9 +536,38 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Listing");
+
                     b.Navigation("Buyer");
 
                     b.Navigation("Seller");
+                });
+
+            modelBuilder.Entity("ChatRating", b =>
+                {
+                    b.HasOne("Chatroom", "Chatroom")
+                        .WithMany("Ratings")
+                        .HasForeignKey("ChatroomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Profile", "Reviewee")
+                        .WithMany()
+                        .HasForeignKey("RevieweeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Profile", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Chatroom");
+
+                    b.Navigation("Reviewee");
+
+                    b.Navigation("Reviewer");
                 });
 
             modelBuilder.Entity("City", b =>
@@ -585,6 +696,8 @@ namespace backend.Migrations
             modelBuilder.Entity("Chatroom", b =>
                 {
                     b.Navigation("Messages");
+
+                    b.Navigation("Ratings");
                 });
 
             modelBuilder.Entity("City", b =>
