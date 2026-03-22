@@ -16,6 +16,7 @@ using backend.Services;
 using backend.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
+using Meilisearch;
 
 namespace backend.Tests.Integration;
 
@@ -30,6 +31,7 @@ public class ListingCommandServiceTests
     private readonly Mock<IPartition> _partitionMock;
     private readonly Mock<IFileStorageService> _fileStorageMock;
     private readonly Mock<ILocationService> _locationMock;
+    private readonly MeilisearchClient _meiliClient;
 
     // Use these constants to ensure IDs match between Seed and Request
     private static readonly Guid TestProfileId = Guid.Parse("00000000-0000-0000-0000-000000000001");
@@ -42,6 +44,8 @@ public class ListingCommandServiceTests
         _partitionMock = new Mock<IPartition>();
         _fileStorageMock = new Mock<IFileStorageService>();
         _locationMock = new Mock<ILocationService>();
+
+        _meiliClient = new MeilisearchClient("http://localhost:7700", "masterKey");
 
         // Setup the "One Lane" mapping
         // We setup for both -1 (default) and 0 just to be safe
@@ -56,6 +60,7 @@ public class ListingCommandServiceTests
             new Mock<ILogger<ListingCommandService>>().Object,
             _fileStorageMock.Object,
             _locationMock.Object,
+            _meiliClient,
             _topicManagerMock.Object
         );
     }
