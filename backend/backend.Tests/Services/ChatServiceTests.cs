@@ -679,6 +679,63 @@ namespace backend.Tests.Services
         }
 
         [Fact]
+        public async Task GetOrCreateChatroomAsync_ShouldCreateSeparateChatrooms_ForDifferentListings()
+        {
+            // Arrange
+            var firstListingId = Guid.NewGuid();
+            var secondListingId = Guid.NewGuid();
+
+            _db.Listings.AddRange(
+                new Listing
+                {
+                    Id = firstListingId,
+                    Title = "First jacket",
+                    Description = "A very nice first jacket listing.",
+                    Price = 20m,
+                    Size = ListingSize.M,
+                    Condition = ListingCondition.LikeNew,
+                    Brand = ListingBrand.Nike,
+                    Colour = ListingColour.Blue,
+                    Category = ListingCategory.Outerwear,
+                    ProfileId = _sellerId,
+                    FSA = "M5V"
+                },
+                new Listing
+                {
+                    Id = secondListingId,
+                    Title = "Second jacket",
+                    Description = "A very nice second jacket listing.",
+                    Price = 25m,
+                    Size = ListingSize.L,
+                    Condition = ListingCondition.UsedExcellent,
+                    Brand = ListingBrand.Zara,
+                    Colour = ListingColour.Black,
+                    Category = ListingCategory.Outerwear,
+                    ProfileId = _sellerId,
+                    FSA = "M5V"
+                });
+            await _db.SaveChangesAsync();
+
+            // Act
+            var firstChatroom = await _service.GetOrCreateChatroomAsync(_sellerId, _buyerId, firstListingId);
+            var secondChatroom = await _service.GetOrCreateChatroomAsync(_sellerId, _buyerId, secondListingId);
+
+            // Assert
+            firstChatroom.Should().NotBeNull();
+            secondChatroom.Should().NotBeNull();
+            secondChatroom!.Id.Should().NotBe(firstChatroom!.Id);
+            firstChatroom.ListingId.Should().Be(firstListingId);
+            secondChatroom.ListingId.Should().Be(secondListingId);
+
+            var persistedChatrooms = await _db.Chatrooms
+                .Where(c => c.SellerId == _sellerId && c.BuyerId == _buyerId)
+                .ToListAsync();
+
+            persistedChatrooms.Should().HaveCount(2);
+            persistedChatrooms.Select(c => c.ListingId).Should().BeEquivalentTo(new Guid?[] { firstListingId, secondListingId });
+        }
+
+        [Fact]
         public async Task UserBelongsToChatroomAsync_ShouldReturnTrue_ForSeller()
         {
             // Arrange

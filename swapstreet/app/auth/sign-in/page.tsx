@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/components/common/logger";
 import AuthLayout from "@/components/auth/AuthLayout";
 import FormField from "@/components/auth/FormField";
@@ -23,6 +24,7 @@ function parseApiError(text: string, fallback: string): string {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -59,8 +61,8 @@ export default function LoginPage() {
         throw new Error("Access token not returned from backend");
       }
 
-      sessionStorage.setItem("accessToken", data.accessToken);
-      logger.debug("Access token stored");
+      login(data.accessToken);
+      logger.debug("Access token stored and auth context updated");
 
       router.push("/browse");
     } catch (err: unknown) {

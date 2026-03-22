@@ -256,22 +256,6 @@ namespace backend.Services.Chat
                 }
             }
 
-            if (listingId.HasValue)
-            {
-                var existingChatroom = await _context.Chatrooms
-                    .FirstOrDefaultAsync(c =>
-                        c.ListingId == null &&
-                        ((c.SellerId == sellerId && c.BuyerId == buyerId) ||
-                         (c.SellerId == buyerId && c.BuyerId == sellerId)));
-
-                if (existingChatroom != null)
-                {
-                    existingChatroom.ListingId = listingId.Value;
-                    await _context.SaveChangesAsync();
-                    return await GetChatroomByIdAsync(existingChatroom.Id);
-                }
-            }
-
             var createDto = new CreateChatroomDto
             {
                 SellerId = sellerId,
