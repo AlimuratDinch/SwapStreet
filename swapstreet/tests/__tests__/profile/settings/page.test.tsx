@@ -33,7 +33,13 @@ describe("SettingsPage", () => {
     expect(screen.getByText("Manage your preferences")).toBeInTheDocument();
     expect(screen.getByText("Behavior")).toBeInTheDocument();
     expect(screen.getByText("Actions")).toBeInTheDocument();
-    expect(screen.getByText("Delete Account")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Delete Account" })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", { name: "Delete Account" })
+    ).toBeInTheDocument();
   });
 
   it("toggles sustainability tracking", () => {
@@ -59,7 +65,7 @@ describe("SettingsPage", () => {
 
     render(<SettingsPage />);
 
-    const deleteButton = screen.getByText("Delete Account");
+    const deleteButton = screen.getByRole("button", { name: "Delete Account" });
 
     fireEvent.click(deleteButton);
 
@@ -88,7 +94,7 @@ describe("SettingsPage", () => {
 
     render(<SettingsPage />);
 
-    fireEvent.click(screen.getByText("Delete Account"));
+    fireEvent.click(screen.getByRole("button", { name: "Delete Account" }));
 
     await waitFor(() => {
     expect(global.fetch).toHaveBeenCalled();
