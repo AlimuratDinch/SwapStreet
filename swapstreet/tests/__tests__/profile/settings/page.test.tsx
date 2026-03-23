@@ -34,11 +34,11 @@ describe("SettingsPage", () => {
     expect(screen.getByText("Behavior")).toBeInTheDocument();
     expect(screen.getByText("Actions")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Delete Account" })
+      screen.getByRole("heading", { name: "Delete Account" }),
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: "Delete Account" })
+      screen.getByRole("button", { name: "Delete Account" }),
     ).toBeInTheDocument();
   });
 
@@ -60,7 +60,7 @@ describe("SettingsPage", () => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
-      } as Response)
+      } as Response),
     );
 
     render(<SettingsPage />);
@@ -77,7 +77,7 @@ describe("SettingsPage", () => {
           headers: {
             Authorization: "Bearer mock-token",
           },
-        })
+        }),
       );
     });
 
@@ -86,10 +86,10 @@ describe("SettingsPage", () => {
 
   it("handles delete failure gracefully", async () => {
     global.fetch = jest.fn(() =>
-    Promise.resolve({
+      Promise.resolve({
         ok: false,
         text: () => Promise.resolve("Delete failed"),
-    } as Response)
+      } as Response),
     );
 
     render(<SettingsPage />);
@@ -97,7 +97,7 @@ describe("SettingsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete Account" }));
 
     await waitFor(() => {
-    expect(global.fetch).toHaveBeenCalled();
+      expect(global.fetch).toHaveBeenCalled();
     });
 
     expect(pushMock).not.toHaveBeenCalled();
