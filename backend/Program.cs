@@ -166,13 +166,16 @@ static void ConfigureCors(WebApplicationBuilder builder)
 
 static void ConfigureGemini(WebApplicationBuilder builder)
 {
-    var geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+    var vertexProjectId = Environment.GetEnvironmentVariable("VERTEX_AI_PROJECT_ID")
                        ?? GenerateRandomKey(32);
-    var geminiApiUrl = Environment.GetEnvironmentVariable("GEMINI_API_URL")
-                       ?? "https://generativelanguage.googleapis.com/v1beta/models/";
+    var vertexLocation = Environment.GetEnvironmentVariable("VERTEX_AI_LOCATION")
+                       ?? "us-central1";
+    var vertexModelId = Environment.GetEnvironmentVariable("VERTEX_AI_MODEL_ID")
+                       ?? "gemini-2.5-flash-image";
 
-    builder.Configuration["Gemini:ApiKey"] = geminiApiKey;
-    builder.Configuration["Gemini:ApiUrl"] = geminiApiUrl;
+    builder.Configuration["VertexAI:ProjectId"] = vertexProjectId;
+    builder.Configuration["VertexAI:Location"] = vertexLocation;
+    builder.Configuration["VertexAI:ModelId"] = vertexModelId;
 }
 
 static void ConfigureDatabase(WebApplicationBuilder builder)
@@ -362,6 +365,7 @@ static void ConfigureControllers(WebApplicationBuilder builder)
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
             options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         });
 
     // Add SignalR
@@ -518,9 +522,9 @@ static async Task InitializeMeilisearchIndex(WebApplication app)
     var client = scope.ServiceProvider.GetRequiredService<MeilisearchClient>();
     var index = client.Index("listings");
 
-    await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa" });
+    await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa", "size", "brand", "category", "colour", "condition" });
     await index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
-    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa" });
+    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa", "size", "brand", "category", "price", "condition", "colour" });
 
     await index.UpdateRankingRulesAsync(new[] {
         "words",

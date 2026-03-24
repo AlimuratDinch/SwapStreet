@@ -64,6 +64,7 @@ test.describe("Landing page tests", () => {
     await page.goto("/");
     // stabilize network and fonts before measuring layout
     await page.waitForLoadState("networkidle");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await page.evaluate(() => (document as any).fonts?.ready);
 
     // no horizontal scroll

@@ -67,11 +67,49 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("BuyerId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("CloseConfirmedByBuyer")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CloseConfirmedBySeller")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("CloseRequestedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CloseRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("CreationTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FrozenReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDealClosed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFrozen")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("ListingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ListingImageSnapshotPath")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<Guid>("SellerId")
                         .HasColumnType("uuid");
@@ -80,9 +118,48 @@ namespace backend.Migrations
 
                     b.HasIndex("BuyerId");
 
+                    b.HasIndex("ListingId");
+
                     b.HasIndex("SellerId");
 
                     b.ToTable("chatrooms", (string)null);
+                });
+
+            modelBuilder.Entity("ChatRating", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChatroomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RevieweeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReviewerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Stars")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatroomId", "ReviewerId")
+                        .IsUnique();
+
+                    b.HasIndex("RevieweeId");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.ToTable("chat_ratings", (string)null);
                 });
 
             modelBuilder.Entity("City", b =>
@@ -182,6 +259,22 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Colour")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Condition")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -206,8 +299,9 @@ namespace backend.Migrations
                         .HasColumnType("text")
                         .HasComputedColumnSql("COALESCE(\"Title\" || ' ' || \"Description\" || ' ', '')", true);
 
-                    b.Property<Guid?>("TagId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Size")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -228,8 +322,6 @@ namespace backend.Migrations
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchText"), "gin");
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("SearchText"), new[] { "gin_trgm_ops" });
-
-                    b.HasIndex("TagId");
 
                     b.ToTable("listings", (string)null);
                 });
@@ -314,8 +406,8 @@ namespace backend.Migrations
 
                     b.Property<string>("FSA")
                         .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("varchar(3)");
+                        .HasMaxLength(7)
+                        .HasColumnType("varchar(7)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -375,101 +467,6 @@ namespace backend.Migrations
                     b.ToTable("provinces", (string)null);
                 });
 
-            modelBuilder.Entity("Size", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ArticleTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ArticleTypeId");
-
-                    b.ToTable("sizes", (string)null);
-                });
-
-            modelBuilder.Entity("Style", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("styles", (string)null);
-                });
-
-            modelBuilder.Entity("Tag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ArticleTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BrandId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Color")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Condition")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Material")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Sex")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SizeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("StyleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ArticleTypeId");
-
-                    b.HasIndex("BrandId");
-
-                    b.HasIndex("SizeId");
-
-                    b.HasIndex("StyleId");
-
-                    b.ToTable("tags", (string)null);
-                });
-
             modelBuilder.Entity("TryOnImage", b =>
                 {
                     b.Property<int>("Id")
@@ -522,6 +519,11 @@ namespace backend.Migrations
 
             modelBuilder.Entity("Chatroom", b =>
                 {
+                    b.HasOne("Listing", "Listing")
+                        .WithMany()
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Profile", "Buyer")
                         .WithMany()
                         .HasForeignKey("BuyerId")
@@ -534,9 +536,38 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Listing");
+
                     b.Navigation("Buyer");
 
                     b.Navigation("Seller");
+                });
+
+            modelBuilder.Entity("ChatRating", b =>
+                {
+                    b.HasOne("Chatroom", "Chatroom")
+                        .WithMany("Ratings")
+                        .HasForeignKey("ChatroomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Profile", "Reviewee")
+                        .WithMany()
+                        .HasForeignKey("RevieweeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Profile", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Chatroom");
+
+                    b.Navigation("Reviewee");
+
+                    b.Navigation("Reviewer");
                 });
 
             modelBuilder.Entity("City", b =>
@@ -588,13 +619,7 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Tag", "Tag")
-                        .WithMany()
-                        .HasForeignKey("TagId");
-
                     b.Navigation("Profile");
-
-                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("ListingImage", b =>
@@ -638,52 +663,6 @@ namespace backend.Migrations
                     b.Navigation("City");
                 });
 
-            modelBuilder.Entity("Size", b =>
-                {
-                    b.HasOne("ArticleType", "ArticleType")
-                        .WithMany()
-                        .HasForeignKey("ArticleTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ArticleType");
-                });
-
-            modelBuilder.Entity("Tag", b =>
-                {
-                    b.HasOne("ArticleType", "ArticleTypeRef")
-                        .WithMany()
-                        .HasForeignKey("ArticleTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Brand", "BrandRef")
-                        .WithMany()
-                        .HasForeignKey("BrandId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Size", "SizeRef")
-                        .WithMany()
-                        .HasForeignKey("SizeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Style", "StyleRef")
-                        .WithMany()
-                        .HasForeignKey("StyleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ArticleTypeRef");
-
-                    b.Navigation("BrandRef");
-
-                    b.Navigation("SizeRef");
-
-                    b.Navigation("StyleRef");
-                });
-
             modelBuilder.Entity("TryOnImage", b =>
                 {
                     b.HasOne("Profile", "Profile")
@@ -717,6 +696,8 @@ namespace backend.Migrations
             modelBuilder.Entity("Chatroom", b =>
                 {
                     b.Navigation("Messages");
+
+                    b.Navigation("Ratings");
                 });
 
             modelBuilder.Entity("City", b =>

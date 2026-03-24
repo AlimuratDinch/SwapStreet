@@ -15,8 +15,8 @@ namespace backend.DTOs.Profile
 
         public int? CityId { get; set; }
 
-        [StringLength(3, MinimumLength = 3, ErrorMessage = "FSA must be exactly 3 characters")]
-        [RegularExpression(@"^[A-Z]\d[A-Z]$", ErrorMessage = "FSA must be in format: Letter-Digit-Letter (e.g., M5V)")]
+        [StringLength(7, MinimumLength = 7, ErrorMessage = "Postal code must be exactly 7 characters")]
+        [RegularExpression(@"^[A-Z]\d[A-Z] \d[A-Z]\d$", ErrorMessage = "Postal code must be in format A1A 1A1 (e.g., A1A 1A1)")]
         public string? FSA { get; set; }
 
         public string? ProfileImagePath { get; set; }

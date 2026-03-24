@@ -84,7 +84,10 @@ describe("SellerProfileForm", () => {
       "id",
       "test-last-name",
     );
-    expect(screen.getByLabelText(/^FSA$/i)).toHaveAttribute("id", "test-fsa");
+    expect(screen.getByLabelText(/^Postal code$/i)).toHaveAttribute(
+      "id",
+      "test-fsa",
+    );
     expect(screen.getByLabelText(/bio/i)).toHaveAttribute("id", "test-bio");
     expect(screen.getByLabelText(/province/i)).toHaveAttribute(
       "id",
@@ -201,12 +204,12 @@ describe("SellerProfileForm", () => {
     expect(setFirstName).toHaveBeenCalledWith("Jane");
   });
 
-  it("calls setFsa with uppercased value when FSA input changes", () => {
+  it("calls setFsa with uppercased and formatted value when postal code input changes", () => {
     const setFsa = jest.fn();
     const props = createMockFormProps({ setFsa, fsa: "" });
     render(<SellerProfileForm {...props} />);
-    const fsaInput = screen.getByLabelText(/^FSA$/i);
-    fireEvent.change(fsaInput, { target: { value: "m5v" } });
-    expect(setFsa).toHaveBeenCalledWith("M5V");
+    const fsaInput = screen.getByLabelText(/^Postal code$/i);
+    fireEvent.change(fsaInput, { target: { value: "m5v3a8" } });
+    expect(setFsa).toHaveBeenCalledWith("M5V 3A8");
   });
 });

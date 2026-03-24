@@ -1,12 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, ProfileResponse } from "@/lib/api/profile";
 import { Header } from "@/components/common/Header";
-import { Phone, Mail, MapPin, Star, Pencil } from "lucide-react";
+import { ProfilePageContent } from "@/components/profile/ProfilePageContent";
+import type { ProfileTab } from "@/components/profile/ProfileHeader";
+
+function ProfileSuccessToast() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("updated") === "true") {
+      setShowToast(true);
+      router.replace("/profile");
+      const timer = setTimeout(() => setShowToast(false), 3000);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      className={`fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 rounded-xl bg-gray-100 px-5 py-3 text-black shadow-lg z-50 transition-all duration-500 ${
+        showToast
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 translate-y-4 pointer-events-none"
+      }`}
+    >
+      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-teal-500 shrink-0">
+        <svg
+          className="w-4 h-4 text-white"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <span className="text-sm font-medium">Profile updated successfully!</span>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -14,6 +55,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ProfileTab>("listings");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -47,9 +89,19 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
         <Header />
-        <div className="flex items-center justify-center pt-32">
-          <div className="text-lg text-gray-600">Loading profile...</div>
-        </div>
+        <ProfilePageContent
+          profile={null}
+          fullName=""
+          location={null}
+          memberSince=""
+          profileImageUrl=""
+          bannerImageUrl=""
+          activeTab="listings"
+          onTabChange={() => {}}
+          loading={true}
+          error={null}
+          isCurrentUserProfile={true}
+        />
       </div>
     );
   }
@@ -58,163 +110,59 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
         <Header />
-        <div className="flex flex-col items-center justify-center pt-32 gap-4 px-4">
-          <div className="text-center max-w-md">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              No Profile Found
-            </h2>
-            <p className="text-gray-600 mb-6">
-              You haven't created a profile yet. Create one to get started with
-              SwapStreet!
-            </p>
-            <button
-              onClick={() => router.push("/seller/onboarding")}
-              className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 font-medium"
-            >
-              Create Profile
-            </button>
-          </div>
-        </div>
+        <ProfilePageContent
+          profile={null}
+          fullName=""
+          location={null}
+          memberSince=""
+          profileImageUrl=""
+          bannerImageUrl=""
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          loading={false}
+          error={error}
+          isCurrentUserProfile={true}
+        />
       </div>
     );
   }
 
   const fullName = `${profile.firstName} ${profile.lastName}`;
   const location = profile.cityName
-    ? `${profile.cityName}, ${profile.provinceCode || ""}`
-    : "Location not set";
-
-  // Generate MinIO URL for images // WHAT IS THIS?
-  const minioUrl =
-    process.env.NEXT_PUBLIC_MINIO_URL || "http://localhost:9000/public";
+    ? `${profile.cityName}${profile.provinceCode ? `, ${profile.provinceCode}` : ""}`
+    : null;
+  const memberSince = new Date(profile.createdAt).toLocaleDateString("en-CA", {
+    year: "numeric",
+    month: "long",
+  });
   const profileImageUrl = profile.profileImagePath
-    ? `${minioUrl}/${profile.profileImagePath}`
+    ? profile.profileImagePath
     : "/images/default-avatar-icon.jpg";
   const bannerImageUrl = profile.bannerImagePath
-    ? `${minioUrl}/${profile.bannerImagePath}`
+    ? profile.bannerImagePath
     : "/images/default-seller-banner.png";
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
       <Header />
 
-      <div className="mx-auto max-w-6xl px-4 pt-24 pb-8">
-        {/* Banner and Profile Section */}
-        <div className="rounded-xl bg-white shadow-sm overflow-hidden">
-          {/* Banner Image */}
-          <div className="relative h-48 sm:h-64 bg-gray-200">
-            <Image
-              src={bannerImageUrl}
-              alt="Profile Banner"
-              fill
-              className="object-cover"
-              unoptimized={
-                typeof bannerImageUrl === "string" &&
-                bannerImageUrl.startsWith("blob:")
-              }
-            />
-          </div>
+      <ProfilePageContent
+        profile={profile}
+        fullName={fullName}
+        location={location}
+        memberSince={memberSince}
+        profileImageUrl={profileImageUrl}
+        bannerImageUrl={bannerImageUrl}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        loading={false}
+        error={null}
+        isCurrentUserProfile={true}
+      />
 
-          {/* Profile Info Container */}
-          <div className="relative px-6 pb-6">
-            {/* Profile Picture */}
-            <div className="relative -mt-16 mb-4">
-              <div className="relative h-32 w-32 overflow-hidden rounded-full border-4 border-white shadow-lg">
-                <Image
-                  src={profileImageUrl}
-                  alt={fullName}
-                  fill
-                  className="object-cover"
-                  unoptimized={
-                    typeof profileImageUrl === "string" &&
-                    profileImageUrl.startsWith("blob:")
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Name and Rating */}
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">
-                  {fullName}
-                </h1>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`h-5 w-5 ${
-                        star <= Math.floor(profile.rating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="ml-2 text-sm text-gray-600">
-                    ({profile.rating.toFixed(1)})
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => router.push("/seller/profile/edit")}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-              >
-                <Pencil className="h-4 w-4" />
-                Edit profile
-              </button>
-            </div>
-
-            {/* Contact Information */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-gray-200 pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-gray-100">
-                  <Phone className="h-5 w-5 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Phone</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    Not available
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-gray-100">
-                  <Mail className="h-5 w-5 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    Not available
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-gray-100">
-                  <MapPin className="h-5 w-5 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Location</p>
-                  <p className="text-sm font-medium text-gray-900">
-                    {location}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Listings Section - Placeholder */}
-        <div className="mt-6 rounded-xl bg-white shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            My Listings
-          </h2>
-          <div className="text-center py-12 text-gray-500">
-            <p>Your listings will appear here</p>
-            <p className="text-sm mt-2">Listing functionality coming soon</p>
-          </div>
-        </div>
-      </div>
+      <Suspense fallback={null}>
+        <ProfileSuccessToast />
+      </Suspense>
     </div>
   );
 }
