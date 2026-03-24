@@ -6,6 +6,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 
 jest.mock("@/contexts/AuthContext");
 jest.mock("@/app/wardrobe/wardrobeStorage");
+jest.mock("@/components/common/Header", () => ({
+  Header: () => <div data-testid="header-mock">SwapStreet Header</div>,
+}));
 jest.mock("@/app/browse/components/Gallery", () => {
   return function DummyGallery() {
     return <div data-testid="gallery-mock">Gallery</div>;

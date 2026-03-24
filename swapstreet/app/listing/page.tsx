@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import Gallery from "@/app/browse/components/Gallery";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
 import {
   addWardrobeItem,
   hasWardrobeItem,
   removeWardrobeItem,
 } from "@/app/wardrobe/wardrobeStorage";
+import { Header } from "@/components/common/Header";
 
 type Seller = {
   id?: string;
@@ -266,9 +266,10 @@ function ListingContent() {
   const joinedYear = formatJoinYear(seller?.createdAt);
 
   return (
-    <div className="w-screen h-screen bg-white overflow-hidden">
+    <div className="w-screen h-screen bg-white overflow-hidden pt-14">
       {/* Main content */}
-      <div className="flex w-screen h-screen bg-white">
+      <Header />
+      <div className="flex w-screen h-[calc(100vh-56px)] bg-white">
         {/* Left: Gallery */}
         <div className="flex-1 bg-transparent flex flex-col relative border-r border-gray-200 min-w-0 overflow-visible">
           <div className="flex-1 min-h-0 w-full overflow-visible mt-2">
@@ -441,9 +442,9 @@ function ListingContent() {
                         : "Unknown Seller"}
                     </div>
                     <div className="text-amber-500 text-sm mt-0.5">
-                      {seller?.rating != null
-                        ? `★ ${Number(seller.rating).toFixed(1)}`
-                        : "No rating yet"}
+                      {seller?.rating == null
+                        ? "No rating yet"
+                        : `★ ${Number(seller.rating).toFixed(1)}`}
                     </div>
                     <div className="text-gray-500 text-sm mt-0.5">
                       Joined SWAPSTREET {joinedYear ? `in ${joinedYear}` : ""}
