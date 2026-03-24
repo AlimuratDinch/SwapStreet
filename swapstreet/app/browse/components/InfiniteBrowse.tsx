@@ -3,15 +3,13 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CardItem } from "./CardItem";
-import { getSearchResults, SearchParams } from "@/lib/api/browse";
+import {
+  getSearchResults,
+  SearchParams,
+  type BrowseSearchResultItem,
+} from "@/lib/api/browse";
 
-export interface Item {
-  id: string;
-  title: string;
-  price: number;
-  fsa: string;
-  images?: { imageUrl: string }[];
-}
+export type Item = BrowseSearchResultItem;
 
 interface InfiniteBrowseProps {
   initialItems: Item[];

@@ -12,13 +12,52 @@ export type SearchParams = {
   lat?: number;
   lng?: number;
   radiusKm?: number;
+  /** Seller profile id — uses Postgres-backed search on the API. */
+  sellerId?: string;
+  pageSize?: number;
 };
 
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost"
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
 ).replace(/\/$/, "");
 
-export async function getSearchResults(params: SearchParams) {
+/** Normalized listing row from GET /search/search (browse + profile grids). */
+export type BrowseSearchResultItem = {
+  id: string;
+  title: string;
+  price: number;
+  fsa: string;
+  images?: { imageUrl: string }[];
+};
+
+export function parseBrowseSearchResultItem(
+  raw: unknown,
+): BrowseSearchResultItem {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
+    return { id: "", title: "", price: 0, fsa: "" };
+  }
+  const r = raw as Record<string, unknown>;
+  const fsa =
+    typeof r.fsa === "string" ? r.fsa : typeof r.FSA === "string" ? r.FSA : "";
+  const images = Array.isArray(r.images) ? r.images : undefined;
+  return {
+    id: String(r.id ?? ""),
+    title: String(r.title ?? ""),
+    price: Number(r.price ?? 0),
+    fsa,
+    images: images as BrowseSearchResultItem["images"],
+  };
+}
+
+export type SearchResultsPayload = {
+  items: BrowseSearchResultItem[];
+  nextCursor: string | null;
+  hasNextPage: boolean;
+};
+
+export async function getSearchResults(
+  params: SearchParams,
+): Promise<SearchResultsPayload> {
   try {
     const q = new URLSearchParams();
 
@@ -34,8 +73,10 @@ export async function getSearchResults(params: SearchParams) {
     if (params.lat != null) q.set("Lat", params.lat.toString());
     if (params.lng != null) q.set("Lng", params.lng.toString());
     if (params.radiusKm != null) q.set("RadiusKm", params.radiusKm.toString());
+    if (params.sellerId) q.set("SellerId", params.sellerId);
 
-    q.set("PageSize", "18");
+    const pageSize = params.pageSize ?? 18;
+    q.set("PageSize", String(Math.min(Math.max(pageSize, 1), 50)));
 
     const res = await fetch(`${API_BASE}/search/search?${q.toString()}`, {
       cache: "no-store",
@@ -43,14 +84,21 @@ export async function getSearchResults(params: SearchParams) {
 
     if (!res.ok) return { items: [], nextCursor: null, hasNextPage: false };
 
-    const data = await res.json();
+    const data = (await res.json()) as {
+      items?: unknown;
+      nextCursor?: string | null;
+      hasNextPage?: unknown;
+    };
+
+    const rawItems = Array.isArray(data.items) ? data.items : [];
 
     return {
-      items: data.items ?? [],
+      items: rawItems.map(parseBrowseSearchResultItem),
       nextCursor: data.nextCursor ?? null,
-      hasNextPage: !!data.hasNextPage,
+      // Strict boolean so a stray JSON string never enables infinite scroll incorrectly.
+      hasNextPage: data.hasNextPage === true,
     };
-  } catch (err) {
+  } catch {
     return { items: [], nextCursor: null, hasNextPage: false };
   }
 }

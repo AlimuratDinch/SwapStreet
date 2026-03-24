@@ -84,10 +84,16 @@ export function ProfilePageContent({
         bannerImageUrl={bannerImageUrl}
         activeTab={activeTab}
         onTabChange={onTabChange}
+        showEditProfile={isCurrentUserProfile}
       />
 
       <div className="mt-6">
-        {activeTab === "listings" && <ProfileListingsTab />}
+        {activeTab === "listings" && (
+          <ProfileListingsTab
+            sellerId={profile.id}
+            isCurrentUserProfile={isCurrentUserProfile}
+          />
+        )}
         {activeTab === "reviews" && <ProfileReviewsTab />}
       </div>
     </div>
