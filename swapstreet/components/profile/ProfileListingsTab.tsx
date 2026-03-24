@@ -86,7 +86,7 @@ export function ProfileListingsTab({
       try {
         const response = await getSearchResults({ sellerId, pageSize: 18 });
         if (!mounted || ac.signal.aborted) return;
-        const mapped = response.items.map((i) =>
+        const mapped = response.items.map((i: any) =>
           toListingItem(i as Record<string, unknown>),
         );
         setItems(dedupeListingItems(mapped));
@@ -124,7 +124,7 @@ export function ProfileListingsTab({
       setItems((prev) =>
         dedupeListingItems([
           ...prev,
-          ...response.items.map((i) =>
+          ...response.items.map((i: any) =>
             toListingItem(i as Record<string, unknown>),
           ),
         ]),
