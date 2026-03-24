@@ -11,6 +11,7 @@ import {
   hasWardrobeItem,
   removeWardrobeItem,
 } from "@/app/wardrobe/wardrobeStorage";
+import { Header } from "@/components/common/Header";
 
 type Seller = {
   id?: string;
@@ -268,6 +269,7 @@ function ListingContent() {
   return (
     <div className="w-screen h-screen bg-white overflow-hidden">
       {/* Main content */}
+      <Header />
       <div className="flex w-screen h-screen bg-white">
         {/* Left: Gallery */}
         <div className="flex-1 bg-transparent flex flex-col relative border-r border-gray-200 min-w-0 overflow-visible">
