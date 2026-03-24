@@ -19,6 +19,11 @@ jest.mock("next/navigation", () => ({
   useSearchParams: jest.fn(),
 }));
 
+// Mock the Header to avoid AuthContext errors
+jest.mock("@/components/common/Header", () => ({
+  Header: () => <div data-testid="mock-header" />,
+}));
+
 describe("Listing Page", () => {
   const mockListing = {
     id: "listing-1",
