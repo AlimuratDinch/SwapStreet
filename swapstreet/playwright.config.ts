@@ -1,8 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: './',
-  testMatch: ['tests/**/*.spec.ts', 'gifs/playwrightTests/**/*.spec.ts'],
+  testDir: "./",
+  testMatch: ["tests/**/*.spec.ts", "gifs/playwrightTests/**/*.spec.ts"],
+  testIgnore: process.env.CI ? "**/gifs/playwrightTests/**" : undefined,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
