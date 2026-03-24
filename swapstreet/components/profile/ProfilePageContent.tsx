@@ -84,6 +84,7 @@ export function ProfilePageContent({
         bannerImageUrl={bannerImageUrl}
         activeTab={activeTab}
         onTabChange={onTabChange}
+        showEditProfile={isCurrentUserProfile}
       />
 
       <div className="mt-6">

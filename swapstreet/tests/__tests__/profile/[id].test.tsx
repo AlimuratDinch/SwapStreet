@@ -5,6 +5,17 @@ import { useParams } from "next/navigation";
 
 jest.mock("next/navigation");
 jest.mock("@/lib/api/profile");
+
+const mockUseAuth = jest.fn(() => ({
+  userId: "another-user",
+  authLoaded: true,
+}));
+
+jest.mock("@/contexts/AuthContext", () => ({
+  __esModule: true,
+  useAuth: () => mockUseAuth(),
+}));
+
 jest.mock("@/components/common/Header", () => ({
   Header: () => <div data-testid="header-mock">Header</div>,
 }));
@@ -15,8 +26,19 @@ jest.mock("@/components/profile/ProfilePageContent", () => ({
     location,
     loading,
     error,
-  }: any) => (
-    <div data-testid="profile-content">
+    isCurrentUserProfile,
+  }: {
+    profile?: { bio?: string };
+    fullName?: string;
+    location?: string | null;
+    loading?: boolean;
+    error?: string | null;
+    isCurrentUserProfile?: boolean;
+  }) => (
+    <div
+      data-testid="profile-content"
+      data-is-current-user={String(!!isCurrentUserProfile)}
+    >
       {loading && <div>Loading...</div>}
       {error && <div>Error: {error}</div>}
       {profile && (
@@ -48,6 +70,10 @@ describe("Seller Profile Page", () => {
   beforeEach(() => {
     (useParams as jest.Mock).mockReturnValue({
       id: "seller-1",
+    });
+    mockUseAuth.mockReturnValue({
+      userId: "another-user",
+      authLoaded: true,
     });
   });
 
@@ -214,6 +240,36 @@ describe("Seller Profile Page", () => {
     await waitFor(() => {
       expect(screen.getByText("John Doe")).toBeInTheDocument();
       expect(screen.getByText("Selling quality items")).toBeInTheDocument();
+    });
+  });
+
+  it("passes isCurrentUserProfile false when logged-in user is not the seller", async () => {
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
+
+    render(<SellerProfilePage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-content")).toHaveAttribute(
+        "data-is-current-user",
+        "false",
+      );
+    });
+  });
+
+  it("passes isCurrentUserProfile true when JWT user id matches profile id", async () => {
+    mockUseAuth.mockReturnValue({
+      userId: "seller-1",
+      authLoaded: true,
+    });
+    (profileApi.getProfileById as jest.Mock).mockResolvedValueOnce(mockProfile);
+
+    render(<SellerProfilePage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-content")).toHaveAttribute(
+        "data-is-current-user",
+        "true",
+      );
     });
   });
 

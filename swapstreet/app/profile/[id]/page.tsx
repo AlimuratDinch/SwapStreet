@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { Header } from "@/components/common/Header";
 import { getProfileById, ProfileResponse } from "@/lib/api/profile";
 import { ProfilePageContent } from "@/components/profile/ProfilePageContent";
 import type { ProfileTab } from "@/components/profile/ProfileHeader";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SellerProfilePage() {
   const params = useParams<{ id: string }>();
   const sellerId = params?.id;
+  const { userId, authLoaded } = useAuth();
 
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,6 +69,11 @@ export default function SellerProfilePage() {
     ? profile.bannerImagePath
     : "/images/default-seller-banner.png";
 
+  const isCurrentUserProfile = useMemo(() => {
+    if (!authLoaded || !userId || !profile?.id) return false;
+    return userId.toLowerCase() === profile.id.toLowerCase();
+  }, [authLoaded, userId, profile?.id]);
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
       <Header />
@@ -82,7 +89,7 @@ export default function SellerProfilePage() {
         onTabChange={setActiveTab}
         loading={isLoading}
         error={error}
-        isCurrentUserProfile={false}
+        isCurrentUserProfile={isCurrentUserProfile}
       />
     </div>
   );
