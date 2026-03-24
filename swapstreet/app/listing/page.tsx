@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import Gallery from "@/app/browse/components/Gallery";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
 import {
   addWardrobeItem,
   hasWardrobeItem,
@@ -443,9 +442,9 @@ function ListingContent() {
                         : "Unknown Seller"}
                     </div>
                     <div className="text-amber-500 text-sm mt-0.5">
-                      {seller?.rating != null
-                        ? `★ ${Number(seller.rating).toFixed(1)}`
-                        : "No rating yet"}
+                      {seller?.rating == null
+                        ? "No rating yet"
+                        : `★ ${Number(seller.rating).toFixed(1)}`}
                     </div>
                     <div className="text-gray-500 text-sm mt-0.5">
                       Joined SWAPSTREET {joinedYear ? `in ${joinedYear}` : ""}
