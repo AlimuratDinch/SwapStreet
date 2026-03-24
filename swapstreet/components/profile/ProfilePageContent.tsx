@@ -87,7 +87,12 @@ export function ProfilePageContent({
       />
 
       <div className="mt-6">
-        {activeTab === "listings" && <ProfileListingsTab />}
+        {activeTab === "listings" && (
+          <ProfileListingsTab
+            sellerId={profile.id}
+            isCurrentUserProfile={isCurrentUserProfile}
+          />
+        )}
         {activeTab === "reviews" && <ProfileReviewsTab />}
       </div>
     </div>

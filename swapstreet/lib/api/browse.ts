@@ -12,10 +12,13 @@ export type SearchParams = {
   lat?: number;
   lng?: number;
   radiusKm?: number;
+  /** Seller profile id — uses Postgres-backed search on the API. */
+  sellerId?: string;
+  pageSize?: number;
 };
 
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost"
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
 ).replace(/\/$/, "");
 
 export async function getSearchResults(params: SearchParams) {
@@ -34,8 +37,10 @@ export async function getSearchResults(params: SearchParams) {
     if (params.lat != null) q.set("Lat", params.lat.toString());
     if (params.lng != null) q.set("Lng", params.lng.toString());
     if (params.radiusKm != null) q.set("RadiusKm", params.radiusKm.toString());
+    if (params.sellerId) q.set("SellerId", params.sellerId);
 
-    q.set("PageSize", "18");
+    const pageSize = params.pageSize ?? 18;
+    q.set("PageSize", String(Math.min(Math.max(pageSize, 1), 50)));
 
     const res = await fetch(`${API_BASE}/search/search?${q.toString()}`, {
       cache: "no-store",
@@ -48,7 +53,8 @@ export async function getSearchResults(params: SearchParams) {
     return {
       items: data.items ?? [],
       nextCursor: data.nextCursor ?? null,
-      hasNextPage: !!data.hasNextPage,
+      // Strict boolean so a stray JSON string never enables infinite scroll incorrectly.
+      hasNextPage: data.hasNextPage === true,
     };
   } catch (err) {
     return { items: [], nextCursor: null, hasNextPage: false };
