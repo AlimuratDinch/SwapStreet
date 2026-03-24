@@ -2,36 +2,16 @@
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { CardItem } from "@/app/browse/components/CardItem";
-import { getSearchResults } from "@/lib/api/browse";
+import {
+  getSearchResults,
+  type BrowseSearchResultItem,
+} from "@/lib/api/browse";
 
-export interface ProfileListingItem {
-  id: string;
-  title: string;
-  price: number;
-  fsa: string;
-  images?: { imageUrl: string }[];
-}
+export type ProfileListingItem = BrowseSearchResultItem;
 
 interface ProfileListingsTabProps {
   sellerId: string;
   isCurrentUserProfile?: boolean;
-}
-
-function toListingItem(raw: Record<string, unknown>): ProfileListingItem {
-  const fsa =
-    typeof raw.fsa === "string"
-      ? raw.fsa
-      : typeof raw.FSA === "string"
-        ? raw.FSA
-        : "";
-  const images = Array.isArray(raw.images) ? raw.images : undefined;
-  return {
-    id: String(raw.id ?? ""),
-    title: String(raw.title ?? ""),
-    price: Number(raw.price ?? 0),
-    fsa,
-    images: images as ProfileListingItem["images"],
-  };
 }
 
 /** One row per listing id; if duplicates differ by image, keep the row that has a primary image. */
@@ -86,10 +66,7 @@ export function ProfileListingsTab({
       try {
         const response = await getSearchResults({ sellerId, pageSize: 18 });
         if (!mounted || ac.signal.aborted) return;
-        const mapped = response.items.map((i: any) =>
-          toListingItem(i as Record<string, unknown>),
-        );
-        setItems(dedupeListingItems(mapped));
+        setItems(dedupeListingItems(response.items));
         setCursor(response.nextCursor);
         setHasNext(Boolean(response.hasNextPage));
       } finally {
@@ -121,14 +98,7 @@ export function ProfileListingsTab({
         cursor,
         pageSize: 18,
       });
-      setItems((prev) =>
-        dedupeListingItems([
-          ...prev,
-          ...response.items.map((i: any) =>
-            toListingItem(i as Record<string, unknown>),
-          ),
-        ]),
-      );
+      setItems((prev) => dedupeListingItems([...prev, ...response.items]));
       setCursor(response.nextCursor);
       setHasNext(Boolean(response.hasNextPage));
     } catch {
