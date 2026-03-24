@@ -56,7 +56,7 @@ export default function Gallery({
           alt={`background-${index}`}
           fill
           sizes="(max-width: 1024px) 100vw, 800px"
-          className="absolute -top-96 -left-96 -right-96 object-cover blur-2xl scale-300 z-0"
+          className="absolute -top-14 -left-96 -right-96 -bottom-96 object-cover blur-2xl scale-300 z-0"
         />
       ) : null}
 

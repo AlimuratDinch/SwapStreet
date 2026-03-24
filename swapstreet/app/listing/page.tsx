@@ -266,10 +266,10 @@ function ListingContent() {
   const joinedYear = formatJoinYear(seller?.createdAt);
 
   return (
-    <div className="w-screen h-screen bg-white overflow-hidden">
+    <div className="w-screen h-screen bg-white overflow-hidden pt-14">
       {/* Main content */}
       <Header />
-      <div className="flex w-screen h-screen bg-white">
+      <div className="flex w-screen h-[calc(100vh-56px)] bg-white">
         {/* Left: Gallery */}
         <div className="flex-1 bg-transparent flex flex-col relative border-r border-gray-200 min-w-0 overflow-visible">
           <div className="flex-1 min-h-0 w-full overflow-visible mt-2">
