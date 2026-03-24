@@ -3,13 +3,9 @@ import { ProfileListingsTab } from "@/components/profile/ProfileListingsTab";
 import * as browseApi from "@/lib/api/browse";
 
 jest.mock("@/app/browse/components/CardItem", () => ({
-  CardItem: ({
-    title,
-    id,
-  }: {
-    title: string;
-    id: string;
-  }) => <div data-testid={`listing-card-${id}`}>{title}</div>,
+  CardItem: ({ title, id }: { title: string; id: string }) => (
+    <div data-testid={`listing-card-${id}`}>{title}</div>
+  ),
 }));
 
 jest.mock("@/lib/api/browse");
@@ -36,9 +32,7 @@ describe("ProfileListingsTab", () => {
       hasNextPage: false,
     });
 
-    render(
-      <ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />,
-    );
+    render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
 
     expect(screen.getByText("Loading listings...")).toBeInTheDocument();
 
@@ -48,7 +42,9 @@ describe("ProfileListingsTab", () => {
       );
     });
 
-    expect(screen.getByRole("heading", { name: "My Listings" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "My Listings" }),
+    ).toBeInTheDocument();
     expect(browseApi.getSearchResults).toHaveBeenCalledWith({
       sellerId,
       pageSize: 18,
@@ -70,7 +66,9 @@ describe("ProfileListingsTab", () => {
       ).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("heading", { name: "Listings" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Listings" }),
+    ).toBeInTheDocument();
   });
 
   it("shows empty state when seller has no listings", async () => {

@@ -105,7 +105,12 @@ export function ProfileListingsTab({
   }, [sellerId]);
 
   const loadMore = useCallback(async () => {
-    if (loadMoreInFlight.current || !hasNext || cursor == null || isLoadingInitial)
+    if (
+      loadMoreInFlight.current ||
+      !hasNext ||
+      cursor == null ||
+      isLoadingInitial
+    )
       return;
 
     loadMoreInFlight.current = true;

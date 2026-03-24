@@ -19,7 +19,9 @@ describe("getSearchResults", () => {
   });
 
   it("includes SellerId in the request URL when sellerId is set", async () => {
-    await getSearchResults({ sellerId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" });
+    await getSearchResults({
+      sellerId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    });
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     const url = (global.fetch as jest.Mock).mock.calls[0][0] as string;
