@@ -637,7 +637,7 @@ describe("MyListingsPage", () => {
       hasNextPage: false,
     });
 
-    render(<MyListingsPage />);
+    const { rerender } = render(<MyListingsPage />);
 
     await waitFor(() => {
       expect(screen.getByText("Blue Jeans")).toBeInTheDocument();
@@ -647,6 +647,8 @@ describe("MyListingsPage", () => {
       accessToken: null,
       isAuthenticated: false,
     });
+
+    rerender(<MyListingsPage />);
 
     const deleteButton = screen.getByRole("button", {
       name: /Delete Blue Jeans/i,
