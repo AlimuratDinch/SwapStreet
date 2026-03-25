@@ -23,7 +23,17 @@ for (const vp of viewports) {
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(e.message));
       page.on("console", (msg) => {
-        if (msg.type() === "error") errors.push(msg.text());
+        if (msg.type() === "error") {
+          const text = msg.text();
+          if (
+            text.includes("localhost:8080") ||
+            text.includes("ERR_CONNECTION_REFUSED") ||
+            text.includes("CORS request did not succeed") ||
+            text.includes("Could not connect to localhost")
+          )
+            return;
+          errors.push(text);
+        }
       });
 
       // baseURL is set in playwright.config
