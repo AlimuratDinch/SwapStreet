@@ -2,6 +2,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import LoginPage from "@/app/auth/sign-in/page";
 
+const loginMock = jest.fn();
+
 // Mock logger
 jest.mock("@/components/common/logger", () => ({
   logger: {
@@ -17,6 +19,12 @@ const pushMock = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: pushMock,
+  }),
+}));
+
+jest.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    login: loginMock,
   }),
 }));
 
@@ -47,7 +55,57 @@ describe("LoginPage", () => {
     jest.clearAllMocks();
     window.sessionStorage.clear();
   });
+  it("returns generic message for 400 status", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      text: async () =>
+        JSON.stringify({
+          status: 400,
+          title: "One or more validation errors occurred.",
+          errors: {
+            Password: ["Password must be at least 8 characters long."],
+          },
+        }),
+    } as Response);
 
+    render(<LoginPage />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "ab" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(
+      await screen.findByText(/invalid email or password/i),
+    ).toBeInTheDocument();
+  });
+
+  it("returns json.error if present and not 400", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: false,
+      text: async () => JSON.stringify({ error: "Account locked" }),
+    } as Response);
+
+    render(<LoginPage />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "test@example.com" },
+    });
+
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(await screen.findByText(/account locked/i)).toBeInTheDocument();
+  });
   it("renders login form correctly", () => {
     render(<LoginPage />);
 
@@ -93,7 +151,7 @@ describe("LoginPage", () => {
       expect(pushMock).toHaveBeenCalledWith("/browse");
     });
 
-    expect(window.sessionStorage.getItem("accessToken")).toBe(mockToken);
+    expect(loginMock).toHaveBeenCalledWith(mockToken);
   });
 
   it("shows error message when login fails (non-ok response)", async () => {

@@ -1,11 +1,27 @@
 using backend.Models;
 
-namespace backend.DTOs.Search
+namespace backend.DTOs.Search;
+
+public class SearchRequestDto
 {
-    public class SearchRequestDto
-    {
-        public string? Query { get; set; }
-        public int PageSize { get; set; } = 20;
-        public string? Cursor { get; set; }
-    }
+    public string? Query { get; set; }
+    public int PageSize { get; set; } = 18;
+    public string? Cursor { get; set; }
+
+    // Filters
+    public string? Category { get; set; }
+    public string? Condition { get; set; }
+    public string? Size { get; set; }
+    public string? Brand { get; set; }
+    public string? Colour { get; set; }
+    public decimal? MaxPrice { get; set; }
+    public decimal? MinPrice { get; set; }
+
+    // Location
+    public double? Lat { get; set; }
+    public double? Lng { get; set; }
+    public double? RadiusKm { get; set; }
+
+    /// <summary>When set, listings are loaded from Postgres for this seller profile (bypasses Meilisearch).</summary>
+    public Guid? SellerId { get; set; }
 }

@@ -1,0 +1,120 @@
+{
+  "bottoms": {
+    "average_impact": {
+      "co2_kg": 30,
+      "water_l": 3500
+    },
+    "subcategories": {
+      "jeans": {
+        "co2_kg": 33.4,
+        "water_l": 3781,
+        "components": {
+          "cotton_fabric": {
+            "water_l": 3500,
+            "note": "Most water footprint comes from cotton irrigation."
+          },
+          "metal_rivets": {
+            "co2_note": "Metal mining and electroplating contribute to emissions and wastewater pollution."
+          },
+          "zipper": {
+            "water_note": "Zipper dyeing and finishing account for significant freshwater pollution."
+          }
+        },
+        "sources": [
+          "https://www.sciencedirect.com/science/article/abs/pii/S0959652621042098",
+          "https://www.worldbank.org/en/news/feature/2019/09/23/costo-moda-medio-ambiente",
+          "https://www.greenclimate.fund/story/jeans-don-t-cost-earth?"
+        ]
+      },
+      "chinos": {
+        "co2_kg": 20,
+        "water_l": 2500,
+        "sources": [
+          "https://www.wri.org/insights/apparel-industrys-environmental-impact-6-graphics"
+        ]
+      }
+    }
+  },
+
+  "tops": {
+    "average_impact": {
+      "co2_kg": 5,
+      "water_l": 2700
+    },
+    "subcategories": {
+      "tshirt": {
+        "co2_kg": 5.4,
+        "water_l": 2700,
+        "components": {
+          "cotton_fabric": {
+            "water_l": 2700
+          },
+          "plastic_print": {
+            "co2_note": "Printing and dyeing contribute to textile chemical pollution."
+          }
+        },
+        "sources": [
+          "https://www.wri.org/insights/apparel-industrys-environmental-impact-6-graphics",
+          "https://www.fulgar.com/en/feature/282/water-consumption-in-the-textile-industry-challenges-and-solutions?"
+        ]
+      }
+    }
+  },
+
+  "outerwear": {
+    "average_impact": {
+      "materials": "Go based on most common materials used in outwear (leather, polyester, cotton, denim)"
+    },
+    "subcategories": {
+      "synthetic_lining": {
+        "material": "polyester",
+        "note": "Polyester production is fossil-fuel based."
+      }
+    }
+  },
+
+  "footwear": {
+    "average_impact": {
+      "co2_kg": 25
+    },
+    "subcategories": {
+      "sneakers": {
+        "co2_kg": 13.6,
+        "components": {
+          "rubber_outsole": {
+            "co2_percentage": 30,
+            "note": "Rubber processing and molding contribute a large portion of emissions."
+          },
+          "synthetic_upper": {
+            "co2_percentage": 41,
+            "note": "Material production accounts for most footwear emissions."
+          }
+        },
+        "sources": [
+          "https://www.carbonfact.com/carbon-footprint/shoes",
+          "https://www.mdpi.com/2071-1050/16/14/6094"
+        ]
+      }
+    }
+  },
+
+  "sportswear": {
+    "average_impact": "usually using polyester, go based off of materials info"
+  },
+
+  "accessories": {
+    "average_impact": "depends on accessory, go based on common materials used"
+  },
+
+  "global_context": {
+    "fashion_industry": {
+      "global_emissions_percentage": 10,
+      "water_usage_per_year_m3": 93000000000,
+      "textile_waste_tons_per_year": 92000000
+    },
+    "sources": [
+      "https://www.unep.org",
+      "https://earth.org/fast-fashion-and-emissions-whats-the-link/"
+    ]
+  }
+}

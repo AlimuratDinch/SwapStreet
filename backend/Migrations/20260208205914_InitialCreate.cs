@@ -189,7 +189,7 @@ namespace backend.Migrations
                     Rating = table.Column<float>(type: "real", nullable: false),
                     Bio = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     CityId = table.Column<int>(type: "integer", nullable: false),
-                    FSA = table.Column<string>(type: "varchar(3)", maxLength: 3, nullable: false),
+                    FSA = table.Column<string>(type: "varchar(7)", maxLength: 7, nullable: false),
                     ProfileImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     BannerImagePath = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),

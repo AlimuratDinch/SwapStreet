@@ -4,6 +4,8 @@ using backend.DTOs;
 using backend.DTOs.Image;
 using Microsoft.EntityFrameworkCore;
 using Meilisearch;
+using backend.Infrastructure.LogQueue;
+using System.Text.Json;
 
 namespace backend.Services
 {
@@ -16,12 +18,12 @@ namespace backend.Services
 
         private readonly ILocationService _locationService;
         private readonly MeilisearchClient _meiliClient;
+        private readonly ITopicManager _topicManager;
 
         public ListingCommandService(AppDbContext context, MeilisearchClient client)
         {
             _context = context;
             _meiliClient = client;
-
         }
 
         public ListingCommandService(
@@ -50,6 +52,22 @@ namespace backend.Services
             _meiliClient = client;
         }
 
+        public ListingCommandService(
+            AppDbContext context,
+            ILogger<ListingCommandService> logger,
+            IFileStorageService fileStorageService,
+            ILocationService locationService,
+            MeilisearchClient client,
+            ITopicManager topicManager)
+        {
+            _context = context;
+            _logger = logger;
+            _fileStorageService = fileStorageService;
+            _locationService = locationService;
+            _meiliClient = client;
+            _topicManager = topicManager;
+        }
+
         public async Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Deleting listing {ListingId} for ProfileId {ProfileId}", listingId, profileId);
@@ -70,9 +88,17 @@ namespace backend.Services
                 .Where(li => li.ListingId == listingId)
                 .ToListAsync(cancellationToken);
 
+            var retainedPaths = await _context.Chatrooms
+                .AsNoTracking()
+                .Where(c => c.ListingId == listingId && c.ListingImageSnapshotPath != null)
+                .Select(c => c.ListingImageSnapshotPath!)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
             var imagePaths = listingImages
                 .Select(li => li.ImagePath)
                 .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Where(path => !retainedPaths.Contains(path))
                 .ToList();
 
             // 2. Delete images from MinIO first to avoid DB deletes if storage fails
@@ -112,6 +138,18 @@ namespace backend.Services
                 _logger.LogError(ex, "Failed to delete listing {ListingId}", listingId);
                 throw;
             }
+
+            // 4. Remove from Meilisearch index (best effort)
+            try
+            {
+                var index = _meiliClient.Index("listings");
+                await index.DeleteOneDocumentAsync(listingId.ToString(), cancellationToken: cancellationToken);
+                _logger.LogInformation("Removed listing {ListingId} from Meilisearch", listingId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to remove listing {ListingId} from Meilisearch", listingId);
+            }
         }
 
         public async Task<Guid> CreateListingAsync(CreateListingRequestDto request, CancellationToken cancellationToken = default)
@@ -134,8 +172,12 @@ namespace backend.Services
                 Title = request.Title,
                 Description = request.Description,
                 Price = request.Price,
+                Size = request.Size,
+                Brand = request.Brand,
+                Category = request.Category,
+                Condition = request.Condition,
+                Colour = request.Colour,
                 ProfileId = request.ProfileId,
-                TagId = null,
                 FSA = request.FSA,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -150,22 +192,29 @@ namespace backend.Services
             // 4. Sync to Meilisearch
             try
             {
-                var index = _meiliClient.Index("listings");
 
                 var searchDoc = new ListingSearchDto
                 {
                     Id = listing.Id.ToString(),
                     Title = listing.Title,
                     Description = listing.Description,
+                    Price = listing.Price,
+                    Size = listing.Size,
+                    Brand = listing.Brand,
+                    Category = listing.Category,
+                    Condition = listing.Condition,
+                    Colour = listing.Colour,
                     FSA = listing.FSA,
                     CreatedAtTimestamp = new DateTimeOffset(listing.CreatedAt).ToUnixTimeSeconds(),
                     _geo = latlong
                 };
 
 
-                await index.AddDocumentsAsync(new[] { searchDoc }, cancellationToken: cancellationToken);
+                // We simply create the searchDoc and append it to the log to be handled by a Meillisearch worker
+                await AppendToListingLog(listing.Id, searchDoc, ListingAction.Create);
 
-                _logger.LogInformation("Synced listing {ListingId} to Meilisearch", listing.Id);
+
+                _logger.LogInformation("Appended Create listing {ListingId} log to LogQueue", listing.Id);
             }
             catch (Exception ex)
             {
@@ -173,7 +222,43 @@ namespace backend.Services
                 _logger.LogError(ex, "Failed to sync listing {ListingId} to Meilisearch", listing.Id);
             }
 
+
+
             return listing.Id;
         }
+
+
+        // Method to add log to queue to be handled by workers
+        private async Task AppendToListingLog(Guid listingID, ListingSearchDto searchData, ListingAction action)
+        {
+            try
+            {
+                var taskData = new ListingTaskData
+                {
+                    TaskId = Guid.NewGuid(),
+                    Action = action,
+                    SearchData = searchData,
+                    ListingId = listingID,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Serialize to JSON bytes
+                byte[] logBytes = JsonSerializer.SerializeToUtf8Bytes(taskData);
+
+                // Append to partition 0 of the "listings" topic, one day we may scale to multiple partitions if needed
+                var partition = _topicManager.GetTopic("listings", 0);
+                if (partition != null)
+                {
+                    await partition.AppendAsync(logBytes);
+                    _logger.LogInformation("Listing task {TaskId} logged to 'listings' topic", taskData.TaskId);
+                }
+            }
+            catch (Exception ex)
+            {
+                // missing retry logic 
+                _logger.LogError(ex, "Failed to append listing task to log for {ListingId}", listingID);
+            }
+        }
+
     }
 }

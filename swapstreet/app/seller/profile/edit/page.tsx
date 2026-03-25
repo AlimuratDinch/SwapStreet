@@ -64,11 +64,11 @@ export default function EditSellerProfilePage() {
       await updateProfile(token, payload);
     },
     onSuccess: () => {
-      setTimeout(() => router.push("/profile"), 1500);
+      router.push("/profile?updated=true");
     },
   });
 
-  const { loadingData, showSuccess } = form;
+  const { loadingData } = form;
 
   if (!accessToken) {
     router.replace("/profile");
@@ -115,38 +115,6 @@ export default function EditSellerProfilePage() {
     );
   }
 
-  if (showSuccess) {
-    return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center gap-6 px-4"
-        style={{ backgroundColor: "#eae9ea" }}
-      >
-        <div className="flex flex-col items-center gap-4 rounded-xl bg-white px-8 py-10 shadow-lg border border-gray-200">
-          <div className="relative flex items-center justify-center w-16 h-16">
-            <div className="absolute inset-0 rounded-full border-4 border-teal-200 animate-ping opacity-40" />
-            <div className="relative flex items-center justify-center w-14 h-14 rounded-full bg-teal-500">
-              <svg
-                className="w-8 h-8 text-white"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-          <p className="text-lg font-medium text-gray-900">Profile updated!</p>
-          <p className="text-sm text-gray-500">
-            Taking you back to your profile...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
       <Header />
@@ -154,7 +122,7 @@ export default function EditSellerProfilePage() {
         <SellerProfileForm
           {...form}
           idPrefix="edit"
-          title="Edit your seller profile"
+          title="Edit your profile"
           subtitle="Update your details below. Changes are saved when you click Save changes."
           submitLabel={form.loading ? "Saving..." : "Save changes"}
           cancelButton={{

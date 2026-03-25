@@ -31,6 +31,95 @@ describe("RegistrationPage — branch coverage booster", () => {
     jest.clearAllMocks();
   });
 
+  it("shows error from json.error field on failed signup", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: false,
+      text: async () => JSON.stringify({ error: "Email already in use" }),
+    } as Response);
+
+    renderWithAuth(<RegistrationPage />);
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "taken@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+
+    expect(
+      await screen.findByText(/email already in use/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows error from json.errors object on failed signup", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: false,
+      text: async () =>
+        JSON.stringify({
+          errors: {
+            Password: ["Password must be at least 8 characters long."],
+          },
+        }),
+    } as Response);
+
+    renderWithAuth(<RegistrationPage />);
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "user@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+
+    expect(
+      await screen.findByText(/password must be at least 8 characters long/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows error from json.title on failed signup", async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: false,
+      text: async () => JSON.stringify({ title: "Something went wrong" }),
+    } as Response);
+
+    renderWithAuth(<RegistrationPage />);
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "User" },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "user@test.com" },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: "password123" },
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+
+    expect(
+      await screen.findByText(/something went wrong/i),
+    ).toBeInTheDocument();
+  });
+
   it("renders all form fields", () => {
     renderWithAuth(<RegistrationPage />);
     expect(screen.getByLabelText(/username/i)).toBeInTheDocument();

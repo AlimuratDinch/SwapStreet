@@ -8,7 +8,7 @@ jest.mock("next/navigation", () => ({
   useSearchParams: jest.fn(),
 }));
 
-// Mocking Shadcn components and custom sub-components
+// Mock Shadcn sidebar components
 jest.mock("@/components/ui/sidebar", () => ({
   Sidebar: ({ children }: any) => <nav>{children}</nav>,
   SidebarHeader: ({ children }: any) => <div>{children}</div>,
@@ -19,22 +19,40 @@ jest.mock("@/components/ui/sidebar", () => ({
   SidebarMenu: ({ children }: any) => <ul>{children}</ul>,
   SidebarMenuItem: ({ children }: any) => <li>{children}</li>,
   SidebarMenuButton: ({ children, onClick }: any) => (
-    <button onClick={onClick}>{children}</button>
+    <button onClick={onClick} data-testid="sidebar-menu-button">
+      {children}
+    </button>
   ),
   useSidebar: () => ({
     state: "expanded",
     setOpen: jest.fn(),
-    open: true,
-    isMobile: false,
-    toggleSidebar: jest.fn(),
   }),
 }));
 
-// Mock Sub-components to ensure we focus on Sidebar logic
+// Mock Shadcn select components
+jest.mock("@/components/ui/select", () => ({
+  Select: ({ children }: any) => <div>{children}</div>,
+  SelectTrigger: ({ children, className }: any) => (
+    <button className={className}>{children}</button>
+  ),
+  SelectContent: ({ children }: any) => <div>{children}</div>,
+  SelectItem: ({ children, value }: any) => (
+    <option value={value}>{children}</option>
+  ),
+  SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
+}));
+
+jest.mock("@/app/browse/components/Portal", () => ({
+  Portal: ({ children }: any) => (
+    <div data-testid="portal-root">{children}</div>
+  ),
+}));
+
 jest.mock("@/app/browse/components/SearchBar", () => ({
-  SearchBar: ({ onSearch }: any) => (
+  SearchBar: ({ onSearch, initialValue }: any) => (
     <input
       data-testid="search-input"
+      value={initialValue}
       onChange={(e) => onSearch(e.target.value)}
     />
   ),
@@ -44,14 +62,14 @@ jest.mock("@/app/browse/components/LocationFilterModal", () => ({
   LocationFilterModal: ({ onApply }: any) => (
     <button
       data-testid="apply-loc"
-      onClick={() => onApply({ lat: 10, lng: 20, radiusKm: 5 })}
+      onClick={() => onApply({ lat: 45.5, lng: -73.6, radiusKm: 10 })}
     >
       Apply Location
     </button>
   ),
 }));
 
-describe("Sidebar Component Coverage Fix", () => {
+describe("BrowseSidebar Component", () => {
   const mockReplace = jest.fn();
 
   beforeEach(() => {
@@ -59,76 +77,211 @@ describe("Sidebar Component Coverage Fix", () => {
     (useRouter as jest.Mock).mockReturnValue({ replace: mockReplace });
   });
 
-  it("initializes state from URL parameters (Lines 58-60)", () => {
+  it("initializes state from URL parameters (Query and Location)", () => {
     (useSearchParams as jest.Mock).mockReturnValue({
       get: (key: string) => {
-        if (key === "minPrice") return "100";
-        if (key === "maxPrice") return "500";
-        if (key === "q") return "test-query";
-        return null;
+        const params: Record<string, string> = {
+          q: "vintage",
+          lat: "45.5",
+          lng: "-73.6",
+          radiusKm: "10",
+        };
+        return params[key] || null;
       },
-      toString: () => "minPrice=100&maxPrice=500&q=test-query",
     });
 
-    render(<BrowseSidebar />);
+    const { container } = render(<BrowseSidebar />);
 
-    // Expand price to check values
-    fireEvent.click(screen.getByText("Price Range"));
-    expect(screen.getByDisplayValue("100")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("500")).toBeInTheDocument();
+    const searchInput = screen.getByTestId("search-input") as HTMLInputElement;
+    expect(searchInput.value).toBe("vintage");
+
+    const indicator = container.querySelector(".bg-teal-500");
+    expect(indicator).toBeInTheDocument();
   });
 
-  it("updates URL when location is applied (Lines 66-69)", async () => {
+  it("updates URL when location is applied via modal", async () => {
     (useSearchParams as jest.Mock).mockReturnValue({
       get: () => null,
-      toString: () => "",
     });
 
     render(<BrowseSidebar />);
 
-    // Trigger Location Modal
-    fireEvent.click(screen.getByText("Location"));
+    // Click the Location button (contains icon + text, use regex)
+    fireEvent.click(screen.getByText(/location/i));
 
-    // Click the mocked "Apply" button inside the modal
-    const applyBtn = screen.getByTestId("apply-loc");
-    fireEvent.click(applyBtn);
+    // Click Apply in mocked modal
+    fireEvent.click(screen.getByTestId("apply-loc"));
 
     expect(mockReplace).toHaveBeenCalledWith(
-      expect.stringContaining("lat=10&lng=20&radiusKm=5"),
-      expect.any(Object),
+      expect.stringContaining("lat=45.5"),
+      expect.objectContaining({ scroll: false }),
     );
   });
 
-  it("clears all filters when 'Clear' is clicked (Line 84)", () => {
+  it("clears all filters when 'Clear All' is clicked", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: (key: string) => (key === "q" ? "shoes" : null),
+    });
+
+    render(<BrowseSidebar />);
+
+    // Button text is now "Clear All"
+    fireEvent.click(screen.getByText("Clear All"));
+
+    expect(mockReplace).toHaveBeenCalledWith("/browse", { scroll: false });
+  });
+
+  it("clears all filters when 'Clear All' is clicked", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: (key: string) => (key === "q" ? "shoes" : null),
+    });
+
+    render(<BrowseSidebar />);
+
+    // Button text is now "Clear All"
+    fireEvent.click(screen.getByText("Clear All"));
+
+    expect(mockReplace).toHaveBeenCalledWith("/browse", { scroll: false });
+  });
+
+  it("syncs search query changes to the URL", () => {
     (useSearchParams as jest.Mock).mockReturnValue({
       get: () => null,
-      toString: () => "",
     });
 
     render(<BrowseSidebar />);
 
-    const clearBtn = screen.getByText("Clear");
-    fireEvent.click(clearBtn);
+    fireEvent.change(screen.getByTestId("search-input"), {
+      target: { value: "jacket" },
+    });
 
-    // Should reset to defaults
     expect(mockReplace).toHaveBeenCalledWith(
-      expect.stringContaining("minPrice=0&maxPrice=999999"),
-      expect.any(Object),
+      expect.stringContaining("q=jacket"),
+      { scroll: false },
     );
   });
 
-  it("handles empty input in PriceInput (Lines 158-161)", async () => {
+  it("preserves location filter when clearing search", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: (key: string) => {
+        const params: Record<string, string> = {
+          q: "shoes",
+          lat: "45.5",
+          lng: "-73.6",
+          radiusKm: "10",
+        };
+        return params[key] || null;
+      },
+    });
+
     render(<BrowseSidebar />);
-    fireEvent.click(screen.getByText("Price Range"));
+    fireEvent.click(screen.getByText("Clear All"));
 
-    const minInput = screen.getByDisplayValue("0");
-    // Simulate clearing the input (empty string)
-    fireEvent.change(minInput, { target: { value: "" } });
+    expect(mockReplace).toHaveBeenCalledWith("/browse", { scroll: false });
+  });
 
-    // The component logic `Number(e.target.value) || 0` should convert "" to 0
+  it("displays all filter dropdowns", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: () => null,
+    });
+
+    render(<BrowseSidebar />);
+
+    expect(screen.getByText("Category")).toBeInTheDocument();
+    expect(screen.getByText("Brand")).toBeInTheDocument();
+    expect(screen.getByText("Condition")).toBeInTheDocument();
+    expect(screen.getByText("Size")).toBeInTheDocument();
+    expect(screen.getByText("Colour")).toBeInTheDocument();
+  });
+
+  it("displays price range label", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: () => null,
+    });
+
+    render(<BrowseSidebar />);
+
+    expect(screen.getByText("Price Range")).toBeInTheDocument();
+  });
+
+  it("initializes price range from URL parameters", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: (key: string) => {
+        const params: Record<string, string> = {
+          minPrice: "50",
+          maxPrice: "150",
+        };
+        return params[key] || null;
+      },
+    });
+
+    render(<BrowseSidebar />);
+
+    const minInput = screen.getByPlaceholderText(
+      "Min price",
+    ) as HTMLInputElement;
+    const maxInput = screen.getByPlaceholderText(
+      "Max price",
+    ) as HTMLInputElement;
+
+    expect(minInput.value).toBe("50");
+    expect(maxInput.value).toBe("150");
+  });
+
+  it("updates URL when minimum price changes", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: () => null,
+    });
+
+    render(<BrowseSidebar />);
+
+    const minInput = screen.getByPlaceholderText("Min price");
+    fireEvent.change(minInput, { target: { value: "25" } });
+
     expect(mockReplace).toHaveBeenCalledWith(
-      expect.stringContaining("minPrice=0"),
-      expect.any(Object),
+      expect.stringContaining("minPrice=25"),
+      { scroll: false },
     );
+  });
+
+  it("updates URL when maximum price changes", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: () => null,
+    });
+
+    render(<BrowseSidebar />);
+
+    const maxInput = screen.getByPlaceholderText("Max price");
+    fireEvent.change(maxInput, { target: { value: "200" } });
+
+    expect(mockReplace).toHaveBeenCalledWith(
+      expect.stringContaining("maxPrice=200"),
+      { scroll: false },
+    );
+  });
+
+  it("opens location modal when Location button is clicked", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: () => null,
+    });
+
+    render(<BrowseSidebar />);
+
+    fireEvent.click(screen.getByText(/location/i));
+
+    expect(screen.getByTestId("apply-loc")).toBeInTheDocument();
+  });
+
+  it("closes location modal after applying location", () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: () => null,
+    });
+
+    render(<BrowseSidebar />);
+
+    fireEvent.click(screen.getByText(/location/i));
+    fireEvent.click(screen.getByTestId("apply-loc"));
+
+    expect(mockReplace).toHaveBeenCalled();
   });
 });

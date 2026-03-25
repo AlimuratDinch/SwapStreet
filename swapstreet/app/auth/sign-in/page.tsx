@@ -2,14 +2,29 @@
 export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/components/common/logger";
 import AuthLayout from "@/components/auth/AuthLayout";
 import FormField from "@/components/auth/FormField";
 import ErrorMessage from "@/components/auth/ErrorMessage";
 import AuthButton from "@/components/auth/AuthButton";
 
+function parseApiError(text: string, fallback: string): string {
+  try {
+    const json = JSON.parse(text);
+    if (json.status === 400) {
+      return "Invalid email or password.";
+    }
+    if (json.error && typeof json.error === "string") return json.error;
+  } catch {
+    if (text && !text.startsWith("{")) return text;
+  }
+  return fallback;
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,9 +49,9 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        const err = await response.text();
-        logger.warn("Login failed", { status: response.status, err });
-        throw new Error(err || "Login failed");
+        const text = await response.text();
+        logger.warn("Login failed", { status: response.status, text });
+        throw new Error(parseApiError(text, "Login failed. Please try again."));
       }
 
       const data = await response.json();
@@ -46,8 +61,8 @@ export default function LoginPage() {
         throw new Error("Access token not returned from backend");
       }
 
-      sessionStorage.setItem("accessToken", data.accessToken);
-      logger.debug("Access token stored");
+      login(data.accessToken);
+      logger.debug("Access token stored and auth context updated");
 
       router.push("/browse");
     } catch (err: unknown) {

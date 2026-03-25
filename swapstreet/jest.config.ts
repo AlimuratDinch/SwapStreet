@@ -17,12 +17,10 @@ const customJestConfig = {
   collectCoverageFrom: [
     "app/**/*.{js,jsx,ts,tsx}",
     "!app/layout.{js,tsx}",
-    "!app/seller/**",
     // "!app/browse/**", // Ignore all source files in browse
     "!app/wardrobe/**", // Ignore all source files in wardrobe
     // "!app/listing/[id]/**", // Ignore the specific dynamic route folder
     // "!app/profile/**", // Ignore the specific dynamic route folder
-    "!app/seller/onboarding/**", // Removed after meeting 24 discussion (to be re-evaluated)
     "!**/node_modules/**",
     "!**/.next/**",
   ],
@@ -32,6 +30,7 @@ const customJestConfig = {
     "<rootDir>/node_modules/",
     "<rootDir>/.next/",
     "<rootDir>/e2e/",
+    "<rootDir>/gifs/",
     "<rootDir>/tests/__tests__/wardrobe/",
     // "<rootDir>/tests/__tests__/browse/", // Stops "Your test suite must contain at least one test"
     // "<rootDir>/tests/__tests__/wardrobe/",

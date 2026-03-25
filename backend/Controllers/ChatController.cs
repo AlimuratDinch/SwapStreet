@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using backend.Contracts;
 using backend.DTOs.Chat;
 using System.Security.Claims;
+using Microsoft.AspNetCore.SignalR;
+using backend.Hubs;
 
 namespace backend.Controllers
 {
@@ -13,11 +15,13 @@ namespace backend.Controllers
     {
         private readonly IChatroomService _chatroomService;
         private readonly IChatService _chatService;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatController(IChatroomService chatroomService, IChatService chatService)
+        public ChatController(IChatroomService chatroomService, IChatService chatService, IHubContext<ChatHub> hubContext)
         {
             _chatroomService = chatroomService;
             _chatService = chatService;
+            _hubContext = hubContext;
         }
 
         private Guid GetUserId()
@@ -124,7 +128,7 @@ namespace backend.Controllers
                     return Forbid("You can only access chatrooms where you are the seller or buyer");
                 }
 
-                var chatroom = await _chatroomService.GetOrCreateChatroomAsync(dto.SellerId, dto.BuyerId);
+                var chatroom = await _chatroomService.GetOrCreateChatroomAsync(dto.SellerId, dto.BuyerId, dto.ListingId);
                 return Ok(chatroom);
             }
             catch (ArgumentException ex)
@@ -134,6 +138,104 @@ namespace backend.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("chatrooms/{chatroomId}/ratings")]
+        public async Task<IActionResult> SubmitRating(Guid chatroomId, [FromBody] SubmitChatRatingDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .SelectMany(x => x.Value!.Errors.Select(e => e.ErrorMessage))
+                        .ToList();
+                    return BadRequest(new { Error = string.Join("; ", errors) });
+                }
+
+                var userId = GetUserId();
+                var chatroom = await _chatroomService.SubmitRatingAsync(
+                    chatroomId,
+                    userId,
+                    dto.Stars,
+                    dto.Description);
+
+                return Ok(chatroom);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("chatrooms/{chatroomId}/close-request")]
+        public async Task<IActionResult> RequestCloseDeal(Guid chatroomId)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var chatroom = await _chatroomService.RequestCloseDealAsync(chatroomId, userId);
+                await _hubContext.Clients.Group($"chatroom-{chatroomId}")
+                    .SendAsync("CloseDealUpdated", chatroom);
+                return Ok(chatroom);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("chatrooms/{chatroomId}/close-respond")]
+        public async Task<IActionResult> RespondCloseDeal(Guid chatroomId, [FromBody] CloseDealRespondDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var chatroom = await _chatroomService.RespondToCloseDealAsync(chatroomId, userId, dto.Accept);
+                await _hubContext.Clients.Group($"chatroom-{chatroomId}")
+                    .SendAsync("CloseDealUpdated", chatroom);
+
+                if (chatroom.IsDealClosed && chatroom.ListingId.HasValue)
+                {
+                    var related = await _chatroomService.GetChatroomsByListingAsync(chatroom.ListingId.Value);
+                    foreach (var room in related)
+                    {
+                        await _hubContext.Clients.Group($"chatroom-{room.Id}")
+                            .SendAsync("CloseDealUpdated", room);
+                    }
+                }
+
+                return Ok(chatroom);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
@@ -180,7 +282,7 @@ namespace backend.Controllers
 
                 if (isInChatroom)
                 {
-                    _chatroomService.DeleteChatroomAsync(chatroomId);
+                    await _chatroomService.DeleteChatroomAsync(chatroomId);
                 }
                 else
                 {
@@ -221,7 +323,7 @@ namespace backend.Controllers
 
                 if (isInChatroom && messageDTO.AuthorId == userId)
                 {
-                    _chatService.DeleteMessageByIdAsync(messageDTO.Id);
+                    await _chatService.DeleteMessageByIdAsync(messageDTO.Id);
                 }
                 else
                 {

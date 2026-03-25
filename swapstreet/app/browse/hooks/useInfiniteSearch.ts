@@ -1,15 +1,19 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+// Import the centralized fetcher
+import {
+  getSearchResults,
+  SearchParams,
+  type BrowseSearchResultItem,
+} from "@/lib/api/browse";
 
-export function useInfiniteSearch<T>(
-  initialItems: T[],
-  initialCursor: string | null,
-  initialHasNext: boolean,
-) {
+export function useInfiniteSearch<
+  T extends BrowseSearchResultItem = BrowseSearchResultItem,
+>(initialItems: T[], initialCursor: string | null, initialHasNext: boolean) {
   const searchParams = useSearchParams();
-  const [items, setItems] = useState(initialItems);
-  const [cursor, setCursor] = useState(initialCursor);
+  const [items, setItems] = useState<T[]>(initialItems);
+  const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [hasNext, setHasNext] = useState(initialHasNext);
   const [loading, setLoading] = useState(false);
 
@@ -17,48 +21,52 @@ export function useInfiniteSearch<T>(
   const fetchInProgressRef = useRef(false);
 
   const fetchPage = useCallback(
-    async (currentCursor: string | null) => {
+    async (currentCursor: string | null, isReset: boolean = false) => {
       if (fetchInProgressRef.current) return;
       fetchInProgressRef.current = true;
       setLoading(true);
 
       try {
-        const q = new URLSearchParams();
-        q.set("Query", searchParams.get("q") || "");
-        q.set("MinPrice", searchParams.get("minPrice") || "");
-        q.set("MaxPrice", searchParams.get("maxPrice") || "");
-        q.set("PageSize", "18");
-        if (currentCursor) q.set("Cursor", currentCursor);
+        // Construct params object for getSearchResults
+        const params: SearchParams = {
+          q: searchParams.get("q") || undefined,
+          cursor: currentCursor || undefined,
+        };
 
-        const res = await fetch(`/api/search/search?${q.toString()}`);
-        const data = await res.json();
+        // Use the centralized fetcher from browse.ts
+        const data = await getSearchResults(params);
 
-        setItems((prev) => [...prev, ...(data.items ?? [])]);
+        setItems((prev) =>
+          isReset ? (data.items as T[]) : [...prev, ...(data.items as T[])],
+        );
         setCursor(data.nextCursor);
         setHasNext(data.hasNextPage);
       } catch (err) {
+        console.error("Infinite Search Error:", err);
         setHasNext(false);
       } finally {
         setLoading(false);
         fetchInProgressRef.current = false;
       }
     },
-    [searchParams],
+    [searchParams], // Hook now relies on the searchParams and browse.ts logic
   );
 
-  // RESET LOGIC
+  // RESET LOGIC: When the user types a new search query
   useEffect(() => {
-    // IMPORTANT: Skip reset on mount so we keep the server-side items
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
 
-    setItems([]);
-    setCursor(null);
-    setHasNext(true);
-    fetchPage(null);
+    // When search params change, reset the list and fetch from the start
+    fetchPage(null, true);
   }, [searchParams, fetchPage]);
 
-  return { items, loading, hasNext, fetchPage: () => fetchPage(cursor) };
+  return {
+    items,
+    loading,
+    hasNext,
+    fetchPage: () => fetchPage(cursor),
+  };
 }

@@ -5,9 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, ProfileResponse } from "@/lib/api/profile";
 import { Header } from "@/components/common/Header";
-import { ProfileHeader, ProfileTab } from "@/components/profile/ProfileHeader";
-import { ProfileListingsTab } from "@/components/profile/ProfileListingsTab";
-import { ProfileReviewsTab } from "@/components/profile/ProfileReviewsTab";
+import { ProfilePageContent } from "@/components/profile/ProfilePageContent";
+import type { ProfileTab } from "@/components/profile/ProfileHeader";
 
 function ProfileSuccessToast() {
   const router = useRouter();
@@ -90,9 +89,19 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
         <Header />
-        <div className="flex items-center justify-center pt-32">
-          <div className="text-lg text-gray-600">Loading profile...</div>
-        </div>
+        <ProfilePageContent
+          profile={null}
+          fullName=""
+          location={null}
+          memberSince=""
+          profileImageUrl=""
+          bannerImageUrl=""
+          activeTab="listings"
+          onTabChange={() => {}}
+          loading={true}
+          error={null}
+          isCurrentUserProfile={true}
+        />
       </div>
     );
   }
@@ -101,32 +110,26 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
         <Header />
-        <div className="flex flex-col items-center justify-center pt-32 gap-4 px-4">
-          <div className="text-center max-w-md">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              No Profile Found
-            </h2>
-            <p className="text-gray-600 mb-6">
-              You haven&apos;t created a profile yet. Create one to get started
-              with SwapStreet!
-            </p>
-            <button
-              onClick={() => router.push("/seller/onboarding")}
-              className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 font-medium"
-            >
-              Create Profile
-            </button>
-          </div>
-        </div>
+        <ProfilePageContent
+          profile={null}
+          fullName=""
+          location={null}
+          memberSince=""
+          profileImageUrl=""
+          bannerImageUrl=""
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          loading={false}
+          error={error}
+          isCurrentUserProfile={true}
+        />
       </div>
     );
   }
 
   const fullName = `${profile.firstName} ${profile.lastName}`;
   const location = profile.cityName
-    ? `${profile.cityName}${
-        profile.provinceCode ? `, ${profile.provinceCode}` : ""
-      }`
+    ? `${profile.cityName}${profile.provinceCode ? `, ${profile.provinceCode}` : ""}`
     : null;
   const memberSince = new Date(profile.createdAt).toLocaleDateString("en-CA", {
     year: "numeric",
@@ -143,23 +146,19 @@ export default function ProfilePage() {
     <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
       <Header />
 
-      <div className="mx-auto max-w-6xl px-4 pt-24 pb-8">
-        <ProfileHeader
-          profile={profile}
-          fullName={fullName}
-          location={location}
-          memberSince={memberSince}
-          profileImageUrl={profileImageUrl}
-          bannerImageUrl={bannerImageUrl}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-
-        <div className="mt-4">
-          {activeTab === "listings" && <ProfileListingsTab />}
-          {activeTab === "reviews" && <ProfileReviewsTab />}
-        </div>
-      </div>
+      <ProfilePageContent
+        profile={profile}
+        fullName={fullName}
+        location={location}
+        memberSince={memberSince}
+        profileImageUrl={profileImageUrl}
+        bannerImageUrl={bannerImageUrl}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        loading={false}
+        error={null}
+        isCurrentUserProfile={true}
+      />
 
       <Suspense fallback={null}>
         <ProfileSuccessToast />
