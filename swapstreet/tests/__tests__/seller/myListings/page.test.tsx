@@ -715,7 +715,9 @@ describe("MyListingsPage", () => {
           title: "MinIO Item",
           price: 40,
           fsa: "M5H",
-          images: [{ imageUrl: "http://localhost:9000/minio/bucket/image.jpg" }],
+          images: [
+            { imageUrl: "http://localhost:9000/minio/bucket/image.jpg" },
+          ],
         },
       ],
       nextCursor: null,
@@ -724,7 +726,9 @@ describe("MyListingsPage", () => {
 
     render(<MyListingsPage />);
 
-    const image = (await screen.findByAltText(/MinIO Item/i)) as HTMLImageElement;
+    const image = (await screen.findByAltText(
+      /MinIO Item/i,
+    )) as HTMLImageElement;
     expect(image.src).toContain("minio");
   });
 

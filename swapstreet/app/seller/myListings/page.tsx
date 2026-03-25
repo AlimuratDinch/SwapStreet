@@ -9,8 +9,7 @@ import { Trash2 } from "lucide-react";
 import { getSearchResults } from "@/lib/api/browse";
 import { getMyProfile } from "@/lib/api/profile";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 type ListingItem = {
   id: string;
@@ -38,16 +37,23 @@ export default function MyListingsPage() {
       setError(null);
       try {
         const profile = await getMyProfile(accessToken);
-        const { items } = await getSearchResults({ 
+        const { items } = await getSearchResults({
           sellerId: profile.id,
-          pageSize: 50
+          pageSize: 50,
         });
-        const mapped: ListingItem[] = (items ?? []).map((i: { id: string; title: string; price: number; images?: { imageUrl: string | null }[] }) => ({
-          id: i.id,
-          title: i.title,
-          price: i.price,
-          images: i.images,
-        }));
+        const mapped: ListingItem[] = (items ?? []).map(
+          (i: {
+            id: string;
+            title: string;
+            price: number;
+            images?: { imageUrl: string | null }[];
+          }) => ({
+            id: i.id,
+            title: i.title,
+            price: i.price,
+            images: i.images,
+          }),
+        );
         setListings(mapped);
       } catch (e) {
         console.error(e);
@@ -87,7 +93,9 @@ export default function MyListingsPage() {
         setConfirmId(null);
       } else {
         const data = await res.json().catch(() => ({}));
-        setError(data?.Error || "Could not delete listing. It may not be yours.");
+        setError(
+          data?.Error || "Could not delete listing. It may not be yours.",
+        );
       }
     } catch (e) {
       console.error(e);
@@ -107,7 +115,9 @@ export default function MyListingsPage() {
       <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
         <Header />
         <div className="mx-auto max-w-4xl px-4 pt-24 pb-10 text-center">
-          <p className="text-gray-600">Please sign in to view and manage listings.</p>
+          <p className="text-gray-600">
+            Please sign in to view and manage listings.
+          </p>
           <button
             type="button"
             onClick={() => router.push("/auth/sign-in")}
@@ -125,7 +135,9 @@ export default function MyListingsPage() {
       <Header />
       <div className="mx-auto max-w-4xl px-4 pt-24 pb-10">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Manage Listings</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Manage Listings
+          </h1>
           <button
             type="button"
             onClick={() => router.push("/profile")}
@@ -142,7 +154,9 @@ export default function MyListingsPage() {
         )}
 
         {loading ? (
-          <div className="mt-8 text-center text-gray-500">Loading listings...</div>
+          <div className="mt-8 text-center text-gray-500">
+            Loading listings...
+          </div>
         ) : listings.length === 0 ? (
           <div className="mt-8 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100 text-center text-gray-500">
             <p>No listings found.</p>
@@ -176,7 +190,9 @@ export default function MyListingsPage() {
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-medium text-gray-900 truncate">{item.title}</h2>
+                  <h2 className="font-medium text-gray-900 truncate">
+                    {item.title}
+                  </h2>
                   <p className="text-sm text-gray-500">
                     ${Number(item.price).toFixed(2)} CAD
                   </p>
@@ -184,7 +200,9 @@ export default function MyListingsPage() {
                 <div className="flex shrink-0 items-center gap-2">
                   {confirmId === item.id ? (
                     <>
-                      <span className="text-sm text-gray-600">Delete this listing?</span>
+                      <span className="text-sm text-gray-600">
+                        Delete this listing?
+                      </span>
                       <button
                         type="button"
                         onClick={() => handleConfirmDelete(item.id)}
