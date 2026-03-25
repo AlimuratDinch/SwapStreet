@@ -11,7 +11,7 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never" }]],
 
   use: {
-    baseURL: process.env.CI ? "http://localhost" : "http://localhost:3000",
+    baseURL: process.env.CI ? "http://localhost:3000" : "http://localhost",
     video: "on",
     viewport: { width: 1280, height: 720 },
     trace: "on-first-retry",
@@ -21,17 +21,19 @@ export default defineConfig({
 
   webServer: process.env.CI
     ? {
-        command: "npm run build && node .next/standalone/server.js",
+        command: "npm run build && npm run start",
         url: "http://localhost:3000",
         reuseExistingServer: false,
         timeout: 120_000,
       }
-    : {
-        command: "npm run dev",
-        url: "http://localhost",
-        reuseExistingServer: true,
-        timeout: 120_000,
-      },
+    : process.env.PW_USE_DEV_SERVER
+      ? {
+          command: "npm run dev",
+          url: "http://localhost",
+          reuseExistingServer: true,
+          timeout: 120_000,
+        }
+      : undefined,
 
   projects: [
     { name: "chromium-desktop", use: { ...devices["Desktop Chrome"] } },
