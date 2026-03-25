@@ -28,7 +28,7 @@ for (const vp of viewports) {
       });
 
       const rawErrors: string[] = [];
-      
+
       // 2. ERROR LISTENERS
       page.on("pageerror", (e) => rawErrors.push(`Page Error: ${e.message}`));
       page.on("console", (msg) => {
@@ -43,7 +43,7 @@ for (const vp of viewports) {
       // 4. STABILITY
       await expect(page.locator("body")).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
-      
+
       // Give the page an extra second for any late-firing network retries
       await page.waitForTimeout(1000);
 
@@ -53,29 +53,29 @@ for (const vp of viewports) {
         const body = document.body;
         // Check both html and body for scroll width
         return (
-          doc.scrollWidth > doc.clientWidth + 1 || 
+          doc.scrollWidth > doc.clientWidth + 1 ||
           body.scrollWidth > body.clientWidth + 1
         );
       });
 
       // 6. AGGRESSIVE ERROR FILTERING
       // We explicitly exclude any errors related to the missing backend
-      const filteredErrors = rawErrors.filter(err => {
+      const filteredErrors = rawErrors.filter((err) => {
         const lowerErr = err.toLowerCase();
-        const isBackendNoise = 
-          lowerErr.includes("err_connection_refused") || 
-          lowerErr.includes("8080") || 
+        const isBackendNoise =
+          lowerErr.includes("err_connection_refused") ||
+          lowerErr.includes("8080") ||
           lowerErr.includes("auth/refresh") ||
           lowerErr.includes("failed to load resource") ||
           lowerErr.includes("cors");
-          
+
         return !isBackendNoise;
       });
 
       // 7. ASSERTIONS
       expect(
-        filteredErrors, 
-        `Real JS crashes found at ${vp.name}: ${filteredErrors.join(", ")}`
+        filteredErrors,
+        `Real JS crashes found at ${vp.name}: ${filteredErrors.join(", ")}`,
       ).toEqual([]);
 
       expect(
