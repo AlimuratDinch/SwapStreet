@@ -49,7 +49,8 @@ export default function RegistrationPage() {
     }
 
     setLoading(true);
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+    const API_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
@@ -75,7 +76,9 @@ export default function RegistrationPage() {
       setShowEmailSentModal(true);
     } catch (err: unknown) {
       logger.error("Registration error", err);
-      setError(err instanceof Error ? err.message : "Failed to create account.");
+      setError(
+        err instanceof Error ? err.message : "Failed to create account.",
+      );
     } finally {
       setLoading(false);
     }
@@ -98,13 +101,17 @@ export default function RegistrationPage() {
     <AuthLayout>
       <div className="w-full max-w-md">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-          <p className="text-teal-600">Join the sustainable fashion community</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Create Account
+          </h1>
+          <p className="text-teal-600">
+            Join the sustainable fashion community
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <ErrorMessage message={error} />
-          
+
           <FormField
             id="name"
             label="Username"
@@ -143,36 +150,41 @@ export default function RegistrationPage() {
             minLength={8}
           />
 
-{/* COOKIE & LEGAL AGREEMENT CHECKBOX */}
-<div className="flex items-start space-x-3 py-2">
-  <input
-    id="cookie-agreement"
-    type="checkbox"
-    checked={agreedToCookies}
-    onChange={(e) => setAgreedToCookies(e.target.checked)}
-    className="mt-1 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
-  />
-  <label htmlFor="cookie-agreement" className="text-sm text-gray-600 cursor-pointer select-none">
-    I agree to the use of cookies for session management and acknowledge the{" "}
-    <a 
-      href="/privacy" 
-      target="_blank" 
-      rel="noopener noreferrer" 
-      className="text-teal-600 hover:underline font-medium"
-    >
-      Privacy Policy
-    </a>{" "}
-    and{" "}
-    <a 
-      href="/terms" 
-      target="_blank" 
-      rel="noopener noreferrer" 
-      className="text-teal-600 hover:underline font-medium"
-    >
-      Terms of Service
-    </a>.
-  </label>
-</div>
+          {/* COOKIE & LEGAL AGREEMENT CHECKBOX */}
+          <div className="flex items-start space-x-3 py-2">
+            <input
+              id="cookie-agreement"
+              type="checkbox"
+              checked={agreedToCookies}
+              onChange={(e) => setAgreedToCookies(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+            />
+            <label
+              htmlFor="cookie-agreement"
+              className="text-sm text-gray-600 cursor-pointer select-none"
+            >
+              I agree to the use of cookies for session management and
+              acknowledge the{" "}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-teal-600 hover:underline font-medium"
+              >
+                Privacy Policy
+              </a>{" "}
+              and{" "}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-teal-600 hover:underline font-medium"
+              >
+                Terms of Service
+              </a>
+              .
+            </label>
+          </div>
 
           <AuthButton disabled={loading}>
             {loading ? "Creating Account..." : "Sign Up"}
@@ -181,7 +193,10 @@ export default function RegistrationPage() {
 
         <p className="mt-8 text-center text-sm text-gray-700">
           Already have an account?{" "}
-          <a href="/auth/sign-in" className="text-teal-600 hover:text-teal-700 font-medium">
+          <a
+            href="/auth/sign-in"
+            className="text-teal-600 hover:text-teal-700 font-medium"
+          >
             Sign In
           </a>
         </p>
@@ -193,15 +208,23 @@ export default function RegistrationPage() {
           <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl text-center">
             <div className="mb-6 flex justify-center">
               <div className="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center text-teal-600">
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">
+                <svg
+                  className="w-10 h-10"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
                   <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Check Your Email</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              Check Your Email
+            </h2>
             <p className="text-gray-600 mb-2">Verification link sent to:</p>
-            <p className="text-teal-600 font-semibold mb-6 break-all">{email}</p>
+            <p className="text-teal-600 font-semibold mb-6 break-all">
+              {email}
+            </p>
             <p className="text-sm text-gray-500">
               Please verify your email to access SwapStreet.
             </p>

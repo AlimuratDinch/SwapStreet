@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState, useEffect } from "react"; 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { logger } from "@/components/common/logger";
@@ -23,7 +23,7 @@ function parseApiError(text: string, fallback: string): string {
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, authLoaded } = useAuth();
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -42,7 +42,8 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+    const API_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
     try {
       logger.info("Attempting sign in", { email });
@@ -96,7 +97,9 @@ export default function LoginPage() {
     <AuthLayout>
       <div className="w-full max-w-md">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome Back
+          </h1>
           <p className="text-teal-600">Sign in to your account</p>
         </div>
 
@@ -125,7 +128,10 @@ export default function LoginPage() {
 
         <p className="mt-8 text-center text-sm text-gray-700">
           Don't have an account?{" "}
-          <a href="/auth/sign-up" className="text-teal-600 hover:text-teal-700 font-medium">
+          <a
+            href="/auth/sign-up"
+            className="text-teal-600 hover:text-teal-700 font-medium"
+          >
             Sign Up
           </a>
         </p>

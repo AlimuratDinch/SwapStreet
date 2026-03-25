@@ -31,7 +31,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [authLoaded, setAuthLoaded] = useState(false);
   const router = useRouter();
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
   // Helper to update state from token
   const updateAuthState = useCallback((token: string) => {
@@ -47,41 +48,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateAuthState(token);
   };
 
-const logout = useCallback(async () => {
-  try {
-    
-    // We need the current token because of the [Authorize] attribute on your backend
-    const token = sessionStorage.getItem("accessToken");
+  const logout = useCallback(async () => {
+    try {
+      // We need the current token because of the [Authorize] attribute on your backend
+      const token = sessionStorage.getItem("accessToken");
 
-    // 1. Hit the backend logout endpoint
-    await fetch(`${API_URL}/auth/logout`, {
-      method: "POST",
-      headers: {
-        // REQUIRED: Matches [Authorize] on backend
-        "Authorization": `Bearer ${token}`, 
-        "Content-Type": "application/json",
-      },
-      // REQUIRED: Allows the browser to receive the "Delete Cookie" instruction
-      credentials: "include", 
-    });
-  } catch (error) {
-    // If the token is already expired, the backend might return 401. 
-    // We catch the error so we can still clean up the frontend.
-    console.warn("Backend logout failed or token already expired", error);
-  } finally {
-    // 2. Clear client-side data
-    sessionStorage.removeItem("accessToken");
+      // 1. Hit the backend logout endpoint
+      await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          // REQUIRED: Matches [Authorize] on backend
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        // REQUIRED: Allows the browser to receive the "Delete Cookie" instruction
+        credentials: "include",
+      });
+    } catch (error) {
+      // If the token is already expired, the backend might return 401.
+      // We catch the error so we can still clean up the frontend.
+      console.warn("Backend logout failed or token already expired", error);
+    } finally {
+      // 2. Clear client-side data
+      sessionStorage.removeItem("accessToken");
 
-    // 3. Reset React State
-    setAccessToken(null);
-    setUserId(null);
-    setUsername(null);
-    setEmail(null);
+      // 3. Reset React State
+      setAccessToken(null);
+      setUserId(null);
+      setUsername(null);
+      setEmail(null);
 
-    // 4. Send user to the landing page
-    router.push("/");
-  }
-}, [router]);
+      // 4. Send user to the landing page
+      router.push("/");
+    }
+  }, [router]);
 
   const refreshToken = async (): Promise<string | null> => {
     try {

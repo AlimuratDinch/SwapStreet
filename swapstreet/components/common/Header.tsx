@@ -57,7 +57,7 @@ function NotificationButton() {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { unread, totalUnread, markAsRead } = useChatContext();
-  const { isAuthenticated, authLoaded} = useAuth();
+  const { isAuthenticated, authLoaded } = useAuth();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -146,7 +146,7 @@ function ProfileButton() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { isAuthenticated, authLoaded} = useAuth();
+  const { isAuthenticated, authLoaded } = useAuth();
   const { logout } = useAuth();
 
   useEffect(() => {
@@ -211,18 +211,18 @@ function ProfileButton() {
             <MessageCircle className="w-4 h-4" />
             Give feedback
           </a>
-<div className="border-t border-gray-100">
-  <button
-    onClick={() => {
-      logout();         // This clears the session and redirects to /login
-      setOpen(false);   // This closes your dropdown/menu
-    }}
-    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-gray-100 transition-colors"
-  >
-    <LogOut className="w-4 h-4" />
-    Log Out
-  </button>
-</div>
+          <div className="border-t border-gray-100">
+            <button
+              onClick={() => {
+                logout(); // This clears the session and redirects to /login
+                setOpen(false); // This closes your dropdown/menu
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-gray-100 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Log Out
+            </button>
+          </div>
         </div>
       )}
     </div>

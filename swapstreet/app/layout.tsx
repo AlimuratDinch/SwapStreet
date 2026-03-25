@@ -1,7 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
 import { ChatProvider } from "../contexts/ChatContext";
-import SessionGate from "./SessionGate";
+import SessionGate from "../components/auth/SessionGate";
 
 export default function RootLayout({
   children,
