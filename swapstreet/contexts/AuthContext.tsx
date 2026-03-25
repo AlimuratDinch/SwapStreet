@@ -121,6 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.warn("Silent refresh failed (User likely guest)");
     } finally {
+      console.log("authLoaded set to true");
       setAuthLoaded(true); // Finalize loading regardless of outcome
     }
   }, [API_URL, updateAuthState]);

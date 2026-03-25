@@ -39,6 +39,7 @@ test("sign up flow demo (for GIF)", async ({ page }) => {
   await page.locator("#email").fill(email);
   await page.locator("#password").fill("Password123!");
   await page.locator("#confirmPassword").fill("Password123!");
+  await page.locator("#cookie-agreement").check();
 
   // submit
   await page.getByRole("button", { name: /^sign up$/i }).click();
