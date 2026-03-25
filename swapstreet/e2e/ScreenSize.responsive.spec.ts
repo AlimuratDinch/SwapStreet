@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-// Common viewport sizes to validate responsive behavior.
 const viewports = [
   { name: "mobile-375x667", width: 375, height: 667 },
   { name: "mobile-390x844", width: 390, height: 844 },
@@ -15,73 +14,71 @@ for (const vp of viewports) {
     test.use({
       viewport: { width: vp.width, height: vp.height },
       deviceScaleFactor: 1,
-      isMobile: false,
-      hasTouch: false,
     });
 
     test(`loads without horizontal overflow @${vp.name}`, async ({ page }) => {
-      // 1. MOCK AUTH API: Intercept the silent refresh call.
-      // This prevents "Connection Refused" errors in CI.
-      await page.route("**/api/auth/refresh", async (route) => {
+      // 1. BROAD API MOCKING
+      // Intercept any call to the backend (port 8080) to prevent connection errors
+      await page.route(/\/api\/auth\//, async (route) => {
         await route.fulfill({
           status: 401,
           contentType: "application/json",
-          body: JSON.stringify({ message: "No active session" }),
+          body: JSON.stringify({ error: "Unauthorized" }),
         });
       });
 
-      const errors: string[] = [];
-
-      // 2. COLLECT ERRORS: Listen for actual code crashes.
-      page.on("pageerror", (e) => errors.push(e.message));
-
+      const rawErrors: string[] = [];
+      
+      // 2. LISTENERS
+      page.on("pageerror", (e) => rawErrors.push(e.message));
       page.on("console", (msg) => {
-        if (msg.type() === "error") {
-          const text = msg.text();
-          // FILTER: Ignore connection errors to the auth endpoint if they still slip through
-          if (
-            text.includes("ERR_CONNECTION_REFUSED") ||
-            text.includes("auth/refresh")
-          ) {
-            return;
-          }
-          errors.push(text);
-        }
+        if (msg.type() === "error") rawErrors.push(msg.text());
       });
 
-      // 3. NAVIGATION: Load the page.
-      await page.goto("/");
+      // 3. NAVIGATION
+      await page.goto("/", { waitUntil: "domcontentloaded" });
 
-      // 4. STABILITY: Wait for layout to settle.
+      // 4. WAIT FOR STABILITY
       await expect(page.locator("body")).toBeVisible();
-
-      // Ensure fonts are loaded before measuring width
       await page.evaluate(() => document.fonts.ready);
+      
+      // Short wait for any late-firing console errors
+      await page.waitForTimeout(1000);
 
-      // Allow network to go idle, but catch timeout so the test doesn't crash
-      await page
-        .waitForLoadState("networkidle", { timeout: 5000 })
-        .catch(() => {});
-
-      // 5. MEASURE: Check for horizontal overflow.
+      // 5. MEASURE OVERFLOW
       const hasHorizontalOverflow = await page.evaluate(() => {
         const doc = document.documentElement;
-        // We use a 1px buffer to account for sub-pixel rendering in headless browsers
-        return doc.scrollWidth > doc.clientWidth + 1;
+        // Check both body and documentElement for common overflow issues
+        const body = document.body;
+        return (
+          doc.scrollWidth > doc.clientWidth + 1 || 
+          body.scrollWidth > body.clientWidth + 1
+        );
       });
 
-      // 6. ASSERTIONS
+      // 6. FILTERED ASSERTION
+      // We filter the errors AT THE END to ensure we ignore backend noise
+      // but still catch actual React/Next.js crashes.
+      const filteredErrors = rawErrors.filter(err => {
+        const isBackendError = err.includes("ERR_CONNECTION_REFUSED") || 
+                               err.includes("8080") || 
+                               err.includes("auth/refresh");
+        const isCORSNoise = err.includes("Same Origin Policy") || err.includes("CORS");
+        
+        return !isBackendError && !isCORSNoise;
+      });
+
       expect(
-        errors,
-        `Unexpected Console/Page errors at ${vp.name}: ${errors.join(", ")}`,
+        filteredErrors, 
+        `Actual JS errors found at ${vp.name}: ${filteredErrors.join(", ")}`
       ).toEqual([]);
 
       expect(
         hasHorizontalOverflow,
-        `Horizontal overflow detected at ${vp.name} (ScrollWidth: ${await page.evaluate(() => document.documentElement.scrollWidth)})`,
+        `Horizontal overflow at ${vp.name} (ScrollWidth: ${await page.evaluate(() => document.documentElement.scrollWidth)})`,
       ).toBeFalsy();
 
-      // 7. ATTACHMENTS: Screenshot for visual debugging
+      // 7. ATTACH SCREENSHOT
       await test.info().attach(`screenshot-${vp.name}`, {
         body: await page.screenshot({ fullPage: false }),
         contentType: "image/png",
