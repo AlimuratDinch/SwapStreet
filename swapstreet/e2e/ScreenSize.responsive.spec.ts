@@ -25,11 +25,11 @@ for (const vp of viewports) {
       page.on("console", (msg) => {
         if (msg.type() === "error") {
           const text = msg.text();
-          // Ignore expected errors when backend is not running
           if (
             text.includes("localhost:8080") ||
             text.includes("ERR_CONNECTION_REFUSED") ||
-            text.includes("CORS request did not succeed")
+            text.includes("CORS request did not succeed") ||
+            text.includes("Could not connect to localhost")
           )
             return;
           errors.push(text);
