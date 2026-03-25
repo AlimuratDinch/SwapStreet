@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { CardItem } from "@/app/browse/components/CardItem";
 import {
   getSearchResults,
@@ -39,6 +40,7 @@ export function ProfileListingsTab({
   sellerId,
   isCurrentUserProfile = false,
 }: ProfileListingsTabProps) {
+  const router = useRouter();
   const [items, setItems] = useState<ProfileListingItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
@@ -135,7 +137,18 @@ export function ProfileListingsTab({
 
   return (
     <div className="rounded-xl bg-white shadow-sm p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">{heading}</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-900">{heading}</h2>
+        {isCurrentUserProfile && items.length > 0 && (
+          <button
+            type="button"
+            onClick={() => router.push("/seller/myListings")}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          >
+            Edit listings
+          </button>
+        )}
+      </div>
 
       {isLoadingInitial ? (
         <div className="flex justify-center py-16 text-gray-500">

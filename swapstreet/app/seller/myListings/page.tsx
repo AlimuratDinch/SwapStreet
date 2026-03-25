@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Header } from "@/components/common/Header";
 import { Trash2 } from "lucide-react";
 import { getSearchResults } from "@/lib/api/browse";
+import { getMyProfile } from "@/lib/api/profile";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
@@ -28,7 +29,7 @@ export default function MyListingsPage() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !accessToken) {
       setLoading(false);
       return;
     }
@@ -36,7 +37,11 @@ export default function MyListingsPage() {
       setLoading(true);
       setError(null);
       try {
-        const { items } = await getSearchResults({});
+        const profile = await getMyProfile(accessToken);
+        const { items } = await getSearchResults({ 
+          sellerId: profile.id,
+          pageSize: 50
+        });
         const mapped: ListingItem[] = (items ?? []).map((i: { id: string; title: string; price: number; images?: { imageUrl: string | null }[] }) => ({
           id: i.id,
           title: i.title,
@@ -53,7 +58,7 @@ export default function MyListingsPage() {
       }
     };
     load();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, accessToken]);
 
   const handleDeleteClick = (id: string) => {
     setConfirmId(id);
@@ -119,17 +124,16 @@ export default function MyListingsPage() {
     <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
       <Header />
       <div className="mx-auto max-w-4xl px-4 pt-24 pb-10">
-        <h1 className="text-2xl font-semibold text-gray-900">Listings</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Delete only works for listings you own. Others will show an error.
-        </p>
-        <button
-          type="button"
-          onClick={() => router.push("/profile")}
-          className="mt-4 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-        >
-          Back to profile
-        </button>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">Manage Listings</h1>
+          <button
+            type="button"
+            onClick={() => router.push("/profile")}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          >
+            Back to profile
+          </button>
+        </div>
 
         {error && (
           <div className="mt-6 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 text-center">
