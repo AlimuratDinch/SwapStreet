@@ -6,7 +6,7 @@ import { getMyProfile } from "@/lib/api/profile";
 
 jest.mock("next/image", () => {
   const MockNextImage = (props: React.ComponentProps<"img">) => {
-    const { src, alt, fill, ...rest } = props;
+    const { src, alt, fill, unoptimized, ...rest } = props;
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img

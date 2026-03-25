@@ -2,6 +2,12 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { ProfileListingsTab } from "@/components/profile/ProfileListingsTab";
 import * as browseApi from "@/lib/api/browse";
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+  }),
+}));
+
 jest.mock("@/app/browse/components/CardItem", () => ({
   CardItem: ({ title, id }: { title: string; id: string }) => (
     <div data-testid={`listing-card-${id}`}>{title}</div>
