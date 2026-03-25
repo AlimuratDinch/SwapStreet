@@ -627,7 +627,7 @@ describe("MyListingsPage", () => {
 
   it("redirects to sign-in when deleting without token", async () => {
     mockUseAuth.mockReturnValue({
-      accessToken: null,
+      accessToken: "token-123",
       isAuthenticated: true,
     });
     mockGetMyProfile.mockResolvedValue(mockProfile);
@@ -639,12 +639,16 @@ describe("MyListingsPage", () => {
 
     render(<MyListingsPage />);
 
+    await waitFor(() => {
+      expect(screen.getByText("Blue Jeans")).toBeInTheDocument();
+    });
+
     mockUseAuth.mockReturnValue({
       accessToken: null,
       isAuthenticated: false,
     });
 
-    const deleteButton = await screen.findByRole("button", {
+    const deleteButton = screen.getByRole("button", {
       name: /Delete Blue Jeans/i,
     });
     fireEvent.click(deleteButton);
