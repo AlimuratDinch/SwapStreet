@@ -30,6 +30,11 @@ test.describe("Landing page tests", () => {
   // months below the chart should be visible
   test("monthly labels are visible", async ({ page }) => {
     await page.goto("/");
+
+    // Scroll the chart into view so the IntersectionObserver triggers
+    await page.locator("#impact").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(1500); // wait for bar animation to complete
+
     const months = [
       "Jan",
       "Feb",
@@ -46,14 +51,12 @@ test.describe("Landing page tests", () => {
     ];
     let visibleCount = 0;
     for (const m of months) {
-      // uses text selector -> isVisible returns false if not present or hidden
       try {
         if (await page.isVisible(`text=${m}`)) visibleCount++;
       } catch (e) {
         /* ignore */
       }
     }
-    // on small screens we show the previous 6 months (assert at least 6 labels are visible)
     expect(visibleCount).toBeGreaterThanOrEqual(6);
   });
 
