@@ -28,7 +28,7 @@ for (const vp of viewports) {
       });
 
       const rawErrors: string[] = [];
-      
+
       // 2. LISTENERS
       page.on("pageerror", (e) => rawErrors.push(e.message));
       page.on("console", (msg) => {
@@ -41,7 +41,7 @@ for (const vp of viewports) {
       // 4. WAIT FOR STABILITY
       await expect(page.locator("body")).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
-      
+
       // Short wait for any late-firing console errors
       await page.waitForTimeout(1000);
 
@@ -51,7 +51,7 @@ for (const vp of viewports) {
         // Check both body and documentElement for common overflow issues
         const body = document.body;
         return (
-          doc.scrollWidth > doc.clientWidth + 1 || 
+          doc.scrollWidth > doc.clientWidth + 1 ||
           body.scrollWidth > body.clientWidth + 1
         );
       });
@@ -59,18 +59,20 @@ for (const vp of viewports) {
       // 6. FILTERED ASSERTION
       // We filter the errors AT THE END to ensure we ignore backend noise
       // but still catch actual React/Next.js crashes.
-      const filteredErrors = rawErrors.filter(err => {
-        const isBackendError = err.includes("ERR_CONNECTION_REFUSED") || 
-                               err.includes("8080") || 
-                               err.includes("auth/refresh");
-        const isCORSNoise = err.includes("Same Origin Policy") || err.includes("CORS");
-        
+      const filteredErrors = rawErrors.filter((err) => {
+        const isBackendError =
+          err.includes("ERR_CONNECTION_REFUSED") ||
+          err.includes("8080") ||
+          err.includes("auth/refresh");
+        const isCORSNoise =
+          err.includes("Same Origin Policy") || err.includes("CORS");
+
         return !isBackendError && !isCORSNoise;
       });
 
       expect(
-        filteredErrors, 
-        `Actual JS errors found at ${vp.name}: ${filteredErrors.join(", ")}`
+        filteredErrors,
+        `Actual JS errors found at ${vp.name}: ${filteredErrors.join(", ")}`,
       ).toEqual([]);
 
       expect(
