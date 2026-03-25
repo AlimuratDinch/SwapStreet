@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 
+// Common viewport sizes to validate responsive behavior.
 const viewports = [
   { name: "mobile-375x667", width: 375, height: 667 },
   { name: "mobile-390x844", width: 390, height: 844 },
@@ -14,78 +15,42 @@ for (const vp of viewports) {
     test.use({
       viewport: { width: vp.width, height: vp.height },
       deviceScaleFactor: 1,
+      isMobile: false,
+      hasTouch: false,
     });
 
     test(`loads without horizontal overflow @${vp.name}`, async ({ page }) => {
-      // 1. BROAD API MOCKING
-      // Intercept any call to the backend (port 8080)
-      await page.route("**/api/auth/**", async (route) => {
-        await route.fulfill({
-          status: 401,
-          contentType: "application/json",
-          body: JSON.stringify({ error: "Unauthorized" }),
-        });
-      });
-
-      const rawErrors: string[] = [];
-
-      // 2. ERROR LISTENERS
-      page.on("pageerror", (e) => rawErrors.push(`Page Error: ${e.message}`));
+      const errors: string[] = [];
+      page.on("pageerror", (e) => errors.push(e.message));
       page.on("console", (msg) => {
-        if (msg.type() === "error") {
-          rawErrors.push(msg.text());
-        }
+        if (msg.type() === "error") errors.push(msg.text());
       });
 
-      // 3. NAVIGATION
-      await page.goto("/", { waitUntil: "domcontentloaded" });
+      // baseURL is set in playwright.config
+      await page.goto("/");
 
-      // 4. STABILITY
+      // Generic smoke check that page is loaded.
       await expect(page.locator("body")).toBeVisible();
-      await page.evaluate(() => document.fonts.ready);
+      // Allow network to go idle so heavy pages stabilize before screenshot.
+      await page
+        .waitForLoadState("networkidle", { timeout: 15000 })
+        .catch(() => {});
 
-      // Give the page an extra second for any late-firing network retries
-      await page.waitForTimeout(1000);
-
-      // 5. MEASURE OVERFLOW
+      // ensure layout fits the viewport width (no horizontal scrollbar/overflow).
       const hasHorizontalOverflow = await page.evaluate(() => {
         const doc = document.documentElement;
-        const body = document.body;
-        // Check both html and body for scroll width
-        return (
-          doc.scrollWidth > doc.clientWidth + 1 ||
-          body.scrollWidth > body.clientWidth + 1
-        );
+        return doc.scrollWidth > doc.clientWidth;
       });
 
-      // 6. AGGRESSIVE ERROR FILTERING
-      // We explicitly exclude any errors related to the missing backend
-      const filteredErrors = rawErrors.filter((err) => {
-        const lowerErr = err.toLowerCase();
-        const isBackendNoise =
-          lowerErr.includes("err_connection_refused") ||
-          lowerErr.includes("8080") ||
-          lowerErr.includes("auth/refresh") ||
-          lowerErr.includes("failed to load resource") ||
-          lowerErr.includes("cors");
-
-        return !isBackendNoise;
-      });
-
-      // 7. ASSERTIONS
-      expect(
-        filteredErrors,
-        `Real JS crashes found at ${vp.name}: ${filteredErrors.join(", ")}`,
-      ).toEqual([]);
-
+      expect(errors, `Console/page errors at ${vp.name}`).toEqual([]);
       expect(
         hasHorizontalOverflow,
-        `Horizontal overflow at ${vp.name}. ScrollWidth: ${await page.evaluate(() => document.documentElement.scrollWidth)}, ClientWidth: ${vp.width}`,
+        `Horizontal overflow at ${vp.name}`,
       ).toBeFalsy();
 
-      // 8. ATTACH VISUAL PROOF
+      // Attach a viewport-sized screenshot (faster than fullPage on tall docs).
       await test.info().attach(`screenshot-${vp.name}`, {
-        body: await page.screenshot({ fullPage: false }),
+        body: await page.screenshot({ fullPage: false, timeout: 30000 }),
         contentType: "image/png",
       });
     });
