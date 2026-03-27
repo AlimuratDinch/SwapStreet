@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<City> Cities { get; set; } = null!;
     public DbSet<Province> Provinces { get; set; } = null!;
     public DbSet<Fsa> Fsas { get; set; } = null!;
+    public DbSet<ArticleType> ArticleTypes { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -99,6 +100,8 @@ public class AppDbContext : DbContext
         // LOOKUP/REFERENCE TABLES
         // =======================================================
 
+        modelBuilder.Entity<ArticleType>().ToTable("article_types");
+        modelBuilder.Entity<Brand>().ToTable("brands");
 
         // =======================================================
         // LISTING MODELS
