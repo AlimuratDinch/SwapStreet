@@ -35,13 +35,7 @@ import { Portal } from "./Portal";
 import { FilterSelect } from "./FilterSelect";
 
 // --- Filter Constants ---
-import {
-  CATEGORIES,
-  COLOURS,
-  CONDITIONS,
-  SIZES,
-  BRANDS,
-} from "./constants";
+import { CATEGORIES, COLOURS, CONDITIONS, SIZES, BRANDS } from "./constants";
 
 interface LocationResult {
   lat: number;

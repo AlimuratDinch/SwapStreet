@@ -461,9 +461,7 @@ describe("SellerListingPage", () => {
       fireEvent.change(imagesInput, { target: { files: [createFile()] } });
       submitForm();
       await waitFor(() => {
-        expect(
-          screen.getByText(/Please select a colour/i),
-        ).toBeInTheDocument();
+        expect(screen.getByText(/Please select a colour/i)).toBeInTheDocument();
       });
     });
 
