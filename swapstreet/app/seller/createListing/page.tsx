@@ -4,6 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
+import {
+  CATEGORIES,
+  COLOURS,
+  CONDITIONS,
+  SIZES,
+  BRANDS,
+} from "../../browse/components/constants";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
@@ -20,6 +27,11 @@ export default function SellerListingPage() {
   const [profileId, setProfileId] = useState<string>("");
   const [fsa, setFsa] = useState<string>("");
   const [profileLoading, setProfileLoading] = useState(true);
+  const [category, setCategory] = useState<string>("");
+  const [colour, setColour] = useState<string>("");
+  const [condition, setCondition] = useState<string>("");
+  const [size, setSize] = useState<string>("");
+  const [brand, setBrand] = useState<string>("");
 
   async function uploadListingImages(listingId: string) {
     for (const file of images) {
@@ -143,6 +155,31 @@ export default function SellerListingPage() {
       setIsSubmitting(false);
       return;
     }
+    if (!category) {
+      setError("Please select a category.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!brand) {
+      setError("Please select a brand.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!condition) {
+      setError("Please select a condition.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!size) {
+      setError("Please select a size.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!colour) {
+      setError("Please select a colour.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -242,6 +279,126 @@ export default function SellerListingPage() {
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Category *
+            </label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select a category</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Brand */}
+          <div>
+            <label
+              htmlFor="brand"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Brand *
+            </label>
+            <select
+              id="brand"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select a brand</option>
+              {BRANDS.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Condition */}
+          <div>
+            <label
+              htmlFor="condition"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Condition *
+            </label>
+            <select
+              id="condition"
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select a condition</option>
+              {CONDITIONS.map((cond) => (
+                <option key={cond} value={cond}>
+                  {cond.replace(/([A-Z])/g, " $1").trim()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Size */}
+          <div>
+            <label
+              htmlFor="size"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Size *
+            </label>
+            <select
+              id="size"
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select a size</option>
+              {SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Colour */}
+          <div>
+            <label
+              htmlFor="colour"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Colour *
+            </label>
+            <select
+              id="colour"
+              value={colour}
+              onChange={(e) => setColour(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select a colour</option>
+              {COLOURS.map((col) => (
+                <option key={col} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Price */}
