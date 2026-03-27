@@ -15,21 +15,56 @@ namespace backend.Services
         private readonly AppDbContext _context;
         private readonly ILogger<ListingCommandService> _logger;
         private readonly IFileStorageService _fileStorageService;
-        private readonly ILocationService _locationService;
 
+        private readonly ILocationService _locationService;
+        private readonly MeilisearchClient _meiliClient;
         private readonly ITopicManager _topicManager;
+
+        public ListingCommandService(AppDbContext context, MeilisearchClient client)
+        {
+            _context = context;
+            _meiliClient = client;
+        }
+
+        public ListingCommandService(
+            AppDbContext context,
+            ILogger<ListingCommandService> logger,
+            ILocationService locationService,
+            MeilisearchClient client)
+        {
+            _context = context;
+            _logger = logger;
+            _locationService = locationService;
+            _meiliClient = client;
+        }
 
         public ListingCommandService(
             AppDbContext context,
             ILogger<ListingCommandService> logger,
             IFileStorageService fileStorageService,
             ILocationService locationService,
+            MeilisearchClient client)
+        {
+            _context = context;
+            _logger = logger;
+            _fileStorageService = fileStorageService;
+            _locationService = locationService;
+            _meiliClient = client;
+        }
+
+        public ListingCommandService(
+            AppDbContext context,
+            ILogger<ListingCommandService> logger,
+            IFileStorageService fileStorageService,
+            ILocationService locationService,
+            MeilisearchClient client,
             ITopicManager topicManager)
         {
             _context = context;
             _logger = logger;
             _fileStorageService = fileStorageService;
             _locationService = locationService;
+            _meiliClient = client;
             _topicManager = topicManager;
         }
 
@@ -53,9 +88,17 @@ namespace backend.Services
                 .Where(li => li.ListingId == listingId)
                 .ToListAsync(cancellationToken);
 
+            var retainedPaths = await _context.Chatrooms
+                .AsNoTracking()
+                .Where(c => c.ListingId == listingId && c.ListingImageSnapshotPath != null)
+                .Select(c => c.ListingImageSnapshotPath!)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
             var imagePaths = listingImages
                 .Select(li => li.ImagePath)
                 .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Where(path => !retainedPaths.Contains(path))
                 .ToList();
 
             // 2. Delete images from MinIO first to avoid DB deletes if storage fails
@@ -94,6 +137,18 @@ namespace backend.Services
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Failed to delete listing {ListingId}", listingId);
                 throw;
+            }
+
+            // 4. Remove from Meilisearch index (best effort)
+            try
+            {
+                var index = _meiliClient.Index("listings");
+                await index.DeleteOneDocumentAsync(listingId.ToString(), cancellationToken: cancellationToken);
+                _logger.LogInformation("Removed listing {ListingId} from Meilisearch", listingId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to remove listing {ListingId} from Meilisearch", listingId);
             }
         }
 
@@ -143,6 +198,7 @@ namespace backend.Services
                     Id = listing.Id.ToString(),
                     Title = listing.Title,
                     Description = listing.Description,
+                    Price = listing.Price,
                     Size = listing.Size,
                     Brand = listing.Brand,
                     Category = listing.Category,

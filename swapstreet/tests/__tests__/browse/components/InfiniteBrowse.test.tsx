@@ -2,12 +2,24 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import InfiniteBrowse from "@/app/browse/components/InfiniteBrowse";
 import * as api from "@/lib/api/browse";
 
-// 1. Mock the API Utility
+// 1. Mock Next.js Router
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  useSearchParams: () => ({
+    get: jest.fn(),
+  }),
+}));
+
+// 2. Mock the API Utility
 jest.mock("@/lib/api/browse", () => ({
   getSearchResults: jest.fn(),
 }));
 
-// 2. Mock CardItem
+// 3. Mock CardItem
 jest.mock("@/app/browse/components/CardItem", () => ({
   CardItem: ({ title }: { title: string }) => (
     <div data-testid="card-item">{title}</div>
@@ -172,5 +184,145 @@ describe("InfiniteBrowse Component - High Coverage", () => {
     expect(
       screen.getByText(/No items found matching your criteria/i),
     ).toBeInTheDocument();
+  });
+
+  it("does not load more when isLoading is true", async () => {
+    let resolvePromise: any;
+    const pendingPromise = new Promise((resolve) => {
+      resolvePromise = resolve;
+    });
+    (api.getSearchResults as jest.Mock).mockReturnValue(pendingPromise);
+
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(api.getSearchResults).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not load more when hasNext is false", async () => {
+    (api.getSearchResults as jest.Mock).mockResolvedValue(nextBatch);
+
+    const { rerender } = render(<InfiniteBrowse {...defaultProps} />);
+
+    rerender(
+      <InfiniteBrowse
+        {...defaultProps}
+        initialHasNext={false}
+        initialCursor={null}
+      />,
+    );
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(api.getSearchResults).not.toHaveBeenCalled();
+  });
+
+  it("does not load more when cursor is null", async () => {
+    (api.getSearchResults as jest.Mock).mockResolvedValue(nextBatch);
+
+    const { rerender } = render(<InfiniteBrowse {...defaultProps} />);
+
+    rerender(
+      <InfiniteBrowse
+        {...defaultProps}
+        initialCursor={null}
+        initialHasNext={true}
+      />,
+    );
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(api.getSearchResults).not.toHaveBeenCalled();
+  });
+
+  it("does not trigger load when isIntersecting is false", async () => {
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: false }]);
+    });
+
+    expect(api.getSearchResults).not.toHaveBeenCalled();
+  });
+
+  it("displays loading state while fetching", async () => {
+    (api.getSearchResults as jest.Mock).mockReturnValue(new Promise(() => {}));
+
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(screen.getByText(/Loading more/i)).toBeInTheDocument();
+  });
+
+  it("appends new items to existing items when loading more", async () => {
+    const moreItems = {
+      items: [
+        { id: "3", title: "Item 3", price: 30, fsa: "M2M" },
+        { id: "4", title: "Item 4", price: 40, fsa: "N3N" },
+      ],
+      nextCursor: "cursor-3",
+      hasNextPage: true,
+    };
+
+    (api.getSearchResults as jest.Mock).mockResolvedValue(moreItems);
+
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Item 1")).toBeInTheDocument();
+      expect(screen.getByText("Item 3")).toBeInTheDocument();
+      expect(screen.getByText("Item 4")).toBeInTheDocument();
+    });
+  });
+
+  it("does not fetch when intersection observer is not intersecting", async () => {
+    render(<InfiniteBrowse {...defaultProps} />);
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: false }]);
+    });
+
+    expect(api.getSearchResults).not.toHaveBeenCalled();
+  });
+
+  it("passes correct filter parameters to API", async () => {
+    (api.getSearchResults as jest.Mock).mockResolvedValue(nextBatch);
+
+    render(
+      <InfiniteBrowse
+        {...defaultProps}
+        params={{ q: "jacket", category: "Tops" }}
+      />,
+    );
+
+    await act(async () => {
+      observerCallback([{ isIntersecting: true }]);
+    });
+
+    expect(api.getSearchResults).toHaveBeenCalledWith(
+      expect.objectContaining({
+        q: "jacket",
+        category: "Tops",
+        cursor: "cursor-1",
+      }),
+    );
   });
 });

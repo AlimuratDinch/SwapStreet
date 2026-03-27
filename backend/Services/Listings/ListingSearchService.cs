@@ -4,6 +4,7 @@ using backend.Contracts;
 using backend.DTOs;
 using backend.DTOs.Search;
 using Meilisearch;
+using System.Globalization;
 
 namespace backend.Services;
 
@@ -23,28 +24,68 @@ public class ListingSearchService : IListingSearchService
     public async Task<(IReadOnlyList<ListingWithImagesDto> Items, string? NextCursor, bool HasNextPage)> SearchListingsAsync(
         string? query,
         int pageSize,
-        string? cursor)
+        string? cursor,
+        string? category = null,
+        string? condition = null,
+        string? colour = null,
+        string? size = null,
+        string? brand = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        double? lat = null,
+        double? lng = null,
+        double? radiusKm = null)
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
         var index = _meiliClient.Index("listings");
 
         int offset = 0;
         if (int.TryParse(cursor, out var decodedOffset))
-        {
             offset = decodedOffset;
-        }
+
+        // Build filter string for Meilisearch
+        var filters = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(colour))
+            filters.Add($"colour = \"{colour}\"");
+
+        if (!string.IsNullOrWhiteSpace(category))
+            filters.Add($"category = \"{category}\"");
+
+        if (!string.IsNullOrWhiteSpace(condition))
+            filters.Add($"condition = \"{condition}\"");
+
+        if (!string.IsNullOrWhiteSpace(size))
+            filters.Add($"size = \"{size}\"");
+
+        if (!string.IsNullOrWhiteSpace(brand))
+            filters.Add($"brand = \"{brand}\"");
+
+        if (minPrice.HasValue && maxPrice.HasValue && minPrice > maxPrice)
+            (minPrice, maxPrice) = (maxPrice, minPrice);
+
+        if (minPrice.HasValue)
+            filters.Add($"price >= {minPrice.Value.ToString(CultureInfo.InvariantCulture)}");
+
+        if (maxPrice.HasValue)
+            filters.Add($"price <= {maxPrice.Value.ToString(CultureInfo.InvariantCulture)}");
+
+        // Location filter using Meilisearch geo filtering
+        if (lat.HasValue && lng.HasValue && radiusKm.HasValue)
+            filters.Add($"_geoRadius({lat.Value}, {lng.Value}, {radiusKm.Value * 1000})");
 
         var searchOptions = new SearchQuery
         {
             Limit = pageSize + 1,
             Offset = offset,
-            // If query is null/empty, Meilisearch returns all documents based on Ranking Rules (Recent first)
+            Filter = filters.Count > 0 ? string.Join(" AND ", filters) : null,
             Sort = string.IsNullOrWhiteSpace(query)
                 ? new[] { "createdAtTimestamp:desc" }
                 : null
         };
 
-        // 2. Execute Search in Meilisearch
+
+
         var searchResponse = await index.SearchAsync<ListingSearchDto>(query ?? "", searchOptions);
 
         var hits = searchResponse.Hits.ToList();

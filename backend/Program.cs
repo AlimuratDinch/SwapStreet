@@ -401,7 +401,7 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<IChatService, ChatService>();
 
     // Email Service (environment-dependent)
-    if (builder.Environment.IsDevelopment() || builder.Environment.IsTest())
+    if (builder.Environment.IsDevelopment() || builder.Environment.IsTest() || builder.Environment.IsLocalStaging())
     {
         builder.Services.AddTransient<IEmailService, MockEmailService>();
     }
@@ -524,7 +524,7 @@ static async Task InitializeMeilisearchIndex(WebApplication app)
 
     await index.UpdateSearchableAttributesAsync(new[] { "title", "description", "fsa", "size", "brand", "category", "colour", "condition" });
     await index.UpdateSortableAttributesAsync(new[] { "createdAtTimestamp", "_geo" });
-    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa", "size", "brand", "category", "colour", "condition" });
+    await index.UpdateFilterableAttributesAsync(new[] { "_geo", "fsa", "size", "brand", "category", "price", "condition", "colour" });
 
     await index.UpdateRankingRulesAsync(new[] {
         "words",

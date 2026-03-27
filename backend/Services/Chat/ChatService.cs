@@ -21,6 +21,9 @@ namespace backend.Services.Chat
             if (chatroom == null)
                 throw new ArgumentException("Chatroom not found");
 
+            if (chatroom.IsArchived || chatroom.IsFrozen)
+                throw new InvalidOperationException("Chatroom is read-only");
+
             // Validate sender belongs to chatroom
             if (chatroom.SellerId != authorId && chatroom.BuyerId != authorId)
                 throw new UnauthorizedAccessException("User does not belong to this chatroom");
