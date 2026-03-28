@@ -4,6 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
+import {
+  CATEGORIES,
+  COLOURS,
+  CONDITIONS,
+  SIZES,
+  BRANDS,
+} from "../../browse/components/constants";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
@@ -20,6 +27,11 @@ export default function SellerListingPage() {
   const [profileId, setProfileId] = useState<string>("");
   const [fsa, setFsa] = useState<string>("");
   const [profileLoading, setProfileLoading] = useState(true);
+  const [category, setCategory] = useState<string>("");
+  const [colour, setColour] = useState<string>("");
+  const [condition, setCondition] = useState<string>("");
+  const [size, setSize] = useState<string>("");
+  const [brand, setBrand] = useState<string>("");
 
   async function uploadListingImages(listingId: string) {
     for (const file of images) {
@@ -143,6 +155,31 @@ export default function SellerListingPage() {
       setIsSubmitting(false);
       return;
     }
+    if (!category) {
+      setError("Please select a category.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!brand) {
+      setError("Please select a brand.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!condition) {
+      setError("Please select a condition.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!size) {
+      setError("Please select a size.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!colour) {
+      setError("Please select a colour.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -151,6 +188,11 @@ export default function SellerListingPage() {
       formData.append("Price", price?.toString() ?? "0");
       formData.append("ProfileId", profileId);
       formData.append("FSA", fsa);
+      formData.append("Category", category);
+      formData.append("Brand", brand);
+      formData.append("Condition", condition);
+      formData.append("Colour", colour);
+      formData.append("Size", size);
 
       const response = await fetch(`${API_URL}/listings`, {
         method: "POST",
@@ -220,7 +262,7 @@ export default function SellerListingPage() {
               value={title}
               onChange={handleTitleChange}
               placeholder="Enter a descriptive title for your item"
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             />
           </div>
@@ -239,9 +281,129 @@ export default function SellerListingPage() {
               onChange={handleDescriptionChange}
               placeholder="Describe your item in detail. Include condition, size, brand, etc."
               rows={4}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Category *
+            </label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a category</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Brand */}
+          <div>
+            <label
+              htmlFor="brand"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Brand *
+            </label>
+            <select
+              id="brand"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a brand</option>
+              {BRANDS.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Condition */}
+          <div>
+            <label
+              htmlFor="condition"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Condition *
+            </label>
+            <select
+              id="condition"
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a condition</option>
+              {CONDITIONS.map((cond) => (
+                <option key={cond} value={cond}>
+                  {cond.replace(/([A-Z])/g, " $1").trim()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Size */}
+          <div>
+            <label
+              htmlFor="size"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Size *
+            </label>
+            <select
+              id="size"
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a size</option>
+              {SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Colour */}
+          <div>
+            <label
+              htmlFor="colour"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Colour *
+            </label>
+            <select
+              id="colour"
+              value={colour}
+              onChange={(e) => setColour(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a colour</option>
+              {COLOURS.map((col) => (
+                <option key={col} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Price */}
@@ -264,7 +426,7 @@ export default function SellerListingPage() {
                 placeholder="0.00"
                 min="0"
                 step="0.01"
-                className="w-full pl-7 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-7 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
               />
             </div>
@@ -284,7 +446,7 @@ export default function SellerListingPage() {
               accept="image/*"
               multiple
               onChange={handleImageUpload}
-              className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-white hover:file:bg-blue-700"
+              className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-teal-500 file:px-3 file:py-2 file:text-white hover:file:bg-teal-600"
             />
 
             {/* Image Previews */}
@@ -329,7 +491,7 @@ export default function SellerListingPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
             >
               {isSubmitting ? "Creating..." : "Create Listing"}
             </button>

@@ -2,13 +2,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 // Import the centralized fetcher
-import { getSearchResults, SearchParams } from "@/lib/api/browse";
+import {
+  getSearchResults,
+  SearchParams,
+  type BrowseSearchResultItem,
+} from "@/lib/api/browse";
 
-export function useInfiniteSearch<T>(
-  initialItems: T[],
-  initialCursor: string | null,
-  initialHasNext: boolean,
-) {
+export function useInfiniteSearch<
+  T extends BrowseSearchResultItem = BrowseSearchResultItem,
+>(initialItems: T[], initialCursor: string | null, initialHasNext: boolean) {
   const searchParams = useSearchParams();
   const [items, setItems] = useState<T[]>(initialItems);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
@@ -34,7 +36,9 @@ export function useInfiniteSearch<T>(
         // Use the centralized fetcher from browse.ts
         const data = await getSearchResults(params);
 
-        setItems((prev) => (isReset ? data.items : [...prev, ...data.items]));
+        setItems((prev) =>
+          isReset ? (data.items as T[]) : [...prev, ...(data.items as T[])],
+        );
         setCursor(data.nextCursor);
         setHasNext(data.hasNextPage);
       } catch (err) {

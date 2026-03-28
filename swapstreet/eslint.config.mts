@@ -16,6 +16,10 @@ export default defineConfig([
     ],
   },
   {
+    // Ignore config files and setup files
+    ignores: ["jest-dom.setup.ts", "tailwind.config.js", "eslint.config.mjs"],
+  },
+  {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     plugins: { js },
     extends: ["js/recommended"],

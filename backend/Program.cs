@@ -401,7 +401,7 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<IChatService, ChatService>();
 
     // Email Service (environment-dependent)
-    if (builder.Environment.IsDevelopment() || builder.Environment.IsTest())
+    if (builder.Environment.IsDevelopment() || builder.Environment.IsTest() || builder.Environment.IsLocalStaging())
     {
         builder.Services.AddTransient<IEmailService, MockEmailService>();
     }

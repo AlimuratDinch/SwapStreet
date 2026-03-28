@@ -1,15 +1,57 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using backend.DbContexts;
 using backend.Services.Chat;
 using backend.DTOs.Chat;
+using backend.DTOs;
+using backend.Contracts;
+using backend.DTOs.Image;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using Xunit;
 using AwesomeAssertions;
 
 namespace backend.Tests.Services
 {
+    internal sealed class FakeFileStorageService : IFileStorageService
+    {
+        public Task<string> UploadFileAsync(IFormFile file, UploadType type, Guid userId, Guid? listingId = null, int displayOrder = 0)
+            => Task.FromResult(string.Empty);
+
+        public Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600)
+            => Task.FromResult(string.Empty);
+
+        public string GetPublicFileUrl(string fileName)
+            => string.IsNullOrWhiteSpace(fileName) ? string.Empty : fileName;
+
+        public Task<string> UploadImageInternalAsync(IFormFile file, UploadType type)
+            => Task.FromResult(string.Empty);
+
+        public Task<bool> HasImagesInPublicBucketAsync()
+            => Task.FromResult(false);
+
+        public Task DeleteImagesAsync(UploadType type, Guid? listingId = null, Guid? profileId = null, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task<IReadOnlyCollection<string>> DeleteFilesAsync(UploadType type, IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+            => Task.FromResult((IReadOnlyCollection<string>)Array.Empty<string>());
+
+        public Task<int> CleanupOrphanedFilesAsync(UploadType type, CancellationToken cancellationToken = default)
+            => Task.FromResult(0);
+    }
+
+    internal sealed class FakeListingCommandService : IListingCommandService
+    {
+        public Task<Guid> CreateListingAsync(CreateListingRequestDto request, CancellationToken cancellationToken = default)
+            => Task.FromResult(Guid.NewGuid());
+
+        public Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
+
     public class ChatServiceTests : IDisposable
     {
         private readonly AppDbContext _db;
@@ -29,7 +71,10 @@ namespace backend.Tests.Services
 
             _db = new AppDbContext(options);
             _chatService = new ChatService(_db);
-            _chatroomService = new ChatroomService(_db);
+            _chatroomService = new ChatroomService(
+                _db,
+                new FakeFileStorageService(),
+                new FakeListingCommandService());
 
             _sellerId = Guid.NewGuid();
             _buyerId = Guid.NewGuid();
@@ -318,7 +363,10 @@ namespace backend.Tests.Services
                 .Options;
 
             _db = new AppDbContext(options);
-            _service = new ChatroomService(_db);
+            _service = new ChatroomService(
+                _db,
+                new FakeFileStorageService(),
+                new FakeListingCommandService());
 
             _sellerId = Guid.NewGuid();
             _buyerId = Guid.NewGuid();
@@ -629,6 +677,63 @@ namespace backend.Tests.Services
             // Verify no duplicate was created
             var chatrooms = await _service.GetUserChatroomsAsync(_sellerId);
             chatrooms.Should().HaveCount(1);
+        }
+
+        [Fact]
+        public async Task GetOrCreateChatroomAsync_ShouldCreateSeparateChatrooms_ForDifferentListings()
+        {
+            // Arrange
+            var firstListingId = Guid.NewGuid();
+            var secondListingId = Guid.NewGuid();
+
+            _db.Listings.AddRange(
+                new Listing
+                {
+                    Id = firstListingId,
+                    Title = "First jacket",
+                    Description = "A very nice first jacket listing.",
+                    Price = 20m,
+                    Size = ListingSize.M,
+                    Condition = ListingCondition.LikeNew,
+                    Brand = ListingBrand.Nike,
+                    Colour = ListingColour.Blue,
+                    Category = ListingCategory.Outerwear,
+                    ProfileId = _sellerId,
+                    FSA = "M5V"
+                },
+                new Listing
+                {
+                    Id = secondListingId,
+                    Title = "Second jacket",
+                    Description = "A very nice second jacket listing.",
+                    Price = 25m,
+                    Size = ListingSize.L,
+                    Condition = ListingCondition.UsedExcellent,
+                    Brand = ListingBrand.Zara,
+                    Colour = ListingColour.Black,
+                    Category = ListingCategory.Outerwear,
+                    ProfileId = _sellerId,
+                    FSA = "M5V"
+                });
+            await _db.SaveChangesAsync();
+
+            // Act
+            var firstChatroom = await _service.GetOrCreateChatroomAsync(_sellerId, _buyerId, firstListingId);
+            var secondChatroom = await _service.GetOrCreateChatroomAsync(_sellerId, _buyerId, secondListingId);
+
+            // Assert
+            firstChatroom.Should().NotBeNull();
+            secondChatroom.Should().NotBeNull();
+            secondChatroom!.Id.Should().NotBe(firstChatroom!.Id);
+            firstChatroom.ListingId.Should().Be(firstListingId);
+            secondChatroom.ListingId.Should().Be(secondListingId);
+
+            var persistedChatrooms = await _db.Chatrooms
+                .Where(c => c.SellerId == _sellerId && c.BuyerId == _buyerId)
+                .ToListAsync();
+
+            persistedChatrooms.Should().HaveCount(2);
+            persistedChatrooms.Select(c => c.ListingId).Should().BeEquivalentTo(new Guid?[] { firstListingId, secondListingId });
         }
 
         [Fact]

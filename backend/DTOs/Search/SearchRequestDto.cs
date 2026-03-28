@@ -21,4 +21,7 @@ public class SearchRequestDto
     public double? Lat { get; set; }
     public double? Lng { get; set; }
     public double? RadiusKm { get; set; }
+
+    /// <summary>When set, listings are loaded from Postgres for this seller profile (bypasses Meilisearch).</summary>
+    public Guid? SellerId { get; set; }
 }

@@ -31,22 +31,35 @@ public class ListingSearchController : ControllerBase
         var cappedLimit = Math.Min(request.PageSize > 0 ? request.PageSize : 18, 50);
         var searchTerms = request.Query ?? string.Empty;
 
-        // 2. Call the search service with all filters
-        var (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(
-            searchTerms,
-            cappedLimit,
-            request.Cursor,
-            request.Category,
-            request.Condition,
-            request.Colour,
-            request.Size,
-            request.Brand,
-            request.MinPrice,
-            request.MaxPrice,
-            request.Lat,
-            request.Lng,
-            request.RadiusKm
-        );
+        // 2. Seller-scoped listing feed (Postgres) or Meilisearch search
+        IReadOnlyList<ListingWithImagesDto> items;
+        string? nextCursor;
+        bool hasNextPage;
+
+        if (request.SellerId.HasValue)
+        {
+            (items, nextCursor, hasNextPage) = await SearchListingsBySellerAsync(
+                request.SellerId.Value,
+                cappedLimit,
+                request.Cursor);
+        }
+        else
+        {
+            (items, nextCursor, hasNextPage) = await _listingSearchService.SearchListingsAsync(
+                searchTerms,
+                cappedLimit,
+                request.Cursor,
+                request.Category,
+                request.Condition,
+                request.Colour,
+                request.Size,
+                request.Brand,
+                request.MinPrice,
+                request.MaxPrice,
+                request.Lat,
+                request.Lng,
+                request.RadiusKm);
+        }
 
         // 3. Extract IDs for batch hydration
         var listingIds = items.Select(i => i.Listing.Id).ToList();
@@ -116,6 +129,40 @@ public class ListingSearchController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Paginates listings for a seller profile from Postgres (same offset cursor semantics as Meilisearch search).
+    /// </summary>
+    private async Task<(IReadOnlyList<ListingWithImagesDto> Items, string? NextCursor, bool HasNextPage)> SearchListingsBySellerAsync(
+        Guid sellerId,
+        int pageSize,
+        string? cursor)
+    {
+        var offset = 0;
+        if (int.TryParse(cursor, out var decodedOffset))
+            offset = decodedOffset;
+
+        var query = _db.Listings
+            .AsNoTracking()
+            .Where(l => l.ProfileId == sellerId)
+            .OrderByDescending(l => l.CreatedAt);
+
+        var pageListings = await query
+            .Skip(offset)
+            .Take(pageSize + 1)
+            .ToListAsync();
+
+        var hasNextPage = pageListings.Count > pageSize;
+        var pageHits = pageListings.Take(pageSize).ToList();
+
+        // Images are hydrated in the shared mapping path via batch query on ListingImages.
+        var resultDtos = pageHits
+            .Select(l => new ListingWithImagesDto { Listing = l, Images = Array.Empty<ListingImageDto>() })
+            .ToList();
+
+        var nextCursor = hasNextPage ? (offset + pageSize).ToString() : null;
+        return (resultDtos, nextCursor, hasNextPage);
+    }
+
     [HttpGet("listing/{id:guid}")]
     public async Task<IActionResult> GetListing([FromRoute] Guid id)
     {
@@ -134,14 +181,22 @@ public class ListingSearchController : ControllerBase
             listing.Title,
             listing.Description,
             listing.Price,
+            listing.FSA,
+            listing.Category,
+            listing.Brand,
+            listing.Condition,
+            listing.Size,
+            listing.Colour,
             createdAt = listing.CreatedAt,
             seller = seller == null ? null : new
             {
                 seller.Id,
                 seller.FirstName,
                 seller.LastName,
+                seller.Rating,
                 profileImageUrl = _minio.GetPublicFileUrl(seller.ProfileImagePath),
-                bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath)
+                bannerImageUrl = _minio.GetPublicFileUrl(seller.BannerImagePath),
+                seller.CreatedAt
             },
             images = images.Select(img => new
             {
