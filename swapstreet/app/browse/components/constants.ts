@@ -8,6 +8,7 @@ export const CATEGORIES = [
   "Outerwear",
   "Formalwear",
   "Sportswear",
+  "Other",
 ];
 
 export const COLOURS = [
@@ -42,7 +43,7 @@ export const CONDITIONS = [
   "UsedFair",
 ];
 
-export const SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "NA"];
+export const SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "Other"];
 
 export const BRANDS = [
   "Nike",

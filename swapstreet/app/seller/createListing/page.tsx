@@ -188,6 +188,11 @@ export default function SellerListingPage() {
       formData.append("Price", price?.toString() ?? "0");
       formData.append("ProfileId", profileId);
       formData.append("FSA", fsa);
+      formData.append("Category", category);
+      formData.append("Brand", brand);
+      formData.append("Condition", condition);
+      formData.append("Colour", colour);
+      formData.append("Size", size);
 
       const response = await fetch(`${API_URL}/listings`, {
         method: "POST",
@@ -257,7 +262,7 @@ export default function SellerListingPage() {
               value={title}
               onChange={handleTitleChange}
               placeholder="Enter a descriptive title for your item"
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             />
           </div>
@@ -276,7 +281,7 @@ export default function SellerListingPage() {
               onChange={handleDescriptionChange}
               placeholder="Describe your item in detail. Include condition, size, brand, etc."
               rows={4}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             />
           </div>
@@ -293,7 +298,7 @@ export default function SellerListingPage() {
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             >
               <option value="">Select a category</option>
@@ -317,7 +322,7 @@ export default function SellerListingPage() {
               id="brand"
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             >
               <option value="">Select a brand</option>
@@ -341,7 +346,7 @@ export default function SellerListingPage() {
               id="condition"
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             >
               <option value="">Select a condition</option>
@@ -365,7 +370,7 @@ export default function SellerListingPage() {
               id="size"
               value={size}
               onChange={(e) => setSize(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             >
               <option value="">Select a size</option>
@@ -389,7 +394,7 @@ export default function SellerListingPage() {
               id="colour"
               value={colour}
               onChange={(e) => setColour(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             >
               <option value="">Select a colour</option>
@@ -421,7 +426,7 @@ export default function SellerListingPage() {
                 placeholder="0.00"
                 min="0"
                 step="0.01"
-                className="w-full pl-7 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-7 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
               />
             </div>
@@ -441,7 +446,7 @@ export default function SellerListingPage() {
               accept="image/*"
               multiple
               onChange={handleImageUpload}
-              className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-white hover:file:bg-blue-700"
+              className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-teal-500 file:px-3 file:py-2 file:text-white hover:file:bg-teal-600"
             />
 
             {/* Image Previews */}
@@ -486,7 +491,7 @@ export default function SellerListingPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
             >
               {isSubmitting ? "Creating..." : "Create Listing"}
             </button>
