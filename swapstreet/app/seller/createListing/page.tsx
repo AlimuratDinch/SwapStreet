@@ -214,8 +214,8 @@ export default function SellerListingPage() {
 
       await uploadListingImages(listingId);
 
-      // Redirect to browse
-      router.push("/browse");
+      // Redirect to own profile so listings refetch and the new item shows without a manual refresh
+      router.push("/profile");
     } catch (error) {
       console.error(error);
       setError("Failed to create listing");

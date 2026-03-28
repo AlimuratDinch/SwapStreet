@@ -294,7 +294,7 @@ describe("SellerListingPage", () => {
       render(<SellerListingPage />);
       await fillValidForm();
       submitForm();
-      await waitFor(() => expect(mockPush).toHaveBeenCalled());
+      await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/profile"));
     });
 
     it("shows error when title is missing", async () => {
