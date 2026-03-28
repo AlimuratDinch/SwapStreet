@@ -93,8 +93,16 @@ export default function ChatPanel({
   useEffect(() => {
     if (!accessToken || !room.id) return;
 
+    const baseUrl =
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      (typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:3000");
+
+    const hubUrl = new URL("/chathub", baseUrl).toString();
+
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("/chathub", { accessTokenFactory: () => accessToken })
+      .withUrl(hubUrl, { accessTokenFactory: () => accessToken ?? "" })
       .withAutomaticReconnect()
       .build();
 
