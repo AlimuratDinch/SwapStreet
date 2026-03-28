@@ -410,17 +410,22 @@ describe("ChatPanel Component", () => {
   it("displays error message from SignalR Error event", async () => {
     render(<ChatPanel {...mockProps} />);
 
+    let errorHandler: ((msg: string) => void) | undefined;
+
     await waitFor(() => {
       const onCall = (mockConnection.on as jest.Mock).mock.calls.find(
         (call) => call[0] === "Error",
       );
-      const errorHandler = onCall[1];
-      errorHandler("Custom error message");
+      expect(onCall).toBeTruthy();
+      errorHandler = onCall?.[1];
+      expect(typeof errorHandler).toBe("function");
     });
 
-    await waitFor(() => {
-      expect(screen.getByText("Custom error message")).toBeInTheDocument();
+    act(() => {
+      errorHandler!("Custom error message");
     });
+
+    expect(await screen.findByText("Custom error message")).toBeInTheDocument();
   });
 
   it("opens rating modal when deal is closed and user can rate", async () => {
