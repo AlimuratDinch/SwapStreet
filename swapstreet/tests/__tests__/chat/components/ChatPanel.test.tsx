@@ -7,6 +7,8 @@ import {
 } from "@testing-library/react";
 import ChatPanel from "@/app/chat/components/ChatPanel";
 import * as signalR from "@microsoft/signalr";
+// Ensure the hub URL resolves in Node/Jest environment
+process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:3000";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useSearchParams } from "next/navigation";
