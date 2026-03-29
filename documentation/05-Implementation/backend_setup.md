@@ -7,7 +7,7 @@
 ##### **Windows**
 
 1. Go to the official .NET download page:  
-    [https://dotnet.microsoft.com/en-us/download/dotnet/9.0<span aria-hidden="true" class="ms-0.5 inline-block align-middle leading-none"><svg class="block h-[0.75em] w-[0.75em] stroke-current stroke-[0.75]" data-rtl-flip="" fill="currentColor" height="20" viewbox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M14.3349 13.3301V6.60645L5.47065 15.4707C5.21095 15.7304 4.78895 15.7304 4.52925 15.4707C4.26955 15.211 4.26955 14.789 4.52925 14.5293L13.3935 5.66504H6.66011C6.29284 5.66504 5.99507 5.36727 5.99507 5C5.99507 4.63273 6.29284 4.33496 6.66011 4.33496H14.9999L15.1337 4.34863C15.4369 4.41057 15.665 4.67857 15.665 5V13.3301C15.6649 13.6973 15.3672 13.9951 14.9999 13.9951C14.6327 13.9951 14.335 13.6973 14.3349 13.3301Z"></path></svg></span>](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+   [https://dotnet.microsoft.com/en-us/download/dotnet/9.0<span aria-hidden="true" class="ms-0.5 inline-block align-middle leading-none"><svg class="block h-[0.75em] w-[0.75em] stroke-current stroke-[0.75]" data-rtl-flip="" fill="currentColor" height="20" viewbox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M14.3349 13.3301V6.60645L5.47065 15.4707C5.21095 15.7304 4.78895 15.7304 4.52925 15.4707C4.26955 15.211 4.26955 14.789 4.52925 14.5293L13.3935 5.66504H6.66011C6.29284 5.66504 5.99507 5.36727 5.99507 5C5.99507 4.63273 6.29284 4.33496 6.66011 4.33496H14.9999L15.1337 4.34863C15.4369 4.41057 15.665 4.67857 15.665 5V13.3301C15.6649 13.6973 15.3672 13.9951 14.9999 13.9951C14.6327 13.9951 14.335 13.6973 14.3349 13.3301Z"></path></svg></span>](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 2. Download **.NET SDK 9.0** for Windows (`x64` installer).
 3. Run the installer and follow the prompts.
 4. Open **PowerShell** and verify the installation:
@@ -21,7 +21,7 @@
 ##### **macOS**
 
 1. Go to the official .NET download page:  
-    [https://dotnet.microsoft.com/en-us/download/dotnet/9.0<span aria-hidden="true" class="ms-0.5 inline-block align-middle leading-none"><svg class="block h-[0.75em] w-[0.75em] stroke-current stroke-[0.75]" data-rtl-flip="" fill="currentColor" height="20" viewbox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M14.3349 13.3301V6.60645L5.47065 15.4707C5.21095 15.7304 4.78895 15.7304 4.52925 15.4707C4.26955 15.211 4.26955 14.789 4.52925 14.5293L13.3935 5.66504H6.66011C6.29284 5.66504 5.99507 5.36727 5.99507 5C5.99507 4.63273 6.29284 4.33496 6.66011 4.33496H14.9999L15.1337 4.34863C15.4369 4.41057 15.665 4.67857 15.665 5V13.3301C15.6649 13.6973 15.3672 13.9951 14.9999 13.9951C14.6327 13.9951 14.335 13.6973 14.3349 13.3301Z"></path></svg></span>](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+   [https://dotnet.microsoft.com/en-us/download/dotnet/9.0<span aria-hidden="true" class="ms-0.5 inline-block align-middle leading-none"><svg class="block h-[0.75em] w-[0.75em] stroke-current stroke-[0.75]" data-rtl-flip="" fill="currentColor" height="20" viewbox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M14.3349 13.3301V6.60645L5.47065 15.4707C5.21095 15.7304 4.78895 15.7304 4.52925 15.4707C4.26955 15.211 4.26955 14.789 4.52925 14.5293L13.3935 5.66504H6.66011C6.29284 5.66504 5.99507 5.36727 5.99507 5C5.99507 4.63273 6.29284 4.33496 6.66011 4.33496H14.9999L15.1337 4.34863C15.4369 4.41057 15.665 4.67857 15.665 5V13.3301C15.6649 13.6973 15.3672 13.9951 14.9999 13.9951C14.6327 13.9951 14.335 13.6973 14.3349 13.3301Z"></path></svg></span>](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 2. Download the **.NET SDK 9.0** `.pkg` installer for macOS.
 3. Open the downloaded file and follow the installer instructions.
 4. Open **Terminal** and verify the installation:
@@ -82,18 +82,18 @@ Run:
 
 Add a `.env` file with the following structure:
 
-*\# ================================*  
-*\# PostgreSQL Database Configuration*  
-*\# ================================*  
-*POSTGRES\_USER=postgres*  
-*POSTGRES\_PASSWORD=\*\*\*\*\*\*\*\**  
-*POSTGRES\_DB=swapstreet_db*
+_\# ================================_  
+_\# PostgreSQL Database Configuration_  
+_\# ================================_  
+_POSTGRES_USER=postgres_  
+\*POSTGRES_PASSWORD=\*\*\*\*\*\*\*\*\*  
+_POSTGRES_DB=swapstreet_db_
 
-*\# ================================*  
-*\# pgAdmin Configuration*  
-*\# ================================*  
-*PGADMIN\_DEFAULT\_EMAIL= example@e mail.com*  
-*PGADMIN\_DEFAULT\_PASSWORD=\*\*\*\*\*\*\**
+_\# ================================_  
+_\# pgAdmin Configuration_  
+_\# ================================_  
+_PGADMIN_DEFAULT_EMAIL= example@e mail.com_  
+\*PGADMIN_DEFAULT_PASSWORD=\*\*\*\*\*\*\*\*
 
 ##### 2. Run the docker compose
 

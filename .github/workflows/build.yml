@@ -3,169 +3,169 @@ name: SonarQube Analysis
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
-    types: [ opened, synchronize, reopened ]
+    types: [opened, synchronize, reopened]
 
 jobs:
   frontend-sonarqube:
     name: Frontend SonarQube
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up Node.js 20.20.0
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20.20.0
+      - name: Set up Node.js 20.20.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.20.0
 
-    - name: Install dependencies
-      run: yarn
-      working-directory: swapstreet
+      - name: Install dependencies
+        run: yarn
+        working-directory: swapstreet
 
-    - name: Run tests and collect coverage with threshold
-      run: |
-        yarn jest --coverage --coverageThreshold='{
-          "global": {
-            "branches": 80,
-            "functions": 80,
-            "lines": 80,
-            "statements": 80
-          }
-        }'
-      working-directory: swapstreet
+      - name: Run tests and collect coverage with threshold
+        run: |
+          yarn jest --coverage --coverageThreshold='{
+            "global": {
+              "branches": 80,
+              "functions": 80,
+              "lines": 80,
+              "statements": 80
+            }
+          }'
+        working-directory: swapstreet
 
-    - name: Verify coverage file
-      run: |
-        ls -l coverage
-        cat coverage/lcov.info | head -n 20
-      working-directory: swapstreet
+      - name: Verify coverage file
+        run: |
+          ls -l coverage
+          cat coverage/lcov.info | head -n 20
+        working-directory: swapstreet
 
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v6
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        projectBaseDir: swapstreet
-        args: >
-          -Dsonar.projectKey=swapstreet -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: swapstreet
+          args: >
+            -Dsonar.projectKey=swapstreet -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
 
-    - name: Wait for SonarQube Quality Gate result
-      uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        scanMetadataReportFile: swapstreet/.scannerwork/report-task.txt
+      - name: Wait for SonarQube Quality Gate result
+        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          scanMetadataReportFile: swapstreet/.scannerwork/report-task.txt
 
   backend-sonarqube:
     name: Backend SonarQube
     runs-on: ubuntu-latest
     needs: frontend-sonarqube
     steps:
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: 17
-        distribution: 'zulu'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: "zulu"
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Cache SonarQube Cloud packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.sonar/cache
-        key: ${{ runner.os }}-sonar
-        restore-keys: ${{ runner.os }}-sonar
+      - name: Cache SonarQube Cloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
-    - name: Cache SonarQube Cloud scanner
-      id: cache-sonar-scanner
-      uses: actions/cache@v4
-      with:
-        path: ${{ runner.temp }}/scanner
-        key: ${{ runner.os }}-sonar-scanner
-        restore-keys: ${{ runner.os }}-sonar-scanner
+      - name: Cache SonarQube Cloud scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
 
-    - name: Install SonarQube Cloud scanner
-      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-      shell: bash
-      run: |
-        mkdir -p ${{ runner.temp }}/scanner
-        dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}/scanner
-    - name: Install dotnet-coverage
-      run: dotnet tool install --global dotnet-coverage
+      - name: Install SonarQube Cloud scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p ${{ runner.temp }}/scanner
+          dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}/scanner
+      - name: Install dotnet-coverage
+        run: dotnet tool install --global dotnet-coverage
 
-    - name: Begin SonarQube analysis
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      shell: bash
-      working-directory: backend
-      run: |
-        ${{ runner.temp }}/scanner/dotnet-sonarscanner begin \
-          /k:"swapstreet" \
-          /o:"swapstreet" \
-          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
-          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
-          /d:sonar.coverage.exclusions="**/Migrations/**,**/Models/**"
+      - name: Begin SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: bash
+        working-directory: backend
+        run: |
+          ${{ runner.temp }}/scanner/dotnet-sonarscanner begin \
+            /k:"swapstreet" \
+            /o:"swapstreet" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml \
+            /d:sonar.coverage.exclusions="**/Migrations/**,**/Models/**"
 
-    - name: Build backend
-      shell: bash
-      working-directory: backend
-      run: dotnet build --no-incremental
+      - name: Build backend
+        shell: bash
+        working-directory: backend
+        run: dotnet build --no-incremental
 
-    - name: Pull Postgres image (optional, speeds up / makes failures obvious)
-      run: docker pull postgres:16
+      - name: Pull Postgres image (optional, speeds up / makes failures obvious)
+        run: docker pull postgres:16
 
-    - name: Run tests and collect coverage with threshold
-      shell: bash
-      working-directory: backend
-      run: |
-        # Run tests and collect coverage in XML format using settings from root
-        # We use ../coverage.settings.xml because the working-directory is 'backend'
-        dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
+      - name: Run tests and collect coverage with threshold
+        shell: bash
+        working-directory: backend
+        run: |
+          # Run tests and collect coverage in XML format using settings from root
+          # We use ../coverage.settings.xml because the working-directory is 'backend'
+          dotnet-coverage collect "dotnet test --no-build" -f xml -o "coverage.xml" -s "coverage.settings.xml"
 
-    - name: Validate backend coverage (PowerShell)
-      shell: pwsh
-      working-directory: backend
-      run: |
-        if (!(Test-Path "coverage.xml")) {
-          Write-Error "coverage.xml not found!"
-          exit 1
-        }
+      - name: Validate backend coverage (PowerShell)
+        shell: pwsh
+        working-directory: backend
+        run: |
+          if (!(Test-Path "coverage.xml")) {
+            Write-Error "coverage.xml not found!"
+            exit 1
+          }
 
-        # Load XML (fail with a useful message if the file isn't valid XML)
-        $content = Get-Content "coverage.xml" -Raw
-        try {
-          [xml]$cov = $content
-        } catch {
-          Write-Error "coverage.xml is not valid XML. First 300 chars:`n$($content.Substring(0, [Math]::Min(300, $content.Length)))"
-          exit 1
-        }
+          # Load XML (fail with a useful message if the file isn't valid XML)
+          $content = Get-Content "coverage.xml" -Raw
+          try {
+            [xml]$cov = $content
+          } catch {
+            Write-Error "coverage.xml is not valid XML. First 300 chars:`n$($content.Substring(0, [Math]::Min(300, $content.Length)))"
+            exit 1
+          }
 
-        # Get first <module> and read the line_coverage attribute
-        $module = $cov.SelectSingleNode("//module")
-        if (-not $module) {
-          Write-Error "No <module> found in coverage.xml"
-          exit 1
-        }
+          # Get first <module> and read the line_coverage attribute
+          $module = $cov.SelectSingleNode("//module")
+          if (-not $module) {
+            Write-Error "No <module> found in coverage.xml"
+            exit 1
+          }
 
-        $lineCoverage = [double]$module.GetAttribute("line_coverage")
-        Write-Host "Backend test coverage: $lineCoverage%"
+          $lineCoverage = [double]$module.GetAttribute("line_coverage")
+          Write-Host "Backend test coverage: $lineCoverage%"
 
-        if ($lineCoverage -lt 0) {
-          Write-Error "Coverage below 65% ($lineCoverage%)"
-          exit 1
-        }
+          if ($lineCoverage -lt 0) {
+            Write-Error "Coverage below 65% ($lineCoverage%)"
+            exit 1
+          }
 
-    - name: End SonarQube analysis
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      shell: bash
-      working-directory: backend
-      run: |
-        ${{ runner.temp }}/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+      - name: End SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: bash
+        working-directory: backend
+        run: |
+          ${{ runner.temp }}/scanner/dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

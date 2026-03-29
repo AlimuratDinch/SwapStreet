@@ -3,25 +3,25 @@
 /documentation
 │
 ├── 01-Project-Overview
-│   └── # High-level vision, problem statement, scope, objectives
+│ └── # High-level vision, problem statement, scope, objectives
 │
 ├── 02-User-Experience
-│   └── # User-facing docs: personas, user journeys, flow maps, wireframes
+│ └── # User-facing docs: personas, user journeys, flow maps, wireframes
 │
 ├── 03-Requirements
-│   └── # Functional + non-functional requirements, use cases, user stories
+│ └── # Functional + non-functional requirements, use cases, user stories
 │
 ├── 04-System-Design
-│   └── # Technical design: architecture, framework choices, UML diagrams, ERD
+│ └── # Technical design: architecture, framework choices, UML diagrams, ERD
 │
 ├── 05-Implementation
-│   └── # Tech stack details, API docs, deployment/infrastructure notes
+│ └── # Tech stack details, API docs, deployment/infrastructure notes
 │
 ├── 06-Project-Management
-│   └── # Timeline, milestones, meeting notes, risk management
+│ └── # Timeline, milestones, meeting notes, risk management
 
 ├── 07-Testing
-│   └── # Test plans, unit/integration test docs, results
+│ └── # Test plans, unit/integration test docs, results
 │
 └── 08-Appendices
-    └── # Glossary, references, research, external resources
+└── # Glossary, references, research, external resources

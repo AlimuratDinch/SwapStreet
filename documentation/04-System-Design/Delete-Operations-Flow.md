@@ -3,6 +3,7 @@
 ## Overview
 
 This document describes the delete operations in SwapStreet, focusing on the two distinct delete strategies:
+
 1. **Storage-First Delete** (ListingCommandService): Used for complete listing deletion - deletes from storage first, then database
 2. **Database-First Delete** (MinioFileStorageService): Used for general image deletion - deletes from database first, then storage
 
@@ -123,15 +124,15 @@ Both strategies handle failures gracefully and include automatic orphaned file c
 **File**: `backend/Services/Listings/ListingCommandService.cs`
 
 ```csharp
-public async Task DeleteListingAsync(Guid listingId, Guid profileId, 
+public async Task DeleteListingAsync(Guid listingId, Guid profileId,
     CancellationToken cancellationToken = default)
 {
     // 1. Validate listing exists and belongs to profile
     var listing = await _context.Listings
         .AsNoTracking()
-        .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId, 
+        .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId,
             cancellationToken);
-    
+
     if (listing == null)
         throw new ArgumentException($"Listing {listingId} not found");
 
@@ -155,7 +156,7 @@ public async Task DeleteListingAsync(Guid listingId, Guid profileId,
 
         var failedDeletes = await _fileStorageService
             .DeleteFilesAsync(UploadType.Listing, imagePaths, cancellationToken);
-        
+
         if (failedDeletes.Count != 0)
             throw new InvalidOperationException(
                 $"Failed to delete {failedDeletes.Count} image(s) for listing {listingId}");
@@ -193,13 +194,13 @@ public async Task DeleteListingAsync(Guid listingId, Guid profileId,
 
 ### Error Scenarios
 
-| Scenario | Database State | Storage State | User Impact | Recovery |
-|----------|---------------|---------------|-------------|----------|
-| Listing not found | Unchanged | Unchanged | Error message | None needed |
-| Storage service unavailable | Unchanged | Unchanged | Error message | Retry when service available |
-| Some images fail to delete | Unchanged | Partially deleted | Error message | Manual cleanup or retry |
-| All images fail to delete | Unchanged | Unchanged | Error message | Investigate MinIO |
-| DB transaction fails | Rolled back | Files deleted | Error message | Orphaned files in storage |
+| Scenario                    | Database State | Storage State     | User Impact   | Recovery                     |
+| --------------------------- | -------------- | ----------------- | ------------- | ---------------------------- |
+| Listing not found           | Unchanged      | Unchanged         | Error message | None needed                  |
+| Storage service unavailable | Unchanged      | Unchanged         | Error message | Retry when service available |
+| Some images fail to delete  | Unchanged      | Partially deleted | Error message | Manual cleanup or retry      |
+| All images fail to delete   | Unchanged      | Unchanged         | Error message | Investigate MinIO            |
+| DB transaction fails        | Rolled back    | Files deleted     | Error message | Orphaned files in storage    |
 
 **Handling the Last Scenario**: If database transaction fails after storage deletion, orphaned files remain in MinIO. These will be cleaned up by the automatic orphaned file cleanup system (see Section 4).
 
@@ -264,12 +265,12 @@ public async Task DeleteListingAsync(Guid listingId, Guid profileId,
 **File**: `backend/Services/MinioFileStorageService.cs`
 
 ```csharp
-public async Task DeleteImagesAsync(UploadType type, Guid? listingId = null, 
+public async Task DeleteImagesAsync(UploadType type, Guid? listingId = null,
     Guid? profileId = null, CancellationToken cancellationToken = default)
 {
     // 1. Validate and retrieve image paths
     List<string> imagePaths = [];
-    
+
     switch (type)
     {
         case UploadType.Listing:
@@ -339,12 +340,14 @@ public async Task DeleteImagesAsync(UploadType type, Guid? listingId = null,
 **Orphaned Files**: Files that exist in MinIO but have no corresponding database records.
 
 **Why Accept Orphaned Files?**
+
 - Database is the source of truth
 - Orphaned files don't break application functionality
 - Orphaned listings (database records without files) would cause errors
 - Automatic cleanup handles orphaned files asynchronously
 
 **Tracking Mechanism**:
+
 ```csharp
 // Static fields for cross-request state
 private static readonly ConcurrentDictionary<UploadType, byte> _cleanupPending = new();
@@ -353,12 +356,12 @@ private static int _cleanupRunning = 0;
 
 ### Error Scenarios
 
-| Scenario | Database State | Storage State | User Impact | Recovery |
-|----------|---------------|---------------|-------------|----------|
-| DB transaction fails | Rolled back | Unchanged | Error message | None needed |
-| One MinIO delete fails | Cleaned | Partially cleaned | None (transparent) | Automatic cleanup |
-| All MinIO deletes fail | Cleaned | Unchanged | None (transparent) | Automatic cleanup |
-| MinIO unavailable | Cleaned | Unchanged | None (transparent) | Cleanup when available |
+| Scenario               | Database State | Storage State     | User Impact        | Recovery               |
+| ---------------------- | -------------- | ----------------- | ------------------ | ---------------------- |
+| DB transaction fails   | Rolled back    | Unchanged         | Error message      | None needed            |
+| One MinIO delete fails | Cleaned        | Partially cleaned | None (transparent) | Automatic cleanup      |
+| All MinIO deletes fail | Cleaned        | Unchanged         | None (transparent) | Automatic cleanup      |
+| MinIO unavailable      | Cleaned        | Unchanged         | None (transparent) | Cleanup when available |
 
 **Critical Insight**: This approach prioritizes user experience over storage efficiency. The user sees immediate success, and the system handles cleanup in the background.
 
@@ -395,7 +398,7 @@ public async Task<IReadOnlyCollection<string>> DeleteFilesAsync(
         catch (Exception ex)
         {
             failedDeletes.Add(filePath);
-            _logger.LogError(ex, "Failed to delete object {ObjectKey} from bucket {Bucket}", 
+            _logger.LogError(ex, "Failed to delete object {ObjectKey} from bucket {Bucket}",
                 filePath, bucket);
         }
     }
@@ -405,6 +408,7 @@ public async Task<IReadOnlyCollection<string>> DeleteFilesAsync(
 ```
 
 **Key Characteristics**:
+
 - No database operations
 - Returns list of failures (empty list = complete success)
 - Caller decides how to handle failures
@@ -419,6 +423,7 @@ public async Task<IReadOnlyCollection<string>> DeleteFilesAsync(
 The cleanup system runs automatically in the background when orphaned files are detected. It uses a fire-and-forget pattern to avoid blocking request processing.
 
 **State Management**:
+
 ```csharp
 // Track which upload types need cleanup
 private static readonly ConcurrentDictionary<UploadType, byte> _cleanupPending = new();
@@ -460,7 +465,7 @@ private void TrySchedulePendingCleanup()
                     var deletedCount = await CleanupOrphanedFilesAsync(uploadType);
                     _logger.LogInformation("Auto-cleanup deleted {Count} orphaned files " +
                         "for type {Type}", deletedCount, uploadType);
-                    
+
                     // Remove from pending list after successful cleanup
                     _cleanupPending.TryRemove(uploadType, out _);
                 }
@@ -483,11 +488,13 @@ private void TrySchedulePendingCleanup()
 ### Thread-Safe Scheduling
 
 **Race Condition Prevention**:
+
 1. `Interlocked.CompareExchange` ensures only one cleanup runner executes at a time
 2. `ConcurrentDictionary` allows safe multi-threaded access to pending cleanup list
 3. `_cleanupRunning` flag prevents duplicate work across multiple requests
 
 **Example Scenario**:
+
 ```
 Request 1: DeleteImagesAsync fails on 3 files
            → Marks Listing type for cleanup
@@ -510,7 +517,7 @@ Request 3: DeleteImagesAsync fails on 1 file (later)
 ### Cleanup Process
 
 ```csharp
-public async Task<int> CleanupOrphanedFilesAsync(UploadType type, 
+public async Task<int> CleanupOrphanedFilesAsync(UploadType type,
     CancellationToken cancellationToken = default)
 {
     var prefix = $"{type.ToString().ToLower()}/";
@@ -565,6 +572,7 @@ public async Task<int> CleanupOrphanedFilesAsync(UploadType type,
 ```
 
 **Cleanup Algorithm**:
+
 1. Query database for all valid file paths of the given type
 2. List all files in MinIO with matching prefix
 3. For each MinIO file:
@@ -578,12 +586,14 @@ public async Task<int> CleanupOrphanedFilesAsync(UploadType type,
 ### Database Transactions
 
 **PostgreSQL ACID Properties**:
+
 - **Atomicity**: All changes within a transaction succeed or all fail
 - **Consistency**: Database moves from one valid state to another
 - **Isolation**: Concurrent transactions don't interfere with each other
 - **Durability**: Committed changes persist even after crashes
 
 **Transaction Usage**:
+
 ```csharp
 using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 try
@@ -591,7 +601,7 @@ try
     // Multiple database operations
     _context.ListingImages.RemoveRange(images);
     _context.Listings.Remove(listing);
-    
+
     await _context.SaveChangesAsync(cancellationToken);
     await transaction.CommitAsync(cancellationToken);
 }
@@ -611,24 +621,27 @@ catch (Exception ex)
 **Two Patterns**:
 
 1. **Storage-First** (for complete entity deletion):
+
    ```
    Delete Storage → Delete Database
-   
+
    Success: Both cleaned
    Storage Fails: Nothing cleaned (safe)
    Database Fails: Orphaned files (acceptable, will cleanup)
    ```
 
 2. **Database-First** (for partial deletion):
+
    ```
    Delete Database → Delete Storage
-   
+
    Success: Both cleaned
    Database Fails: Nothing cleaned (safe)
    Storage Fails: Orphaned files (acceptable, will cleanup)
    ```
 
 **Why No Two-Phase Commit?**
+
 - MinIO doesn't support distributed transactions
 - Added complexity with minimal benefit
 - Orphaned file cleanup handles inconsistencies
@@ -641,18 +654,20 @@ catch (Exception ex)
 ### Logging Strategy
 
 **Log Levels**:
+
 - **Information**: Normal operations (deletion start, success, counts)
 - **Warning**: Partial failures (some files not deleted, cleanup pending)
 - **Error**: Critical failures (all deletes failed, transaction rollback)
 
 **Structured Logging Examples**:
+
 ```csharp
 // Success
-_logger.LogInformation("Deleted listing {ListingId} and {ImageCount} images from database", 
+_logger.LogInformation("Deleted listing {ListingId} and {ImageCount} images from database",
     listingId, images.Count);
 
 // Warning
-_logger.LogWarning("Total orphaned files in MinIO for {Type}: {Count}. Bucket: {Bucket}", 
+_logger.LogWarning("Total orphaned files in MinIO for {Type}: {Count}. Bucket: {Bucket}",
     type, orphanedFiles.Count, bucket);
 
 // Error
@@ -662,12 +677,12 @@ _logger.LogError(ex, "Failed to delete image from MinIO: {ImagePath}. " +
 
 ### Exception Types
 
-| Exception | Meaning | User Action | System Action |
-|-----------|---------|-------------|---------------|
-| `ArgumentException` | Invalid request (listing not found, ID mismatch) | Check input and retry | None |
-| `InvalidOperationException` | Operation failed (storage unavailable, deletes failed) | Retry later | Log and return error |
-| `DbUpdateException` | Database constraint violation | Fix data issue | Rollback transaction |
-| Generic `Exception` | Unexpected error | Contact support | Log full stack trace |
+| Exception                   | Meaning                                                | User Action           | System Action        |
+| --------------------------- | ------------------------------------------------------ | --------------------- | -------------------- |
+| `ArgumentException`         | Invalid request (listing not found, ID mismatch)       | Check input and retry | None                 |
+| `InvalidOperationException` | Operation failed (storage unavailable, deletes failed) | Retry later           | Log and return error |
+| `DbUpdateException`         | Database constraint violation                          | Fix data issue        | Rollback transaction |
+| Generic `Exception`         | Unexpected error                                       | Contact support       | Log full stack trace |
 
 ---
 
@@ -676,12 +691,14 @@ _logger.LogError(ex, "Failed to delete image from MinIO: {ImagePath}. " +
 ### Why Two Different Delete Strategies?
 
 **Storage-First (Listing Deletion)**:
+
 - **Goal**: Prevent orphaned listings (listings without images)
 - **Risk**: Orphaned files in storage (acceptable)
 - **Trade-off**: Database cleanup might fail, but user sees error
 - **Use Case**: Complete entity deletion where data integrity is critical
 
 **Database-First (Image Deletion)**:
+
 - **Goal**: Immediate user feedback, fast response
 - **Risk**: Orphaned files in storage (acceptable, will cleanup)
 - **Trade-off**: User sees success even if storage cleanup pending
@@ -707,6 +724,7 @@ _logger.LogError(ex, "Failed to delete image from MinIO: {ImagePath}. " +
    - ❌ Operators need to remember to run cleanup
 
 **Chosen Approach**: In-memory tracking with automatic cleanup
+
 - ✅ No schema changes needed
 - ✅ Fast response times (fire-and-forget)
 - ✅ Automatic recovery from failures
@@ -715,12 +733,14 @@ _logger.LogError(ex, "Failed to delete image from MinIO: {ImagePath}. " +
 ### Why Fire-and-Forget Cleanup?
 
 **Benefits**:
+
 1. **User Experience**: Delete operations return immediately
 2. **Fault Tolerance**: Cleanup failures don't affect user operations
 3. **Resource Efficiency**: Cleanup runs when system has capacity
 4. **Simplicity**: No need for scheduled jobs or background workers
 
 **Trade-offs**:
+
 - Cleanup state is lost on application restart (acceptable - will retry on next failure)
 - No guaranteed cleanup time (acceptable - eventual consistency)
 - Requires monitoring to ensure cleanup is working (standard operations practice)
@@ -730,17 +750,20 @@ _logger.LogError(ex, "Failed to delete image from MinIO: {ImagePath}. " +
 ## 8. Performance Considerations
 
 **Delete Operation Performance**:
+
 - Listing deletion: O(n) where n = number of images
 - Image deletion: O(1) database transaction + O(n) MinIO deletes
 - Cleanup: O(m) where m = all files in MinIO prefix
 
 **Optimization Strategies**:
+
 1. **AsNoTracking()**: Faster reads, less memory for queries that don't need change tracking
 2. **Batching**: RemoveRange() for multiple records instead of individual removes
 3. **Async/Await**: Non-blocking I/O for database and MinIO operations
 4. **Fire-and-Forget**: Cleanup doesn't block request processing
 
 **Scalability**:
+
 - Delete operations scale linearly with number of images
 - Cleanup operations can handle thousands of orphaned files
 - Concurrent deletes are safe (database transactions ensure isolation)
@@ -752,6 +775,7 @@ _logger.LogError(ex, "Failed to delete image from MinIO: {ImagePath}. " +
 ### Unit Tests
 
 **MinioFileStorageServiceTests**:
+
 ```csharp
 [Fact]
 public async Task DeleteImagesAsync_Listing_RemovesDbRowsAndDeletesObjects()
@@ -769,6 +793,7 @@ public async Task DeleteImagesAsync_WhenMinioDeleteFails_StillRemovesDbRows()
 ### Integration Tests
 
 **ListingCommandServiceTests**:
+
 ```csharp
 [Fact]
 public async Task DeleteListingAsync_RemovesListingAndImages_WhenStorageSucceeds()
@@ -802,6 +827,7 @@ public async Task DeleteListingAsync_WithPartialStorageFailure_ThrowsInvalidOper
 ```
 
 **Test Infrastructure**:
+
 - Uses Testcontainers for PostgreSQL (supports real transactions)
 - Mocks MinIO client for controlled failure scenarios
 - Seeds minimal test data to satisfy foreign key constraints
@@ -852,6 +878,7 @@ The SwapStreet delete operations use two complementary strategies:
 2. **Database-First Delete** ensures fast user feedback and database consistency
 
 Both strategies gracefully handle MinIO failures through:
+
 - Careful ordering of operations
 - Database transactions for consistency
 - Fire-and-forget orphaned file cleanup
@@ -863,6 +890,7 @@ The system prioritizes database consistency over storage consistency, accepting 
 
 **Last Updated**: February 17, 2026  
 **Related Files**:
+
 - `backend/Services/Listings/ListingCommandService.cs`
 - `backend/Services/MinioFileStorageService.cs`
 - `backend/Contracts/IFileStorageService.cs`

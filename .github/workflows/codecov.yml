@@ -2,48 +2,48 @@ name: Run Tests and Upload Coverage
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Install dependencies
-      run: npm install
-      working-directory: swapstreet
+      - name: Install dependencies
+        run: npm install
+        working-directory: swapstreet
 
-    - name: Run tests and fail on console errors
-      run: |
-        set -o pipefail
-        npx jest --coverage --coverageThreshold='{
-          "global": {
-            "branches": 80,
-            "functions": 80,
-            "lines": 80,
-            "statements": 80
-          }
-        }' 2>&1 | tee test.log
+      - name: Run tests and fail on console errors
+        run: |
+          set -o pipefail
+          npx jest --coverage --coverageThreshold='{
+            "global": {
+              "branches": 80,
+              "functions": 80,
+              "lines": 80,
+              "statements": 80
+            }
+          }' 2>&1 | tee test.log
 
-        if grep -E "console\.error|Error:|Failed to" test.log; then
-          echo "Console errors detected"
-          exit 1
-        fi
-      working-directory: swapstreet
+          if grep -E "console\.error|Error:|Failed to" test.log; then
+            echo "Console errors detected"
+            exit 1
+          fi
+        working-directory: swapstreet
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./coverage/lcov.info
-        fail_ci_if_error: true
-        verbose: true
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: true
+          verbose: true
