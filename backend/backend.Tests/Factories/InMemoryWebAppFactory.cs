@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 using backend.DbContexts;
 using backend.Infrastructure.LogQueue;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -19,7 +19,7 @@ namespace backend.Tests.BackendTestFactories
     {
         private readonly Channel<bool> _channel = Channel.CreateUnbounded<bool>();
 
-        public IPartition? GetTopic(string topic, int index = -1) => null;
+        public IPartition GetTopic(string topic, int index = -1) => null;
 
         public Task CreateTopic(string topic, int partitionCount, bool autoFlush, int maxFileSize, TimeSpan timeSpan)
             => Task.CompletedTask;
