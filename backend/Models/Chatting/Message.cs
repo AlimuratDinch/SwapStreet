@@ -9,6 +9,8 @@ public class Message
 
     public DateTimeOffset? SendDate { get; set; }
 
+    public DateTimeOffset? ReadAt { get; set; }
+
     public string Content { get; set; }
 
     [ForeignKey("ChatroomId")]

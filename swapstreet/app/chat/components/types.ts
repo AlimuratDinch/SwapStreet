@@ -4,6 +4,7 @@ export type Message = {
   author: string;
   chatroomId: string;
   sendDate: string | null;
+  readAt: string | null;
 };
 
 export type ChatRating = {
