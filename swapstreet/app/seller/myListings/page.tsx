@@ -29,6 +29,9 @@ export default function MyListingsPage() {
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
+      if (!isAuthenticated && !accessToken) {
+        router.push("/auth/sign-in");
+      }
       setLoading(false);
       return;
     }
@@ -37,10 +40,12 @@ export default function MyListingsPage() {
       setError(null);
       try {
         const profile = await getMyProfile(accessToken);
+        console.log("[MyListings] Fetching listings for seller:", profile.id);
         const { items } = await getSearchResults({
           sellerId: profile.id,
           pageSize: 50,
         });
+        console.log("[MyListings] Received listings:", items?.length ?? 0);
         const mapped: ListingItem[] = (items ?? []).map(
           (i: {
             id: string;
@@ -56,7 +61,7 @@ export default function MyListingsPage() {
         );
         setListings(mapped);
       } catch (e) {
-        console.error(e);
+        console.error("[MyListings] Error loading listings:", e);
         setError("Failed to load listings");
         setListings([]);
       } finally {
@@ -64,7 +69,7 @@ export default function MyListingsPage() {
       }
     };
     load();
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated, accessToken, router]);
 
   const handleDeleteClick = (id: string) => {
     setConfirmId(id);
@@ -109,26 +114,6 @@ export default function MyListingsPage() {
     const img = item.images?.[0]?.imageUrl;
     return img || "/images/default-seller-banner.png";
   };
-
-  if (!isAuthenticated && !loading) {
-    return (
-      <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>
-        <Header />
-        <div className="mx-auto max-w-4xl px-4 pt-24 pb-10 text-center">
-          <p className="text-gray-600">
-            Please sign in to view and manage listings.
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push("/auth/sign-in")}
-            className="mt-4 rounded-lg bg-teal-500 px-4 py-2 text-white hover:bg-teal-600"
-          >
-            Sign in
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#eae9ea" }}>

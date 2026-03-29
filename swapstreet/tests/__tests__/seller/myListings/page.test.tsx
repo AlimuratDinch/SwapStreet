@@ -98,16 +98,8 @@ describe("MyListingsPage", () => {
     render(<MyListingsPage />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/Please sign in to view and manage listings/i),
-      ).toBeInTheDocument();
+      expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
     });
-
-    const signInButton = screen.getByRole("button", { name: /Sign in/i });
-    expect(signInButton).toBeInTheDocument();
-
-    fireEvent.click(signInButton);
-    expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
   });
 
   it("loads and displays user listings when authenticated", async () => {

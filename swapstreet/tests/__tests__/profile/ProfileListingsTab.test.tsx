@@ -1,10 +1,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ProfileListingsTab } from "@/components/profile/ProfileListingsTab";
 import * as browseApi from "@/lib/api/browse";
 
+const pushMock = jest.fn();
+
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: pushMock,
+    replace: jest.fn(),
   }),
 }));
 
@@ -51,6 +55,12 @@ describe("ProfileListingsTab", () => {
     expect(
       screen.getByRole("heading", { name: "My Listings" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create Listing" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Edit Listings" }),
+    ).toBeInTheDocument();
     expect(browseApi.getSearchResults).toHaveBeenCalledWith({
       sellerId,
       pageSize: 18,
@@ -75,9 +85,12 @@ describe("ProfileListingsTab", () => {
     expect(
       screen.getByRole("heading", { name: "Listings" }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Create Listing/i }),
+    ).not.toBeInTheDocument();
   });
 
-  it("shows empty state when seller has no listings", async () => {
+  it("shows seller empty state message for other users", async () => {
     (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
       items: [],
       nextCursor: null,
@@ -121,5 +134,97 @@ describe("ProfileListingsTab", () => {
       expect(screen.getAllByTestId(/^listing-card-/)).toHaveLength(1);
     });
     expect(screen.getByTestId("listing-card-dup-1")).toBeInTheDocument();
+  });
+
+  it("shows first-listing CTA variant for owner with no listings", async () => {
+    (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
+      items: [],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Create your first listing" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("You have no active listings yet."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("navigates to create listing page when CTA is clicked", async () => {
+    const user = userEvent.setup();
+    (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
+      items: [],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
+
+    const button = await screen.findByRole("button", {
+      name: "Create your first listing",
+    });
+    await user.click(button);
+
+    expect(pushMock).toHaveBeenCalledWith("/seller/createListing");
+  });
+
+  it("navigates to edit listings page when Edit Listings button is clicked", async () => {
+    const user = userEvent.setup();
+    (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
+      items: [
+        {
+          id: "a1",
+          title: "Blue jacket",
+          price: 25,
+          fsa: "M5V",
+          images: [{ imageUrl: "https://example.com/a.jpg" }],
+        },
+      ],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
+
+    const button = await screen.findByRole("button", {
+      name: "Edit Listings",
+    });
+    await user.click(button);
+
+    expect(pushMock).toHaveBeenCalledWith("/seller/myListings");
+  });
+
+  it("does not show Edit Listings button for non-owner profiles", async () => {
+    (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
+      items: [
+        {
+          id: "a1",
+          title: "Blue jacket",
+          price: 25,
+          fsa: "M5V",
+          images: [{ imageUrl: "https://example.com/a.jpg" }],
+        },
+      ],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    render(<ProfileListingsTab sellerId={sellerId} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("listing-card-a1")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.queryByRole("button", { name: "Edit Listings" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Create Listing" }),
+    ).not.toBeInTheDocument();
   });
 });
