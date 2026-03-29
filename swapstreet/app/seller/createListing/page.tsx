@@ -352,7 +352,7 @@ export default function SellerListingPage() {
               <option value="">Select a condition</option>
               {CONDITIONS.map((cond) => (
                 <option key={cond} value={cond}>
-                  {cond.replace(/([A-Z])/g, " $1").trim()}
+                  {cond.replaceAll(/([A-Z])/g, " $1").trim()}
                 </option>
               ))}
             </select>
