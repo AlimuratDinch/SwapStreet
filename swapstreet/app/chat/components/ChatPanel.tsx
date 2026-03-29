@@ -498,9 +498,7 @@ export default function ChatPanel({
                 <div
                   className={cx(
                     styles.messageFooter,
-                    isOwn
-                      ? styles.messageFooterOwn
-                      : styles.messageFooterOther,
+                    isOwn ? styles.messageFooterOwn : styles.messageFooterOther,
                   )}
                 >
                   {msg.sendDate && (
