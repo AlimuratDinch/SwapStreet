@@ -59,7 +59,7 @@ public enum ListingSize
     L,
     XL,
     XXL,
-    NA
+    Other
 }
 
 public enum ListingCondition
@@ -114,8 +114,12 @@ public enum ListingBrand
 
 public enum ListingCategory
 {
-    Bottoms, Tops, Footwear, Accessory, Outerwear, Formalwear, Sportswear
+    Bottoms,
+    Tops,
+    Footwear,
+    Accessory,
+    Outerwear,
+    Formalwear,
+    Sportswear,
+    Other
 }
-// Brand (Nike, H&M, Zara, Addidas, Carhartt, Dickies, Puma, Gap, Vans, New Balance, Lululemon, Other)
-// Category (Bottoms, Tops, Footwear, Accessory, Outerwear, Formalwear, Sportswear )
-// Condition (New, Like New, Used-Excellent, Used-Good, Used-Fair)

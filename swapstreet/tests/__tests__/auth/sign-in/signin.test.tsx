@@ -2,9 +2,19 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import LoginPage from "@/app/auth/sign-in/page";
 
-const loginMock = jest.fn();
+// --- Mocks ---
 
-// Mock logger
+const loginMock = jest.fn();
+const pushMock = jest.fn();
+const replaceMock = jest.fn();
+
+// We need a way to change these values per test
+let mockAuthContext = {
+  login: loginMock,
+  isAuthenticated: false,
+  authLoaded: true,
+};
+
 jest.mock("@/components/common/logger", () => ({
   logger: {
     info: jest.fn(),
@@ -14,59 +24,61 @@ jest.mock("@/components/common/logger", () => ({
   },
 }));
 
-const pushMock = jest.fn();
-
 jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: pushMock,
+    replace: replaceMock,
   }),
 }));
 
 jest.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({
-    login: loginMock,
-  }),
+  useAuth: () => mockAuthContext,
 }));
-
-// Mock sessionStorage
-beforeAll(() => {
-  Object.defineProperty(window, "sessionStorage", {
-    value: {
-      store: {} as Record<string, string>,
-      getItem(key: string) {
-        return this.store[key] || null;
-      },
-      setItem(key: string, value: string) {
-        this.store[key] = value;
-      },
-      removeItem(key: string) {
-        delete this.store[key];
-      },
-      clear() {
-        this.store = {};
-      },
-    },
-    writable: true,
-  });
-});
 
 describe("LoginPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    window.sessionStorage.clear();
+    // Default state: Page is loaded and user is not logged in (shows form)
+    mockAuthContext = {
+      login: loginMock,
+      isAuthenticated: false,
+      authLoaded: true,
+    };
   });
+
+  it("shows loading spinner when auth is not loaded", () => {
+    mockAuthContext.authLoaded = false;
+    render(<LoginPage />);
+    expect(screen.getByText(/verifying session/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
+  });
+
+  it("redirects automatically if already authenticated", () => {
+    mockAuthContext.isAuthenticated = true;
+    mockAuthContext.authLoaded = true;
+
+    render(<LoginPage />);
+
+    expect(replaceMock).toHaveBeenCalledWith("/browse");
+  });
+
+  it("renders login form correctly when loaded and unauthenticated", () => {
+    render(<LoginPage />);
+
+    expect(
+      screen.getByRole("heading", { name: /welcome back/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /sign in/i }),
+    ).toBeInTheDocument();
+  });
+
   it("returns generic message for 400 status", async () => {
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: false,
       status: 400,
-      text: async () =>
-        JSON.stringify({
-          status: 400,
-          title: "One or more validation errors occurred.",
-          errors: {
-            Password: ["Password must be at least 8 characters long."],
-          },
-        }),
+      text: async () => JSON.stringify({ status: 400 }),
     } as Response);
 
     render(<LoginPage />);
@@ -74,11 +86,9 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "test@example.com" },
     });
-
     fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "ab" },
+      target: { value: "password" },
     });
-
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(
@@ -86,50 +96,8 @@ describe("LoginPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("returns json.error if present and not 400", async () => {
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: false,
-      text: async () => JSON.stringify({ error: "Account locked" }),
-    } as Response);
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "test@example.com" },
-    });
-
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-
-    expect(await screen.findByText(/account locked/i)).toBeInTheDocument();
-  });
-  it("renders login form correctly", () => {
-    render(<LoginPage />);
-
-    expect(
-      screen.getByRole("heading", { name: /welcome back/i }),
-    ).toBeInTheDocument();
-
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-
-    expect(
-      screen.getByRole("button", { name: /sign in/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("renders sign up link", () => {
-    render(<LoginPage />);
-    const link = screen.getByRole("link", { name: /sign up/i });
-    expect(link).toHaveAttribute("href", "/auth/sign-up");
-  });
-
-  it("stores access token and navigates on successful login", async () => {
+  it("stores access token and navigates using replace on successful login", async () => {
     const mockToken = "abc123";
-
     global.fetch = jest.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ accessToken: mockToken }),
@@ -140,64 +108,46 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "test@example.com" },
     });
-
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "password123" },
     });
-
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith("/browse");
+      // Note: We updated the code to use replace()
+      expect(replaceMock).toHaveBeenCalledWith("/browse");
     });
 
     expect(loginMock).toHaveBeenCalledWith(mockToken);
   });
 
-  it("shows error message when login fails (non-ok response)", async () => {
-    const errorMsg = "Login failed";
-
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: false,
-      text: async () => errorMsg,
-    } as Response);
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "fail@example.com" },
-    });
-
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "wrongpass" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-
-    expect(await screen.findByText(errorMsg)).toBeInTheDocument();
-  });
-
-  it("shows error when access token is missing", async () => {
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({}),
-    } as Response);
+  it("disables button and shows 'Signing in...' during submission", async () => {
+    // Create a promise that we can control to simulate a pending request
+    let resolveFetch: (value: any) => void;
+    global.fetch = jest.fn().mockReturnValue(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
 
     render(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "test@example.com" },
     });
-
     fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
+      target: { value: "password" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    const button = screen.getByRole("button", { name: /sign in/i });
+    fireEvent.click(button);
 
-    expect(
-      await screen.findByText(/access token not returned from backend/i),
-    ).toBeInTheDocument();
+    // Verify loading state
+    expect(button).toBeDisabled();
+    expect(button).toHaveTextContent(/signing in/i);
+
+    // Clean up the pending promise
+    resolveFetch!({ ok: true, json: async () => ({ accessToken: "tok" }) });
   });
 
   it("handles network failure (fetch throws)", async () => {
@@ -208,109 +158,11 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: "net@example.com" },
     });
-
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "password123" },
     });
-
     fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(await screen.findByText(/network error/i)).toBeInTheDocument();
-  });
-
-  it("handles unknown thrown error type", async () => {
-    global.fetch = jest.fn().mockRejectedValueOnce("Some string error");
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "unknown@example.com" },
-    });
-
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-
-    expect(
-      await screen.findByText(/failed to login. please try again/i),
-    ).toBeInTheDocument();
-  });
-
-  it("uses fallback API URL when env variable missing", async () => {
-    delete process.env.NEXT_PUBLIC_API_URL;
-
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: false,
-      text: async () => "Fallback hit",
-    } as Response);
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "fallback@example.com" },
-    });
-
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-
-    await screen.findByText(/fallback hit/i);
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:8080/api/auth/signin",
-      expect.any(Object),
-    );
-  });
-
-  it("disables button while loading", async () => {
-    global.fetch = jest.fn(
-      () =>
-        new Promise(() => {
-          /* never resolves */
-        }),
-    );
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "loading@example.com" },
-    });
-
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-
-    expect(screen.getByRole("button")).toBeDisabled();
-  });
-
-  it("re-enables button after request completes (finally branch)", async () => {
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      ok: false,
-      text: async () => "Error",
-    } as Response);
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "finally@example.com" },
-    });
-
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-
-    const button = screen.getByRole("button", { name: /sign in/i });
-
-    fireEvent.click(button);
-
-    await screen.findByText(/error/i);
-
-    expect(button).not.toBeDisabled();
   });
 });

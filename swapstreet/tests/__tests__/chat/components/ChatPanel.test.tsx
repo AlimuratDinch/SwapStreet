@@ -7,6 +7,8 @@ import {
 } from "@testing-library/react";
 import ChatPanel from "@/app/chat/components/ChatPanel";
 import * as signalR from "@microsoft/signalr";
+// Ensure the hub URL resolves in Node/Jest environment
+process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:3000";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useSearchParams } from "next/navigation";
@@ -408,17 +410,22 @@ describe("ChatPanel Component", () => {
   it("displays error message from SignalR Error event", async () => {
     render(<ChatPanel {...mockProps} />);
 
+    let errorHandler: ((msg: string) => void) | undefined;
+
     await waitFor(() => {
       const onCall = (mockConnection.on as jest.Mock).mock.calls.find(
         (call) => call[0] === "Error",
       );
-      const errorHandler = onCall[1];
-      errorHandler("Custom error message");
+      expect(onCall).toBeTruthy();
+      errorHandler = onCall?.[1];
+      expect(typeof errorHandler).toBe("function");
     });
 
-    await waitFor(() => {
-      expect(screen.getByText("Custom error message")).toBeInTheDocument();
+    act(() => {
+      errorHandler!("Custom error message");
     });
+
+    expect(await screen.findByText("Custom error message")).toBeInTheDocument();
   });
 
   it("opens rating modal when deal is closed and user can rate", async () => {
@@ -734,9 +741,13 @@ describe("ChatPanel Component", () => {
   it("updates room via onRoomUpdate when CloseDealUpdated signal received", async () => {
     const updatedRoom: Chatroom = { ...mockRoom, isDealClosed: true };
 
-    const { container } = render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
-    expect(container.querySelector("div")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
   });
 
   it("triggers rating modal when deal is closed via signal", async () => {
@@ -746,11 +757,13 @@ describe("ChatPanel Component", () => {
       ratings: [],
     };
 
-    const { container } = render(
-      <ChatPanel {...mockProps} room={closedRoom} />,
-    );
+    await act(async () => {
+      render(<ChatPanel {...mockProps} room={closedRoom} />);
+    });
 
-    expect(container.querySelector("div")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
   });
 
   it("renders multiple messages with correct styling", async () => {
@@ -776,7 +789,9 @@ describe("ChatPanel Component", () => {
       json: () => Promise.resolve(messages),
     });
 
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
     await waitFor(() => {
       expect(screen.getByText("Hello from user 1")).toBeInTheDocument();
@@ -800,7 +815,9 @@ describe("ChatPanel Component", () => {
       json: () => Promise.resolve(messages),
     });
 
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
     await waitFor(() => {
       expect(screen.getByText("Message 1")).toBeInTheDocument();
@@ -808,25 +825,30 @@ describe("ChatPanel Component", () => {
   });
 
   it("leaves chatroom on unmount", async () => {
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
     await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
       expect(mockConnection.invoke).toHaveBeenCalledWith(
         "JoinChatroom",
         "room-123",
       );
     });
-
-    expect(mockConnection.start).toHaveBeenCalled();
   });
 
   it("truncates textarea with short row height for single messages", async () => {
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
-    const textarea = screen.getByPlaceholderText(
-      "Type Message Here",
-    ) as HTMLTextAreaElement;
-    expect(textarea).toHaveAttribute("rows", "1");
+    await waitFor(() => {
+      const textarea = screen.getByPlaceholderText(
+        "Type Message Here",
+      ) as HTMLTextAreaElement;
+      expect(textarea).toHaveAttribute("rows", "1");
+    });
   });
 
   it("handles fetch failure when loading messages", async () => {
@@ -837,7 +859,9 @@ describe("ChatPanel Component", () => {
       .spyOn(console, "error")
       .mockImplementation(() => {});
 
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -857,14 +881,22 @@ describe("ChatPanel Component", () => {
       authLoaded: true,
     });
 
-    const { container } = render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
-    expect(container.querySelector("div")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
   });
 
   it("renders role text 'Wants to buy' when viewing buyer as seller", async () => {
-    const { container } = render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
-    expect(container.querySelector("div")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
   });
 });
