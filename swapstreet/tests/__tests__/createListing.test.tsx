@@ -98,7 +98,17 @@ describe("SellerListingPage", () => {
     it("renders all form fields", async () => {
       render(<SellerListingPage />);
       await waitFor(() => {
-        ["Title", "Description", "Price", "Images"].forEach((field) => {
+        [
+          "Title",
+          "Description",
+          "Category",
+          "Brand",
+          "Condition",
+          "Size",
+          "Colour",
+          "Price",
+          "Images",
+        ].forEach((field) => {
           expect(
             screen.getByLabelText(new RegExp(`^${field}`, "i")),
           ).toBeInTheDocument();
@@ -153,6 +163,41 @@ describe("SellerListingPage", () => {
       const priceInput = await screen.findByLabelText(/^Price/i);
       fireEvent.change(priceInput, { target: { value: "" } });
       expect(priceInput).toHaveValue(null);
+    });
+
+    it("updates category dropdown", async () => {
+      render(<SellerListingPage />);
+      const categorySelect = await screen.findByLabelText(/^Category/i);
+      fireEvent.change(categorySelect, { target: { value: "Tops" } });
+      expect(categorySelect).toHaveValue("Tops");
+    });
+
+    it("updates brand dropdown", async () => {
+      render(<SellerListingPage />);
+      const brandSelect = await screen.findByLabelText(/^Brand/i);
+      fireEvent.change(brandSelect, { target: { value: "Nike" } });
+      expect(brandSelect).toHaveValue("Nike");
+    });
+
+    it("updates condition dropdown", async () => {
+      render(<SellerListingPage />);
+      const conditionSelect = await screen.findByLabelText(/^Condition/i);
+      fireEvent.change(conditionSelect, { target: { value: "LikeNew" } });
+      expect(conditionSelect).toHaveValue("LikeNew");
+    });
+
+    it("updates size dropdown", async () => {
+      render(<SellerListingPage />);
+      const sizeSelect = await screen.findByLabelText(/^Size/i);
+      fireEvent.change(sizeSelect, { target: { value: "M" } });
+      expect(sizeSelect).toHaveValue("M");
+    });
+
+    it("updates colour dropdown", async () => {
+      render(<SellerListingPage />);
+      const colourSelect = await screen.findByLabelText(/^Colour/i);
+      fireEvent.change(colourSelect, { target: { value: "Blue" } });
+      expect(colourSelect).toHaveValue("Blue");
     });
   });
 
@@ -228,6 +273,16 @@ describe("SellerListingPage", () => {
       fireEvent.change(titleInput, { target: { value: "Test Product" } });
       const descInput = await screen.findByLabelText(/^Description/i);
       fireEvent.change(descInput, { target: { value: "Test Description" } });
+      const categorySelect = await screen.findByLabelText(/^Category/i);
+      fireEvent.change(categorySelect, { target: { value: "Tops" } });
+      const brandSelect = await screen.findByLabelText(/^Brand/i);
+      fireEvent.change(brandSelect, { target: { value: "Nike" } });
+      const conditionSelect = await screen.findByLabelText(/^Condition/i);
+      fireEvent.change(conditionSelect, { target: { value: "LikeNew" } });
+      const sizeSelect = await screen.findByLabelText(/^Size/i);
+      fireEvent.change(sizeSelect, { target: { value: "M" } });
+      const colourSelect = await screen.findByLabelText(/^Colour/i);
+      fireEvent.change(colourSelect, { target: { value: "Blue" } });
       const priceInput = await screen.findByLabelText(/^Price/i);
       fireEvent.change(priceInput, { target: { value: "29.99" } });
       const imagesInput = await screen.findByLabelText(/^Images/i);
@@ -239,7 +294,7 @@ describe("SellerListingPage", () => {
       render(<SellerListingPage />);
       await fillValidForm();
       submitForm();
-      await waitFor(() => expect(mockPush).toHaveBeenCalled());
+      await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/profile"));
     });
 
     it("shows error when title is missing", async () => {
@@ -303,6 +358,110 @@ describe("SellerListingPage", () => {
         expect(
           screen.getByText(/Please enter a valid price/i),
         ).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when category is not selected", async () => {
+      render(<SellerListingPage />);
+      const titleInput = await screen.findByLabelText(/^Title/i);
+      fireEvent.change(titleInput, { target: { value: "Test Product" } });
+      const descInput = await screen.findByLabelText(/^Description/i);
+      fireEvent.change(descInput, { target: { value: "Test Description" } });
+      const priceInput = await screen.findByLabelText(/^Price/i);
+      fireEvent.change(priceInput, { target: { value: "29.99" } });
+      const imagesInput = await screen.findByLabelText(/^Images/i);
+      fireEvent.change(imagesInput, { target: { files: [createFile()] } });
+      submitForm();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Please select a category/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when brand is not selected", async () => {
+      render(<SellerListingPage />);
+      const titleInput = await screen.findByLabelText(/^Title/i);
+      fireEvent.change(titleInput, { target: { value: "Test Product" } });
+      const descInput = await screen.findByLabelText(/^Description/i);
+      fireEvent.change(descInput, { target: { value: "Test Description" } });
+      const categorySelect = await screen.findByLabelText(/^Category/i);
+      fireEvent.change(categorySelect, { target: { value: "Tops" } });
+      const priceInput = await screen.findByLabelText(/^Price/i);
+      fireEvent.change(priceInput, { target: { value: "29.99" } });
+      const imagesInput = await screen.findByLabelText(/^Images/i);
+      fireEvent.change(imagesInput, { target: { files: [createFile()] } });
+      submitForm();
+      await waitFor(() => {
+        expect(screen.getByText(/Please select a brand/i)).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when condition is not selected", async () => {
+      render(<SellerListingPage />);
+      const titleInput = await screen.findByLabelText(/^Title/i);
+      fireEvent.change(titleInput, { target: { value: "Test Product" } });
+      const descInput = await screen.findByLabelText(/^Description/i);
+      fireEvent.change(descInput, { target: { value: "Test Description" } });
+      const categorySelect = await screen.findByLabelText(/^Category/i);
+      fireEvent.change(categorySelect, { target: { value: "Tops" } });
+      const brandSelect = await screen.findByLabelText(/^Brand/i);
+      fireEvent.change(brandSelect, { target: { value: "Nike" } });
+      const priceInput = await screen.findByLabelText(/^Price/i);
+      fireEvent.change(priceInput, { target: { value: "29.99" } });
+      const imagesInput = await screen.findByLabelText(/^Images/i);
+      fireEvent.change(imagesInput, { target: { files: [createFile()] } });
+      submitForm();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Please select a condition/i),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when size is not selected", async () => {
+      render(<SellerListingPage />);
+      const titleInput = await screen.findByLabelText(/^Title/i);
+      fireEvent.change(titleInput, { target: { value: "Test Product" } });
+      const descInput = await screen.findByLabelText(/^Description/i);
+      fireEvent.change(descInput, { target: { value: "Test Description" } });
+      const categorySelect = await screen.findByLabelText(/^Category/i);
+      fireEvent.change(categorySelect, { target: { value: "Tops" } });
+      const brandSelect = await screen.findByLabelText(/^Brand/i);
+      fireEvent.change(brandSelect, { target: { value: "Nike" } });
+      const conditionSelect = await screen.findByLabelText(/^Condition/i);
+      fireEvent.change(conditionSelect, { target: { value: "LikeNew" } });
+      const priceInput = await screen.findByLabelText(/^Price/i);
+      fireEvent.change(priceInput, { target: { value: "29.99" } });
+      const imagesInput = await screen.findByLabelText(/^Images/i);
+      fireEvent.change(imagesInput, { target: { files: [createFile()] } });
+      submitForm();
+      await waitFor(() => {
+        expect(screen.getByText(/Please select a size/i)).toBeInTheDocument();
+      });
+    });
+
+    it("shows error when colour is not selected", async () => {
+      render(<SellerListingPage />);
+      const titleInput = await screen.findByLabelText(/^Title/i);
+      fireEvent.change(titleInput, { target: { value: "Test Product" } });
+      const descInput = await screen.findByLabelText(/^Description/i);
+      fireEvent.change(descInput, { target: { value: "Test Description" } });
+      const categorySelect = await screen.findByLabelText(/^Category/i);
+      fireEvent.change(categorySelect, { target: { value: "Tops" } });
+      const brandSelect = await screen.findByLabelText(/^Brand/i);
+      fireEvent.change(brandSelect, { target: { value: "Nike" } });
+      const conditionSelect = await screen.findByLabelText(/^Condition/i);
+      fireEvent.change(conditionSelect, { target: { value: "LikeNew" } });
+      const sizeSelect = await screen.findByLabelText(/^Size/i);
+      fireEvent.change(sizeSelect, { target: { value: "M" } });
+      const priceInput = await screen.findByLabelText(/^Price/i);
+      fireEvent.change(priceInput, { target: { value: "29.99" } });
+      const imagesInput = await screen.findByLabelText(/^Images/i);
+      fireEvent.change(imagesInput, { target: { files: [createFile()] } });
+      submitForm();
+      await waitFor(() => {
+        expect(screen.getByText(/Please select a colour/i)).toBeInTheDocument();
       });
     });
 

@@ -1,11 +1,30 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
+import {
+  CATEGORIES,
+  COLOURS,
+  CONDITIONS,
+  SIZES,
+  BRANDS,
+} from "../../browse/components/constants";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+
+function revokeBlobUrl(url: string) {
+  if (typeof globalThis.URL?.revokeObjectURL === "function") {
+    globalThis.URL.revokeObjectURL(url);
+  }
+}
+
+type PendingListingImage = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};
 
 export default function SellerListingPage() {
   const router = useRouter();
@@ -13,16 +32,20 @@ export default function SellerListingPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | null>(null);
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingListingImage[]>([]);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileId, setProfileId] = useState<string>("");
   const [fsa, setFsa] = useState<string>("");
   const [profileLoading, setProfileLoading] = useState(true);
+  const [category, setCategory] = useState<string>("");
+  const [colour, setColour] = useState<string>("");
+  const [condition, setCondition] = useState<string>("");
+  const [size, setSize] = useState<string>("");
+  const [brand, setBrand] = useState<string>("");
 
   async function uploadListingImages(listingId: string) {
-    for (const file of images) {
+    for (const { file } of pendingImages) {
       const imageFormData = new FormData();
       imageFormData.append("File", file);
       imageFormData.append("Type", "Listing");
@@ -58,7 +81,7 @@ export default function SellerListingPage() {
         if (!res.ok) throw new Error("Failed to fetch profile");
         const data = await res.json();
         setProfileId(data.id);
-        setFsa(data.fsa ? data.fsa.replace(/\s/g, "").slice(0, 3) : "");
+        setFsa(data.fsa ? data.fsa.replaceAll(/\s/g, "").slice(0, 3) : "");
       } catch (error) {
         console.error(error);
         setError("Could not load profile info. Please refresh or re-login.");
@@ -87,28 +110,30 @@ export default function SellerListingPage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newImages = [...images, ...files];
+    const additions: PendingListingImage[] = files.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
 
-    if (newImages.length > 5) {
+    if (pendingImages.length + additions.length > 5) {
+      additions.forEach((a) => revokeBlobUrl(a.previewUrl));
       setError("You can upload a maximum of 5 images.");
       return;
     }
 
-    setImages(newImages);
-
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setImagePreviews([...imagePreviews, ...newPreviews]);
+    setPendingImages((prev) => [...prev, ...additions]);
   };
 
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
-
-    setImages(newImages);
-    setImagePreviews(newPreviews);
+  const removeImage = (id: string) => {
+    setPendingImages((prev) => {
+      const removed = prev.find((item) => item.id === id);
+      if (removed) revokeBlobUrl(removed.previewUrl);
+      return prev.filter((item) => item.id !== id);
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
@@ -128,7 +153,7 @@ export default function SellerListingPage() {
       setIsSubmitting(false);
       return;
     }
-    if (!images.length) {
+    if (!pendingImages.length) {
       setError("Please upload at least one image.");
       setIsSubmitting(false);
       return;
@@ -143,6 +168,31 @@ export default function SellerListingPage() {
       setIsSubmitting(false);
       return;
     }
+    if (!category) {
+      setError("Please select a category.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!brand) {
+      setError("Please select a brand.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!condition) {
+      setError("Please select a condition.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!size) {
+      setError("Please select a size.");
+      setIsSubmitting(false);
+      return;
+    }
+    if (!colour) {
+      setError("Please select a colour.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -151,6 +201,11 @@ export default function SellerListingPage() {
       formData.append("Price", price?.toString() ?? "0");
       formData.append("ProfileId", profileId);
       formData.append("FSA", fsa);
+      formData.append("Category", category);
+      formData.append("Brand", brand);
+      formData.append("Condition", condition);
+      formData.append("Colour", colour);
+      formData.append("Size", size);
 
       const response = await fetch(`${API_URL}/listings`, {
         method: "POST",
@@ -172,8 +227,8 @@ export default function SellerListingPage() {
 
       await uploadListingImages(listingId);
 
-      // Redirect to browse
-      router.push("/browse");
+      // Redirect to own profile so listings refetch and the new item shows without a manual refresh
+      router.push("/profile");
     } catch (error) {
       console.error(error);
       setError("Failed to create listing");
@@ -220,7 +275,7 @@ export default function SellerListingPage() {
               value={title}
               onChange={handleTitleChange}
               placeholder="Enter a descriptive title for your item"
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             />
           </div>
@@ -239,9 +294,129 @@ export default function SellerListingPage() {
               onChange={handleDescriptionChange}
               placeholder="Describe your item in detail. Include condition, size, brand, etc."
               rows={4}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Category *
+            </label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a category</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Brand */}
+          <div>
+            <label
+              htmlFor="brand"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Brand *
+            </label>
+            <select
+              id="brand"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a brand</option>
+              {BRANDS.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Condition */}
+          <div>
+            <label
+              htmlFor="condition"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Condition *
+            </label>
+            <select
+              id="condition"
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a condition</option>
+              {CONDITIONS.map((cond) => (
+                <option key={cond} value={cond}>
+                  {cond.replaceAll(/([A-Z])/g, " $1").trim()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Size */}
+          <div>
+            <label
+              htmlFor="size"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Size *
+            </label>
+            <select
+              id="size"
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a size</option>
+              {SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Colour */}
+          <div>
+            <label
+              htmlFor="colour"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Colour *
+            </label>
+            <select
+              id="colour"
+              value={colour}
+              onChange={(e) => setColour(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              required
+            >
+              <option value="">Select a colour</option>
+              {COLOURS.map((col) => (
+                <option key={col} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Price */}
@@ -264,7 +439,7 @@ export default function SellerListingPage() {
                 placeholder="0.00"
                 min="0"
                 step="0.01"
-                className="w-full pl-7 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-7 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
               />
             </div>
@@ -284,27 +459,24 @@ export default function SellerListingPage() {
               accept="image/*"
               multiple
               onChange={handleImageUpload}
-              className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-white hover:file:bg-blue-700"
+              className="mt-1 w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-teal-500 file:px-3 file:py-2 file:text-white hover:file:bg-teal-600"
             />
 
             {/* Image Previews */}
-            {imagePreviews.length > 0 && (
+            {pendingImages.length > 0 && (
               <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
-                {imagePreviews.map((preview, index) => (
-                  <div key={index} className="relative h-32 w-full">
+                {pendingImages.map((item, index) => (
+                  <div key={item.id} className="relative h-32 w-full">
                     <Image
-                      src={preview}
+                      src={item.previewUrl}
                       alt={`Preview ${index + 1}`}
                       fill
                       className="rounded-lg object-cover ring-1 ring-gray-200"
-                      unoptimized={
-                        typeof preview === "string" &&
-                        preview.startsWith("blob:")
-                      }
+                      unoptimized={item.previewUrl.startsWith("blob:")}
                     />
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
+                      onClick={() => removeImage(item.id)}
                       className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs hover:bg-red-600"
                     >
                       ×
@@ -329,7 +501,7 @@ export default function SellerListingPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50"
             >
               {isSubmitting ? "Creating..." : "Create Listing"}
             </button>

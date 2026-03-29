@@ -1,11 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
 import { ChatProvider } from "../contexts/ChatContext";
-
-export const metadata = {
-  title: "SwapStreet",
-  description: "***",
-};
+import SessionGate from "../components/auth/SessionGate";
 
 export default function RootLayout({
   children,
@@ -16,7 +12,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <AuthProvider>
-          <ChatProvider>{children}</ChatProvider>
+          <SessionGate>
+            <ChatProvider>{children}</ChatProvider>
+          </SessionGate>
         </AuthProvider>
       </body>
     </html>

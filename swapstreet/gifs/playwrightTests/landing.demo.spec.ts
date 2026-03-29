@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 
 test("landing page demo (for GIF)", async ({ page }) => {
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/");
+  await expect(page.getByText("The Marketplace for")).toBeVisible({
+    timeout: 10000,
+  });
 
   await expect(page.getByText("The Marketplace for")).toBeVisible();
   await page.waitForTimeout(2000); // hero typewriter
