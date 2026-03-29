@@ -96,6 +96,7 @@ services:
     networks:
       - app-net
 
+
   swapstreet: # Frontend
     build:
       context: ./swapstreet

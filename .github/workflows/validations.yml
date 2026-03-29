@@ -2,92 +2,93 @@ name: Validations
 
 on:
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   validations:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # Secret scanning (hardcoded secrets, JWT keys, API tokens)
-      - name: Run Gitleaks (secret detection)
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # Checkout
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      # Node setup
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: swapstreet/package-lock.json
+    # Secret scanning (hardcoded secrets, JWT keys, API tokens)
+    - name: Run Gitleaks (secret detection)
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Install frontend dependencies
-      - name: Install frontend dependencies
-        run: |
-          cd swapstreet
-          npm ci
+    # Node setup
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: npm
+        cache-dependency-path: swapstreet/package-lock.json
 
-      # Frontend dependency vulnerability scan
-      # Prompts warnings but does not block PRs
-      - name: Frontend dependency security audit (non-blocking, informational)
-        run: |
-          cd swapstreet
-          npm audit --audit-level=high || true
-          npm audit --json > audit-report.json || true
+    # Install frontend dependencies
+    - name: Install frontend dependencies
+      run: |
+        cd swapstreet
+        npm ci
 
-          echo ""
-          echo "Vulnerability summary:"
-          node -e "
-          const report = require('./audit-report.json');
-          if (!report.vulnerabilities || Object.keys(report.vulnerabilities).length === 0) {
-            console.log('No vulnerabilities found');
-          } else {
-            for (const [name, v] of Object.entries(report.vulnerabilities)) {
-              console.log(
-                `- ${name}: ${v.severity.toUpperCase()} (${v.title || 'multiple issues'})`
-              );
-            }
+    # Frontend dependency vulnerability scan
+    # Prompts warnings but does not block PRs
+    - name: Frontend dependency security audit (non-blocking, informational)
+      run: |
+        cd swapstreet
+        npm audit --audit-level=high || true
+        npm audit --json > audit-report.json || true
+
+        echo ""
+        echo "Vulnerability summary:"
+        node -e "
+        const report = require('./audit-report.json');
+        if (!report.vulnerabilities || Object.keys(report.vulnerabilities).length === 0) {
+          console.log('No vulnerabilities found');
+        } else {
+          for (const [name, v] of Object.entries(report.vulnerabilities)) {
+            console.log(
+              `- ${name}: ${v.severity.toUpperCase()} (${v.title || 'multiple issues'})`
+            );
           }
-          "
+        }
+        "
 
-      # Detect changed frontend files only
-      - name: Get changed frontend files
-        id: changed-files
-        run: |
-          # 1. Get diff of files within the swapstreet directory
-          # 2. Strip the 'swapstreet/' prefix so paths are relative to the frontend root
-          # 3. Filter for existing files
-          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "^swapstreet/.*[tj]sx\?$" | sed 's|^swapstreet/||' || true)
+# Detect changed frontend files only
+    - name: Get changed frontend files
+      id: changed-files
+      run: |
+        # 1. Get diff of files within the swapstreet directory
+        # 2. Strip the 'swapstreet/' prefix so paths are relative to the frontend root
+        # 3. Filter for existing files
+        FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep "^swapstreet/.*[tj]sx\?$" | sed 's|^swapstreet/||' || true)
+        
+        EXISTING_FILES=""
+        for file in $FILES; do
+          if [ -f "swapstreet/$file" ]; then
+            EXISTING_FILES="$EXISTING_FILES $file"
+          fi
+        done
+        
+        echo "FILES=$EXISTING_FILES" >> $GITHUB_ENV
 
-          EXISTING_FILES=""
-          for file in $FILES; do
-            if [ -f "swapstreet/$file" ]; then
-              EXISTING_FILES="$EXISTING_FILES $file"
-            fi
-          done
+    # ESLint (style + security rules, no console logs)
+    - name: Run ESLint on changed files only
+      if: env.FILES != ''
+      run: |
+        cd swapstreet
+        # Now $FILES contains "app/browse/hooks/useScrollListener.ts" 
+        # which is correct relative to the current directory
+        echo "Linting files: $FILES"
+        npx eslint $FILES --max-warnings=10
 
-          echo "FILES=$EXISTING_FILES" >> $GITHUB_ENV
-
-      # ESLint (style + security rules, no console logs)
-      - name: Run ESLint on changed files only
-        if: env.FILES != ''
-        run: |
-          cd swapstreet
-          # Now $FILES contains "app/browse/hooks/useScrollListener.ts" 
-          # which is correct relative to the current directory
-          echo "Linting files: $FILES"
-          npx eslint $FILES --max-warnings=10
-
-      # Backend dependency vulnerability scan
-      - name: Backend dependency vulnerability check
-        run: |
-          cd backend
-          dotnet list package --vulnerable
+    # Backend dependency vulnerability scan
+    - name: Backend dependency vulnerability check
+      run: |
+        cd backend
+        dotnet list package --vulnerable
