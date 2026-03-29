@@ -44,14 +44,7 @@ namespace backend.Services.Chat
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
-            return new MessageDto
-            {
-                Id = message.Id,
-                SendDate = message.SendDate,
-                Content = message.Content,
-                ChatroomId = message.ChatroomId,
-                AuthorId = message.AuthorId
-            };
+            return ToDto(message);
         }
 
         public async Task<List<MessageDto>> GetMessagesAsync(Guid chatroomId, int page = 1, int pageSize = 50)
@@ -63,14 +56,7 @@ namespace backend.Services.Chat
                 .Take(pageSize)
                 .ToListAsync();
 
-            return messages.Select(m => new MessageDto
-            {
-                Id = m.Id,
-                SendDate = m.SendDate,
-                Content = m.Content,
-                ChatroomId = m.ChatroomId,
-                AuthorId = m.AuthorId
-            }).Reverse().ToList(); // Reverse to get chronological order
+            return messages.Select(ToDto).Reverse().ToList(); // Reverse to get chronological order
         }
 
         public async Task<MessageDto?> GetMessageByIdAsync(Guid messageId)
@@ -79,14 +65,7 @@ namespace backend.Services.Chat
             if (message == null)
                 return null;
 
-            return new MessageDto
-            {
-                Id = message.Id,
-                SendDate = message.SendDate,
-                Content = message.Content,
-                ChatroomId = message.ChatroomId,
-                AuthorId = message.AuthorId
-            };
+            return ToDto(message);
         }
 
         public async Task DeleteMessageByIdAsync(Guid messageId)
@@ -103,5 +82,41 @@ namespace backend.Services.Chat
                 throw new ArgumentException("Cannot find message");
             }
         }
+
+        public async Task<MessagesReadDto> MarkMessagesAsReadAsync(Guid chatroomId, Guid readerId)
+        {
+            var readAt = DateTimeOffset.UtcNow;
+
+            var unreadMessages = await _context.Messages
+                .Where(m => m.ChatroomId == chatroomId && m.AuthorId != readerId && m.ReadAt == null)
+                .ToListAsync();
+
+            foreach (var message in unreadMessages)
+            {
+                message.ReadAt = readAt;
+            }
+
+            if (unreadMessages.Count > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return new MessagesReadDto
+            {
+                ChatroomId = chatroomId,
+                ReaderId = readerId,
+                ReadAt = readAt
+            };
+        }
+
+        private static MessageDto ToDto(Message m) => new MessageDto
+        {
+            Id = m.Id,
+            SendDate = m.SendDate,
+            ReadAt = m.ReadAt,
+            Content = m.Content,
+            ChatroomId = m.ChatroomId,
+            AuthorId = m.AuthorId
+        };
     }
 }

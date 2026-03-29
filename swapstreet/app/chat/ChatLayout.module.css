@@ -369,17 +369,37 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
-.messageTimestamp {
-  font-size: 0.625rem;
+.messageFooter {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
   margin-top: 0.25rem;
 }
 
-.messageTimestampOwn {
+.messageFooterOwn {
+  justify-content: flex-end;
+}
+
+.messageFooterOther {
+  justify-content: flex-start;
+}
+
+.messageTimestamp {
+  font-size: 0.625rem;
+}
+
+.messageStatusDelivered {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.messageStatusRead {
   color: #000000;
 }
 
-.messageTimestampOther {
-  color: #9ca3af;
+.statusIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+  display: block;
 }
 
 .composer {
