@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = "force-dynamic";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
@@ -14,14 +14,25 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
+function revokeBlobUrl(url: string) {
+  if (typeof globalThis.URL?.revokeObjectURL === "function") {
+    globalThis.URL.revokeObjectURL(url);
+  }
+}
+
+type PendingListingImage = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};
+
 export default function SellerListingPage() {
   const router = useRouter();
   const { accessToken } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | null>(null);
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingListingImage[]>([]);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileId, setProfileId] = useState<string>("");
@@ -34,7 +45,7 @@ export default function SellerListingPage() {
   const [brand, setBrand] = useState<string>("");
 
   async function uploadListingImages(listingId: string) {
-    for (const file of images) {
+    for (const { file } of pendingImages) {
       const imageFormData = new FormData();
       imageFormData.append("File", file);
       imageFormData.append("Type", "Listing");
@@ -70,7 +81,7 @@ export default function SellerListingPage() {
         if (!res.ok) throw new Error("Failed to fetch profile");
         const data = await res.json();
         setProfileId(data.id);
-        setFsa(data.fsa ? data.fsa.replace(/\s/g, "").slice(0, 3) : "");
+        setFsa(data.fsa ? data.fsa.replaceAll(/\s/g, "").slice(0, 3) : "");
       } catch (error) {
         console.error(error);
         setError("Could not load profile info. Please refresh or re-login.");
@@ -99,28 +110,30 @@ export default function SellerListingPage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const newImages = [...images, ...files];
+    const additions: PendingListingImage[] = files.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
 
-    if (newImages.length > 5) {
+    if (pendingImages.length + additions.length > 5) {
+      additions.forEach((a) => revokeBlobUrl(a.previewUrl));
       setError("You can upload a maximum of 5 images.");
       return;
     }
 
-    setImages(newImages);
-
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    setImagePreviews([...imagePreviews, ...newPreviews]);
+    setPendingImages((prev) => [...prev, ...additions]);
   };
 
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
-
-    setImages(newImages);
-    setImagePreviews(newPreviews);
+  const removeImage = (id: string) => {
+    setPendingImages((prev) => {
+      const removed = prev.find((item) => item.id === id);
+      if (removed) revokeBlobUrl(removed.previewUrl);
+      return prev.filter((item) => item.id !== id);
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
@@ -140,7 +153,7 @@ export default function SellerListingPage() {
       setIsSubmitting(false);
       return;
     }
-    if (!images.length) {
+    if (!pendingImages.length) {
       setError("Please upload at least one image.");
       setIsSubmitting(false);
       return;
@@ -214,8 +227,8 @@ export default function SellerListingPage() {
 
       await uploadListingImages(listingId);
 
-      // Redirect to browse
-      router.push("/browse");
+      // Redirect to own profile so listings refetch and the new item shows without a manual refresh
+      router.push("/profile");
     } catch (error) {
       console.error(error);
       setError("Failed to create listing");
@@ -352,7 +365,7 @@ export default function SellerListingPage() {
               <option value="">Select a condition</option>
               {CONDITIONS.map((cond) => (
                 <option key={cond} value={cond}>
-                  {cond.replace(/([A-Z])/g, " $1").trim()}
+                  {cond.replaceAll(/([A-Z])/g, " $1").trim()}
                 </option>
               ))}
             </select>
@@ -450,23 +463,20 @@ export default function SellerListingPage() {
             />
 
             {/* Image Previews */}
-            {imagePreviews.length > 0 && (
+            {pendingImages.length > 0 && (
               <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
-                {imagePreviews.map((preview, index) => (
-                  <div key={index} className="relative h-32 w-full">
+                {pendingImages.map((item, index) => (
+                  <div key={item.id} className="relative h-32 w-full">
                     <Image
-                      src={preview}
+                      src={item.previewUrl}
                       alt={`Preview ${index + 1}`}
                       fill
                       className="rounded-lg object-cover ring-1 ring-gray-200"
-                      unoptimized={
-                        typeof preview === "string" &&
-                        preview.startsWith("blob:")
-                      }
+                      unoptimized={item.previewUrl.startsWith("blob:")}
                     />
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
+                      onClick={() => removeImage(item.id)}
                       className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs hover:bg-red-600"
                     >
                       ×
