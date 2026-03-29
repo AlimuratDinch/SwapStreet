@@ -10,6 +10,9 @@ namespace backend.DTOs.Chat
         [JsonPropertyName("sendDate")]
         public DateTimeOffset? SendDate { get; set; }
 
+        [JsonPropertyName("readAt")]
+        public DateTimeOffset? ReadAt { get; set; }
+
         [JsonPropertyName("content")]
         public string Content { get; set; } = string.Empty;
 

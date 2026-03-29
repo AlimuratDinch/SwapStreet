@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import * as signalR from "@microsoft/signalr";
-import { Send, Star, Plus } from "lucide-react";
+import { Send, Star, Plus, Check, CheckCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatContext } from "@/contexts/ChatContext";
 import styles from "../ChatLayout.module.css";
@@ -16,6 +16,12 @@ type ChatPanelProps = {
   otherName: string;
   otherImage?: string | null;
   onRoomUpdate: (room: Chatroom) => void;
+};
+
+type MessagesReadEvent = {
+  chatroomId: string;
+  readerId: string;
+  readAt: string;
 };
 
 const cx = (...classes: Array<string | false | null | undefined>) =>
@@ -108,6 +114,10 @@ export default function ChatPanel({
 
     connection.on("ReceiveMessage", (msg: Message) => {
       setMessages((prev) => [...prev, msg]);
+      // If the incoming message is from the other user, mark it as read immediately
+      if (msg.author !== userId) {
+        connection.invoke("MarkAsRead", room.id).catch(() => {});
+      }
     });
     connection.on("Error", (err: string) => setError(err));
     connection.on("CloseDealUpdated", (updated: Chatroom) => {
@@ -116,12 +126,21 @@ export default function ChatPanel({
         setIsRatingModalOpen(true);
       }
     });
+    connection.on("MessagesRead", (event: MessagesReadEvent) => {
+      if (event.chatroomId !== room.id) return;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.readAt == null ? { ...m, readAt: event.readAt } : m,
+        ),
+      );
+    });
 
     connection
       .start()
       .then(async () => {
         setConnected(true);
         await connection.invoke("JoinChatroom", room.id);
+        await connection.invoke("MarkAsRead", room.id);
         const pending = autoSendRef.current.trim();
         if (pending) {
           autoSendRef.current = "";
@@ -484,21 +503,38 @@ export default function ChatPanel({
                 )}
               >
                 {msg.content}
-                {msg.sendDate && (
-                  <div
-                    className={cx(
-                      styles.messageTimestamp,
-                      isOwn
-                        ? styles.messageTimestampOwn
-                        : styles.messageTimestampOther,
-                    )}
-                  >
-                    {new Date(msg.sendDate).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                )}
+                <div
+                  className={cx(
+                    styles.messageFooter,
+                    isOwn ? styles.messageFooterOwn : styles.messageFooterOther,
+                  )}
+                >
+                  {msg.sendDate && (
+                    <span className={styles.messageTimestamp}>
+                      {new Date(msg.sendDate).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                  {isOwn && (
+                    <span
+                      className={cx(
+                        styles.messageStatus,
+                        msg.readAt
+                          ? styles.messageStatusRead
+                          : styles.messageStatusDelivered,
+                      )}
+                      title={msg.readAt ? "Read" : "Delivered"}
+                    >
+                      {msg.readAt ? (
+                        <CheckCheck className={styles.statusIcon} />
+                      ) : (
+                        <Check className={styles.statusIcon} />
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );
