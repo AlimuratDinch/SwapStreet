@@ -241,7 +241,7 @@ describe("ChatPanel Component", () => {
     render(<ChatPanel {...mockProps} />);
 
     await waitFor(() => {
-      const link = screen.getByRole("link");
+      const link = screen.getByRole("link", { name: "Test Item" });
       expect(link).toHaveAttribute(
         "href",
         expect.stringContaining("listing-456"),
