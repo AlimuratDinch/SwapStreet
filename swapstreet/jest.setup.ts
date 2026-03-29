@@ -46,6 +46,24 @@ if (
   }
 }
 
+// ResizeObserver mock (used by Leaflet / map layouts in JSDOM)
+
+if (
+  typeof (globalThis as unknown as { ResizeObserver?: unknown })
+    .ResizeObserver === "undefined"
+) {
+  class ResizeObserverMock {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+  Object.defineProperty(globalThis, "ResizeObserver", {
+    configurable: true,
+    writable: true,
+    value: ResizeObserverMock,
+  });
+}
+
 // IntersectionObserver mock
 
 if (
