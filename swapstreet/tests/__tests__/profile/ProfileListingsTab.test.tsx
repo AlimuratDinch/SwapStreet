@@ -25,6 +25,14 @@ describe("ProfileListingsTab", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    const mockIntersectionObserver = jest.fn();
+    mockIntersectionObserver.mockReturnValue({
+      observe: jest.fn(),
+      unobserve: jest.fn(),
+      disconnect: jest.fn(),
+    });
+    (window as any).IntersectionObserver = mockIntersectionObserver;
   });
 
   it("shows loading then renders listing cards from search results", async () => {
@@ -226,5 +234,197 @@ describe("ProfileListingsTab", () => {
     expect(
       screen.queryByRole("button", { name: "Create Listing" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("loads more listings when scrolling to bottom", async () => {
+    (browseApi.getSearchResults as jest.Mock)
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "a1",
+            title: "First item",
+            price: 25,
+            fsa: "M5V",
+            images: [],
+          },
+        ],
+        nextCursor: "cursor-1",
+        hasNextPage: true,
+      })
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "a2",
+            title: "Second item",
+            price: 30,
+            fsa: "M5V",
+            images: [],
+          },
+        ],
+        nextCursor: null,
+        hasNextPage: false,
+      });
+
+    const { container } = render(
+      <ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("listing-card-a1")).toBeInTheDocument();
+    });
+
+    const observerTarget = container.querySelector(
+      ".w-full.py-8",
+    ) as HTMLElement;
+    expect(observerTarget).toBeInTheDocument();
+
+    const mockIntersectionObserver = (window as any).IntersectionObserver;
+    const observerCallback = mockIntersectionObserver.mock
+      .calls[0][0] as IntersectionObserverCallback;
+
+    observerCallback(
+      [{ isIntersecting: true } as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("listing-card-a2")).toBeInTheDocument();
+    });
+
+    expect(browseApi.getSearchResults).toHaveBeenCalledTimes(2);
+    expect(browseApi.getSearchResults).toHaveBeenNthCalledWith(2, {
+      sellerId,
+      cursor: "cursor-1",
+      pageSize: 18,
+    });
+  });
+
+  it("shows loading indicator while loading more listings", async () => {
+    let resolveSecondCall: (value: any) => void;
+    const secondCallPromise = new Promise((resolve) => {
+      resolveSecondCall = resolve;
+    });
+
+    (browseApi.getSearchResults as jest.Mock)
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "a1",
+            title: "First item",
+            price: 25,
+            fsa: "M5V",
+            images: [],
+          },
+        ],
+        nextCursor: "cursor-1",
+        hasNextPage: true,
+      })
+      .mockReturnValueOnce(secondCallPromise);
+
+    const { container } = render(
+      <ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("listing-card-a1")).toBeInTheDocument();
+    });
+
+    const mockIntersectionObserver = (window as any).IntersectionObserver;
+    const observerCallback = mockIntersectionObserver.mock
+      .calls[0][0] as IntersectionObserverCallback;
+
+    observerCallback(
+      [{ isIntersecting: true } as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Loading more...")).toBeInTheDocument();
+    });
+
+    resolveSecondCall!({
+      items: [
+        {
+          id: "a2",
+          title: "Second item",
+          price: 30,
+          fsa: "M5V",
+          images: [],
+        },
+      ],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading more...")).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows end of list message when no more pages", async () => {
+    (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
+      items: [
+        {
+          id: "a1",
+          title: "Only item",
+          price: 25,
+          fsa: "M5V",
+          images: [],
+        },
+      ],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("listing-card-a1")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText("You've reached the end of the list."),
+    ).toBeInTheDocument();
+  });
+
+  it("handles loadMore API error gracefully", async () => {
+    (browseApi.getSearchResults as jest.Mock)
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "a1",
+            title: "First item",
+            price: 25,
+            fsa: "M5V",
+            images: [],
+          },
+        ],
+        nextCursor: "cursor-1",
+        hasNextPage: true,
+      })
+      .mockRejectedValueOnce(new Error("Network error"));
+
+    const { container } = render(
+      <ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("listing-card-a1")).toBeInTheDocument();
+    });
+
+    const mockIntersectionObserver = (window as any).IntersectionObserver;
+    const observerCallback = mockIntersectionObserver.mock
+      .calls[0][0] as IntersectionObserverCallback;
+
+    observerCallback(
+      [{ isIntersecting: true } as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading more...")).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("listing-card-a1")).toBeInTheDocument();
   });
 });

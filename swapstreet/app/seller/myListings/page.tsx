@@ -40,12 +40,10 @@ export default function MyListingsPage() {
       setError(null);
       try {
         const profile = await getMyProfile(accessToken);
-        console.log("[MyListings] Fetching listings for seller:", profile.id);
         const { items } = await getSearchResults({
           sellerId: profile.id,
           pageSize: 50,
         });
-        console.log("[MyListings] Received listings:", items?.length ?? 0);
         const mapped: ListingItem[] = (items ?? []).map(
           (i: {
             id: string;
@@ -69,7 +67,8 @@ export default function MyListingsPage() {
       }
     };
     load();
-  }, [isAuthenticated, accessToken, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, accessToken]);
 
   const handleDeleteClick = (id: string) => {
     setConfirmId(id);

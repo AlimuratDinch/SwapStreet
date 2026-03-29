@@ -244,7 +244,9 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButtons[0]);
 
-    expect(screen.getByText(/Delete this listing\?/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Delete this listing\?/i)).toBeInTheDocument();
+    });
     expect(
       screen.getByRole("button", { name: /Yes, delete/i }),
     ).toBeInTheDocument();
@@ -270,7 +272,7 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButton);
 
-    const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+    const cancelButton = await screen.findByRole("button", { name: /Cancel/i });
     fireEvent.click(cancelButton);
 
     await waitFor(() => {
@@ -304,7 +306,9 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButton);
 
-    const confirmButton = screen.getByRole("button", { name: /Yes, delete/i });
+    const confirmButton = await screen.findByRole("button", {
+      name: /Yes, delete/i,
+    });
     fireEvent.click(confirmButton);
 
     await waitFor(() => {
@@ -350,7 +354,9 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButton);
 
-    const confirmButton = screen.getByRole("button", { name: /Yes, delete/i });
+    const confirmButton = await screen.findByRole("button", {
+      name: /Yes, delete/i,
+    });
     fireEvent.click(confirmButton);
 
     expect(
@@ -386,7 +392,9 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButton);
 
-    const confirmButton = screen.getByRole("button", { name: /Yes, delete/i });
+    const confirmButton = await screen.findByRole("button", {
+      name: /Yes, delete/i,
+    });
     fireEvent.click(confirmButton);
 
     expect(
@@ -419,7 +427,9 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButton);
 
-    const confirmButton = screen.getByRole("button", { name: /Yes, delete/i });
+    const confirmButton = await screen.findByRole("button", {
+      name: /Yes, delete/i,
+    });
     fireEvent.click(confirmButton);
 
     expect(
@@ -458,7 +468,9 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButton);
 
-    const confirmButton = screen.getByRole("button", { name: /Yes, delete/i });
+    const confirmButton = await screen.findByRole("button", {
+      name: /Yes, delete/i,
+    });
     fireEvent.click(confirmButton);
 
     await waitFor(() => {
@@ -611,10 +623,12 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButton);
 
-    const confirmButtons = screen.getAllByRole("button", {
-      name: /Yes, delete/i,
+    await waitFor(() => {
+      const confirmButtons = screen.getAllByRole("button", {
+        name: /Yes, delete/i,
+      });
+      expect(confirmButtons).toHaveLength(1);
     });
-    expect(confirmButtons).toHaveLength(1);
   });
 
   it("redirects to sign-in when deleting without token", async () => {
@@ -647,7 +661,9 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButton);
 
-    const confirmButton = screen.getByRole("button", { name: /Yes, delete/i });
+    const confirmButton = await screen.findByRole("button", {
+      name: /Yes, delete/i,
+    });
     fireEvent.click(confirmButton);
 
     expect(mockPush).toHaveBeenCalledWith("/auth/sign-in");
@@ -774,7 +790,9 @@ describe("MyListingsPage", () => {
 
     render(<MyListingsPage />);
 
-    expect(await screen.findByText("Blue Jeans")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Blue Jeans")).toBeInTheDocument();
+    });
     expect(screen.getByText("Red Sweater")).toBeInTheDocument();
 
     const deleteButton = screen.getByRole("button", {
@@ -782,8 +800,14 @@ describe("MyListingsPage", () => {
     });
     fireEvent.click(deleteButton);
 
-    const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+    const cancelButton = await screen.findByRole("button", { name: /Cancel/i });
     fireEvent.click(cancelButton);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Delete this listing\?/i),
+      ).not.toBeInTheDocument();
+    });
 
     expect(screen.getByText("Blue Jeans")).toBeInTheDocument();
     expect(screen.getByText("Red Sweater")).toBeInTheDocument();
