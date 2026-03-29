@@ -331,9 +331,17 @@ export default function ChatPanel({
             </div>
           </div>
         </div>
-        {isDealClosed ? (
-          <span className={styles.dealClosedBadge}>Deal closed</span>
-        ) : null}
+        <div className={styles.chatHeaderRight}>
+          {isDealClosed ? (
+            <span className={styles.dealClosedBadge}>Deal closed</span>
+          ) : null}
+          <Link
+            href={`/profile/${isSeller ? room.buyerId : room.sellerId}`}
+            className={styles.viewProfileBtn}
+          >
+            View Profile
+          </Link>
+        </div>
       </div>
 
       {error && <div className={styles.errorBanner}>{error}</div>}
