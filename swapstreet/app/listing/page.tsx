@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import Gallery from "@/app/browse/components/Gallery";
@@ -11,6 +12,33 @@ import {
   removeWardrobeItem,
 } from "@/app/wardrobe/wardrobeStorage";
 import { Header } from "@/components/common/Header";
+
+const ListingLocationMiniMap = dynamic(
+  () =>
+    import("@/components/listing/ListingLocationMiniMap").then((m) => ({
+      default: m.ListingLocationMiniMap,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="w-full h-[200px] rounded-lg border border-gray-300 bg-gray-100 animate-pulse"
+        aria-hidden
+      />
+    ),
+  },
+);
+
+function isValidLatLng(lat: number, lng: number) {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  );
+}
 
 type Seller = {
   id?: string;
@@ -78,6 +106,8 @@ function ListingContent() {
   const [locationData, setLocationData] = useState<{
     city: string;
     province: string;
+    lat?: number;
+    lng?: number;
   } | null>(null);
 
   const [inWardrobe, setInWardrobe] = useState(false);
@@ -116,12 +146,18 @@ function ListingContent() {
         return res.json();
       })
       .then((data) => {
-        if (data?.city) {
-          setLocationData({
-            city: data.city,
-            province: data.provinceCode || data.province || "",
-          });
-        }
+        if (!data) return;
+        const city = typeof data.city === "string" ? data.city : "";
+        const province = data.provinceCode || data.province || "";
+        const lat = Number(data.lat);
+        const lng = Number(data.lng);
+        const coordsOk = isValidLatLng(lat, lng);
+        if (!city && !coordsOk) return;
+        setLocationData({
+          city,
+          province,
+          ...(coordsOk ? { lat, lng } : {}),
+        });
       })
       .catch((e) => console.error("Failed to fetch location", e));
   }, [listing]);
@@ -298,7 +334,9 @@ function ListingContent() {
                     <span className="text-gray-400 mx-1">•</span>
                     <span className="font-medium text-gray-700">
                       {locationData
-                        ? `${locationData.city}, ${locationData.province}`
+                        ? locationData.city
+                          ? `${locationData.city}, ${locationData.province}`
+                          : locationData.province || location
                         : location}
                     </span>
                   </div>
@@ -374,35 +412,52 @@ function ListingContent() {
                 <h2 className="text-[17px] font-bold mb-1 text-gray-900">
                   Location
                 </h2>
-                <div className="w-full h-[200px] bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500 text-sm">
-                  <div className="text-center">
-                    <svg
-                      className="w-8 h-8 mx-auto mb-2 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    <p>Google Maps</p>
-                    <p className="text-xs mt-1">
-                      {locationData
-                        ? `${locationData.city}, ${locationData.province}`
-                        : location}
+                {locationData?.lat != null &&
+                locationData.lng != null &&
+                isValidLatLng(locationData.lat, locationData.lng) ? (
+                  <div className="space-y-1.5">
+                    <ListingLocationMiniMap
+                      lat={locationData.lat}
+                      lng={locationData.lng}
+                    />
+                    <p className="text-xs text-gray-500">
+                      Approximate area based on postal code prefix (FSA).
                     </p>
                   </div>
-                </div>
+                ) : (
+                  <div className="w-full h-[200px] bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500 text-sm">
+                    <div className="text-center px-3">
+                      <svg
+                        className="w-8 h-8 mx-auto mb-2 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      <p className="font-medium text-gray-600">
+                        Location map unavailable
+                      </p>
+                      <p className="text-xs mt-1">
+                        {locationData
+                          ? `${locationData.city}, ${locationData.province}`
+                          : location}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="h-px bg-gray-200 w-[94%] mx-auto" />
 

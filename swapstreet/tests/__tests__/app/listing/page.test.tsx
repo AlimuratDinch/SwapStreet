@@ -14,6 +14,11 @@ jest.mock("@/app/browse/components/Gallery", () => {
     return <div data-testid="gallery-mock">Gallery</div>;
   };
 });
+jest.mock("@/components/listing/ListingLocationMiniMap", () => ({
+  ListingLocationMiniMap: ({ lat, lng }: { lat: number; lng: number }) => (
+    <div data-testid="listing-mini-map" data-lat={lat} data-lng={lng} />
+  ),
+}));
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(() => ({
     push: jest.fn(),
@@ -764,6 +769,8 @@ describe("Listing Page", () => {
           Promise.resolve({
             city: "Toronto",
             provinceCode: "ON",
+            lat: 43.65,
+            lng: -79.38,
           }),
       });
 
@@ -771,6 +778,54 @@ describe("Listing Page", () => {
     await waitFor(() => {
       expect(screen.getByText("Vintage Jacket")).toBeInTheDocument();
     });
+  });
+
+  it("shows mini map when location lookup returns coordinates", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockListing),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            city: "Toronto",
+            provinceCode: "ON",
+            lat: 43.65,
+            lng: -79.38,
+          }),
+      });
+
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId("listing-mini-map")).toBeInTheDocument();
+    });
+    const map = screen.getByTestId("listing-mini-map");
+    expect(map).toHaveAttribute("data-lat", "43.65");
+    expect(map).toHaveAttribute("data-lng", "-79.38");
+  });
+
+  it("shows location map unavailable when lookup has no coordinates", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockListing),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            city: "Toronto",
+            provinceCode: "ON",
+          }),
+      });
+
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByText("Location map unavailable")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("listing-mini-map")).not.toBeInTheDocument();
   });
 
   it("falls back to location field when API unavailable", async () => {
