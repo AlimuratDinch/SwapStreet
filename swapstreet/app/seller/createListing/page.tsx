@@ -32,9 +32,7 @@ export default function SellerListingPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState<number | null>(null);
-  const [pendingImages, setPendingImages] = useState<PendingListingImage[]>(
-    [],
-  );
+  const [pendingImages, setPendingImages] = useState<PendingListingImage[]>([]);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileId, setProfileId] = useState<string>("");
