@@ -116,10 +116,38 @@ public class ListingCommandServiceTests
     {
         // Arange
         using var context = new AppDbContext(_pgFixture.DbOptions);
-        await context.Database.EnsureDeletedAsync();
-        await context.Database.EnsureCreatedAsync();
+        context.Database.EnsureDeleted();
+        context.Database.EnsureCreated();
 
         var service = CreateService(context);
+
+        context.Provinces.Add(
+            new Province { Id = 1, Code = "QC", Name = "Quebec" }
+        );
+
+        context.Cities.AddRange(
+            new City { Id = 1, Name = "City A", ProvinceId = 1 },
+            new City { Id = 2, Name = "City B", ProvinceId = 1 },
+            new City { Id = 3, Name = "City C", ProvinceId = 1 }
+        );
+
+        context.Fsas.AddRange(new Fsa
+        {
+            Code = "A1A",
+            CityId = 1,
+            Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
+        }, new Fsa
+        {
+            Code = "A2A",
+            CityId = 2,
+            Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
+        }, new Fsa
+        {
+            Code = "A3A",
+            CityId = 3,
+            Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
+        });
+
         Guid userIdA = Guid.NewGuid(),
             userIdB = Guid.NewGuid(),
             userIdC = Guid.NewGuid();
@@ -128,49 +156,60 @@ public class ListingCommandServiceTests
         {
             Id = userIdA,
             FirstName = "Guy",
-            LastName = "1"
+            LastName = "1",
+            CityId = 1,
+            FSA = "A1A"
         }, new Profile
         {
             Id = userIdB,
             FirstName = "Guy",
-            LastName = "2"
+            LastName = "2",
+            CityId = 2,
+            FSA = "A2A"
         }, new Profile
         {
             Id = userIdC,
             FirstName = "Guy",
-            LastName = "3"
+            LastName = "3",
+            CityId = 3,
+            FSA = "A3A"
         });
-
-        context.Listings.AddRange(new Listing
+        
+        Listing listingA = new Listing
         {
             Id = Guid.NewGuid(),
             ProfileId = userIdA,
             Title = "Article A-1",
             Description = "Description A-1"
-        }, new Listing
+        }, listingB = new Listing
         {
             Id = Guid.NewGuid(),
             ProfileId = userIdA,
             Title = "Article A-2",
             Description = "Description A-2"
-        }, new Listing
+        }, listingC = new Listing
         {
             Id = Guid.NewGuid(),
             ProfileId = userIdB,
             Title = "Article B",
             Description = "Description B"
-        }, new Listing
+        }, listingD = new Listing
         {
             Id = Guid.NewGuid(),
             ProfileId = userIdC,
             Title = "Article C",
             Description = "Description C"
-        });
-
+        };
+        
+        context.Listings.Add(listingA);
+        context.Listings.Add(listingB);
+        context.Listings.Add(listingC);
+        context.Listings.Add(listingD);
         context.SaveChanges();
-
+        context.ChangeTracker.Clear();
+        
         // Act
-        service.DeleteAllFromUserAsync(userIdA);
+        await service.DeleteAllFromUserAsync(userIdA);
 
         // Assert
         context.Listings.Should()

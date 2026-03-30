@@ -229,7 +229,8 @@ namespace backend.Services
 
         public async Task DeleteAllFromUserAsync(Guid targetId)
         {
-            var listingData = _context.Listings.Where(l => l.ProfileId == targetId).ToList();
+            var listingData = _context.Listings.AsNoTracking()
+                .Where(l => l.ProfileId == targetId).ToList();
 
             foreach (Listing listing in listingData)
             {
