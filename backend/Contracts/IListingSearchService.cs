@@ -1,3 +1,5 @@
+using backend.DTOs.Listings;
+
 namespace backend.Contracts
 {
     using backend.DTOs.Search;

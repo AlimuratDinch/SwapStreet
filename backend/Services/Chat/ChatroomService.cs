@@ -543,12 +543,46 @@ namespace backend.Services.Chat
 
         public async Task DeleteChatroomAsync(Guid chatroomId)
         {
-            var chatroom = await _context.Chatrooms.FindAsync(chatroomId);
+            DeleteChatroom(chatroomId);
+            _context.SaveChanges();
+        }
+
+        public void DeleteAllFromUser(Guid userId)
+        {
+            var chatroomData = _context.Chatrooms.Where(
+                c => c.SellerId == userId || c.BuyerId == userId
+            );
+
+            bool fail = false;
+
+            foreach (Chatroom chatroom in chatroomData)
+            {
+                DeleteChatroom(chatroom.Id);
+                // It is impossible for this call to throw an 
+                // exception. The chatrooms are necessarily in the 
+                // database if this function queried them.
+
+            }
+            _context.SaveChanges();
+        }
+
+        private void DeleteChatroom(Guid chatroomId)
+        {
+            var chatroom = _context.Chatrooms.Find(chatroomId);
 
             if (chatroom != null)
             {
+                var messageData = _context.Messages.Where(
+                    m => m.ChatroomId == chatroomId
+                );
+
+                foreach (Message message in messageData)
+                {
+                    _context.Messages.Remove(message);
+                }
+                // Delete all messages before deleting the chatroom.
+
                 _context.Chatrooms.Remove(chatroom);
-                await _context.SaveChangesAsync();
             }
             else
             {

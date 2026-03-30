@@ -10,7 +10,7 @@ using Moq;
 using Microsoft.Extensions.Logging;
 using backend.Contracts;
 using backend.DbContexts;
-using backend.DTOs;
+using backend.DTOs.Listings;
 using backend.Infrastructure.LogQueue;
 using backend.Services;
 using backend.Tests.Fixtures;
@@ -109,6 +109,76 @@ public class ListingCommandServiceTests
         taskData.Should().NotBeNull();
         taskData!.ListingId.Should().Be(listingId);
         taskData.Action.Should().Be(ListingAction.Create);
+    }
+
+    [Fact]
+    public async Task DeleteAllFromUserAsync_ShouldDeleteListingsOfUser()
+    {
+        // Arange
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        await context.Database.EnsureDeletedAsync();
+        await context.Database.EnsureCreatedAsync();
+
+        var service = CreateService(context);
+        Guid userIdA = Guid.NewGuid(),
+            userIdB = Guid.NewGuid(),
+            userIdC = Guid.NewGuid();
+
+        context.Profiles.AddRange(new Profile
+        {
+            Id = userIdA,
+            FirstName = "Guy",
+            LastName = "1"
+        }, new Profile
+        {
+            Id = userIdB,
+            FirstName = "Guy",
+            LastName = "2"
+        }, new Profile
+        {
+            Id = userIdC,
+            FirstName = "Guy",
+            LastName = "3"
+        });
+
+        context.Listings.AddRange(new Listing
+        {
+            Id = Guid.NewGuid(),
+            ProfileId = userIdA,
+            Title = "Article A-1",
+            Description = "Description A-1"
+        }, new Listing
+        {
+            Id = Guid.NewGuid(),
+            ProfileId = userIdA,
+            Title = "Article A-2",
+            Description = "Description A-2"
+        }, new Listing
+        {
+            Id = Guid.NewGuid(),
+            ProfileId = userIdB,
+            Title = "Article B",
+            Description = "Description B"
+        }, new Listing
+        {
+            Id = Guid.NewGuid(),
+            ProfileId = userIdC,
+            Title = "Article C",
+            Description = "Description C"
+        });
+
+        context.SaveChanges();
+
+        // Act
+        service.DeleteAllFromUserAsync(userIdA);
+
+        // Assert
+        context.Listings.Should()
+            .HaveCount(2)
+            .And
+            .ContainSingle(l => l.ProfileId == userIdB)
+            .And
+            .ContainSingle(l => l.ProfileId == userIdC);
     }
 
     #endregion

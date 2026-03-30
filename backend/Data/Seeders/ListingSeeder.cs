@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.Models;
 using backend.DbContexts;
 using backend.Contracts;
-using backend.DTOs;
+using backend.DTOs.Listings;
 using Microsoft.AspNetCore.Authentication;
 using System.ComponentModel;
 using System.Drawing;

@@ -1,7 +1,7 @@
 using backend.Contracts;
 using backend.DbContexts;
-using backend.DTOs;
 using backend.DTOs.Image;
+using backend.DTOs.Listings;
 using Microsoft.EntityFrameworkCore;
 using Meilisearch;
 using backend.Infrastructure.LogQueue;
@@ -227,6 +227,18 @@ namespace backend.Services
             return listing.Id;
         }
 
+        public async Task DeleteAllFromUserAsync(Guid targetId)
+        {
+            var listingData = _context.Listings.Where(l => l.ProfileId == targetId).ToList();
+
+            foreach (Listing listing in listingData)
+            {
+                await DeleteListingAsync(listing.Id, listing.ProfileId);
+                // The listing must exist if the query returned these 
+                // to begin with. As such, this function call cannot 
+                // throw an exception.
+            }
+        }
 
         // Method to add log to queue to be handled by workers
         private async Task AppendToListingLog(Guid listingID, ListingSearchDto searchData, ListingAction action)

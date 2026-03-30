@@ -1,3 +1,4 @@
+using backend.Contracts;
 using backend.Contracts.Auth;
 using backend.Models.Authentication;
 using Microsoft.EntityFrameworkCore;
@@ -6,23 +7,34 @@ using backend.DTOs.Auth;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Configuration;
 
-
 namespace backend.Services.Auth
 {
     public class UserService : IUserService
     {
         private readonly IPasswordHasher _passwordHasher;
         private readonly AuthDbContext _authDBContext;
-
         private readonly IEmailService _emailService;
+        private readonly IListingCommandService _listingCommandService;
+        private readonly IProfileService _profileService;
+        private readonly IChatroomService _chatroomService;
 
         private readonly IConfiguration _config;
 
-        public UserService(IPasswordHasher passwordHasher, AuthDbContext authDBContext, IEmailService emailService, IConfiguration config)
+        public UserService(
+            IPasswordHasher passwordHasher,
+            AuthDbContext authDBContext,
+            IEmailService emailService,
+            IListingCommandService listingCommandService,
+            IProfileService profileService,
+            IChatroomService chatroomService,
+            IConfiguration config)
         {
             _passwordHasher = passwordHasher;
             _authDBContext = authDBContext;
             _emailService = emailService;
+            _listingCommandService = listingCommandService;
+            _profileService = profileService;
+            _chatroomService = chatroomService;
             _config = config;
         }
 
@@ -53,12 +65,18 @@ namespace backend.Services.Auth
 
         public async Task PermanentlyDeleteUserAsync(Guid userId)
         {
-            User? user = await _authDBContext.Users.FindAsync(userId);
-            if (user != null)
-            {
-                _authDBContext.Users.Remove(user);
-                await _authDBContext.SaveChangesAsync();
-            }
+            User? user = _authDBContext.Users.Find(userId);
+            if (user == null)
+                return;
+
+            // Users have a profile, listings, chatrooms, and 
+            // messages. Deleting the former automatically deletes
+            // the messages in it.
+            await _listingCommandService.DeleteAllFromUserAsync(userId);
+            _chatroomService.DeleteAllFromUser(userId);
+            _profileService.DeleteProfile(userId);
+            _authDBContext.Users.Remove(user);
+            _authDBContext.SaveChanges();
         }
 
         public async Task<User?> GetUserByEmailAsync(string email)
