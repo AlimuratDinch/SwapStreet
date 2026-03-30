@@ -450,7 +450,6 @@ export default function EditListingPage() {
                 <label htmlFor="image-upload" className="cursor-pointer">
                   <div className="text-gray-600">
                     <p className="font-medium">Click to upload images</p>
-                    <p className="text-sm text-gray-500">or drag and drop</p>
                   </div>
                 </label>
               </div>
