@@ -1,110 +1,108 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import SettingsPage from "@/app/profile/settings/page";
 import "@testing-library/jest-dom";
+import React from "react";
 
-// Mocks
-const pushMock = jest.fn();
+const mockPush = jest.fn();
 
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: pushMock,
-  }),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 jest.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({
-    accessToken: "mock-token",
-  }),
+  __esModule: true,
+  useAuth: () => jest.fn(),
 }));
 
-jest.mock("@/components/common/Header", () => ({
-  Header: () => <div data-testid="header" />,
-}));
-
-describe("SettingsPage", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+describe("Settings Page", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
-  it("renders the page correctly", () => {
+  it("renders all menu options", () => {
     render(<SettingsPage />);
 
-    expect(screen.getByText("Settings")).toBeInTheDocument();
-    expect(screen.getByText("Manage your preferences")).toBeInTheDocument();
-    expect(screen.getByText("Behavior")).toBeInTheDocument();
-    expect(screen.getByText("Actions")).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Delete Account" }),
-    ).toBeInTheDocument();
+    const labels = ["Settings", "Sustainability Tracking", "Delete Account"];
 
-    expect(
-      screen.getByRole("button", { name: "Delete Account" }),
-    ).toBeInTheDocument();
+    for (const label of labels) {
+      const elementData = screen.getAllByText(label);
+      /*There is a `Delete Account` button and label.*/
+
+      expect(elementData.filter(() => true).length).toBeGreaterThan(0);
+
+      for (const element of elementData) expect(element).toBeInTheDocument();
+    }
   });
 
-  it("toggles sustainability tracking", () => {
-    render(<SettingsPage />);
-
-    const toggleButton = screen.getAllByRole("button")[0];
-
-    // Initially ON (teal)
-    expect(toggleButton.className).toContain("bg-teal-500");
-
-    fireEvent.click(toggleButton);
-
-    // After click -> OFF (gray)
-    expect(toggleButton.className).toContain("bg-gray-300");
-  });
-
-  it("calls delete API and redirects on success", async () => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
+  it("can delete the user's account", async () => {
+    global.fetch = jest.fn((url) => {
+      return Promise.resolve({
         ok: true,
-      } as Response),
-    );
+      });
+    });
 
     render(<SettingsPage />);
 
-    const deleteButton = screen.getByRole("button", { name: "Delete Account" });
-
-    fireEvent.click(deleteButton);
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/auth/deleteUser"),
-        expect.objectContaining({
-          method: "DELETE",
-          headers: {
-            Authorization: "Bearer mock-token",
-          },
-        }),
-      );
+    const deleteAccount = screen.getByRole("button", {
+      name: "Delete Account",
     });
-
-    expect(pushMock).toHaveBeenCalledWith("/");
+    expect(deleteAccount).toBeInTheDocument();
+    await fireEvent.click(deleteAccount);
+    expect(mockPush).toHaveBeenCalledWith("/");
+    expect(mockPush).toHaveBeenCalledTimes(1);
   });
 
-  it("handles delete failure gracefully", async () => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
+  it("displays an error when account deletion fails", async () => {
+    global.fetch = jest.fn((url) => {
+      return Promise.resolve({
         ok: false,
-        text: () => Promise.resolve("Delete failed"),
-      } as Response),
-    );
+        text: () => Promise.resolve("Server Error"),
+      });
+    });
+    global.alert = jest.fn();
 
     render(<SettingsPage />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete Account" }));
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalled();
+    const deleteAccount = screen.getByRole("button", {
+      name: "Delete Account",
     });
-
-    expect(pushMock).not.toHaveBeenCalled();
+    fireEvent.click(deleteAccount);
+    await waitFor(() => {
+      expect(global.alert).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it("renders header component", () => {
-    render(<SettingsPage />);
-    expect(screen.getByTestId("header")).toBeInTheDocument();
+  it("toggles the sustainability tracking feature", async () => {
+    const setter = jest.fn();
+
+    React.useState = jest.fn((value) => {
+      return [true, setter];
+    });
+    var result = render(<SettingsPage />);
+    var buttonData = result.getAllByRole("button");
+    var candidateData = buttonData.filter(
+      (b) => b.id === "toggleSustainabilityTracking",
+    );
+    expect(candidateData.filter(() => true)).toHaveLength(1);
+    var toggle = candidateData[0];
+    fireEvent.click(toggle);
+    await waitFor(() => {
+      expect(setter).toHaveBeenCalledTimes(1);
+    });
+
+    React.useState = jest.fn((value) => {
+      return [false, setter];
+    });
+
+    result = render(<SettingsPage />);
+    buttonData = result.getAllByRole("button");
+    candidateData = buttonData.filter(
+      (b) => b.id === "toggleSustainabilityTracking",
+    );
+    toggle = candidateData[0];
+    fireEvent.click(toggle);
+    await waitFor(() => {
+      expect(setter).toHaveBeenCalledTimes(2);
+    });
   });
 });

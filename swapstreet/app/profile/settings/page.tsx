@@ -5,17 +5,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function Separator() {
-  return <div className="border-b-2 border-gray-600 w-full"></div>;
+  return <div className="border-b-1 border-gray-600 w-full" />;
 }
 
 export default function SettingsPage() {
   const router = useRouter();
   const { accessToken } = useAuth();
   const [sustainabilityTracking, setSustainabilityTracking] = useState(true);
-  const [confirmText, setConfirmText] = useState("");
 
   async function deleteAcount() {
     try {
@@ -28,11 +27,14 @@ export default function SettingsPage() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText);
+        throw Error(errorText);
       }
 
       router.push("/");
-    } catch (err) {}
+    } catch (exception) {
+      const error: Error = exception as Error;
+      alert("Error: " + error?.toString());
+    }
   }
 
   return (
@@ -57,13 +59,14 @@ export default function SettingsPage() {
                 Sustainability Tracking
               </h3>
               <p className="text-sm text-gray-600 max-w-md">
-                Enable tracking of your environmental impact based on your
-                purchases.
+                Allow tracking purchases to quantitatively understand your
+                environmental impact.
               </p>
             </div>
 
             <button
               onClick={() => setSustainabilityTracking((prev) => !prev)}
+              id="toggleSustainabilityTracking"
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
                 sustainabilityTracking ? "bg-teal-500" : "bg-gray-300"
               }`}
@@ -89,8 +92,8 @@ export default function SettingsPage() {
                 Delete Account
               </h3>
               <p className="text-sm text-gray-600 mb-4 max-w-md">
-                Permanently delete your account and all associated data. You
-                cannot undo this action.
+                Permanently delete your data and account. This action is
+                irreversable.
               </p>
             </div>
             <button

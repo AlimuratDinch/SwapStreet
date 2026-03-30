@@ -174,7 +174,7 @@ public class ListingCommandServiceTests
             CityId = 3,
             FSA = "A3A"
         });
-        
+
         Listing listingA = new Listing
         {
             Id = Guid.NewGuid(),
@@ -200,14 +200,14 @@ public class ListingCommandServiceTests
             Title = "Article C",
             Description = "Description C"
         };
-        
+
         context.Listings.Add(listingA);
         context.Listings.Add(listingB);
         context.Listings.Add(listingC);
         context.Listings.Add(listingD);
         context.SaveChanges();
         context.ChangeTracker.Clear();
-        
+
         // Act
         await service.DeleteAllFromUserAsync(userIdA);
 

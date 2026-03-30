@@ -10,6 +10,7 @@ using backend.Services.Auth;
 using backend.Contracts;
 using backend.Contracts.Auth;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 using AwesomeAssertions;
 using Microsoft.Extensions.Configuration;
@@ -51,9 +52,9 @@ namespace backend.Tests
                 hasher,
                 _db,
                 _emailService,
-                new DummyListingCommandService(),
-                new DummyProfileService(),
-                new DummyChatroomService(),
+                Mock.Of<IListingCommandService>(),
+                Mock.Of<IProfileService>(),
+                Mock.Of<IChatroomService>(),
                 config
             );
         }
@@ -351,178 +352,6 @@ namespace backend.Tests
                 // So 'password' here will be the unhashed input from the service, which is then hashed and compared to the stored hash..
                 var hasher = new FakePasswordHasher();
                 return hasher.HashPassword(password) == hashedPassword;
-            }
-        }
-
-        // Dummy implementation. The unit tests do not test 
-        // this interface.
-        private class DummyListingCommandService : IListingCommandService
-        {
-            public async Task<Guid> CreateListingAsync(CreateListingRequestDto request, CancellationToken cancellationToken = default)
-            {
-                var _ = request;
-                var __ = cancellationToken;
-                return Guid.NewGuid();
-            }
-
-            public async Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
-            {
-                var _ = listingId;
-                var __ = profileId;
-                var ___ = cancellationToken;
-                return;
-            }
-
-            public async Task DeleteAllFromUserAsync(Guid targetId)
-            {
-                var _ = targetId;
-                return;
-            }
-        }
-
-        // ditto, for profiles
-        private class DummyProfileService : IProfileService
-        {
-            public async Task<ProfileResponseDto?> GetProfileByIdAsync(Guid profileId)
-            {
-                var _ = profileId;
-                return null;
-            }
-
-            public async Task<ProfileResponseDto?> GetProfileByUserIdAsync(Guid userId)
-            {
-                var _ = userId;
-                return null;
-            }
-
-            public async Task<ProfileResponseDto> CreateProfileAsync(Guid userId, CreateProfileDto dto)
-            {
-                var _ = userId;
-                var __ = dto;
-
-                return null;
-            }
-
-            public async Task<ProfileResponseDto> UpdateProfileAsync(Guid userId, UpdateProfileDto dto)
-            {
-                var _ = userId;
-                var __ = dto;
-
-                return null;
-            }
-
-            public async Task<bool> DeleteProfileAsync(Guid userId)
-            {
-                var _ = userId;
-
-                return false;
-            }
-
-            public void DeleteProfile(Guid userId)
-            {
-                var _ = userId;
-            }
-
-            public async Task<bool> ProfileExistsAsync(Guid userId)
-            {
-                var _ = userId;
-
-                return false;
-            }
-        }
-
-        private class DummyChatroomService : IChatroomService
-        {
-            public async Task<ChatroomDto?> GetChatroomByIdAsync(Guid chatroomId)
-            {
-                var _ = chatroomId;
-
-                return null;
-            }
-
-            public async Task<List<ChatroomDto>> GetUserChatroomsAsync(Guid userId)
-            {
-                var _ = userId;
-
-                return null;
-            }
-
-            public async Task<ChatroomDto> CreateChatroomAsync(CreateChatroomDto dto)
-            {
-                var _ = dto;
-
-                return null;
-            }
-
-            public async Task<ChatroomDto?> GetOrCreateChatroomAsync(Guid sellerId, Guid buyerId, Guid? listingId = null)
-            {
-                var _ = sellerId;
-                var __ = buyerId;
-
-                return null;
-            }
-
-            public async Task<ChatroomDto> CloseDealAsync(Guid chatroomId, Guid sellerId, int? stars = null, string? description = null)
-            {
-                var _ = chatroomId;
-                var __ = sellerId;
-
-                return null;
-            }
-
-            public async Task<ChatroomDto> RequestCloseDealAsync(Guid chatroomId, Guid userId)
-            {
-                var _ = chatroomId;
-                var __ = userId;
-
-                return null;
-            }
-
-            public async Task<ChatroomDto> RespondToCloseDealAsync(Guid chatroomId, Guid userId, bool accept)
-            {
-                var _ = chatroomId;
-                var __ = userId;
-                var ___ = accept;
-
-                return null;
-            }
-
-            public async Task<List<ChatroomDto>> GetChatroomsByListingAsync(Guid listingId)
-            {
-                var _ = listingId;
-
-                return null;
-            }
-
-            public async Task<ChatroomDto> SubmitRatingAsync(Guid chatroomId, Guid reviewerId, int stars, string? description = null)
-            {
-                var _ = chatroomId;
-                var __ = reviewerId;
-                var ___ = stars;
-
-                return null;
-            }
-
-            public async Task<bool> UserBelongsToChatroomAsync(Guid userId, Guid chatroomId)
-            {
-                var _ = userId;
-                var __ = chatroomId;
-
-                return false;
-            }
-
-            public async Task DeleteChatroomAsync(Guid chatroomId)
-            {
-                var _ = chatroomId;
-
-                return;
-            }
-
-            public void DeleteAllFromUser(Guid targetId)
-            {
-                var _ = targetId;
-
-                return;
             }
         }
     }
