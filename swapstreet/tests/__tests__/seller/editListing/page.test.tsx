@@ -243,6 +243,63 @@ describe("EditListingPage", () => {
     );
   });
 
+  it("shows error when deleting existing image fails", async () => {
+    const user = userEvent.setup();
+    global.fetch = jest.fn((url: string, options?: RequestInit) => {
+      if (url.includes("/search/listing/listing-1")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockListing,
+        } as Response);
+      }
+
+      if (
+        url.includes("/listings/listing-1/images/") &&
+        options?.method === "DELETE"
+      ) {
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          text: async () => "Delete failed",
+        } as Response);
+      }
+
+      return Promise.reject(new Error(`Unmocked URL: ${url}`));
+    }) as jest.Mock;
+
+    await renderLoaded();
+
+    const removeButtons = screen.getAllByRole("button", { name: "Remove" });
+    await user.click(removeButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText("Delete failed")).toBeInTheDocument();
+    });
+  });
+
+  it("shows missing-context error when auth token disappears before remove", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<EditListingPage />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Blue Jacket")).toBeInTheDocument();
+    });
+
+    authToken = null;
+    rerender(<EditListingPage />);
+
+    const removeButtons = screen.getAllByRole("button", { name: "Remove" });
+    await user.click(removeButtons[0]);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Unable to delete image: missing listing or authentication context.",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
   it("uploads pending image before PUT", async () => {
     const user = userEvent.setup();
     const calls: string[] = [];
