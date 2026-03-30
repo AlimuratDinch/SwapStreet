@@ -126,7 +126,10 @@ describe("ManageListingsPage", () => {
   it("shows listings API error message", async () => {
     global.fetch = jest.fn((url: string) => {
       if (url.includes("/profile/me")) {
-        return Promise.resolve({ ok: true, json: async () => mockProfile } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockProfile,
+        } as Response);
       }
       if (url.includes("/search/search")) {
         return Promise.resolve({ ok: false, status: 503 } as Response);
@@ -144,10 +147,16 @@ describe("ManageListingsPage", () => {
   it("shows empty state when no listings exist", async () => {
     global.fetch = jest.fn((url: string) => {
       if (url.includes("/profile/me")) {
-        return Promise.resolve({ ok: true, json: async () => mockProfile } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockProfile,
+        } as Response);
       }
       if (url.includes("/search/search")) {
-        return Promise.resolve({ ok: true, json: async () => ({ items: [] }) } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ items: [] }),
+        } as Response);
       }
       return Promise.reject(new Error("Unmocked"));
     }) as jest.Mock;
@@ -172,7 +181,9 @@ describe("ManageListingsPage", () => {
     const user = userEvent.setup();
     render(<ManageListingsPage />);
 
-    await waitFor(() => expect(screen.getByText("Blue Jacket")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Blue Jacket")).toBeInTheDocument(),
+    );
 
     const editButton = screen.getAllByTitle("Edit listing")[0];
     await user.click(editButton);
@@ -184,25 +195,35 @@ describe("ManageListingsPage", () => {
     const user = userEvent.setup();
     render(<ManageListingsPage />);
 
-    await waitFor(() => expect(screen.getByText("Blue Jacket")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Blue Jacket")).toBeInTheDocument(),
+    );
 
     await user.click(screen.getAllByTitle("Delete listing")[0]);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Confirm Delete/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Cancel" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Confirm Delete/i }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(screen.queryByRole("button", { name: /Confirm Delete/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Confirm Delete/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("deletes listing successfully", async () => {
     const user = userEvent.setup();
     render(<ManageListingsPage />);
 
-    await waitFor(() => expect(screen.getByText("Blue Jacket")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Blue Jacket")).toBeInTheDocument(),
+    );
 
     await user.click(screen.getAllByTitle("Delete listing")[0]);
     await user.click(screen.getByRole("button", { name: /Confirm Delete/i }));
@@ -217,10 +238,16 @@ describe("ManageListingsPage", () => {
 
     global.fetch = jest.fn((url: string, options?: RequestInit) => {
       if (url.includes("/profile/me")) {
-        return Promise.resolve({ ok: true, json: async () => mockProfile } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockProfile,
+        } as Response);
       }
       if (url.includes("/search/search")) {
-        return Promise.resolve({ ok: true, json: async () => ({ items: mockItems }) } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ items: mockItems }),
+        } as Response);
       }
       if (url.includes("/listings/") && options?.method === "DELETE") {
         return Promise.resolve({
@@ -234,7 +261,9 @@ describe("ManageListingsPage", () => {
 
     render(<ManageListingsPage />);
 
-    await waitFor(() => expect(screen.getByText("Blue Jacket")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Blue Jacket")).toBeInTheDocument(),
+    );
 
     await user.click(screen.getAllByTitle("Delete listing")[0]);
     await user.click(screen.getByRole("button", { name: /Confirm Delete/i }));
@@ -249,10 +278,16 @@ describe("ManageListingsPage", () => {
 
     global.fetch = jest.fn((url: string, options?: RequestInit) => {
       if (url.includes("/profile/me")) {
-        return Promise.resolve({ ok: true, json: async () => mockProfile } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockProfile,
+        } as Response);
       }
       if (url.includes("/search/search")) {
-        return Promise.resolve({ ok: true, json: async () => ({ items: mockItems }) } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ items: mockItems }),
+        } as Response);
       }
       if (url.includes("/listings/") && options?.method === "DELETE") {
         return Promise.reject("fail");
@@ -262,7 +297,9 @@ describe("ManageListingsPage", () => {
 
     render(<ManageListingsPage />);
 
-    await waitFor(() => expect(screen.getByText("Blue Jacket")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Blue Jacket")).toBeInTheDocument(),
+    );
 
     await user.click(screen.getAllByTitle("Delete listing")[0]);
     await user.click(screen.getByRole("button", { name: /Confirm Delete/i }));
@@ -278,10 +315,16 @@ describe("ManageListingsPage", () => {
 
     global.fetch = jest.fn((url: string, options?: RequestInit) => {
       if (url.includes("/profile/me")) {
-        return Promise.resolve({ ok: true, json: async () => mockProfile } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockProfile,
+        } as Response);
       }
       if (url.includes("/search/search")) {
-        return Promise.resolve({ ok: true, json: async () => ({ items: mockItems }) } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ items: mockItems }),
+        } as Response);
       }
       if (url.includes("/listings/") && options?.method === "DELETE") {
         return new Promise((resolve) => {
@@ -293,7 +336,9 @@ describe("ManageListingsPage", () => {
 
     render(<ManageListingsPage />);
 
-    await waitFor(() => expect(screen.getByText("Blue Jacket")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Blue Jacket")).toBeInTheDocument(),
+    );
 
     await user.click(screen.getAllByTitle("Delete listing")[0]);
     await user.click(screen.getByRole("button", { name: /Confirm Delete/i }));
@@ -311,12 +356,17 @@ describe("ManageListingsPage", () => {
   it("renders listing without image branch", async () => {
     global.fetch = jest.fn((url: string) => {
       if (url.includes("/profile/me")) {
-        return Promise.resolve({ ok: true, json: async () => mockProfile } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockProfile,
+        } as Response);
       }
       if (url.includes("/search/search")) {
         return Promise.resolve({
           ok: true,
-          json: async () => ({ items: [{ id: "a", title: "No Image", price: 9, images: [] }] }),
+          json: async () => ({
+            items: [{ id: "a", title: "No Image", price: 9, images: [] }],
+          }),
         } as Response);
       }
       return Promise.reject(new Error("Unmocked"));

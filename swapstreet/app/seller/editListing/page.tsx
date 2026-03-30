@@ -265,8 +265,7 @@ export default function EditListingPage() {
 
       router.push("/seller/manageListings");
     } catch (err) {
-      const errorMsg =
-        err instanceof Error ? err.message : "An error occurred";
+      const errorMsg = err instanceof Error ? err.message : "An error occurred";
       setError(errorMsg);
       console.error(err);
     } finally {
@@ -348,7 +347,9 @@ export default function EditListingPage() {
                 step="0.01"
                 min="0"
                 value={price ?? ""}
-                onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) =>
+                  setPrice(e.target.value ? Number(e.target.value) : null)
+                }
                 placeholder="0.00"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
@@ -421,9 +422,7 @@ export default function EditListingPage() {
                 <label htmlFor="image-upload" className="cursor-pointer">
                   <div className="text-gray-600">
                     <p className="font-medium">Click to upload images</p>
-                    <p className="text-sm text-gray-500">
-                      or drag and drop
-                    </p>
+                    <p className="text-sm text-gray-500">or drag and drop</p>
                   </div>
                 </label>
               </div>

@@ -51,7 +51,7 @@ export default function ManageListingsPage() {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
-          }
+          },
         );
 
         if (!listingsRes.ok) {
@@ -64,7 +64,7 @@ export default function ManageListingsPage() {
       } catch (err) {
         console.error("Error fetching listings:", err);
         setError(
-          err instanceof Error ? err.message : "Failed to load listings"
+          err instanceof Error ? err.message : "Failed to load listings",
         );
       } finally {
         setIsLoading(false);
@@ -88,7 +88,9 @@ export default function ManageListingsPage() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText || `Failed to delete listing (${res.status})`);
+        throw new Error(
+          errorText || `Failed to delete listing (${res.status})`,
+        );
       }
 
       setListings((prev) => prev.filter((l) => l.id !== listingId));
@@ -96,9 +98,7 @@ export default function ManageListingsPage() {
       setError("");
     } catch (err) {
       console.error("Delete error:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to delete listing"
-      );
+      setError(err instanceof Error ? err.message : "Failed to delete listing");
     } finally {
       setIsDeleting(false);
     }
@@ -160,7 +160,9 @@ export default function ManageListingsPage() {
                     <h3 className="font-semibold text-gray-900">
                       {listing.title}
                     </h3>
-                    <p className="text-teal-600 font-medium">${listing.price}</p>
+                    <p className="text-teal-600 font-medium">
+                      ${listing.price}
+                    </p>
                   </div>
 
                   {/* Actions */}

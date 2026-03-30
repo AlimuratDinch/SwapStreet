@@ -66,14 +66,22 @@ const stubFetch = ({
     if (url.includes("/images/upload") && options?.method === "POST") {
       return uploadOk
         ? Promise.resolve({ ok: true, status: 200 } as Response)
-        : Promise.resolve({ ok: false, status: 400, text: async () => uploadText } as Response);
+        : Promise.resolve({
+            ok: false,
+            status: 400,
+            text: async () => uploadText,
+          } as Response);
     }
 
     if (url.includes("/listings/listing-1") && options?.method === "PUT") {
       if (onPut) onPut(options);
       return putOk
         ? Promise.resolve({ ok: true, status: 204 } as Response)
-        : Promise.resolve({ ok: false, status: 500, text: async () => putText } as Response);
+        : Promise.resolve({
+            ok: false,
+            status: 500,
+            text: async () => putText,
+          } as Response);
     }
 
     return Promise.reject(new Error(`Unmocked URL: ${url}`));
@@ -82,7 +90,9 @@ const stubFetch = ({
 
 const renderLoaded = async () => {
   render(<EditListingPage />);
-  await waitFor(() => expect(screen.getByDisplayValue("Blue Jacket")).toBeInTheDocument());
+  await waitFor(() =>
+    expect(screen.getByDisplayValue("Blue Jacket")).toBeInTheDocument(),
+  );
 };
 
 const clickSave = async (user = userEvent.setup()) => {
@@ -119,7 +129,9 @@ describe("EditListingPage", () => {
   it("shows load error when listing fetch fails", async () => {
     stubFetch({ listingOk: false });
     render(<EditListingPage />);
-    await waitFor(() => expect(screen.getByText("Could not load listing")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Could not load listing")).toBeInTheDocument(),
+    );
   });
 
   it("navigates via Back and Cancel", async () => {
@@ -135,31 +147,54 @@ describe("EditListingPage", () => {
     await renderLoaded();
 
     const title = screen.getByDisplayValue("Blue Jacket") as HTMLInputElement;
-    const description = screen.getByDisplayValue("A nice blue jacket") as HTMLTextAreaElement;
+    const description = screen.getByDisplayValue(
+      "A nice blue jacket",
+    ) as HTMLTextAreaElement;
     const price = screen.getByDisplayValue("29.99") as HTMLInputElement;
 
     await user.clear(title);
     await clickSave(user);
-    await waitFor(() => expect(screen.getByText("Please enter a title.")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Please enter a title.")).toBeInTheDocument(),
+    );
 
     await user.type(title, "Updated title");
     await user.clear(description);
     await clickSave(user);
-    await waitFor(() => expect(screen.getByText("Please enter a description.")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        screen.getByText("Please enter a description."),
+      ).toBeInTheDocument(),
+    );
 
     await user.type(description, "Updated description");
     await user.clear(price);
     await user.type(price, "0");
     await clickSave(user);
-    await waitFor(() => expect(screen.getByText("Please enter a valid price.")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        screen.getByText("Please enter a valid price."),
+      ).toBeInTheDocument(),
+    );
   });
 
   it("validates category first when enum fields are empty", async () => {
     const user = userEvent.setup();
-    stubFetch({ listing: { ...mockListing, category: "", brand: "", condition: "", size: "", colour: "" } });
+    stubFetch({
+      listing: {
+        ...mockListing,
+        category: "",
+        brand: "",
+        condition: "",
+        size: "",
+        colour: "",
+      },
+    });
     await renderLoaded();
     await clickSave(user);
-    await waitFor(() => expect(screen.getByText("Please select a category.")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Please select a category.")).toBeInTheDocument(),
+    );
   });
 
   it("validates remaining enum branches", async () => {
@@ -172,11 +207,17 @@ describe("EditListingPage", () => {
     ] as const;
 
     for (const scenario of scenarios) {
-      stubFetch({ listing: { ...mockListing, [scenario.key]: "" } as typeof mockListing });
+      stubFetch({
+        listing: { ...mockListing, [scenario.key]: "" } as typeof mockListing,
+      });
       const { unmount } = render(<EditListingPage />);
-      await waitFor(() => expect(screen.getByDisplayValue("Blue Jacket")).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByDisplayValue("Blue Jacket")).toBeInTheDocument(),
+      );
       await clickSave(user);
-      await waitFor(() => expect(screen.getByText(scenario.message)).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText(scenario.message)).toBeInTheDocument(),
+      );
       unmount();
     }
   });
@@ -192,7 +233,9 @@ describe("EditListingPage", () => {
 
     await clickSave(user);
     await waitFor(() =>
-      expect(screen.getByText("Please keep at least one image or upload new ones.")).toBeInTheDocument()
+      expect(
+        screen.getByText("Please keep at least one image or upload new ones."),
+      ).toBeInTheDocument(),
     );
   });
 
@@ -203,7 +246,10 @@ describe("EditListingPage", () => {
     global.fetch = jest.fn((url: string, options?: RequestInit) => {
       calls.push(`${options?.method || "GET"}:${url}`);
       if (url.includes("/search/listing/listing-1")) {
-        return Promise.resolve({ ok: true, json: async () => mockListing } as Response);
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockListing,
+        } as Response);
       }
       if (url.includes("/images/upload") && options?.method === "POST") {
         return Promise.resolve({ ok: true, status: 200 } as Response);
@@ -216,12 +262,19 @@ describe("EditListingPage", () => {
 
     await renderLoaded();
     const input = document.getElementById("image-upload") as HTMLInputElement;
-    await user.upload(input, new File(["img"], "new.png", { type: "image/png" }));
+    await user.upload(
+      input,
+      new File(["img"], "new.png", { type: "image/png" }),
+    );
     await clickSave(user);
 
     await waitFor(() => {
-      const uploadIndex = calls.findIndex((c) => c.includes("POST:") && c.includes("/images/upload"));
-      const putIndex = calls.findIndex((c) => c.includes("PUT:") && c.includes("/listings/listing-1"));
+      const uploadIndex = calls.findIndex(
+        (c) => c.includes("POST:") && c.includes("/images/upload"),
+      );
+      const putIndex = calls.findIndex(
+        (c) => c.includes("PUT:") && c.includes("/listings/listing-1"),
+      );
       expect(uploadIndex).toBeGreaterThanOrEqual(0);
       expect(putIndex).toBeGreaterThan(uploadIndex);
     });
@@ -233,10 +286,15 @@ describe("EditListingPage", () => {
     await renderLoaded();
 
     const input = document.getElementById("image-upload") as HTMLInputElement;
-    await user.upload(input, new File(["img"], "bad.png", { type: "image/png" }));
+    await user.upload(
+      input,
+      new File(["img"], "bad.png", { type: "image/png" }),
+    );
     await clickSave(user);
 
-    await waitFor(() => expect(screen.getByText("Image upload failed")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Image upload failed")).toBeInTheDocument(),
+    );
   });
 
   it("shows too-many-images error and revokes object URL", async () => {
@@ -244,16 +302,24 @@ describe("EditListingPage", () => {
     stubFetch({
       listing: {
         ...mockListing,
-        images: Array.from({ length: 5 }, (_, i) => ({ id: `img-${i}`, imageUrl: `https://x/${i}.jpg` })),
+        images: Array.from({ length: 5 }, (_, i) => ({
+          id: `img-${i}`,
+          imageUrl: `https://x/${i}.jpg`,
+        })),
       },
     });
 
     await renderLoaded();
     const input = document.getElementById("image-upload") as HTMLInputElement;
-    await user.upload(input, new File(["img"], "over.png", { type: "image/png" }));
+    await user.upload(
+      input,
+      new File(["img"], "over.png", { type: "image/png" }),
+    );
 
     await waitFor(() => {
-      expect(screen.getByText("You can upload a maximum of 5 images total.")).toBeInTheDocument();
+      expect(
+        screen.getByText("You can upload a maximum of 5 images total."),
+      ).toBeInTheDocument();
       expect(URL.revokeObjectURL).toHaveBeenCalled();
     });
   });
@@ -263,8 +329,13 @@ describe("EditListingPage", () => {
     await renderLoaded();
 
     const input = document.getElementById("image-upload") as HTMLInputElement;
-    await user.upload(input, new File(["img"], "preview.png", { type: "image/png" }));
-    await waitFor(() => expect(screen.getByAltText("Preview")).toBeInTheDocument());
+    await user.upload(
+      input,
+      new File(["img"], "preview.png", { type: "image/png" }),
+    );
+    await waitFor(() =>
+      expect(screen.getByAltText("Preview")).toBeInTheDocument(),
+    );
 
     const removePending = screen
       .getAllByRole("button", { name: "Remove" })
@@ -282,7 +353,9 @@ describe("EditListingPage", () => {
   it("submits valid payload and redirects", async () => {
     const user = userEvent.setup();
     let capturedBody = "";
-    stubFetch({ onPut: (options) => (capturedBody = String(options?.body || "")) });
+    stubFetch({
+      onPut: (options) => (capturedBody = String(options?.body || "")),
+    });
 
     await renderLoaded();
     const title = screen.getByDisplayValue("Blue Jacket") as HTMLInputElement;
@@ -301,7 +374,9 @@ describe("EditListingPage", () => {
     stubFetch({ putOk: false, putText: "Failed to update listing" });
     await renderLoaded();
     await clickSave(user);
-    await waitFor(() => expect(screen.getByText("Failed to update listing")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Failed to update listing")).toBeInTheDocument(),
+    );
   });
 
   it("updates all select controls on change", async () => {
@@ -319,6 +394,8 @@ describe("EditListingPage", () => {
     authToken = null;
     searchParamsValue = new URLSearchParams("");
     render(<EditListingPage />);
-    await waitFor(() => expect(screen.getByText("Loading listing...")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Loading listing...")).toBeInTheDocument(),
+    );
   });
 });
