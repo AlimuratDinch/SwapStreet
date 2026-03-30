@@ -139,6 +139,34 @@ namespace backend.Hubs
             }
         }
 
+        /// <summary>
+        /// Mark all unread messages in a chatroom as read by the current user
+        /// </summary>
+        public async Task MarkAsRead(Guid chatroomId)
+        {
+            try
+            {
+                var userId = GetUserId();
+
+                var belongsToChatroom = await _chatroomService.UserBelongsToChatroomAsync(userId, chatroomId);
+                if (!belongsToChatroom)
+                {
+                    await Clients.Caller.SendAsync("Error", "You do not have access to this chatroom");
+                    return;
+                }
+
+                var result = await _chatService.MarkMessagesAsReadAsync(chatroomId, userId);
+
+                // Notify everyone in the room (so the sender sees the read receipt)
+                var groupName = GetGroupName(chatroomId);
+                await Clients.Group(groupName).SendAsync("MessagesRead", result);
+            }
+            catch (Exception ex)
+            {
+                await Clients.Caller.SendAsync("Error", ex.Message);
+            }
+        }
+
         private static string GetGroupName(Guid chatroomId)
         {
             return $"chatroom-{chatroomId}";

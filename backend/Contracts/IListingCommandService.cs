@@ -7,4 +7,6 @@ public interface IListingCommandService
     Task<Guid> CreateListingAsync(CreateListingRequestDto request, CancellationToken cancellationToken = default);
     Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default);
     Task DeleteAllFromUserAsync(Guid targetId);
+    Task UpdateListingAsync(Guid listingId, Guid profileId, UpdateListingRequestDto request, CancellationToken cancellationToken = default);
+    Task DeleteListingImageAsync(Guid listingId, Guid imageId, Guid profileId, CancellationToken cancellationToken = default);
 }

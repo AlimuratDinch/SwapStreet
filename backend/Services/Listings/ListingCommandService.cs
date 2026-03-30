@@ -240,6 +240,63 @@ namespace backend.Services
                 // throw an exception.
             }
         }
+        public async Task DeleteListingImageAsync(Guid listingId, Guid imageId, Guid profileId, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation(
+                "Deleting image {ImageId} from listing {ListingId} for ProfileId {ProfileId}",
+                imageId,
+                listingId,
+                profileId);
+
+            var listing = await _context.Listings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId, cancellationToken);
+
+            if (listing == null)
+            {
+                throw new ArgumentException($"Listing {listingId} not found or does not belong to this profile");
+            }
+
+            var listingImage = await _context.ListingImages
+                .FirstOrDefaultAsync(li => li.Id == imageId && li.ListingId == listingId, cancellationToken);
+
+            if (listingImage == null)
+            {
+                throw new ArgumentException($"Image {imageId} not found for listing {listingId}");
+            }
+
+            var imagePath = listingImage.ImagePath;
+
+            var isRetainedByChatroom = await _context.Chatrooms
+                .AsNoTracking()
+                .AnyAsync(
+                    c => c.ListingId == listingId && c.ListingImageSnapshotPath == imagePath,
+                    cancellationToken);
+
+            if (!isRetainedByChatroom && !string.IsNullOrWhiteSpace(imagePath))
+            {
+                if (_fileStorageService == null)
+                {
+                    throw new InvalidOperationException("File storage service not available for listing image deletion.");
+                }
+
+                var failedDeletes = await _fileStorageService.DeleteFilesAsync(
+                    UploadType.Listing,
+                    new[] { imagePath },
+                    cancellationToken);
+
+                if (failedDeletes.Count != 0)
+                {
+                    throw new InvalidOperationException($"Failed to delete image file for listing image {imageId}");
+                }
+            }
+
+            _context.ListingImages.Remove(listingImage);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Deleted image {ImageId} from listing {ListingId}", imageId, listingId);
+        }
+
 
         // Method to add log to queue to be handled by workers
         private async Task AppendToListingLog(Guid listingID, ListingSearchDto searchData, ListingAction action)
@@ -270,6 +327,66 @@ namespace backend.Services
             {
                 // missing retry logic 
                 _logger.LogError(ex, "Failed to append listing task to log for {ListingId}", listingID);
+            }
+        }
+
+        public async Task UpdateListingAsync(Guid listingId, Guid profileId, UpdateListingRequestDto request, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Updating listing {ListingId} for ProfileId {ProfileId}", listingId, profileId);
+
+            // 1. Validate listing exists && belongs to profile
+            var listing = await _context.Listings
+                .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId, cancellationToken);
+
+            if (listing == null)
+            {
+                _logger.LogWarning("Listing {ListingId} not found or does not belong to ProfileId {ProfileId}", listingId, profileId);
+                throw new ArgumentException($"Listing {listingId} not found or does not belong to this profile");
+            }
+
+            // 2. Update listing
+            listing.Title = request.Title;
+            listing.Description = request.Description;
+            listing.Price = request.Price;
+            listing.Category = request.Category;
+            listing.Brand = request.Brand;
+            listing.Condition = request.Condition;
+            listing.Size = request.Size;
+            listing.Colour = request.Colour;
+            listing.UpdatedAt = DateTime.UtcNow;
+
+            // 3. Save
+            _context.Listings.Update(listing);
+            await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Updated listing {ListingId} in database", listingId);
+
+            // 4. Meilisearch
+            try
+            {
+                var latlong = await _locationService.getLatLongFromFSAAsync(listing.FSA);
+
+                var searchDoc = new ListingSearchDto
+                {
+                    Id = listing.Id.ToString(),
+                    Title = listing.Title,
+                    Description = listing.Description,
+                    Price = listing.Price,
+                    Size = listing.Size,
+                    Brand = listing.Brand,
+                    Category = listing.Category,
+                    Condition = listing.Condition,
+                    Colour = listing.Colour,
+                    FSA = listing.FSA,
+                    CreatedAtTimestamp = new DateTimeOffset(listing.CreatedAt).ToUnixTimeSeconds(),
+                    _geo = latlong
+                };
+
+                await AppendToListingLog(listing.Id, searchDoc, ListingAction.Update);
+                _logger.LogInformation("Appended Update listing {ListingId} log to LogQueue", listing.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to sync listing {ListingId} update to Meilisearch", listing.Id);
             }
         }
 
