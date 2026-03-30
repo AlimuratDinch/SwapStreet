@@ -260,5 +260,65 @@ namespace backend.Services
             }
         }
 
+        public async Task UpdateListingAsync(Guid listingId, Guid profileId, UpdateListingRequestDto request, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Updating listing {ListingId} for ProfileId {ProfileId}", listingId, profileId);
+
+            // 1. Validate listing exists && belongs to profile
+            var listing = await _context.Listings
+                .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId, cancellationToken);
+            
+            if (listing == null)
+            {
+                _logger.LogWarning("Listing {ListingId} not found or does not belong to ProfileId {ProfileId}", listingId, profileId);
+                throw new ArgumentException($"Listing {listingId} not found or does not belong to this profile");
+            }
+
+            // 2. Update listing
+            listing.Title = request.Title;
+            listing.Description = request.Description;
+            listing.Price = request.Price;
+            listing.Category = request.Category;
+            listing.Brand = request.Brand;
+            listing.Condition = request.Condition;
+            listing.Size = request.Size;
+            listing.Colour = request.Colour;
+            listing.UpdatedAt = DateTime.UtcNow;
+
+            // 3. Save
+            _context.Listings.Update(listing);
+            await _context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Updated listing {ListingId} in database", listingId);
+
+            // 4. Meilisearch
+            try
+            {
+                var latlong = await _locationService.getLatLongFromFSAAsync(listing.FSA);
+
+                var searchDoc = new ListingSearchDto
+                {
+                    Id = listing.Id.ToString(),
+                    Title = listing.Title,
+                    Description = listing.Description,
+                    Price = listing.Price,
+                    Size = listing.Size,
+                    Brand = listing.Brand,
+                    Category = listing.Category,
+                    Condition = listing.Condition,
+                    Colour = listing.Colour,
+                    FSA = listing.FSA,
+                    CreatedAtTimestamp = new DateTimeOffset(listing.CreatedAt).ToUnixTimeSeconds(),
+                    _geo = latlong
+                };
+
+                await AppendToListingLog(listing.Id, searchDoc, ListingAction.Update);
+                _logger.LogInformation("Appended Update listing {ListingId} log to LogQueue", listing.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to sync listing {ListingId} update to Meilisearch", listing.Id);
+            }
+        }
+
     }
 }

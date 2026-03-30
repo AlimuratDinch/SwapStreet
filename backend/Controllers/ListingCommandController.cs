@@ -147,5 +147,75 @@ namespace backend.Controllers
                 return StatusCode(500, new { Error = "An error occurred while creating the listing" });
             }
         }
+
+        /// <summary>
+        /// Update existing listing
+        /// </summary>
+        /// <param name="listingId">The ID of listing to update</param>
+        /// <param name="dto">listing update request</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>No content on success</returns>
+        [Authorize]
+        [HttpPut("{listingId}")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> Update(
+            Guid listingId,
+            [FromBody] UpdateListingRequestDto dto,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug(
+                "Attempting to update listing with ID {ListingId}: Title={Title}, Price={Price}",
+                listingId,
+                dto?.Title,
+                dto?.Price);
+
+            if (dto == null)
+            {
+                return BadRequest(new { Error = "Request body is required" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .SelectMany(x => x.Value!.Errors.Select(e => $"{x.Key}: {e.ErrorMessage}"))
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for UpdateListing: {Errors}", string.Join(", ", errors));
+                return BadRequest(new { Error = "Validation failed", Details = errors });
+            }
+
+            try
+            {
+                // Get profile ID from the authenticated user
+                var profileIdClaim = User.FindFirst("ProfileId")?.Value;
+                if (string.IsNullOrEmpty(profileIdClaim))
+                {
+                    _logger.LogWarning("Profile ID not found in claims for user updating listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Profile ID not found in claims" });
+                }
+
+                if (!Guid.TryParse(profileIdClaim, out var profileId))
+                {
+                    _logger.LogWarning("Invalid Profile ID format in claims for user updating listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Invalid Profile ID format" });
+                }
+
+                await _listingCommandService.UpdateListingAsync(listingId, profileId, dto, cancellationToken);
+
+                _logger.LogInformation("Successfully updated listing with ID {ListingId}", listingId);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Failed to update listing with ID {ListingId}: {Message}", listingId, ex.Message);
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating listing with ID {ListingId}: {Message}", listingId, ex.Message);
+                return StatusCode(500, new { Error = "An error occurred while updating the listing. Please try again." });
+            }
+        }
     }
 }

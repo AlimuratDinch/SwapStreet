@@ -44,7 +44,8 @@ namespace backend.Services.Auth
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("username", user.Username ?? ""),
                 new Claim("isAdmin", user.IsAdmin.ToString()),
-                new Claim("isEmailConfirmed", user.IsEmailConfirmed.ToString())
+                new Claim("isEmailConfirmed", user.IsEmailConfirmed.ToString()),
+                new Claim("ProfileId", user.Id.ToString())
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor
