@@ -50,6 +50,12 @@ namespace backend.Tests.Services
 
         public Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
+
+        public Task UpdateListingAsync(Guid listingId, Guid profileId, UpdateListingRequestDto request, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task DeleteListingImageAsync(Guid listingId, Guid imageId, Guid profileId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 
     public class ChatServiceTests : IDisposable

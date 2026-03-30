@@ -69,6 +69,54 @@ namespace backend.Controllers
         }
 
         /// <summary>
+        /// Delete a single image from a listing
+        /// </summary>
+        /// <param name="listingId">listing ID</param>
+        /// <param name="imageId">image ID</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>No content on success</returns>
+        [Authorize]
+        [HttpDelete("{listingId}/images/{imageId}")]
+        public async Task<IActionResult> DeleteImage(
+            Guid listingId,
+            Guid imageId,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug("Attempting to delete image {ImageId} from listing {ListingId}", imageId, listingId);
+
+            try
+            {
+                var profileIdClaim = User.FindFirst("ProfileId")?.Value;
+                if (string.IsNullOrEmpty(profileIdClaim))
+                {
+                    _logger.LogWarning("Profile ID not found in claims for image delete on listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Profile ID not found in claims" });
+                }
+
+                if (!Guid.TryParse(profileIdClaim, out var profileId))
+                {
+                    _logger.LogWarning("Invalid Profile ID format in claims for image delete on listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Invalid Profile ID format" });
+                }
+
+                await _listingCommandService.DeleteListingImageAsync(listingId, imageId, profileId, cancellationToken);
+
+                _logger.LogInformation("Successfully deleted image {ImageId} from listing {ListingId}", imageId, listingId);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete image {ImageId} from listing {ListingId}: {Message}", imageId, listingId, ex.Message);
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting image {ImageId} from listing {ListingId}: {Message}", imageId, listingId, ex.Message);
+                return StatusCode(500, new { Error = "An error occurred while deleting the image. Please try again." });
+            }
+        }
+
+        /// <summary>
         /// Create a new listing with optional images
         /// </summary>
         /// <param name="dto">The listing creation request with optional images</param>
@@ -145,6 +193,76 @@ namespace backend.Controllers
             {
                 _logger.LogError(ex, "Error creating listing: {Message}", ex.Message);
                 return StatusCode(500, new { Error = "An error occurred while creating the listing" });
+            }
+        }
+
+        /// <summary>
+        /// Update existing listing
+        /// </summary>
+        /// <param name="listingId">The ID of listing to update</param>
+        /// <param name="dto">listing update request</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>No content on success</returns>
+        [Authorize]
+        [HttpPut("{listingId}")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> Update(
+            Guid listingId,
+            [FromBody] UpdateListingRequestDto dto,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug(
+                "Attempting to update listing with ID {ListingId}: Title={Title}, Price={Price}",
+                listingId,
+                dto?.Title,
+                dto?.Price);
+
+            if (dto == null)
+            {
+                return BadRequest(new { Error = "Request body is required" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .SelectMany(x => x.Value!.Errors.Select(e => $"{x.Key}: {e.ErrorMessage}"))
+                    .ToList();
+
+                _logger.LogWarning("Validation failed for UpdateListing: {Errors}", string.Join(", ", errors));
+                return BadRequest(new { Error = "Validation failed", Details = errors });
+            }
+
+            try
+            {
+                // Get profile ID from the authenticated user
+                var profileIdClaim = User.FindFirst("ProfileId")?.Value;
+                if (string.IsNullOrEmpty(profileIdClaim))
+                {
+                    _logger.LogWarning("Profile ID not found in claims for user updating listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Profile ID not found in claims" });
+                }
+
+                if (!Guid.TryParse(profileIdClaim, out var profileId))
+                {
+                    _logger.LogWarning("Invalid Profile ID format in claims for user updating listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Invalid Profile ID format" });
+                }
+
+                await _listingCommandService.UpdateListingAsync(listingId, profileId, dto, cancellationToken);
+
+                _logger.LogInformation("Successfully updated listing with ID {ListingId}", listingId);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Failed to update listing with ID {ListingId}: {Message}", listingId, ex.Message);
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating listing with ID {ListingId}: {Message}", listingId, ex.Message);
+                return StatusCode(500, new { Error = "An error occurred while updating the listing. Please try again." });
             }
         }
     }
