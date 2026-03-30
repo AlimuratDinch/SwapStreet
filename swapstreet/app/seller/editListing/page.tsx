@@ -163,8 +163,31 @@ export default function EditListingPage() {
     setPendingImages((prev) => [...prev, ...additions]);
   };
 
-  const removeExistingImage = (id: string) => {
-    setExistingImages((prev) => prev.filter((img) => img.id !== id));
+  const removeExistingImage = async (id: string) => {
+    if (!listingId || !accessToken) {
+      setError("Unable to delete image: missing listing or authentication context.");
+      return;
+    }
+
+    setError("");
+    try {
+      const res = await fetch(`${API_URL}/listings/${listingId}/images/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to delete image");
+      }
+
+      setExistingImages((prev) => prev.filter((img) => img.id !== id));
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to delete image";
+      setError(errorMsg);
+    }
   };
 
   const removePendingImage = (id: string) => {
@@ -394,7 +417,9 @@ export default function EditListingPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => removeExistingImage(img.id)}
+                        onClick={() => {
+                          void removeExistingImage(img.id);
+                        }}
                         className="absolute inset-0 bg-black bg-opacity-50 rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center text-white font-medium transition"
                       >
                         Remove

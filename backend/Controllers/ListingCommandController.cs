@@ -69,6 +69,54 @@ namespace backend.Controllers
         }
 
         /// <summary>
+        /// Delete a single image from a listing
+        /// </summary>
+        /// <param name="listingId">listing ID</param>
+        /// <param name="imageId">image ID</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>No content on success</returns>
+        [Authorize]
+        [HttpDelete("{listingId}/images/{imageId}")]
+        public async Task<IActionResult> DeleteImage(
+            Guid listingId,
+            Guid imageId,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug("Attempting to delete image {ImageId} from listing {ListingId}", imageId, listingId);
+
+            try
+            {
+                var profileIdClaim = User.FindFirst("ProfileId")?.Value;
+                if (string.IsNullOrEmpty(profileIdClaim))
+                {
+                    _logger.LogWarning("Profile ID not found in claims for image delete on listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Profile ID not found in claims" });
+                }
+
+                if (!Guid.TryParse(profileIdClaim, out var profileId))
+                {
+                    _logger.LogWarning("Invalid Profile ID format in claims for image delete on listing {ListingId}", listingId);
+                    return BadRequest(new { Error = "Invalid Profile ID format" });
+                }
+
+                await _listingCommandService.DeleteListingImageAsync(listingId, imageId, profileId, cancellationToken);
+
+                _logger.LogInformation("Successfully deleted image {ImageId} from listing {ListingId}", imageId, listingId);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete image {ImageId} from listing {ListingId}: {Message}", imageId, listingId, ex.Message);
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting image {ImageId} from listing {ListingId}: {Message}", imageId, listingId, ex.Message);
+                return StatusCode(500, new { Error = "An error occurred while deleting the image. Please try again." });
+            }
+        }
+
+        /// <summary>
         /// Create a new listing with optional images
         /// </summary>
         /// <param name="dto">The listing creation request with optional images</param>

@@ -227,6 +227,63 @@ namespace backend.Services
             return listing.Id;
         }
 
+        public async Task DeleteListingImageAsync(Guid listingId, Guid imageId, Guid profileId, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation(
+                "Deleting image {ImageId} from listing {ListingId} for ProfileId {ProfileId}",
+                imageId,
+                listingId,
+                profileId);
+
+            var listing = await _context.Listings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId, cancellationToken);
+
+            if (listing == null)
+            {
+                throw new ArgumentException($"Listing {listingId} not found or does not belong to this profile");
+            }
+
+            var listingImage = await _context.ListingImages
+                .FirstOrDefaultAsync(li => li.Id == imageId && li.ListingId == listingId, cancellationToken);
+
+            if (listingImage == null)
+            {
+                throw new ArgumentException($"Image {imageId} not found for listing {listingId}");
+            }
+
+            var imagePath = listingImage.ImagePath;
+
+            var isRetainedByChatroom = await _context.Chatrooms
+                .AsNoTracking()
+                .AnyAsync(
+                    c => c.ListingId == listingId && c.ListingImageSnapshotPath == imagePath,
+                    cancellationToken);
+
+            if (!isRetainedByChatroom && !string.IsNullOrWhiteSpace(imagePath))
+            {
+                if (_fileStorageService == null)
+                {
+                    throw new InvalidOperationException("File storage service not available for listing image deletion.");
+                }
+
+                var failedDeletes = await _fileStorageService.DeleteFilesAsync(
+                    UploadType.Listing,
+                    new[] { imagePath },
+                    cancellationToken);
+
+                if (failedDeletes.Count != 0)
+                {
+                    throw new InvalidOperationException($"Failed to delete image file for listing image {imageId}");
+                }
+            }
+
+            _context.ListingImages.Remove(listingImage);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Deleted image {ImageId} from listing {ListingId}", imageId, listingId);
+        }
+
 
         // Method to add log to queue to be handled by workers
         private async Task AppendToListingLog(Guid listingID, ListingSearchDto searchData, ListingAction action)
