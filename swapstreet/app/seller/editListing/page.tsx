@@ -34,6 +34,14 @@ interface ListingDetail {
   images: Array<{ id: string; imageUrl: string }>;
 }
 
+type EnumSelectConfig = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  options: string[];
+};
+
 export default function EditListingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,6 +64,44 @@ export default function EditListingPage() {
   const [condition, setCondition] = useState<string>("");
   const [size, setSize] = useState<string>("");
   const [brand, setBrand] = useState<string>("");
+
+  const enumSelects: EnumSelectConfig[] = [
+    {
+      label: "Category *",
+      value: category,
+      onChange: setCategory,
+      placeholder: "Select category",
+      options: CATEGORIES,
+    },
+    {
+      label: "Brand *",
+      value: brand,
+      onChange: setBrand,
+      placeholder: "Select brand",
+      options: BRANDS,
+    },
+    {
+      label: "Condition *",
+      value: condition,
+      onChange: setCondition,
+      placeholder: "Select condition",
+      options: CONDITIONS,
+    },
+    {
+      label: "Size *",
+      value: size,
+      onChange: setSize,
+      placeholder: "Select size",
+      options: SIZES,
+    },
+    {
+      label: "Colour *",
+      value: colour,
+      onChange: setColour,
+      placeholder: "Select colour",
+      options: COLOURS,
+    },
+  ];
 
   // Get listing data
   useEffect(() => {
@@ -158,55 +204,30 @@ export default function EditListingPage() {
     setError("");
     setIsSubmitting(true);
 
-    if (!listingId) {
-      setError("Listing ID missing.");
+    const failValidation = (message: string) => {
+      setError(message);
       setIsSubmitting(false);
-      return;
-    }
+    };
 
-    if (!title.trim()) {
-      setError("Please enter a title.");
-      setIsSubmitting(false);
-      return;
-    }
-    if (!description.trim()) {
-      setError("Please enter a description.");
-      setIsSubmitting(false);
-      return;
-    }
-    if (!price || price <= 0) {
-      setError("Please enter a valid price.");
-      setIsSubmitting(false);
-      return;
-    }
-    if (existingImages.length + pendingImages.length === 0) {
-      setError("Please keep at least one image or upload new ones.");
-      setIsSubmitting(false);
-      return;
-    }
-    if (!category) {
-      setError("Please select a category.");
-      setIsSubmitting(false);
-      return;
-    }
-    if (!brand) {
-      setError("Please select a brand.");
-      setIsSubmitting(false);
-      return;
-    }
-    if (!condition) {
-      setError("Please select a condition.");
-      setIsSubmitting(false);
-      return;
-    }
-    if (!size) {
-      setError("Please select a size.");
-      setIsSubmitting(false);
-      return;
-    }
-    if (!colour) {
-      setError("Please select a colour.");
-      setIsSubmitting(false);
+    const validations = [
+      { invalid: !listingId, message: "Listing ID missing." },
+      { invalid: !title.trim(), message: "Please enter a title." },
+      { invalid: !description.trim(), message: "Please enter a description." },
+      { invalid: !price || price <= 0, message: "Please enter a valid price." },
+      {
+        invalid: existingImages.length + pendingImages.length === 0,
+        message: "Please keep at least one image or upload new ones.",
+      },
+      { invalid: !category, message: "Please select a category." },
+      { invalid: !brand, message: "Please select a brand." },
+      { invalid: !condition, message: "Please select a condition." },
+      { invalid: !size, message: "Please select a size." },
+      { invalid: !colour, message: "Please select a colour." },
+    ];
+
+    const firstError = validations.find((item) => item.invalid);
+    if (firstError) {
+      failValidation(firstError.message);
       return;
     }
 
@@ -335,95 +356,25 @@ export default function EditListingPage() {
 
             {/* ENUMS */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category *
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Select category</option>
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Brand *
-                </label>
-                <select
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Select brand</option>
-                  {BRANDS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Condition *
-                </label>
-                <select
-                  value={condition}
-                  onChange={(e) => setCondition(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Select condition</option>
-                  {CONDITIONS.map((cond) => (
-                    <option key={cond} value={cond}>
-                      {cond}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Size *
-                </label>
-                <select
-                  value={size}
-                  onChange={(e) => setSize(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Select size</option>
-                  {SIZES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Colour *
-                </label>
-                <select
-                  value={colour}
-                  onChange={(e) => setColour(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Select colour</option>
-                  {COLOURS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {enumSelects.map((field) => (
+                <div key={field.label}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {field.label}
+                  </label>
+                  <select
+                    value={field.value}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">{field.placeholder}</option>
+                    {field.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
             </div>
 
             {/* Existing Images */}
