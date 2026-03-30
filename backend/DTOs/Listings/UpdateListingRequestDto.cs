@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using backend.Models;
 
-namespace backend.DTOs;
+namespace backend.DTOs.Listings;
 
 public class UpdateListingRequestDto
 {

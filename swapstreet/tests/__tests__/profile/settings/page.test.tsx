@@ -78,13 +78,13 @@ describe("Settings Page", () => {
     React.useState = jest.fn((value) => {
       return [true, setter];
     });
-    var result = render(<SettingsPage />);
-    var buttonData = result.getAllByRole("button");
-    var candidateData = buttonData.filter(
+    let result = render(<SettingsPage />);
+    let buttonData = result.getAllByRole("button");
+    let candidateData = buttonData.filter(
       (b) => b.id === "toggleSustainabilityTracking",
     );
     expect(candidateData.filter(() => true)).toHaveLength(1);
-    var toggle = candidateData[0];
+    let toggle = candidateData[0];
     fireEvent.click(toggle);
     await waitFor(() => {
       expect(setter).toHaveBeenCalledTimes(1);
@@ -93,7 +93,6 @@ describe("Settings Page", () => {
     React.useState = jest.fn((value) => {
       return [false, setter];
     });
-
     result = render(<SettingsPage />);
     buttonData = result.getAllByRole("button");
     candidateData = buttonData.filter(
