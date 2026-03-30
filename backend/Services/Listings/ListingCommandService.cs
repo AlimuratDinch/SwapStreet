@@ -267,7 +267,7 @@ namespace backend.Services
             // 1. Validate listing exists && belongs to profile
             var listing = await _context.Listings
                 .FirstOrDefaultAsync(l => l.Id == listingId && l.ProfileId == profileId, cancellationToken);
-            
+
             if (listing == null)
             {
                 _logger.LogWarning("Listing {ListingId} not found or does not belong to ProfileId {ProfileId}", listingId, profileId);
