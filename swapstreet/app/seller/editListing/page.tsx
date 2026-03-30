@@ -165,7 +165,9 @@ export default function EditListingPage() {
 
   const removeExistingImage = async (id: string) => {
     if (!listingId || !accessToken) {
-      setError("Unable to delete image: missing listing or authentication context.");
+      setError(
+        "Unable to delete image: missing listing or authentication context.",
+      );
       return;
     }
 
@@ -185,7 +187,8 @@ export default function EditListingPage() {
 
       setExistingImages((prev) => prev.filter((img) => img.id !== id));
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to delete image";
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to delete image";
       setError(errorMsg);
     }
   };

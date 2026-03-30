@@ -73,7 +73,10 @@ const stubFetch = ({
           } as Response);
     }
 
-    if (url.includes("/listings/listing-1/images/") && options?.method === "DELETE") {
+    if (
+      url.includes("/listings/listing-1/images/") &&
+      options?.method === "DELETE"
+    ) {
       return Promise.resolve({ ok: true, status: 204 } as Response);
     }
 
