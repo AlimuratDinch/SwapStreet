@@ -8,5 +8,6 @@ namespace backend.Contracts
         Task<List<MessageDto>> GetMessagesAsync(Guid chatroomId, int page = 1, int pageSize = 50);
         Task<MessageDto?> GetMessageByIdAsync(Guid messageId);
         Task DeleteMessageByIdAsync(Guid messageId);
+        Task<MessagesReadDto> MarkMessagesAsReadAsync(Guid chatroomId, Guid readerId);
     }
 }

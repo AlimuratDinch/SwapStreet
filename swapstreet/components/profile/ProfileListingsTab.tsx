@@ -134,8 +134,6 @@ export function ProfileListingsTab({
   }, [loadMore, hasNext, isLoadingMore, isLoadingInitial]);
 
   const heading = isCurrentUserProfile ? "My Listings" : "Listings";
-  const showCreateListingCta = isCurrentUserProfile && !isLoadingInitial;
-  const isFirstListingMode = showCreateListingCta && items.length === 0;
   const emptyStateMessage = isCurrentUserProfile
     ? "You have no active listings yet."
     : "This seller has no active listings.";
@@ -184,6 +182,17 @@ export function ProfileListingsTab({
       ) : items.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <p>{emptyStateMessage}</p>
+          {isCurrentUserProfile && (
+            <p className="mt-2">
+              <button
+                type="button"
+                onClick={() => router.push("/seller/createListing")}
+                className="inline text-teal-500 hover:text-teal-600 hover:underline cursor-pointer font-medium"
+              >
+                Create a listing
+              </button>
+            </p>
+          )}
         </div>
       ) : (
         <>

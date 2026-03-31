@@ -64,7 +64,7 @@ describe("ProfileListingsTab", () => {
       screen.getByRole("heading", { name: "My Listings" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Create Listing" }),
+      screen.getByRole("button", { name: "Edit/Delete" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Edit Listings" }),
@@ -155,7 +155,7 @@ describe("ProfileListingsTab", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "Create your first listing" }),
+        screen.getByRole("button", { name: "Create a listing" }),
       ).toBeInTheDocument();
       expect(
         screen.getByText("You have no active listings yet."),
@@ -174,7 +174,7 @@ describe("ProfileListingsTab", () => {
     render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
 
     const button = await screen.findByRole("button", {
-      name: "Create your first listing",
+      name: "Create a listing",
     });
     await user.click(button);
 
