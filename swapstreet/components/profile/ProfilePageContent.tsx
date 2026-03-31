@@ -94,7 +94,9 @@ export function ProfilePageContent({
             isCurrentUserProfile={isCurrentUserProfile}
           />
         )}
-        {activeTab === "reviews" && <ProfileReviewsTab />}
+        {activeTab === "reviews" && (
+          <ProfileReviewsTab profileId={profile.id} />
+        )}
       </div>
     </div>
   );
