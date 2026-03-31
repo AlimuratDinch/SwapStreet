@@ -60,11 +60,9 @@ jest.mock(
 
 jest.mock("leaflet/dist/leaflet.css", () => ({}), { virtual: true });
 
-jest.mock(
-  "leaflet/dist/images/marker-icon-2x.png",
-  () => "icon-2x.png",
-  { virtual: true },
-);
+jest.mock("leaflet/dist/images/marker-icon-2x.png", () => "icon-2x.png", {
+  virtual: true,
+});
 jest.mock("leaflet/dist/images/marker-icon.png", () => "icon.png", {
   virtual: true,
 });
@@ -72,7 +70,9 @@ jest.mock("leaflet/dist/images/marker-shadow.png", () => "shadow.png", {
   virtual: true,
 });
 
-const { ListingLocationMiniMap } = require("@/components/listing/ListingLocationMiniMap");
+const {
+  ListingLocationMiniMap,
+} = require("@/components/listing/ListingLocationMiniMap");
 
 describe("ListingLocationMiniMap", () => {
   it("renders map shell with OpenStreetMap tile URL and attribution", () => {
