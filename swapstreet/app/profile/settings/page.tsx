@@ -2,18 +2,16 @@
 
 import { Header } from "@/components/common/Header";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 function Separator() {
-  return <div className="border-b-1 border-gray-600 w-full" />;
+  return <div className="border-b-2 border-gray-600 w-full" />;
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
-  const { accessToken } = useAuth();
+  const { accessToken, logout } = useAuth();
   const [sustainabilityTracking, setSustainabilityTracking] = useState(true);
 
   async function deleteAcount() {
@@ -30,10 +28,10 @@ export default function SettingsPage() {
         throw Error(errorText);
       }
 
-      router.push("/");
+      logout();
     } catch (exception) {
       const error: Error = exception as Error;
-      alert("Error: " + error?.toString());
+      alert(error?.toString());
     }
   }
 
