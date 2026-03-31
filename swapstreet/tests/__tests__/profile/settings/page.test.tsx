@@ -3,15 +3,11 @@ import SettingsPage from "@/app/profile/settings/page";
 import "@testing-library/jest-dom";
 import React from "react";
 
-const mockPush = jest.fn();
-
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
-}));
+const mockLogout = jest.fn();
 
 jest.mock("@/contexts/AuthContext", () => ({
   __esModule: true,
-  useAuth: () => jest.fn(),
+  useAuth: () => ({ accessToken: jest.fn(), logout: mockLogout }),
 }));
 
 describe("Settings Page", () => {
@@ -48,8 +44,7 @@ describe("Settings Page", () => {
     });
     expect(deleteAccount).toBeInTheDocument();
     await fireEvent.click(deleteAccount);
-    expect(mockPush).toHaveBeenCalledWith("/");
-    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockLogout).toHaveBeenCalledTimes(1);
   });
 
   it("displays an error when account deletion fails", async () => {
