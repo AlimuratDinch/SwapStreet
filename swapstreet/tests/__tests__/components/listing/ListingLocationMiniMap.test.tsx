@@ -70,9 +70,9 @@ jest.mock("leaflet/dist/images/marker-shadow.png", () => "shadow.png", {
   virtual: true,
 });
 
-const {
-  ListingLocationMiniMap,
-} = require("@/components/listing/ListingLocationMiniMap");
+const { ListingLocationMiniMap } = jest.requireActual(
+  "@/components/listing/ListingLocationMiniMap",
+);
 
 describe("ListingLocationMiniMap", () => {
   it("renders map shell with OpenStreetMap tile URL and attribution", () => {
