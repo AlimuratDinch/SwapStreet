@@ -56,6 +56,9 @@ describe("ProfileListingsTab", () => {
       screen.getByRole("heading", { name: "My Listings" }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: "Create Listing" }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "Edit/Delete" }),
     ).toBeInTheDocument();
     expect(browseApi.getSearchResults).toHaveBeenCalledWith({
@@ -164,6 +167,32 @@ describe("ProfileListingsTab", () => {
 
     const button = await screen.findByRole("button", {
       name: "Create a listing",
+    });
+    await user.click(button);
+
+    expect(pushMock).toHaveBeenCalledWith("/seller/createListing");
+  });
+
+  it("navigates to create listing from header when owner has listings", async () => {
+    const user = userEvent.setup();
+    (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
+      items: [
+        {
+          id: "a1",
+          title: "Blue jacket",
+          price: 25,
+          fsa: "M5V",
+          images: [{ imageUrl: "https://example.com/a.jpg" }],
+        },
+      ],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
+
+    const button = await screen.findByRole("button", {
+      name: "Create Listing",
     });
     await user.click(button);
 
