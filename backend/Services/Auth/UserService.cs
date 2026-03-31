@@ -72,8 +72,16 @@ namespace backend.Services.Auth
             // Users have a profile, listings, chatrooms, and 
             // messages. Deleting the former automatically deletes
             // the messages in it.
-            await _listingCommandService.DeleteAllFromUserAsync(userId);
+
             _chatroomService.DeleteAllFromUser(userId);
+            // Very important to delete the chatroom first. The 
+            // database associates a chatroom to a listing. Deleting 
+            // the listing first may cause issues.
+
+            await _listingCommandService.DeleteAllFromUserAsync(userId);
+            // No chatrooms exist here, so we can proceed with 
+            // account deletion.
+
             _profileService.DeleteProfile(userId);
             _authDBContext.Users.Remove(user);
             _authDBContext.SaveChanges();

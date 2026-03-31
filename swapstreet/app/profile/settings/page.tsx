@@ -1,10 +1,11 @@
 "use client";
 
 import { Header } from "@/components/common/Header";
+import { logger } from "@/components/common/logger";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function Separator() {
   return <div className="border-b-2 border-gray-600 w-full" />;
@@ -25,6 +26,7 @@ export default function SettingsPage() {
 
       if (!res.ok) {
         const errorText = await res.text();
+        logger.warn(errorText);
         throw Error(errorText);
       }
 

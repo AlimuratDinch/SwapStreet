@@ -551,7 +551,7 @@ namespace backend.Services.Chat
         {
             var chatroomData = _context.Chatrooms.Where(
                 c => c.SellerId == userId || c.BuyerId == userId
-            );
+            ).ToList();
 
             bool fail = false;
 
