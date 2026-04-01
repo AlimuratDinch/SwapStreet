@@ -1,55 +1,78 @@
 /** @jest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
-import { ListingLocationMiniMap } from "@/components/listing/ListingLocationMiniMap";
 
-jest.mock("react-leaflet", () => ({
-  MapContainer: ({
-    children,
-    center,
-    zoom,
-  }: {
-    children?: React.ReactNode;
-    center: [number, number];
-    zoom?: number;
-  }) => (
-    <div
-      data-testid="mock-map-container"
-      data-center-lat={center[0]}
-      data-center-lng={center[1]}
-      data-zoom={zoom}
-    >
-      {children}
-    </div>
-  ),
-  TileLayer: ({ attribution, url }: { attribution?: string; url?: string }) => (
-    <div
-      data-testid="mock-tile-layer"
-      data-url={url}
-      data-attribution={attribution}
-    />
-  ),
-  Marker: ({ position }: { position: [number, number] }) => (
-    <div
-      data-testid="mock-marker"
-      data-lat={position[0]}
-      data-lng={position[1]}
-    />
-  ),
-}));
+jest.mock(
+  "react-leaflet",
+  () => ({
+    MapContainer: ({
+      children,
+      center,
+      zoom,
+    }: {
+      children?: React.ReactNode;
+      center: [number, number];
+      zoom?: number;
+    }) => (
+      <div
+        data-testid="mock-map-container"
+        data-center-lat={center[0]}
+        data-center-lng={center[1]}
+        data-zoom={zoom}
+      >
+        {children}
+      </div>
+    ),
+    TileLayer: ({
+      attribution,
+      url,
+    }: {
+      attribution?: string;
+      url?: string;
+    }) => (
+      <div
+        data-testid="mock-tile-layer"
+        data-url={url}
+        data-attribution={attribution}
+      />
+    ),
+    Marker: ({ position }: { position: [number, number] }) => (
+      <div
+        data-testid="mock-marker"
+        data-lat={position[0]}
+        data-lng={position[1]}
+      />
+    ),
+  }),
+  { virtual: true },
+);
 
-jest.mock("leaflet", () => ({
-  __esModule: true,
-  default: {
-    icon: jest.fn(() => ({})),
-  },
-}));
+jest.mock(
+  "leaflet",
+  () => ({
+    __esModule: true,
+    default: {
+      icon: jest.fn(() => ({})),
+    },
+  }),
+  { virtual: true },
+);
 
-jest.mock("leaflet/dist/leaflet.css", () => ({}));
+jest.mock("leaflet/dist/leaflet.css", () => ({}), { virtual: true });
 
-jest.mock("leaflet/dist/images/marker-icon-2x.png", () => "icon-2x.png");
-jest.mock("leaflet/dist/images/marker-icon.png", () => "icon.png");
-jest.mock("leaflet/dist/images/marker-shadow.png", () => "shadow.png");
+jest.mock("leaflet/dist/images/marker-icon-2x.png", () => "icon-2x.png", {
+  virtual: true,
+});
+jest.mock("leaflet/dist/images/marker-icon.png", () => "icon.png", {
+  virtual: true,
+});
+jest.mock("leaflet/dist/images/marker-shadow.png", () => "shadow.png", {
+  virtual: true,
+});
+
+const { ListingLocationMiniMap } = jest.requireActual(
+  "@/components/listing/ListingLocationMiniMap",
+);
 
 describe("ListingLocationMiniMap", () => {
   it("renders map shell with OpenStreetMap tile URL and attribution", () => {

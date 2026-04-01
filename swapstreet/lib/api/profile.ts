@@ -46,6 +46,19 @@ export interface ProfileResponse {
   updatedAt: string;
 }
 
+export interface ProfileReviewResponse {
+  id: string;
+  chatroomId: string;
+  reviewerId: string;
+  reviewerFirstName: string;
+  reviewerLastName: string;
+  reviewerProfileImagePath?: string | null;
+  revieweeId: string;
+  stars: number;
+  description?: string | null;
+  createdAt: string;
+}
+
 export interface City {
   id: number;
   name: string;
@@ -103,6 +116,67 @@ export async function getProfileById(userId: string): Promise<ProfileResponse> {
   }
 
   return response.json();
+}
+
+export async function getProfileReviews(
+  userId: string,
+): Promise<ProfileReviewResponse[]> {
+  const response = await fetch(`${API_URL}/profile/${userId}/reviews`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const responseText = await response.text().catch(() => "");
+
+    try {
+      const error = JSON.parse(responseText);
+      throw new Error(
+        error.Error ||
+          error.error ||
+          `Failed to fetch reviews (${response.status})`,
+      );
+    } catch {
+      throw new Error(
+        responseText || `Failed to fetch reviews (${response.status})`,
+      );
+    }
+  }
+
+  return response.json();
+}
+
+export async function deleteProfileReview(
+  accessToken: string,
+  reviewId: string,
+): Promise<void> {
+  const response = await fetch(`${API_URL}/profile/reviews/${reviewId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const responseText = await response.text().catch(() => "");
+
+    try {
+      const error = JSON.parse(responseText);
+      throw new Error(
+        error.Error ||
+          error.error ||
+          `Failed to delete review (${response.status})`,
+      );
+    } catch {
+      throw new Error(
+        responseText || `Failed to delete review (${response.status})`,
+      );
+    }
+  }
 }
 
 /**
