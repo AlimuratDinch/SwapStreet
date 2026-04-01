@@ -73,6 +73,11 @@ services:
       - MEILISEARCH_HOST=http://meilisearch:7700
       - MEILISEARCH_API_KEY=${MEILI_MASTER_KEY}
       - FrontendUrl=${FRONTEND_URL}
+      - LOGQUEUESETTINGS__BASEPATH=App_Data
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/config/gcloud/application_default_credentials.json
+    volumes:
+      - "${GOOGLE_ADC_FILE_PATH:-./gcloud/application_default_credentials.json}:/app/config/gcloud/application_default_credentials.json:ro"
+      - app-data:/app/App_Data 
     depends_on:
       postgres:
         condition: service_healthy
@@ -132,6 +137,7 @@ networks:
     driver: bridge
 
 volumes:
+  app-data:
   postgres_data_staging:
   minio_data_staging:
   meilisearch_data_staging:
