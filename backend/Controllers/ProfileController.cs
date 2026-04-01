@@ -58,6 +58,16 @@ namespace backend.Controllers
         }
 
         /// <summary>
+        /// Get public reviews for a user's profile
+        /// </summary>
+        [HttpGet("{userId}/reviews")]
+        public async Task<IActionResult> GetProfileReviews(Guid userId)
+        {
+            var reviews = await _profileService.GetProfileReviewsAsync(userId);
+            return Ok(reviews);
+        }
+
+        /// <summary>
         /// Create a profile for the authenticated user
         /// </summary>
         [Authorize]
@@ -147,6 +157,56 @@ namespace backend.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { Error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Delete the authenticated user's profile
+        /// </summary>
+        [Authorize]
+        [HttpDelete]
+        public async Task<IActionResult> DeleteProfile()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { Error = "Invalid token" });
+            }
+
+            var result = await _profileService.DeleteProfileAsync(userId);
+            if (!result)
+            {
+                return NotFound(new { Error = "Profile not found" });
+            }
+
+            return Ok(new { Message = "Profile deleted successfully" });
+        }
+
+        /// <summary>
+        /// Delete one of the authenticated user's submitted reviews
+        /// </summary>
+        [Authorize]
+        [HttpDelete("reviews/{reviewId}")]
+        public async Task<IActionResult> DeleteProfileReview(Guid reviewId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { Error = "Invalid token" });
+            }
+
+            try
+            {
+                await _profileService.DeleteProfileReviewAsync(userId, reviewId);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { Error = ex.Message });
             }
         }
 

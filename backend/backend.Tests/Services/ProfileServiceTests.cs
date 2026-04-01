@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using backend.DbContexts;
 using backend.Services;
@@ -7,6 +8,9 @@ using backend.DTOs.Profile;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 using AwesomeAssertions;
+using backend.Contracts;
+using backend.DTOs.Image;
+using Microsoft.AspNetCore.Http;
 
 namespace backend.Tests
 {
@@ -25,7 +29,7 @@ namespace backend.Tests
                 .Options;
 
             _db = new AppDbContext(options);
-            _service = new ProfileService(_db);
+            _service = new ProfileService(_db, new FakeFileStorageService());
 
             _testUserId = Guid.NewGuid();
             _testProvinceId = 1;
@@ -61,6 +65,31 @@ namespace backend.Tests
         public void Dispose()
         {
             _db.Dispose();
+        }
+
+        private sealed class FakeFileStorageService : IFileStorageService
+        {
+            public Task<int> CleanupOrphanedFilesAsync(UploadType type, CancellationToken cancellationToken = default) =>
+                Task.FromResult(0);
+
+            public Task DeleteImagesAsync(UploadType type, Guid? listingId = null, Guid? profileId = null, CancellationToken cancellationToken = default) =>
+                Task.CompletedTask;
+
+            public Task<IReadOnlyCollection<string>> DeleteFilesAsync(UploadType type, IEnumerable<string> filePaths, CancellationToken cancellationToken = default) =>
+                Task.FromResult<IReadOnlyCollection<string>>(Array.Empty<string>());
+
+            public string GetPublicFileUrl(string fileName) => fileName;
+
+            public Task<string> GetPrivateFileUrlAsync(string fileName, int expiryInSeconds = 3600) =>
+                Task.FromResult(fileName);
+
+            public Task<bool> HasImagesInPublicBucketAsync() => Task.FromResult(false);
+
+            public Task<string> UploadFileAsync(IFormFile file, UploadType type, Guid userId, Guid? listingId = null, int displayOrder = 0) =>
+                Task.FromResult(string.Empty);
+
+            public Task<string> UploadImageInternalAsync(IFormFile file, UploadType type) =>
+                Task.FromResult(string.Empty);
         }
 
         [Fact]
