@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/common/Header";
 import { logger } from "@/components/common/logger";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
@@ -12,7 +13,7 @@ function Separator() {
 }
 
 export default function SettingsPage() {
-  const { accessToken, logout, use } = useAuth();
+  const { accessToken, logout } = useAuth();
   const router = useRouter();
   const [sustainabilityTracking, setSustainabilityTracking] = useState(true);
 
