@@ -1,10 +1,16 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using backend.DbContexts;
+using backend.DTOs.Chat;
+using backend.DTOs.Listings;
+using backend.DTOs.Profile;
 using backend.Models.Authentication;
 using backend.Services.Auth;
+using backend.Contracts;
 using backend.Contracts.Auth;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 using AwesomeAssertions;
 using Microsoft.Extensions.Configuration;
@@ -42,7 +48,15 @@ namespace backend.Tests
             // 4. Simple fake hasher
             var hasher = new FakePasswordHasher();
 
-            _service = new UserService(hasher, _db, _emailService, config);
+            _service = new UserService(
+                hasher,
+                _db,
+                _emailService,
+                Mock.Of<IListingCommandService>(),
+                Mock.Of<IProfileService>(),
+                Mock.Of<IChatroomService>(),
+                config
+            );
         }
 
         public void Dispose()

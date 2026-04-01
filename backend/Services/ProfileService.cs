@@ -118,6 +118,16 @@ namespace backend.Services
             return (await GetProfileByIdAsync(profile.Id))!;
         }
 
+        public void DeleteProfile(Guid userId)
+        {
+            var profile = _context.Profiles.Find(userId);
+            if (profile != null)
+            {
+                _context.Profiles.Remove(profile);
+                _context.SaveChanges();
+            }
+        }
+
         public async Task<bool> DeleteProfileAsync(Guid userId)
         {
             var profile = await _context.Profiles.FindAsync(userId);

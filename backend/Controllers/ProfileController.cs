@@ -151,28 +151,6 @@ namespace backend.Controllers
         }
 
         /// <summary>
-        /// Delete the authenticated user's profile
-        /// </summary>
-        [Authorize]
-        [HttpDelete]
-        public async Task<IActionResult> DeleteProfile()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            {
-                return Unauthorized(new { Error = "Invalid token" });
-            }
-
-            var result = await _profileService.DeleteProfileAsync(userId);
-            if (!result)
-            {
-                return NotFound(new { Error = "Profile not found" });
-            }
-
-            return Ok(new { Message = "Profile deleted successfully" });
-        }
-
-        /// <summary>
         /// Check if the authenticated user has a profile
         /// </summary>
         [Authorize]

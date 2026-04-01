@@ -15,5 +15,6 @@ namespace backend.Contracts
         Task<ChatroomDto> SubmitRatingAsync(Guid chatroomId, Guid reviewerId, int stars, string? description = null);
         Task<bool> UserBelongsToChatroomAsync(Guid userId, Guid chatroomId);
         Task DeleteChatroomAsync(Guid chatroomId);
+        void DeleteAllFromUser(Guid targetId);
     }
 }
