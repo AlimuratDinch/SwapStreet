@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using backend.DbContexts;
 using backend.Services.Chat;
 using backend.DTOs.Chat;
-using backend.DTOs;
+using backend.DTOs.Listings;
 using backend.Contracts;
 using backend.DTOs.Image;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +51,7 @@ namespace backend.Tests.Services
         public Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
+        public Task DeleteAllFromUserAsync(Guid listingId) => Task.CompletedTask;
         public Task UpdateListingAsync(Guid listingId, Guid profileId, UpdateListingRequestDto request, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
@@ -856,6 +857,54 @@ namespace backend.Tests.Services
             // Assert
             exception.Should().NotBeNull();
             exception.Message.Should().Be("Cannot find chatroom");
+        }
+
+        [Fact]
+        public async Task DeleteAllFromUserAsync_ShouldRemoveChatroomsOfOneUser()
+        {
+            // Arange
+            Guid chatroomIdA = Guid.NewGuid(),
+                chatroomIdB = Guid.NewGuid(),
+                chatroomIdC = Guid.NewGuid(),
+                userIdA = Guid.NewGuid(),
+                userIdB = Guid.NewGuid(),
+                userIdC = Guid.NewGuid();
+
+            _db.Chatrooms.AddRange(
+                new Chatroom { Id = chatroomIdA, SellerId = userIdA, BuyerId = userIdB },
+                new Chatroom { Id = chatroomIdB, SellerId = userIdA, BuyerId = userIdC },
+                new Chatroom { Id = chatroomIdC, SellerId = userIdB, BuyerId = userIdC }
+            );
+
+            _db.Messages.AddRange(
+                new Message { Id = Guid.NewGuid(), ChatroomId = chatroomIdA, Content = "In A, Message 1" },
+                new Message { Id = Guid.NewGuid(), ChatroomId = chatroomIdA, Content = "In A, Message 2" },
+                new Message { Id = Guid.NewGuid(), ChatroomId = chatroomIdB, Content = "In B, Message 1" },
+                new Message { Id = Guid.NewGuid(), ChatroomId = chatroomIdB, Content = "In B, Message 2" },
+                new Message { Id = Guid.NewGuid(), ChatroomId = chatroomIdC, Content = "In C, Message 1" },
+                new Message { Id = Guid.NewGuid(), ChatroomId = chatroomIdC, Content = "In C, Message 2" }
+            );
+            _db.SaveChanges();
+
+            // Act
+            _service.DeleteAllFromUser(userIdA);
+
+            // Assert
+            var chatroomData = _db.Chatrooms.ToList();
+            chatroomData.Should()
+                .HaveCount(1)
+                .And
+                .ContainSingle(c => c.Id == chatroomIdC);
+            // Only the chatroom with B and C should remain.
+
+            var messageData = _db.Messages.ToList();
+            messageData.Should()
+                .HaveCount(2)
+                .And
+                .ContainSingle(m => m.Content == "In C, Message 1")
+                .And
+                .ContainSingle(m => m.Content == "In C, Message 2");
+            // Said chatroom only contains two messages.
         }
     }
 }

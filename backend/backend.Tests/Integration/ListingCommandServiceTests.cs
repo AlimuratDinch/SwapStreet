@@ -10,7 +10,7 @@ using Moq;
 using Microsoft.Extensions.Logging;
 using backend.Contracts;
 using backend.DbContexts;
-using backend.DTOs;
+using backend.DTOs.Listings;
 using backend.Infrastructure.LogQueue;
 using backend.Services;
 using backend.Tests.Fixtures;
@@ -109,6 +109,115 @@ public class ListingCommandServiceTests
         taskData.Should().NotBeNull();
         taskData!.ListingId.Should().Be(listingId);
         taskData.Action.Should().Be(ListingAction.Create);
+    }
+
+    [Fact]
+    public async Task DeleteAllFromUserAsync_ShouldDeleteListingsOfUser()
+    {
+        // Arange
+        using var context = new AppDbContext(_pgFixture.DbOptions);
+        context.Database.EnsureDeleted();
+        context.Database.EnsureCreated();
+
+        var service = CreateService(context);
+
+        context.Provinces.Add(
+            new Province { Id = 1, Code = "QC", Name = "Quebec" }
+        );
+
+        context.Cities.AddRange(
+            new City { Id = 1, Name = "City A", ProvinceId = 1 },
+            new City { Id = 2, Name = "City B", ProvinceId = 1 },
+            new City { Id = 3, Name = "City C", ProvinceId = 1 }
+        );
+
+        context.Fsas.AddRange(new Fsa
+        {
+            Code = "A1A",
+            CityId = 1,
+            Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
+        }, new Fsa
+        {
+            Code = "A2A",
+            CityId = 2,
+            Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
+        }, new Fsa
+        {
+            Code = "A3A",
+            CityId = 3,
+            Centroid = new Point(-73.5673, 45.5017) { SRID = 4326 }
+        });
+
+        Guid userIdA = Guid.NewGuid(),
+            userIdB = Guid.NewGuid(),
+            userIdC = Guid.NewGuid();
+
+        context.Profiles.AddRange(new Profile
+        {
+            Id = userIdA,
+            FirstName = "Guy",
+            LastName = "1",
+            CityId = 1,
+            FSA = "A1A"
+        }, new Profile
+        {
+            Id = userIdB,
+            FirstName = "Guy",
+            LastName = "2",
+            CityId = 2,
+            FSA = "A2A"
+        }, new Profile
+        {
+            Id = userIdC,
+            FirstName = "Guy",
+            LastName = "3",
+            CityId = 3,
+            FSA = "A3A"
+        });
+
+        Listing listingA = new Listing
+        {
+            Id = Guid.NewGuid(),
+            ProfileId = userIdA,
+            Title = "Article A-1",
+            Description = "Description A-1"
+        }, listingB = new Listing
+        {
+            Id = Guid.NewGuid(),
+            ProfileId = userIdA,
+            Title = "Article A-2",
+            Description = "Description A-2"
+        }, listingC = new Listing
+        {
+            Id = Guid.NewGuid(),
+            ProfileId = userIdB,
+            Title = "Article B",
+            Description = "Description B"
+        }, listingD = new Listing
+        {
+            Id = Guid.NewGuid(),
+            ProfileId = userIdC,
+            Title = "Article C",
+            Description = "Description C"
+        };
+
+        context.Listings.Add(listingA);
+        context.Listings.Add(listingB);
+        context.Listings.Add(listingC);
+        context.Listings.Add(listingD);
+        context.SaveChanges();
+        context.ChangeTracker.Clear();
+
+        // Act
+        await service.DeleteAllFromUserAsync(userIdA);
+
+        // Assert
+        context.Listings.Should()
+            .HaveCount(2)
+            .And
+            .ContainSingle(l => l.ProfileId == userIdB)
+            .And
+            .ContainSingle(l => l.ProfileId == userIdC);
     }
 
     #endregion
