@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import SettingsPage from "@/app/profile/settings/page";
 import "@testing-library/jest-dom";
-import React from "react";
 
 const mockLogout = jest.fn();
 
@@ -35,11 +34,9 @@ describe("Settings Page", () => {
   });
 
   it("can delete the user's account", async () => {
-    global.fetch = jest.fn((url) => {
-      return Promise.resolve({
-        ok: true,
-      });
-    });
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue({ ok: true } as unknown as Response);
 
     render(<SettingsPage />);
 
@@ -47,17 +44,29 @@ describe("Settings Page", () => {
       name: "Delete Account",
     });
     expect(deleteAccount).toBeInTheDocument();
-    await fireEvent.click(deleteAccount);
-    expect(mockLogout).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(deleteAccount);
+
+    const deleteConfirmationInput = screen.getByLabelText(
+      "Type DELETE to confirm",
+    );
+    fireEvent.change(deleteConfirmationInput, { target: { value: "DELETE" } });
+
+    const confirmDeleteButton = screen.getByRole("button", {
+      name: "Delete permanently",
+    });
+    fireEvent.click(confirmDeleteButton);
+
+    await waitFor(() => {
+      expect(mockLogout).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("displays an error when account deletion fails", async () => {
-    global.fetch = jest.fn((url) => {
-      return Promise.resolve({
-        ok: false,
-        text: () => Promise.resolve("Server Error"),
-      });
-    });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      text: () => Promise.resolve("Server Error"),
+    } as unknown as Response);
     global.alert = jest.fn();
 
     render(<SettingsPage />);
@@ -65,42 +74,38 @@ describe("Settings Page", () => {
     const deleteAccount = screen.getByRole("button", {
       name: "Delete Account",
     });
+
     fireEvent.click(deleteAccount);
+
+    const deleteConfirmationInput = screen.getByLabelText(
+      "Type DELETE to confirm",
+    );
+    fireEvent.change(deleteConfirmationInput, { target: { value: "DELETE" } });
+
+    const confirmDeleteButton = screen.getByRole("button", {
+      name: "Delete permanently",
+    });
+    fireEvent.click(confirmDeleteButton);
+
     await waitFor(() => {
       expect(global.alert).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("toggles the sustainability tracking feature", async () => {
-    const setter = jest.fn();
+  it("toggles the sustainability tracking feature", () => {
+    render(<SettingsPage />);
 
-    React.useState = jest.fn((value) => {
-      return [true, setter];
-    });
-    let result = render(<SettingsPage />);
-    let buttonData = result.getAllByRole("button");
-    let candidateData = buttonData.filter(
-      (b) => b.id === "toggleSustainabilityTracking",
-    );
-    expect(candidateData.filter(() => true)).toHaveLength(1);
-    let toggle = candidateData[0];
-    fireEvent.click(toggle);
-    await waitFor(() => {
-      expect(setter).toHaveBeenCalledTimes(1);
+    const toggle = screen.getByRole("button", {
+      name: "",
     });
 
-    React.useState = jest.fn((value) => {
-      return [false, setter];
-    });
-    result = render(<SettingsPage />);
-    buttonData = result.getAllByRole("button");
-    candidateData = buttonData.filter(
-      (b) => b.id === "toggleSustainabilityTracking",
-    );
-    toggle = candidateData[0];
+    expect(toggle).toHaveAttribute("id", "toggleSustainabilityTracking");
+    expect(toggle.className).toContain("bg-teal-500");
+
     fireEvent.click(toggle);
-    await waitFor(() => {
-      expect(setter).toHaveBeenCalledTimes(2);
-    });
+    expect(toggle.className).toContain("bg-gray-300");
+
+    fireEvent.click(toggle);
+    expect(toggle.className).toContain("bg-teal-500");
   });
 });
