@@ -201,3 +201,47 @@ public class ListingSearchService : IListingSearchService
         };
     }
 
+    private async Task<HashSet<Guid>> FilterListingsByLocationAsync(List<Listing> listings, double centerLat, double centerLng, double radiusKm)
+    {
+        var filteredListingIds = new HashSet<Guid>();
+
+        foreach (var listing in listings)
+        {
+            // Get coordinates for this listing's FSA
+            var coords = await _locationService.getLatLongFromFSAAsync(listing.FSA);
+            if (coords == null)
+                continue;
+
+            // Calculate distance using Haversine formula
+            var distance = CalculateDistance(centerLat, centerLng, coords.lat, coords.lng);
+
+            // If within radius, include the listing
+            if (distance <= radiusKm)
+            {
+                filteredListingIds.Add(listing.Id);
+            }
+        }
+
+        return filteredListingIds;
+    }
+
+    private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double EarthRadiusKm = 6371;
+
+        var dLat = DegreesToRadians(lat2 - lat1);
+        var dLon = DegreesToRadians(lon2 - lon1);
+
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(DegreesToRadians(lat1)) * Math.Cos(DegreesToRadians(lat2)) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return EarthRadiusKm * c;
+    }
+
+    private double DegreesToRadians(double degrees)
+    {
+        return degrees * Math.PI / 180.0;
+    }
+}
