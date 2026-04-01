@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
-namespace backend.DTOs
+namespace backend.DTOs.Listings
 {
     public class CreateListingRequestDto
     {
