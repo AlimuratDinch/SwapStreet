@@ -142,14 +142,23 @@ export function ProfileListingsTab({
     <div className="rounded-xl bg-white shadow-sm p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-gray-900">{heading}</h2>
-        {isCurrentUserProfile && items.length > 0 && (
-          <button
-            type="button"
-            onClick={() => router.push("/seller/manageListings")}
-            className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Edit/Delete
-          </button>
+        {isCurrentUserProfile && !isLoadingInitial && items.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/seller/createListing")}
+              className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+            >
+              Create Listing
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/seller/manageListings")}
+              className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+            >
+              Edit/Delete
+            </button>
+          </div>
         )}
       </div>
 
