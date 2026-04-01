@@ -209,7 +209,7 @@ describe("ProfilePage", () => {
     const { container } = render(<ProfilePage />);
     expect(await screen.findByText(/Sam Ng/)).toBeInTheDocument();
 
-    const filledStars = container.querySelectorAll(".fill-yellow-400");
+    const filledStars = container.querySelectorAll(".fill-\\[\\#14b8a6\\]");
     expect(filledStars.length).toBe(3);
     expect(screen.getByText(/\(3\.2\)/)).toBeInTheDocument();
   });

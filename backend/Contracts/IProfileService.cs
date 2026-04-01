@@ -10,5 +10,7 @@ namespace backend.Contracts
         Task<ProfileResponseDto> UpdateProfileAsync(Guid userId, UpdateProfileDto dto);
         Task<bool> DeleteProfileAsync(Guid userId);
         Task<bool> ProfileExistsAsync(Guid userId);
+        Task<List<ProfileReviewResponseDto>> GetProfileReviewsAsync(Guid userId);
+        Task DeleteProfileReviewAsync(Guid requesterId, Guid reviewId);
     }
 }

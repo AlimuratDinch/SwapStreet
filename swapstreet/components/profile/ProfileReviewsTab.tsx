@@ -139,7 +139,7 @@ export function ProfileReviewsTab({ profileId }: ProfileReviewsTabProps) {
                             key={star}
                             className={`h-4 w-4 ${
                               star <= review.stars
-                                ? "fill-yellow-400 text-yellow-400"
+                                ? "fill-[#14b8a6] text-[#14b8a6]"
                                 : "text-gray-300"
                             }`}
                             aria-hidden="true"

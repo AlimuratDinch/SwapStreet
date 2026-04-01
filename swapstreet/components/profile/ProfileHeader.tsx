@@ -81,7 +81,7 @@ export function ProfileHeader({
                   key={star}
                   className={`h-5 w-5 ${
                     star <= Math.floor(profile.rating)
-                      ? "fill-yellow-400 text-yellow-400"
+                      ? "fill-[#14b8a6] text-[#14b8a6]"
                       : "text-gray-300"
                   }`}
                 />
