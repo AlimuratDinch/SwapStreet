@@ -103,7 +103,7 @@ public class ListingSearchService : IListingSearchService
             var normalizedQuery = query.Trim().ToLower();
             var matchingProfiles = await _db.Profiles
                 .AsNoTracking()
-                .Where(p => p.FirstName.ToLower().Contains(normalizedQuery) || 
+                .Where(p => p.FirstName.ToLower().Contains(normalizedQuery) ||
                             p.LastName.ToLower().Contains(normalizedQuery) ||
                             (p.FirstName.ToLower() + " " + p.LastName.ToLower()).Contains(normalizedQuery))
                 .Select(p => p.Id)
