@@ -12,7 +12,8 @@ function Separator() {
 }
 
 export default function SettingsPage() {
-  const { accessToken, logout } = useAuth();
+  const { accessToken, logout, use } = useAuth();
+  const router = useRouter();
   const [sustainabilityTracking, setSustainabilityTracking] = useState(true);
 
   async function deleteAcount() {

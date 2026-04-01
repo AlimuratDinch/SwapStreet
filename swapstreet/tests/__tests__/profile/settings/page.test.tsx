@@ -5,6 +5,10 @@ import React from "react";
 
 const mockLogout = jest.fn();
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
 jest.mock("@/contexts/AuthContext", () => ({
   __esModule: true,
   useAuth: () => ({ accessToken: jest.fn(), logout: mockLogout }),
