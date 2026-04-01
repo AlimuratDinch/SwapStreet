@@ -79,8 +79,8 @@ public class ListingSearchService : IListingSearchService
 
         var searchOptions = new SearchQuery
         {
-            Limit = pageSize + 1,
-            Offset = offset,
+            Limit = offset + pageSize + 1,
+            Offset = 0,
             Filter = filters.Count > 0 ? string.Join(" AND ", filters) : null,
             Sort = string.IsNullOrWhiteSpace(query)
                 ? new[] { "createdAtTimestamp:desc" }
