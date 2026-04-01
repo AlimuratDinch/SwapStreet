@@ -14,27 +14,27 @@ namespace backend.Data.Seed
             // --- Standard Static Seeds (No dependencies) ---
             await ProvinceSeeder.SeedAsync(context, logger);
             await CitySeeder.SeedAsync(context, logger);
-            await ProfileSeeder.SeedAsync(context, logger);
+            // await ProfileSeeder.SeedAsync(context, logger);
 
-            var listingService = serviceProvider.GetRequiredService<IListingCommandService>();
-            await ListingSeeder.SeedAsync(context, listingService, logger);
+            // var listingService = serviceProvider.GetRequiredService<IListingCommandService>();
+            // await ListingSeeder.SeedAsync(context, listingService, logger);
 
-            // --- Service-Based Seeds (Complex dependencies) ---
-            try
-            {
-                // 2. Resolve the ImageSeeder instance from DI
-                var imageSeeder = serviceProvider.GetRequiredService<ImageSeeder>();
+            // // --- Service-Based Seeds (Complex dependencies) ---
+            // try
+            // {
+            //     // 2. Resolve the ImageSeeder instance from DI
+            //     var imageSeeder = serviceProvider.GetRequiredService<ImageSeeder>();
 
-                // 3. Resolve Environment to get the Root Path
-                var env = serviceProvider.GetRequiredService<IWebHostEnvironment>();
+            //     // 3. Resolve Environment to get the Root Path
+            //     var env = serviceProvider.GetRequiredService<IWebHostEnvironment>();
 
-                // 4. Call the instance method
-                await imageSeeder.SeedImagesAsync(env.ContentRootPath);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to seed images.");
-            }
+            //     // 4. Call the instance method
+            //     await imageSeeder.SeedImagesAsync(env.ContentRootPath);
+            // }
+            // catch (Exception ex)
+            // {
+            //     logger.LogError(ex, "Failed to seed images.");
+            // }
         }
     }
 }
