@@ -439,8 +439,10 @@ public class SearchServiceIntegrationTests
         var mockFileService = new Mock<IFileStorageService>();
         mockFileService.Setup(x => x.GetPublicFileUrl(It.IsAny<string>())).Returns((string path) => path);
 
+        var mockLocationService = new Mock<ILocationService>();
+
         // Pass the real Meilisearch Client from our fixture
-        return new ListingSearchService(db, mockFileService.Object, _meiliFx.Client);
+        return new ListingSearchService(db, mockFileService.Object, _meiliFx.Client, mockLocationService.Object);
     }
 
     private async Task SeedAsync()

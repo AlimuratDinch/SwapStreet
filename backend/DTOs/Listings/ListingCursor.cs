@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace backend.DTOs;
+namespace backend.DTOs.Listings;
 
 public sealed class ListingCursor
 {

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.Models;
 using backend.DbContexts;
 using backend.Contracts;
-using backend.DTOs;
+using backend.DTOs.Listings;
 using Microsoft.AspNetCore.Authentication;
 using System.ComponentModel;
 using System.Drawing;
@@ -31,7 +31,7 @@ namespace backend.Data.Seed
 
         private static readonly ListingSize[] Sizes = new[]
         {
-            ListingSize.XXS, ListingSize.XS, ListingSize.S, ListingSize.M, ListingSize.L, ListingSize.XL, ListingSize.XXL, ListingSize.NA
+            ListingSize.XXS, ListingSize.XS, ListingSize.S, ListingSize.M, ListingSize.L, ListingSize.XL, ListingSize.XXL, ListingSize.Other
         };
 
         private static readonly ListingBrand[] Brands = new[]
@@ -41,7 +41,7 @@ namespace backend.Data.Seed
 
         private static readonly ListingCategory[] Categories = new[]
         {
-            ListingCategory.Accessory, ListingCategory.Bottoms, ListingCategory.Tops, ListingCategory.Footwear, ListingCategory.Outerwear, ListingCategory.Formalwear, ListingCategory.Sportswear,
+            ListingCategory.Accessory, ListingCategory.Bottoms, ListingCategory.Tops, ListingCategory.Footwear, ListingCategory.Outerwear, ListingCategory.Formalwear, ListingCategory.Sportswear, ListingCategory.Other,
         };
 
         private static readonly ListingCondition[] Conditions = new[]
@@ -103,7 +103,7 @@ namespace backend.Data.Seed
             for (int i = 0; i < (100 - existingCount); i++)
             {
                 var category = Categories[random.Next(Categories.Length)];
-                var size = category == ListingCategory.Footwear ? ListingSize.NA : Sizes[random.Next(Sizes.Length)];
+                var size = category == ListingCategory.Footwear ? ListingSize.Other : Sizes[random.Next(Sizes.Length)];
 
                 var request = new CreateListingRequestDto
                 {

@@ -1,6 +1,16 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ProfileListingsTab } from "@/components/profile/ProfileListingsTab";
 import * as browseApi from "@/lib/api/browse";
+
+const pushMock = jest.fn();
+
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: pushMock,
+    replace: jest.fn(),
+  }),
+}));
 
 jest.mock("@/app/browse/components/CardItem", () => ({
   CardItem: ({ title, id }: { title: string; id: string }) => (
@@ -45,6 +55,12 @@ describe("ProfileListingsTab", () => {
     expect(
       screen.getByRole("heading", { name: "My Listings" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create Listing" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Edit/Delete" }),
+    ).toBeInTheDocument();
     expect(browseApi.getSearchResults).toHaveBeenCalledWith({
       sellerId,
       pageSize: 18,
@@ -69,9 +85,12 @@ describe("ProfileListingsTab", () => {
     expect(
       screen.getByRole("heading", { name: "Listings" }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Create Listing/i }),
+    ).not.toBeInTheDocument();
   });
 
-  it("shows empty state when seller has no listings", async () => {
+  it("shows seller empty state message for other users", async () => {
     (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
       items: [],
       nextCursor: null,
@@ -115,5 +134,68 @@ describe("ProfileListingsTab", () => {
       expect(screen.getAllByTestId(/^listing-card-/)).toHaveLength(1);
     });
     expect(screen.getByTestId("listing-card-dup-1")).toBeInTheDocument();
+  });
+
+  it("shows first-listing CTA variant for owner with no listings", async () => {
+    (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
+      items: [],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Create a listing" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("You have no active listings yet."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("navigates to create listing page when CTA is clicked", async () => {
+    const user = userEvent.setup();
+    (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
+      items: [],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
+
+    const button = await screen.findByRole("button", {
+      name: "Create a listing",
+    });
+    await user.click(button);
+
+    expect(pushMock).toHaveBeenCalledWith("/seller/createListing");
+  });
+
+  it("navigates to create listing from header when owner has listings", async () => {
+    const user = userEvent.setup();
+    (browseApi.getSearchResults as jest.Mock).mockResolvedValueOnce({
+      items: [
+        {
+          id: "a1",
+          title: "Blue jacket",
+          price: 25,
+          fsa: "M5V",
+          images: [{ imageUrl: "https://example.com/a.jpg" }],
+        },
+      ],
+      nextCursor: null,
+      hasNextPage: false,
+    });
+
+    render(<ProfileListingsTab sellerId={sellerId} isCurrentUserProfile />);
+
+    const button = await screen.findByRole("button", {
+      name: "Create Listing",
+    });
+    await user.click(button);
+
+    expect(pushMock).toHaveBeenCalledWith("/seller/createListing");
   });
 });

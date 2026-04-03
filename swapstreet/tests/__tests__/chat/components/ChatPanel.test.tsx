@@ -7,6 +7,8 @@ import {
 } from "@testing-library/react";
 import ChatPanel from "@/app/chat/components/ChatPanel";
 import * as signalR from "@microsoft/signalr";
+// Ensure the hub URL resolves in Node/Jest environment
+process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:3000";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useSearchParams } from "next/navigation";
@@ -239,7 +241,7 @@ describe("ChatPanel Component", () => {
     render(<ChatPanel {...mockProps} />);
 
     await waitFor(() => {
-      const link = screen.getByRole("link");
+      const link = screen.getByRole("link", { name: "Test Item" });
       expect(link).toHaveAttribute(
         "href",
         expect.stringContaining("listing-456"),
@@ -408,17 +410,22 @@ describe("ChatPanel Component", () => {
   it("displays error message from SignalR Error event", async () => {
     render(<ChatPanel {...mockProps} />);
 
+    let errorHandler: ((msg: string) => void) | undefined;
+
     await waitFor(() => {
       const onCall = (mockConnection.on as jest.Mock).mock.calls.find(
         (call) => call[0] === "Error",
       );
-      const errorHandler = onCall[1];
-      errorHandler("Custom error message");
+      expect(onCall).toBeTruthy();
+      errorHandler = onCall?.[1];
+      expect(typeof errorHandler).toBe("function");
     });
 
-    await waitFor(() => {
-      expect(screen.getByText("Custom error message")).toBeInTheDocument();
+    act(() => {
+      errorHandler!("Custom error message");
     });
+
+    expect(await screen.findByText("Custom error message")).toBeInTheDocument();
   });
 
   it("opens rating modal when deal is closed and user can rate", async () => {
@@ -732,11 +739,13 @@ describe("ChatPanel Component", () => {
   });
 
   it("updates room via onRoomUpdate when CloseDealUpdated signal received", async () => {
-    const updatedRoom: Chatroom = { ...mockRoom, isDealClosed: true };
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
-    const { container } = render(<ChatPanel {...mockProps} />);
-
-    expect(container.querySelector("div")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
   });
 
   it("triggers rating modal when deal is closed via signal", async () => {
@@ -746,11 +755,13 @@ describe("ChatPanel Component", () => {
       ratings: [],
     };
 
-    const { container } = render(
-      <ChatPanel {...mockProps} room={closedRoom} />,
-    );
+    await act(async () => {
+      render(<ChatPanel {...mockProps} room={closedRoom} />);
+    });
 
-    expect(container.querySelector("div")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
   });
 
   it("renders multiple messages with correct styling", async () => {
@@ -761,6 +772,7 @@ describe("ChatPanel Component", () => {
         chatroomId: mockRoom.id,
         content: "Hello from user 1",
         sendDate: new Date().toISOString(),
+        readAt: null,
       },
       {
         id: "msg-2",
@@ -768,6 +780,7 @@ describe("ChatPanel Component", () => {
         chatroomId: mockRoom.id,
         content: "Reply from user 2",
         sendDate: new Date().toISOString(),
+        readAt: null,
       },
     ];
 
@@ -776,7 +789,9 @@ describe("ChatPanel Component", () => {
       json: () => Promise.resolve(messages),
     });
 
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
     await waitFor(() => {
       expect(screen.getByText("Hello from user 1")).toBeInTheDocument();
@@ -792,6 +807,7 @@ describe("ChatPanel Component", () => {
         chatroomId: mockRoom.id,
         content: "Message 1",
         sendDate: new Date().toISOString(),
+        readAt: null,
       },
     ];
 
@@ -800,7 +816,9 @@ describe("ChatPanel Component", () => {
       json: () => Promise.resolve(messages),
     });
 
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
     await waitFor(() => {
       expect(screen.getByText("Message 1")).toBeInTheDocument();
@@ -808,25 +826,30 @@ describe("ChatPanel Component", () => {
   });
 
   it("leaves chatroom on unmount", async () => {
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
     await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
       expect(mockConnection.invoke).toHaveBeenCalledWith(
         "JoinChatroom",
         "room-123",
       );
     });
-
-    expect(mockConnection.start).toHaveBeenCalled();
   });
 
   it("truncates textarea with short row height for single messages", async () => {
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
-    const textarea = screen.getByPlaceholderText(
-      "Type Message Here",
-    ) as HTMLTextAreaElement;
-    expect(textarea).toHaveAttribute("rows", "1");
+    await waitFor(() => {
+      const textarea = screen.getByPlaceholderText(
+        "Type Message Here",
+      ) as HTMLTextAreaElement;
+      expect(textarea).toHaveAttribute("rows", "1");
+    });
   });
 
   it("handles fetch failure when loading messages", async () => {
@@ -837,7 +860,9 @@ describe("ChatPanel Component", () => {
       .spyOn(console, "error")
       .mockImplementation(() => {});
 
-    render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -857,14 +882,324 @@ describe("ChatPanel Component", () => {
       authLoaded: true,
     });
 
-    const { container } = render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
-    expect(container.querySelector("div")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
   });
 
   it("renders role text 'Wants to buy' when viewing buyer as seller", async () => {
-    const { container } = render(<ChatPanel {...mockProps} />);
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
 
-    expect(container.querySelector("div")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
+  });
+
+  // ─── Read Receipt Tests ───────────────────────────────────────────────────
+
+  it("invokes MarkAsRead on the hub after joining chatroom", async () => {
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      expect(mockConnection.invoke).toHaveBeenCalledWith(
+        "MarkAsRead",
+        "room-123",
+      );
+    });
+  });
+
+  it("registers a MessagesRead event handler on the connection", async () => {
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      const registeredEvents = (mockConnection.on as jest.Mock).mock.calls.map(
+        (call) => call[0],
+      );
+      expect(registeredEvents).toContain("MessagesRead");
+    });
+  });
+
+  it("updates readAt on all unread messages when MessagesRead event fires", async () => {
+    const readAt = new Date().toISOString();
+    const messages: Message[] = [
+      {
+        id: "msg-1",
+        author: "user-1",
+        chatroomId: mockRoom.id,
+        content: "My message",
+        sendDate: new Date().toISOString(),
+        readAt: null,
+      },
+    ];
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(messages),
+    });
+
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("My message")).toBeInTheDocument();
+    });
+
+    // Grab the MessagesRead handler and fire it
+    const messagesReadCall = (mockConnection.on as jest.Mock).mock.calls.find(
+      (call) => call[0] === "MessagesRead",
+    );
+    const messagesReadHandler = messagesReadCall?.[1];
+    expect(typeof messagesReadHandler).toBe("function");
+
+    act(() => {
+      messagesReadHandler({
+        chatroomId: mockRoom.id,
+        readerId: "user-2",
+        readAt,
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTitle("Read")).toBeInTheDocument();
+    });
+  });
+
+  it("does not update messages in other chatrooms when MessagesRead fires", async () => {
+    const readAt = new Date().toISOString();
+    const messages: Message[] = [
+      {
+        id: "msg-1",
+        author: "user-1",
+        chatroomId: mockRoom.id,
+        content: "My message",
+        sendDate: new Date().toISOString(),
+        readAt: null,
+      },
+    ];
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(messages),
+    });
+
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("My message")).toBeInTheDocument();
+    });
+
+    const messagesReadCall = (mockConnection.on as jest.Mock).mock.calls.find(
+      (call) => call[0] === "MessagesRead",
+    );
+    const messagesReadHandler = messagesReadCall?.[1];
+
+    act(() => {
+      messagesReadHandler({
+        chatroomId: "different-room-id",
+        readerId: "user-2",
+        readAt,
+      });
+    });
+
+    // Should still show Delivered (single check), not Read (double check)
+    await waitFor(() => {
+      expect(screen.getByTitle("Delivered")).toBeInTheDocument();
+      expect(screen.queryByTitle("Read")).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows Delivered status on own unread sent messages", async () => {
+    const messages: Message[] = [
+      {
+        id: "msg-1",
+        author: "user-1",
+        chatroomId: mockRoom.id,
+        content: "My sent message",
+        sendDate: new Date().toISOString(),
+        readAt: null,
+      },
+    ];
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(messages),
+    });
+
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTitle("Delivered")).toBeInTheDocument();
+    });
+  });
+
+  it("shows Read status on own messages that have been read", async () => {
+    const messages: Message[] = [
+      {
+        id: "msg-1",
+        author: "user-1",
+        chatroomId: mockRoom.id,
+        content: "Read message",
+        sendDate: new Date().toISOString(),
+        readAt: new Date().toISOString(),
+      },
+    ];
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(messages),
+    });
+
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTitle("Read")).toBeInTheDocument();
+    });
+  });
+
+  it("does not show status indicator on messages from the other user", async () => {
+    const messages: Message[] = [
+      {
+        id: "msg-1",
+        author: "user-2",
+        chatroomId: mockRoom.id,
+        content: "Their message",
+        sendDate: new Date().toISOString(),
+        readAt: null,
+      },
+    ];
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(messages),
+    });
+
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Their message")).toBeInTheDocument();
+      expect(screen.queryByTitle("Delivered")).not.toBeInTheDocument();
+      expect(screen.queryByTitle("Read")).not.toBeInTheDocument();
+    });
+  });
+
+  it("calls MarkAsRead when receiving a message from the other user", async () => {
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
+
+    // Clear previous invoke calls (JoinChatroom, MarkAsRead on join)
+    (mockConnection.invoke as jest.Mock).mockClear();
+
+    const receiveMessageCall = (mockConnection.on as jest.Mock).mock.calls.find(
+      (call) => call[0] === "ReceiveMessage",
+    );
+    const receiveMessageHandler = receiveMessageCall?.[1];
+
+    act(() => {
+      receiveMessageHandler({
+        id: "msg-incoming",
+        author: "user-2",
+        chatroomId: mockRoom.id,
+        content: "Incoming message",
+        sendDate: new Date().toISOString(),
+        readAt: null,
+      });
+    });
+
+    await waitFor(() => {
+      expect(mockConnection.invoke).toHaveBeenCalledWith(
+        "MarkAsRead",
+        "room-123",
+      );
+    });
+  });
+
+  it("does not call MarkAsRead when receiving own message", async () => {
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
+
+    (mockConnection.invoke as jest.Mock).mockClear();
+
+    const receiveMessageCall = (mockConnection.on as jest.Mock).mock.calls.find(
+      (call) => call[0] === "ReceiveMessage",
+    );
+    const receiveMessageHandler = receiveMessageCall?.[1];
+
+    act(() => {
+      receiveMessageHandler({
+        id: "msg-own",
+        author: "user-1", // same as current userId
+        chatroomId: mockRoom.id,
+        content: "My own message echoed back",
+        sendDate: new Date().toISOString(),
+        readAt: null,
+      });
+    });
+
+    // Give time for any async calls
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(mockConnection.invoke).not.toHaveBeenCalledWith(
+      "MarkAsRead",
+      expect.anything(),
+    );
+  });
+
+  it("appends incoming message to the messages list in real time", async () => {
+    await act(async () => {
+      render(<ChatPanel {...mockProps} />);
+    });
+
+    await waitFor(() => {
+      expect(mockConnection.start).toHaveBeenCalled();
+    });
+
+    const receiveMessageCall = (mockConnection.on as jest.Mock).mock.calls.find(
+      (call) => call[0] === "ReceiveMessage",
+    );
+    const receiveMessageHandler = receiveMessageCall?.[1];
+
+    act(() => {
+      receiveMessageHandler({
+        id: "msg-live",
+        author: "user-2",
+        chatroomId: mockRoom.id,
+        content: "Live incoming message",
+        sendDate: new Date().toISOString(),
+        readAt: null,
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Live incoming message")).toBeInTheDocument();
+    });
   });
 });
