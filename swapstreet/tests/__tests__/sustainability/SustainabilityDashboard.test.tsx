@@ -282,12 +282,37 @@ describe('SustainabilityDashboard', () => {
     });
 
     it('stat cards are keyboard accessible', () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll('.cursor-pointer');
-      
-      expect(cards[0]).toHaveClass('cursor-pointer');
-      // Note: For full keyboard accessibility, you'd want to add
-      // role="button" and onKeyDown handlers in the actual component
+      render(<SustainabilityDashboard />);
+
+      const firstCard = screen
+        .getByText('Metric tons of CO₂ avoided')
+        .closest('[role="button"]');
+
+      expect(firstCard).toBeInTheDocument();
+      expect(firstCard).toHaveAttribute('tabindex', '0');
+      expect(firstCard).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('changes selected card with Enter and Space keyboard events', () => {
+      render(<SustainabilityDashboard />);
+
+      const firstCard = screen
+        .getByText('Metric tons of CO₂ avoided')
+        .closest('[role="button"]');
+      const secondCard = screen
+        .getByText('Gallons of water saved')
+        .closest('[role="button"]');
+
+      expect(firstCard).toHaveAttribute('aria-pressed', 'true');
+      expect(secondCard).toHaveAttribute('aria-pressed', 'false');
+
+      fireEvent.keyDown(secondCard!, { key: 'Enter' });
+      expect(secondCard).toHaveAttribute('aria-pressed', 'true');
+      expect(firstCard).toHaveAttribute('aria-pressed', 'false');
+
+      fireEvent.keyDown(firstCard!, { key: ' ' });
+      expect(firstCard).toHaveAttribute('aria-pressed', 'true');
+      expect(secondCard).toHaveAttribute('aria-pressed', 'false');
     });
   });
 });
