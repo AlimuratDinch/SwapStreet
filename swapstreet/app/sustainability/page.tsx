@@ -65,24 +65,37 @@ const StatCard: React.FC<StatCardProps> = ({
   colorClass,
   isSelected,
   onClick,
-}) => (
-  <div
-    className={`relative p-6 bg-white border-2 rounded-xl transition-all cursor-pointer ${
-      isSelected ? "border-blue-500 shadow-md" : "border-gray-200"
-    }`}
-    onClick={onClick}
-  >
-    <div className="flex items-center gap-4">
-      <div className={`p-4 rounded-full ${colorClass}`}>
-        <Icon size={32} className="stroke-[1.5]" />
-      </div>
-      <div>
-        <div className="text-2xl font-bold text-gray-800">{value}</div>
-        <div className="text-sm text-gray-500 leading-tight">{label}</div>
+}) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick();
+    }
+  };
+
+  return (
+    <div
+      className={`relative p-6 bg-white border-2 rounded-xl transition-all cursor-pointer ${
+        isSelected ? "border-blue-500 shadow-md" : "border-gray-200"
+      }`}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
+    >
+      <div className="flex items-center gap-4">
+        <div className={`p-4 rounded-full ${colorClass}`}>
+          <Icon size={32} className="stroke-[1.5]" />
+        </div>
+        <div>
+          <div className="text-2xl font-bold text-gray-800">{value}</div>
+          <div className="text-sm text-gray-500 leading-tight">{label}</div>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Custom Tooltip Component
 export const CustomTooltip = ({
