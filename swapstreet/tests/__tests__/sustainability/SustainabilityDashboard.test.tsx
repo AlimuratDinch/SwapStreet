@@ -36,7 +36,7 @@ describe('SustainabilityDashboard', () => {
   beforeEach(() => {
     // Mock current date to April (month index 3)
     jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-04-15'));
+    jest.setSystemTime(new Date('2026-04-15').getTime());
   });
 
   afterEach(() => {
