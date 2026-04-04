@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import SustainabilityDashboard from '@/app/sustainability/page';
+import SustainabilityDashboard, { CustomTooltip } from '@/app/sustainability/page';
 
 // Mock the Header component
 jest.mock('@/components/common/Header', () => ({
@@ -186,13 +186,11 @@ describe('SustainabilityDashboard', () => {
 
   describe('CustomTooltip', () => {
     it('renders tooltip with correct data when active', () => {
-      const CustomTooltip = require('@/app/sustainability/page').CustomTooltip;
-      
       const mockPayload = [
         { name: 'Apr', value: 40 }
       ];
       
-      const { container } = render(
+      render(
         <CustomTooltip active={true} payload={mockPayload} />
       );
       
@@ -201,8 +199,6 @@ describe('SustainabilityDashboard', () => {
     });
 
     it('returns null when not active', () => {
-      const CustomTooltip = require('@/app/sustainability/page').CustomTooltip;
-      
       const { container } = render(
         <CustomTooltip active={false} payload={[]} />
       );
@@ -211,8 +207,6 @@ describe('SustainabilityDashboard', () => {
     });
 
     it('returns null when payload is empty', () => {
-      const CustomTooltip = require('@/app/sustainability/page').CustomTooltip;
-      
       const { container } = render(
         <CustomTooltip active={true} payload={[]} />
       );
