@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { 
   Cloud, Droplets, Shirt, Zap, Pipette, Mountain, 
-  Maximize2, BarChart2, TrendingUp, ChevronDown, Fullscreen,
   LucideIcon
 } from 'lucide-react';
 import { 
@@ -33,27 +32,38 @@ interface StatCardProps {
   value: string;
   label: string;
   colorClass: string;
-  borderClass?: string;
+  isSelected: boolean;
+  onClick: () => void;
 }
 
-// --- Mock Data ---
+// --- Mock Data (Updated to months) ---
 
 const DATA: ChartData[] = [
-  { name: '10', value: 65 }, { name: '11', value: 45 }, { name: '12', value: 25 },
-  { name: '13', value: 40 }, { name: '14', value: 48 }, { name: '15', value: 60, highlighted: true },
-  { name: '16', value: 38 }, { name: '17', value: 55 }, { name: '18', value: 70 },
-  { name: '19', value: 82 }, { name: '20', value: 95 }, { name: '21', value: 62 },
+  { name: 'Jan', value: 65 }, 
+  { name: 'Feb', value: 45 }, 
+  { name: 'Mar', value: 25 },
+  { name: 'Apr', value: 40 }, 
+  { name: 'May', value: 48 }, 
+  { name: 'Jun', value: 60 },
+  { name: 'Jul', value: 38 }, 
+  { name: 'Aug', value: 55 }, 
+  { name: 'Sep', value: 70 },
+  { name: 'Oct', value: 82 }, 
+  { name: 'Nov', value: 95 }, 
+  { name: 'Dec', value: 62 },
 ];
 
 // --- Sub-components ---
 
 const StatCard: React.FC<StatCardProps> = ({ 
-  icon: Icon, value, label, colorClass, borderClass = "border-gray-200" 
+  icon: Icon, value, label, colorClass, isSelected, onClick
 }) => (
-  <div className={`relative p-6 bg-white border-2 rounded-xl transition-all ${borderClass}`}>
-    <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-      <Maximize2 size={18} />
-    </button>
+  <div 
+    className={`relative p-6 bg-white border-2 rounded-xl transition-all cursor-pointer ${
+      isSelected ? 'border-blue-500 shadow-md' : 'border-gray-200'
+    }`}
+    onClick={onClick}
+  >
     <div className="flex items-center gap-4">
       <div className={`p-4 rounded-full ${colorClass}`}>
         <Icon size={32} className="stroke-[1.5]" />
@@ -69,7 +79,15 @@ const StatCard: React.FC<StatCardProps> = ({
 // --- Main Component ---
 
 export default function SustainabilityDashboard() {
-  const [view, setView] = useState<'bar' | 'trend'>('bar');
+  // Get current month (0-11, so April = 3)
+  const currentMonth = new Date().getMonth();
+  
+  const [selectedBar, setSelectedBar] = useState<number>(currentMonth);
+  const [selectedCard, setSelectedCard] = useState<number>(0);
+
+  const handleBarClick = (index: number) => {
+    setSelectedBar(index);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-20 md:pt-24 font-sans">
@@ -81,12 +99,54 @@ export default function SustainabilityDashboard() {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        <StatCard icon={Cloud} value="82" label="Metric tons of CO₂ avoided" colorClass="bg-green-50 text-green-500" />
-        <StatCard icon={Droplets} value="8,059" label="Gallons of water saved" colorClass="bg-blue-50 text-blue-400" />
-        <StatCard icon={Shirt} value="132" label="Individual clothes saved" colorClass="bg-orange-50 text-orange-400" />
-        <StatCard icon={Zap} value="5,287" label="Kwh of electricity saved" colorClass="bg-yellow-50 text-yellow-400" borderClass="border-blue-500 shadow-md" />
-        <StatCard icon={Pipette} value="2,350" label="Kg of toxic dye chemicals avoided" colorClass="bg-purple-50 text-purple-400" />
-        <StatCard icon={Mountain} value="8,000" label="m² of land preserved" colorClass="bg-red-50 text-red-400" />
+        <StatCard 
+          icon={Cloud} 
+          value="82" 
+          label="Metric tons of CO₂ avoided" 
+          colorClass="bg-green-50 text-green-500" 
+          isSelected={selectedCard === 0}
+          onClick={() => setSelectedCard(0)}
+        />
+        <StatCard 
+          icon={Droplets} 
+          value="8,059" 
+          label="Gallons of water saved" 
+          colorClass="bg-blue-50 text-blue-400" 
+          isSelected={selectedCard === 1}
+          onClick={() => setSelectedCard(1)}
+        />
+        <StatCard 
+          icon={Shirt} 
+          value="132" 
+          label="Individual clothes saved" 
+          colorClass="bg-orange-50 text-orange-400" 
+          isSelected={selectedCard === 2}
+          onClick={() => setSelectedCard(2)}
+        />
+        <StatCard 
+          icon={Zap} 
+          value="5,287" 
+          label="Kwh of electricity saved" 
+          colorClass="bg-yellow-50 text-yellow-400" 
+          isSelected={selectedCard === 3}
+          onClick={() => setSelectedCard(3)}
+        />
+        <StatCard 
+          icon={Pipette} 
+          value="2,350" 
+          label="Kg of toxic dye chemicals avoided" 
+          colorClass="bg-purple-50 text-purple-400" 
+          isSelected={selectedCard === 4}
+          onClick={() => setSelectedCard(4)}
+        />
+        <StatCard 
+          icon={Mountain} 
+          value="8,000" 
+          label="m² of land preserved" 
+          colorClass="bg-red-50 text-red-400" 
+          isSelected={selectedCard === 5}
+          onClick={() => setSelectedCard(5)}
+        />
       </div>
 
       <section>
@@ -96,30 +156,8 @@ export default function SustainabilityDashboard() {
         </div>
 
         <div className="bg-white border-2 border-gray-200 rounded-xl p-4 md:p-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
-            <h3 className="text-xl font-semibold text-gray-800">Chart</h3>
-            <div className="flex items-center gap-3">
-              <div className="flex border rounded-lg overflow-hidden bg-white shadow-sm">
-                <button 
-                  onClick={() => setView('bar')}
-                  className={`p-2 transition-colors ${view === 'bar' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
-                >
-                  <BarChart2 size={20} className={view === 'bar' ? 'text-teal-600' : 'text-gray-500'} />
-                </button>
-                <button 
-                  onClick={() => setView('trend')}
-                  className={`p-2 border-l transition-colors ${view === 'trend' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
-                >
-                  <TrendingUp size={20} className={view === 'trend' ? 'text-teal-600' : 'text-gray-500'} />
-                </button>
-              </div>
-              <button className="flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 bg-white shadow-sm">
-                Last Month <ChevronDown size={16} />
-              </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600">
-                <Fullscreen size={20} />
-              </button>
-            </div>
+          <div className="mb-10">
+            <h3 className="text-xl font-semibold text-gray-800">Monthly Usage</h3>
           </div>
 
           <div className="h-[350px] w-full">
@@ -146,11 +184,10 @@ export default function SustainabilityDashboard() {
                     if (active && payload && payload.length) {
                       return (
                         <div className="bg-gray-200 p-3 rounded shadow-lg border border-gray-300">
-                          {/* Use payload[0].value to get the number */}
                           <p className="text-sm font-bold text-gray-800">
                             {payload[0].value}
                           </p>
-                          <p className="text-xs text-gray-600">January 15, 2026</p>
+                          <p className="text-xs text-gray-600">{payload[0].payload.name} 2026</p>
                         </div>
                       );
                     }
@@ -161,8 +198,9 @@ export default function SustainabilityDashboard() {
                   {DATA.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={entry.highlighted ? '#0D9488' : '#E5E7EB'} 
-                      className="transition-all duration-300 hover:opacity-80"
+                      fill={selectedBar === index ? '#0D9488' : '#E5E7EB'} 
+                      className="transition-all duration-300 hover:opacity-80 cursor-pointer"
+                      onClick={() => handleBarClick(index)}
                     />
                   ))}
                 </Bar>
