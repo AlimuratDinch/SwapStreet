@@ -85,7 +85,7 @@ const StatCard: React.FC<StatCardProps> = ({
 );
 
 // Custom Tooltip Component
-const CustomTooltip = ({
+export const CustomTooltip = ({
   active,
   payload,
 }: {
