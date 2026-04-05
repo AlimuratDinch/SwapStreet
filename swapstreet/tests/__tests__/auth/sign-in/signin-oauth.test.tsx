@@ -65,19 +65,22 @@ describe("LoginPage - OAuth Integration", () => {
       render(<LoginPage />);
 
       expect(
-        screen.getByRole("button", { name: /sign in with google/i })
+        screen.getByRole("button", { name: /sign in with google/i }),
       ).toBeInTheDocument();
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /^sign in$/i })
+        screen.getByRole("button", { name: /^sign in$/i }),
       ).toBeInTheDocument();
     });
   });
 
   describe("OAuth Button Interaction", () => {
     it("calls initiateOAuthSignIn when Google button is clicked", () => {
-      const initiateOAuthSignInSpy = jest.spyOn(oauthApi, "initiateOAuthSignIn");
+      const initiateOAuthSignInSpy = jest.spyOn(
+        oauthApi,
+        "initiateOAuthSignIn",
+      );
 
       render(<LoginPage />);
 
@@ -91,7 +94,10 @@ describe("LoginPage - OAuth Integration", () => {
     });
 
     it("passes correct provider to initiateOAuthSignIn", () => {
-      const initiateOAuthSignInSpy = jest.spyOn(oauthApi, "initiateOAuthSignIn");
+      const initiateOAuthSignInSpy = jest.spyOn(
+        oauthApi,
+        "initiateOAuthSignIn",
+      );
 
       render(<LoginPage />);
 
@@ -108,7 +114,7 @@ describe("LoginPage - OAuth Integration", () => {
   describe("OAuth Button State", () => {
     it("disables OAuth button when loading state is active", async () => {
       global.fetch = jest.fn().mockReturnValue(
-        new Promise(() => {}) // Never resolves to keep loading state
+        new Promise(() => {}), // Never resolves to keep loading state
       );
 
       render(<LoginPage />);
@@ -149,7 +155,9 @@ describe("LoginPage - OAuth Integration", () => {
 
       const googleButtonPosition =
         googleButton.compareDocumentPosition(emailInput);
-      expect(googleButtonPosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(
+        googleButtonPosition & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
     });
 
     it("has proper spacing with divider", () => {

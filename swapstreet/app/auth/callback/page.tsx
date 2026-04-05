@@ -31,7 +31,10 @@ export default function OAuthCallbackPage() {
     if (errorParam) {
       const errorMessage =
         errorDescription || errorParam || "Authentication failed";
-      logger.warn("OAuth callback error", { error: errorParam, errorDescription });
+      logger.warn("OAuth callback error", {
+        error: errorParam,
+        errorDescription,
+      });
       setError(errorMessage);
       setIsProcessing(false);
       return;
@@ -47,7 +50,7 @@ export default function OAuthCallbackPage() {
     try {
       logger.info("OAuth callback successful, logging in user");
       login(accessToken);
-      
+
       setTimeout(() => {
         router.replace("/browse");
       }, 100);

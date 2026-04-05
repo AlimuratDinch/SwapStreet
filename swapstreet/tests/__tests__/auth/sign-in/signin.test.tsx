@@ -70,7 +70,7 @@ describe("LoginPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /sign in/i }),
+      screen.getByRole("button", { name: /^sign in$/i }),
     ).toBeInTheDocument();
   });
 
@@ -89,7 +89,7 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "password" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
 
     expect(
       await screen.findByText(/invalid email or password/i),
@@ -111,7 +111,7 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "password123" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
 
     await waitFor(() => {
       // Note: We updated the code to use replace()
@@ -139,7 +139,7 @@ describe("LoginPage", () => {
       target: { value: "password" },
     });
 
-    const button = screen.getByRole("button", { name: /sign in/i });
+    const button = screen.getByRole("button", { name: /^sign in$/i });
     fireEvent.click(button);
 
     // Verify loading state
@@ -161,7 +161,7 @@ describe("LoginPage", () => {
     fireEvent.change(screen.getByLabelText(/password/i), {
       target: { value: "password123" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
 
     expect(await screen.findByText(/network error/i)).toBeInTheDocument();
   });

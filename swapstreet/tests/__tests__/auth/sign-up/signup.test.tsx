@@ -74,7 +74,7 @@ describe("RegistrationPage", () => {
       target: { value: "password123" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^sign up$/i }));
 
     expect(
       await screen.findByText(/you must agree to the cookie policy/i),
@@ -106,7 +106,7 @@ describe("RegistrationPage", () => {
     });
 
     fireEvent.click(screen.getByLabelText(/i agree to the use of cookies/i));
-    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^sign up$/i }));
 
     expect(
       await screen.findByText(/email already in use/i),
@@ -137,7 +137,7 @@ describe("RegistrationPage", () => {
     fireEvent.click(screen.getByLabelText(/i agree to the use of cookies/i));
 
     // 4. CLICK SUBMIT
-    const button = screen.getByRole("button", { name: /sign up/i });
+    const button = screen.getByRole("button", { name: /^sign up$/i });
     fireEvent.click(button);
 
     // 5. ASSERTIONS

@@ -62,7 +62,7 @@ describe("RegistrationPage - OAuth Integration", () => {
       render(<RegistrationPage />);
 
       expect(
-        screen.getByRole("button", { name: /sign up with google/i })
+        screen.getByRole("button", { name: /sign up with google/i }),
       ).toBeInTheDocument();
       expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
@@ -71,7 +71,10 @@ describe("RegistrationPage - OAuth Integration", () => {
 
   describe("OAuth Button Interaction", () => {
     it("calls initiateOAuthSignIn with signup=true when Google button is clicked", () => {
-      const initiateOAuthSignInSpy = jest.spyOn(oauthApi, "initiateOAuthSignIn");
+      const initiateOAuthSignInSpy = jest.spyOn(
+        oauthApi,
+        "initiateOAuthSignIn",
+      );
 
       render(<RegistrationPage />);
 
@@ -85,7 +88,10 @@ describe("RegistrationPage - OAuth Integration", () => {
     });
 
     it("passes signup=true to indicate new user registration", () => {
-      const initiateOAuthSignInSpy = jest.spyOn(oauthApi, "initiateOAuthSignIn");
+      const initiateOAuthSignInSpy = jest.spyOn(
+        oauthApi,
+        "initiateOAuthSignIn",
+      );
 
       render(<RegistrationPage />);
 
@@ -102,9 +108,7 @@ describe("RegistrationPage - OAuth Integration", () => {
 
   describe("OAuth Button State", () => {
     it("disables OAuth button when loading state is active", async () => {
-      global.fetch = jest.fn().mockReturnValue(
-        new Promise(() => {})
-      );
+      global.fetch = jest.fn().mockReturnValue(new Promise(() => {}));
 
       render(<RegistrationPage />);
 
@@ -121,7 +125,9 @@ describe("RegistrationPage - OAuth Integration", () => {
         target: { value: "password123" },
       });
       fireEvent.click(
-        screen.getByRole("checkbox", { name: /i agree to the use of cookies/i })
+        screen.getByRole("checkbox", {
+          name: /i agree to the use of cookies/i,
+        }),
       );
       fireEvent.click(screen.getByRole("button", { name: /^sign up$/i }));
 
@@ -152,7 +158,9 @@ describe("RegistrationPage - OAuth Integration", () => {
 
       const googleButtonPosition =
         googleButton.compareDocumentPosition(usernameInput);
-      expect(googleButtonPosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(
+        googleButtonPosition & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
     });
 
     it("has proper spacing with divider", () => {
@@ -185,7 +193,9 @@ describe("RegistrationPage - OAuth Integration", () => {
         target: { value: "password123" },
       });
       fireEvent.click(
-        screen.getByRole("checkbox", { name: /i agree to the use of cookies/i })
+        screen.getByRole("checkbox", {
+          name: /i agree to the use of cookies/i,
+        }),
       );
       fireEvent.click(screen.getByRole("button", { name: /^sign up$/i }));
 
@@ -217,10 +227,10 @@ describe("RegistrationPage - OAuth Integration", () => {
       render(<RegistrationPage />);
 
       expect(
-        screen.getByRole("button", { name: /sign up with google/i })
+        screen.getByRole("button", { name: /sign up with google/i }),
       ).toBeInTheDocument();
       expect(
-        screen.queryByRole("button", { name: /sign in with google/i })
+        screen.queryByRole("button", { name: /sign in with google/i }),
       ).not.toBeInTheDocument();
     });
   });

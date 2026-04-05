@@ -66,7 +66,7 @@ describe("OAuthCallbackPage", () => {
       render(<OAuthCallbackPage />);
 
       expect(
-        screen.getByText(/completing authentication/i)
+        screen.getByText(/completing authentication/i),
       ).toBeInTheDocument();
     });
 
@@ -122,7 +122,7 @@ describe("OAuthCallbackPage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("heading", { name: /authentication failed/i })
+          screen.getByRole("heading", { name: /authentication failed/i }),
         ).toBeInTheDocument();
         expect(screen.getByText(/access_denied/i)).toBeInTheDocument();
       });
@@ -141,16 +141,13 @@ describe("OAuthCallbackPage", () => {
 
     it("prioritizes error_description over error code", async () => {
       mockSearchParams.set("error", "some_error");
-      mockSearchParams.set(
-        "error_description",
-        "A more helpful error message"
-      );
+      mockSearchParams.set("error_description", "A more helpful error message");
 
       render(<OAuthCallbackPage />);
 
       await waitFor(() => {
         expect(
-          screen.getByText(/a more helpful error message/i)
+          screen.getByText(/a more helpful error message/i),
         ).toBeInTheDocument();
       });
     });
@@ -160,7 +157,7 @@ describe("OAuthCallbackPage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/invalid authentication response/i)
+          screen.getByText(/invalid authentication response/i),
         ).toBeInTheDocument();
       });
     });
@@ -175,7 +172,7 @@ describe("OAuthCallbackPage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/failed to complete authentication/i)
+          screen.getByText(/failed to complete authentication/i),
         ).toBeInTheDocument();
       });
     });
@@ -236,7 +233,7 @@ describe("OAuthCallbackPage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/invalid authentication response/i)
+          screen.getByText(/invalid authentication response/i),
         ).toBeInTheDocument();
       });
     });
@@ -248,7 +245,7 @@ describe("OAuthCallbackPage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/invalid authentication response/i)
+          screen.getByText(/invalid authentication response/i),
         ).toBeInTheDocument();
       });
     });

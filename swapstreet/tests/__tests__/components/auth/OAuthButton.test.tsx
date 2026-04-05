@@ -16,7 +16,7 @@ describe("OAuthButton", () => {
           provider="google"
           variant="signin"
           onClick={mockOnClick}
-        />
+        />,
       );
 
       expect(screen.getByText("Sign in with Google")).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe("OAuthButton", () => {
           provider="google"
           variant="signup"
           onClick={mockOnClick}
-        />
+        />,
       );
 
       expect(screen.getByText("Sign up with Google")).toBeInTheDocument();
@@ -36,7 +36,7 @@ describe("OAuthButton", () => {
 
     it("renders Google link button with correct text", () => {
       render(
-        <OAuthButton provider="google" variant="link" onClick={mockOnClick} />
+        <OAuthButton provider="google" variant="link" onClick={mockOnClick} />,
       );
 
       expect(screen.getByText("Link Google account")).toBeInTheDocument();
@@ -50,7 +50,11 @@ describe("OAuthButton", () => {
 
     it("calls onClick handler when clicked", () => {
       render(
-        <OAuthButton provider="google" onClick={mockOnClick} variant="signin" />
+        <OAuthButton
+          provider="google"
+          onClick={mockOnClick}
+          variant="signin"
+        />,
       );
 
       const button = screen.getByRole("button");
@@ -61,11 +65,7 @@ describe("OAuthButton", () => {
 
     it("is disabled when disabled prop is true", () => {
       render(
-        <OAuthButton
-          provider="google"
-          onClick={mockOnClick}
-          disabled={true}
-        />
+        <OAuthButton provider="google" onClick={mockOnClick} disabled={true} />,
       );
 
       const button = screen.getByRole("button");
@@ -74,11 +74,7 @@ describe("OAuthButton", () => {
 
     it("does not call onClick when disabled and clicked", () => {
       render(
-        <OAuthButton
-          provider="google"
-          onClick={mockOnClick}
-          disabled={true}
-        />
+        <OAuthButton provider="google" onClick={mockOnClick} disabled={true} />,
       );
 
       const button = screen.getByRole("button");
@@ -105,7 +101,7 @@ describe("OAuthButton", () => {
           provider="facebook"
           variant="signin"
           onClick={mockOnClick}
-        />
+        />,
       );
 
       expect(screen.getByText("Sign in with Facebook")).toBeInTheDocument();
@@ -117,7 +113,7 @@ describe("OAuthButton", () => {
           provider="facebook"
           variant="signup"
           onClick={mockOnClick}
-        />
+        />,
       );
 
       expect(screen.getByText("Sign up with Facebook")).toBeInTheDocument();
@@ -129,7 +125,7 @@ describe("OAuthButton", () => {
           provider="facebook"
           variant="link"
           onClick={mockOnClick}
-        />
+        />,
       );
 
       expect(screen.getByText("Link Facebook account")).toBeInTheDocument();
@@ -147,7 +143,7 @@ describe("OAuthButton", () => {
   describe("Apple Provider", () => {
     it("renders Apple sign-in button with correct text", () => {
       render(
-        <OAuthButton provider="apple" variant="signin" onClick={mockOnClick} />
+        <OAuthButton provider="apple" variant="signin" onClick={mockOnClick} />,
       );
 
       expect(screen.getByText("Sign in with Apple")).toBeInTheDocument();
@@ -155,7 +151,7 @@ describe("OAuthButton", () => {
 
     it("renders Apple sign-up button with correct text", () => {
       render(
-        <OAuthButton provider="apple" variant="signup" onClick={mockOnClick} />
+        <OAuthButton provider="apple" variant="signup" onClick={mockOnClick} />,
       );
 
       expect(screen.getByText("Sign up with Apple")).toBeInTheDocument();
@@ -163,7 +159,7 @@ describe("OAuthButton", () => {
 
     it("renders Apple link button with correct text", () => {
       render(
-        <OAuthButton provider="apple" variant="link" onClick={mockOnClick} />
+        <OAuthButton provider="apple" variant="link" onClick={mockOnClick} />,
       );
 
       expect(screen.getByText("Link Apple account")).toBeInTheDocument();

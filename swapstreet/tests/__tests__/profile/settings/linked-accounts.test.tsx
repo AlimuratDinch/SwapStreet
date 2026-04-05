@@ -52,14 +52,14 @@ describe("SettingsPage - Linked Accounts", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("heading", { name: /linked accounts/i })
+          screen.getByRole("heading", { name: /linked accounts/i }),
         ).toBeInTheDocument();
       });
     });
 
     it("shows loading state while fetching accounts", () => {
       (oauthApi.getLinkedAccounts as jest.Mock).mockReturnValue(
-        new Promise(() => {})
+        new Promise(() => {}),
       );
 
       render(<SettingsPage />);
@@ -76,7 +76,7 @@ describe("SettingsPage - Linked Accounts", () => {
 
       await waitFor(() => {
         expect(oauthApi.getLinkedAccounts).toHaveBeenCalledWith(
-          mockAccessToken
+          mockAccessToken,
         );
       });
     });
@@ -92,7 +92,7 @@ describe("SettingsPage - Linked Accounts", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /link account/i })
+          screen.getByRole("button", { name: /link account/i }),
         ).toBeInTheDocument();
       });
     });
@@ -106,7 +106,9 @@ describe("SettingsPage - Linked Accounts", () => {
       render(<SettingsPage />);
 
       await waitFor(() => {
-        const linkButton = screen.getByRole("button", { name: /link account/i });
+        const linkButton = screen.getByRole("button", {
+          name: /link account/i,
+        });
         fireEvent.click(linkButton);
       });
 
@@ -130,7 +132,7 @@ describe("SettingsPage - Linked Accounts", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /unlink/i })
+          screen.getByRole("button", { name: /unlink/i }),
         ).toBeInTheDocument();
       });
     });
@@ -156,7 +158,7 @@ describe("SettingsPage - Linked Accounts", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByRole("button", { name: /link account/i })
+          screen.queryByRole("button", { name: /link account/i }),
         ).not.toBeInTheDocument();
       });
     });
@@ -182,7 +184,7 @@ describe("SettingsPage - Linked Accounts", () => {
       });
 
       expect(
-        screen.getByRole("heading", { name: /unlink google account/i })
+        screen.getByRole("heading", { name: /unlink google account/i }),
       ).toBeInTheDocument();
     });
 
@@ -217,7 +219,7 @@ describe("SettingsPage - Linked Accounts", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByRole("heading", { name: /unlink google account/i })
+          screen.queryByRole("heading", { name: /unlink google account/i }),
         ).not.toBeInTheDocument();
       });
     });
@@ -252,7 +254,7 @@ describe("SettingsPage - Linked Accounts", () => {
       await waitFor(() => {
         expect(oauthApi.unlinkAccount).toHaveBeenCalledWith(
           "google",
-          mockAccessToken
+          mockAccessToken,
         );
       });
     });
@@ -271,14 +273,10 @@ describe("SettingsPage - Linked Accounts", () => {
         fireEvent.click(screen.getByRole("button", { name: /^unlink$/i }));
       });
 
-      fireEvent.click(
-        screen.getByRole("button", { name: /unlink account/i })
-      );
+      fireEvent.click(screen.getByRole("button", { name: /unlink account/i }));
 
       await waitFor(() => {
-        expect(
-          screen.queryByText("test@gmail.com")
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText("test@gmail.com")).not.toBeInTheDocument();
       });
     });
 
@@ -296,13 +294,11 @@ describe("SettingsPage - Linked Accounts", () => {
         fireEvent.click(screen.getByRole("button", { name: /^unlink$/i }));
       });
 
-      fireEvent.click(
-        screen.getByRole("button", { name: /unlink account/i })
-      );
+      fireEvent.click(screen.getByRole("button", { name: /unlink account/i }));
 
       await waitFor(() => {
         expect(
-          screen.getByText(/successfully unlinked google account/i)
+          screen.getByText(/successfully unlinked google account/i),
         ).toBeInTheDocument();
       });
     });
@@ -312,7 +308,7 @@ describe("SettingsPage - Linked Accounts", () => {
         linkedAccounts: [linkedAccount],
       });
       (oauthApi.unlinkAccount as jest.Mock).mockReturnValue(
-        new Promise(() => {})
+        new Promise(() => {}),
       );
 
       render(<SettingsPage />);
@@ -327,7 +323,9 @@ describe("SettingsPage - Linked Accounts", () => {
       fireEvent.click(unlinkButton);
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /unlinking/i })).toBeDisabled();
+        expect(
+          screen.getByRole("button", { name: /unlinking/i }),
+        ).toBeDisabled();
       });
     });
 
@@ -336,7 +334,7 @@ describe("SettingsPage - Linked Accounts", () => {
         linkedAccounts: [linkedAccount],
       });
       (oauthApi.unlinkAccount as jest.Mock).mockRejectedValueOnce(
-        new Error("Cannot unlink only authentication method")
+        new Error("Cannot unlink only authentication method"),
       );
 
       render(<SettingsPage />);
@@ -345,13 +343,11 @@ describe("SettingsPage - Linked Accounts", () => {
         fireEvent.click(screen.getByRole("button", { name: /^unlink$/i }));
       });
 
-      fireEvent.click(
-        screen.getByRole("button", { name: /unlink account/i })
-      );
+      fireEvent.click(screen.getByRole("button", { name: /unlink account/i }));
 
       await waitFor(() => {
         expect(
-          screen.getByText(/cannot unlink only authentication method/i)
+          screen.getByText(/cannot unlink only authentication method/i),
         ).toBeInTheDocument();
       });
     });
@@ -360,14 +356,14 @@ describe("SettingsPage - Linked Accounts", () => {
   describe("Error Handling", () => {
     it("shows error message when fetching accounts fails", async () => {
       (oauthApi.getLinkedAccounts as jest.Mock).mockRejectedValueOnce(
-        new Error("Network error")
+        new Error("Network error"),
       );
 
       render(<SettingsPage />);
 
       await waitFor(() => {
         expect(
-          screen.getByText(/failed to load linked accounts/i)
+          screen.getByText(/failed to load linked accounts/i),
         ).toBeInTheDocument();
       });
     });
@@ -383,7 +379,7 @@ describe("SettingsPage - Linked Accounts", () => {
         linkedAccounts: [linkedAccount],
       });
       (oauthApi.unlinkAccount as jest.Mock).mockRejectedValueOnce(
-        "Generic error"
+        "Generic error",
       );
 
       render(<SettingsPage />);
@@ -392,15 +388,16 @@ describe("SettingsPage - Linked Accounts", () => {
         fireEvent.click(screen.getByRole("button", { name: /^unlink$/i }));
       });
 
-      fireEvent.click(
-        screen.getByRole("button", { name: /unlink account/i })
-      );
+      fireEvent.click(screen.getByRole("button", { name: /unlink account/i }));
 
-      await waitFor(() => {
-        expect(
-          screen.getByText(/failed to unlink account/i)
-        ).toBeInTheDocument();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(
+            screen.getByText(/failed to unlink account/i),
+          ).toBeInTheDocument();
+        },
+        { timeout: 3000 },
+      );
     });
   });
 
@@ -435,10 +432,10 @@ describe("SettingsPage - Linked Accounts", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/sustainability tracking/i)
+          screen.getByText(/sustainability tracking/i),
         ).toBeInTheDocument();
         expect(
-          screen.getByRole("button", { name: /delete account/i })
+          screen.getByRole("button", { name: /delete account/i }),
         ).toBeInTheDocument();
       });
     });

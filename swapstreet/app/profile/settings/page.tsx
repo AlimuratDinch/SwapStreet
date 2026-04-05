@@ -2,10 +2,8 @@
 
 import { Header } from "@/components/common/Header";
 import { logger } from "@/components/common/logger";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
-import OAuthButton from "@/components/auth/OAuthButton";
 import {
   getLinkedAccounts,
   unlinkAccount,
@@ -21,7 +19,6 @@ function Separator() {
 
 export default function SettingsPage() {
   const { accessToken, logout } = useAuth();
-  const router = useRouter();
   const [sustainabilityTracking, setSustainabilityTracking] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -32,7 +29,7 @@ export default function SettingsPage() {
   const [accountsError, setAccountsError] = useState<string | null>(null);
   const [isUnlinkModalOpen, setIsUnlinkModalOpen] = useState(false);
   const [accountToUnlink, setAccountToUnlink] = useState<LinkedAccount | null>(
-    null
+    null,
   );
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
@@ -95,12 +92,12 @@ export default function SettingsPage() {
     try {
       await unlinkAccount(accountToUnlink.provider, accessToken);
       setLinkedAccounts((prev) =>
-        prev.filter((acc) => acc.provider !== accountToUnlink.provider)
+        prev.filter((acc) => acc.provider !== accountToUnlink.provider),
       );
       setIsUnlinkModalOpen(false);
       setAccountToUnlink(null);
       setSuccessMessage(
-        `Successfully unlinked ${accountToUnlink.provider} account`
+        `Successfully unlinked ${accountToUnlink.provider} account`,
       );
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error) {
@@ -108,7 +105,7 @@ export default function SettingsPage() {
       setUnlinkError(
         error instanceof Error
           ? error.message
-          : "Failed to unlink account. Please try again."
+          : "Failed to unlink account. Please try again.",
       );
     } finally {
       setIsUnlinking(false);
@@ -144,7 +141,9 @@ export default function SettingsPage() {
                 clipRule="evenodd"
               />
             </svg>
-            <p className="text-sm text-teal-800 font-medium">{successMessage}</p>
+            <p className="text-sm text-teal-800 font-medium">
+              {successMessage}
+            </p>
           </div>
         )}
 
@@ -163,7 +162,9 @@ export default function SettingsPage() {
           {isLoadingAccounts ? (
             <div className="flex items-center gap-2 py-4">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-teal-600 border-t-transparent"></div>
-              <p className="text-sm text-gray-600">Loading linked accounts...</p>
+              <p className="text-sm text-gray-600">
+                Loading linked accounts...
+              </p>
             </div>
           ) : accountsError ? (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -192,7 +193,9 @@ export default function SettingsPage() {
                     />
                   </svg>
                   <div>
-                    <h3 className="font-medium text-gray-900 text-sm">Google</h3>
+                    <h3 className="font-medium text-gray-900 text-sm">
+                      Google
+                    </h3>
                     {isAccountLinked("google") && (
                       <p className="text-xs text-gray-500">
                         {getLinkedAccountEmail("google")}
@@ -204,7 +207,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => {
                       const account = linkedAccounts.find(
-                        (acc) => acc.provider === "google"
+                        (acc) => acc.provider === "google",
                       );
                       if (account) {
                         setAccountToUnlink(account);

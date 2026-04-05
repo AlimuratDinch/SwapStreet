@@ -14,7 +14,7 @@ export interface LinkedAccountsResponse {
  * Fetch all linked OAuth accounts for the current user
  */
 export async function getLinkedAccounts(
-  accessToken: string
+  accessToken: string,
 ): Promise<LinkedAccountsResponse> {
   const response = await fetch(`${API_URL}/auth/linked-accounts`, {
     method: "GET",
@@ -28,7 +28,7 @@ export async function getLinkedAccounts(
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      errorText || `Failed to fetch linked accounts: ${response.status}`
+      errorText || `Failed to fetch linked accounts: ${response.status}`,
     );
   }
 
@@ -41,23 +41,22 @@ export async function getLinkedAccounts(
  */
 export async function unlinkAccount(
   provider: "google" | "facebook" | "apple",
-  accessToken: string
+  accessToken: string,
 ): Promise<{ success: boolean }> {
-  const response = await fetch(
-    `${API_URL}/auth/linked-accounts/${provider}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    }
-  );
+  const response = await fetch(`${API_URL}/auth/linked-accounts/${provider}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(errorText || `Failed to unlink account: ${response.status}`);
+    throw new Error(
+      errorText || `Failed to unlink account: ${response.status}`,
+    );
   }
 
   return response.json();
@@ -77,7 +76,7 @@ export function initiateOAuthLink(provider: "google" | "facebook" | "apple") {
  */
 export function initiateOAuthSignIn(
   provider: "google" | "facebook" | "apple",
-  isSignUp = false
+  isSignUp = false,
 ) {
   const signupParam = isSignUp ? "?signup=true" : "";
   window.location.href = `${API_URL}/auth/${provider}${signupParam}`;

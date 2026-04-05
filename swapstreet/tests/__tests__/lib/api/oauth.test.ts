@@ -54,7 +54,7 @@ describe("OAuth API", () => {
             "Content-Type": "application/json",
           }),
           credentials: "include",
-        })
+        }),
       );
     });
 
@@ -68,7 +68,7 @@ describe("OAuth API", () => {
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       expect(fetchCall[1].headers.Authorization).toBe(
-        `Bearer ${mockAccessToken}`
+        `Bearer ${mockAccessToken}`,
       );
     });
 
@@ -80,7 +80,7 @@ describe("OAuth API", () => {
       } as Response);
 
       await expect(getLinkedAccounts(mockAccessToken)).rejects.toThrow(
-        "Unauthorized"
+        "Unauthorized",
       );
     });
 
@@ -92,7 +92,7 @@ describe("OAuth API", () => {
       } as Response);
 
       await expect(getLinkedAccounts(mockAccessToken)).rejects.toThrow(
-        "Failed to fetch linked accounts: 500"
+        "Failed to fetch linked accounts: 500",
       );
     });
 
@@ -129,7 +129,7 @@ describe("OAuth API", () => {
             Authorization: `Bearer ${mockAccessToken}`,
           }),
           credentials: "include",
-        })
+        }),
       );
     });
 
@@ -165,7 +165,7 @@ describe("OAuth API", () => {
       } as Response);
 
       await expect(unlinkAccount("google", mockAccessToken)).rejects.toThrow(
-        "Cannot unlink only authentication method"
+        "Cannot unlink only authentication method",
       );
     });
 
@@ -177,7 +177,7 @@ describe("OAuth API", () => {
       } as Response);
 
       await expect(unlinkAccount("google", mockAccessToken)).rejects.toThrow(
-        "Failed to unlink account: 404"
+        "Failed to unlink account: 404",
       );
     });
   });
