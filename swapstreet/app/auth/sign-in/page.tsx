@@ -8,6 +8,8 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import FormField from "@/components/auth/FormField";
 import ErrorMessage from "@/components/auth/ErrorMessage";
 import AuthButton from "@/components/auth/AuthButton";
+import OAuthButton from "@/components/auth/OAuthButton";
+import { initiateOAuthSignIn } from "@/lib/api/oauth";
 
 function parseApiError(text: string, fallback: string): string {
   try {
@@ -101,6 +103,26 @@ export default function LoginPage() {
             Welcome Back
           </h1>
           <p className="text-teal-600">Sign in to your account</p>
+        </div>
+
+        <div className="space-y-4">
+          <OAuthButton
+            provider="google"
+            variant="signin"
+            onClick={() => initiateOAuthSignIn("google")}
+            disabled={loading}
+          />
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500 font-medium">
+                OR
+              </span>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
