@@ -66,6 +66,18 @@ export default function ChatPanel({
   const autoSendRef = useRef<string>(searchParams.get("msg") ?? "");
 
   useEffect(() => {
+    const pending = searchParams.get("msg");
+    if (!pending || typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("msg")) return;
+
+    url.searchParams.delete("msg");
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, [searchParams]);
+
+  useEffect(() => {
     markAsRead(room.id);
   }, [room.id, messages, markAsRead]);
 
@@ -128,9 +140,12 @@ export default function ChatPanel({
     });
     connection.on("MessagesRead", (event: MessagesReadEvent) => {
       if (event.chatroomId !== room.id) return;
+      if (event.readerId === userId) return;
       setMessages((prev) =>
         prev.map((m) =>
-          m.readAt == null ? { ...m, readAt: event.readAt } : m,
+          m.author === userId && m.readAt == null
+            ? { ...m, readAt: event.readAt }
+            : m,
         ),
       );
     });
