@@ -89,7 +89,7 @@ export default function InfiniteBrowse({
   return (
     <main className="flex-1 h-full overflow-y-auto p-6">
       {/* The Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
         {items.map((item, index) => (
           <CardItem
             key={`${item.id}-${index}`} // Composite key to prevent collisions
