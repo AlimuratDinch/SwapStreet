@@ -185,7 +185,7 @@ export function BrowseSidebar() {
             <SidebarGroupContent>
               <SidebarMenu className="gap-4">
                 {/* Location Button */}
-                 <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+                <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
                   <SidebarMenuButton
                     onClick={() => setShowLocationModal(true)}
                     tooltip="Location"

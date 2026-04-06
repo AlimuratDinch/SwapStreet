@@ -30,7 +30,9 @@ export default function InfiniteBrowse({
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [hasNext, setHasNext] = useState(initialHasNext);
   const [isLoading, setIsLoading] = useState(false);
-  const [locationLabels, setLocationLabels] = useState<Record<string, string>>({});
+  const [locationLabels, setLocationLabels] = useState<Record<string, string>>(
+    {},
+  );
 
   const router = useRouter();
 
@@ -60,7 +62,9 @@ export default function InfiniteBrowse({
 
     const resolveLocations = async () => {
       const entries = await Promise.all(
-        missingFsas.map(async (fsa) => [fsa, await getLocationLabelByFsa(fsa)] as const),
+        missingFsas.map(
+          async (fsa) => [fsa, await getLocationLabelByFsa(fsa)] as const,
+        ),
       );
 
       if (isCancelled) return;

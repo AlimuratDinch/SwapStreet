@@ -106,12 +106,13 @@ export function FilterSelect({
                         backgroundImage:
                           opt === "MultiColor"
                             ? "linear-gradient(90deg, #ef4444 0 33.33%, #22c55e 33.33% 66.66%, #3b82f6 66.66% 100%)"
-                          : undefined,
+                            : undefined,
                         backgroundColor:
                           opt === "MultiColor"
                             ? undefined
-                            : (colorMap[opt] || "#CCCCCC"),
-                        border: opt === "White" ? "1px solid #D1D5DB" : undefined,
+                            : colorMap[opt] || "#CCCCCC",
+                        border:
+                          opt === "White" ? "1px solid #D1D5DB" : undefined,
                       }}
                     />
                   )}

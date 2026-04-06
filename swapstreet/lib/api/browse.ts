@@ -68,15 +68,23 @@ export async function getLocationLabelByFsa(fsa: string): Promise<string> {
   if (!fsa) return "";
 
   try {
-    const res = await fetch(`${API_BASE}/location/lookup/${encodeURIComponent(fsa)}`, {
-      cache: "force-cache",
-    });
+    const res = await fetch(
+      `${API_BASE}/location/lookup/${encodeURIComponent(fsa)}`,
+      {
+        cache: "force-cache",
+      },
+    );
 
     if (!res.ok) return fsa;
 
     const data = (await res.json()) as LocationLookupResponse;
     const city = data.city ?? data.City ?? "";
-    const province = data.provinceCode ?? data.ProvinceCode ?? data.province ?? data.Province ?? "";
+    const province =
+      data.provinceCode ??
+      data.ProvinceCode ??
+      data.province ??
+      data.Province ??
+      "";
 
     if (!city && !province) return fsa;
     if (!city) return province;
