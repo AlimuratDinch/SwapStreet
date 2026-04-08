@@ -34,6 +34,28 @@ async function parseApiError(
     try {
       const errorData = JSON.parse(text);
 
+      // Check for validation errors with Details array first (highest priority)
+      if (errorData.Details && Array.isArray(errorData.Details)) {
+        const detailMessages = errorData.Details.map((detail: string) => {
+          // Clean up field names like "Title: " from messages
+          return detail.replace(/^[A-Za-z]+:\s*/, "");
+        }).join("; ");
+        return `Please fix the following: ${detailMessages}`;
+      }
+
+      // Handle validation errors object (second priority)
+      if (errorData.errors && typeof errorData.errors === "object") {
+        const validationErrors = Object.entries(errorData.errors)
+          .map(([key, value]) => {
+            if (Array.isArray(value)) {
+              return `${key}: ${value.join(", ")}`;
+            }
+            return `${key}: ${value}`;
+          })
+          .join("; ");
+        return validationErrors || fallback;
+      }
+
       // Check for Error field (capitalized)
       if (errorData.Error && typeof errorData.Error === "string") {
         return mapTechnicalErrorToFriendly(errorData.Error);
@@ -47,28 +69,6 @@ async function parseApiError(
       // Check for message field
       if (errorData.message && typeof errorData.message === "string") {
         return mapTechnicalErrorToFriendly(errorData.message);
-      }
-
-      // Handle validation errors with Details array
-      if (errorData.Details && Array.isArray(errorData.Details)) {
-        const detailMessages = errorData.Details.map((detail: string) => {
-          // Clean up field names like "Title: " from messages
-          return detail.replace(/^[A-Za-z]+:\s*/, "");
-        }).join("; ");
-        return `Please fix the following: ${detailMessages}`;
-      }
-
-      // Handle validation errors object
-      if (errorData.errors && typeof errorData.errors === "object") {
-        const validationErrors = Object.entries(errorData.errors)
-          .map(([key, value]) => {
-            if (Array.isArray(value)) {
-              return `${key}: ${value.join(", ")}`;
-            }
-            return `${key}: ${value}`;
-          })
-          .join("; ");
-        return validationErrors || fallback;
       }
 
       // If JSON parsed but no recognizable error format

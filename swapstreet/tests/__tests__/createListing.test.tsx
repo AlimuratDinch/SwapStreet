@@ -91,6 +91,28 @@ describe("SellerListingPage", () => {
   const createFile = (name = "test.png") =>
     new File(["img"], name, { type: "image/png" });
 
+  const fillValidForm = async () => {
+    const titleInput = await screen.findByLabelText(/^Title/i);
+    fireEvent.change(titleInput, { target: { value: "Test Product" } });
+    const descInput = await screen.findByLabelText(/^Description/i);
+    fireEvent.change(descInput, { target: { value: "Test Description" } });
+    const categorySelect = await screen.findByLabelText(/^Category/i);
+    fireEvent.change(categorySelect, { target: { value: "Tops" } });
+    const brandSelect = await screen.findByLabelText(/^Brand/i);
+    fireEvent.change(brandSelect, { target: { value: "Nike" } });
+    const conditionSelect = await screen.findByLabelText(/^Condition/i);
+    fireEvent.change(conditionSelect, { target: { value: "LikeNew" } });
+    const sizeSelect = await screen.findByLabelText(/^Size/i);
+    fireEvent.change(sizeSelect, { target: { value: "M" } });
+    const colourSelect = await screen.findByLabelText(/^Colour/i);
+    fireEvent.change(colourSelect, { target: { value: "Blue" } });
+    const priceInput = await screen.findByLabelText(/^Price/i);
+    fireEvent.change(priceInput, { target: { value: "29.99" } });
+    const imagesInput = await screen.findByLabelText(/^Images/i);
+    fireEvent.change(imagesInput, { target: { files: [createFile()] } });
+    await waitFor(() => {});
+  };
+
   // ----------------------------
   // Rendering tests
   // ----------------------------
@@ -268,28 +290,6 @@ describe("SellerListingPage", () => {
   // Form submission and validation
   // ----------------------------
   describe("Form Submission", () => {
-    const fillValidForm = async () => {
-      const titleInput = await screen.findByLabelText(/^Title/i);
-      fireEvent.change(titleInput, { target: { value: "Test Product" } });
-      const descInput = await screen.findByLabelText(/^Description/i);
-      fireEvent.change(descInput, { target: { value: "Test Description" } });
-      const categorySelect = await screen.findByLabelText(/^Category/i);
-      fireEvent.change(categorySelect, { target: { value: "Tops" } });
-      const brandSelect = await screen.findByLabelText(/^Brand/i);
-      fireEvent.change(brandSelect, { target: { value: "Nike" } });
-      const conditionSelect = await screen.findByLabelText(/^Condition/i);
-      fireEvent.change(conditionSelect, { target: { value: "LikeNew" } });
-      const sizeSelect = await screen.findByLabelText(/^Size/i);
-      fireEvent.change(sizeSelect, { target: { value: "M" } });
-      const colourSelect = await screen.findByLabelText(/^Colour/i);
-      fireEvent.change(colourSelect, { target: { value: "Blue" } });
-      const priceInput = await screen.findByLabelText(/^Price/i);
-      fireEvent.change(priceInput, { target: { value: "29.99" } });
-      const imagesInput = await screen.findByLabelText(/^Images/i);
-      fireEvent.change(imagesInput, { target: { files: [createFile()] } });
-      await waitFor(() => {});
-    };
-
     it("submits form successfully with valid data", async () => {
       render(<SellerListingPage />);
       await fillValidForm();
@@ -642,6 +642,313 @@ describe("SellerListingPage", () => {
       submitForm();
       expect(
         await screen.findByText(/Image upload failed/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  // ----------------------------
+  // Error Message Formatting
+  // ----------------------------
+  describe("Error Message Formatting", () => {
+    it("shows user-friendly error for capitalized Error field", async () => {
+      (global.fetch as jest.Mock).mockImplementation((url) => {
+        if (typeof url === "string" && url.includes("profile/me")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
+        }
+        if (typeof url === "string" && url.includes("listings")) {
+          return Promise.resolve({
+            ok: false,
+            text: () =>
+              Promise.resolve(JSON.stringify({ Error: "Not Verified" })),
+          } as unknown as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
+      });
+
+      render(<SellerListingPage />);
+      await fillValidForm();
+      submitForm();
+
+      expect(
+        await screen.findByText(
+          /Please verify your email address before creating a listing/i,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("shows user-friendly error for lowercase error field", async () => {
+      (global.fetch as jest.Mock).mockImplementation((url) => {
+        if (typeof url === "string" && url.includes("profile/me")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
+        }
+        if (typeof url === "string" && url.includes("listings")) {
+          return Promise.resolve({
+            ok: false,
+            text: () =>
+              Promise.resolve(JSON.stringify({ error: "Invalid token" })),
+          } as unknown as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
+      });
+
+      render(<SellerListingPage />);
+      await fillValidForm();
+      submitForm();
+
+      expect(
+        await screen.findByText(/Your session has expired/i),
+      ).toBeInTheDocument();
+    });
+
+    it("shows user-friendly error for message field", async () => {
+      (global.fetch as jest.Mock).mockImplementation((url) => {
+        if (typeof url === "string" && url.includes("profile/me")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
+        }
+        if (typeof url === "string" && url.includes("listings")) {
+          return Promise.resolve({
+            ok: false,
+            text: () =>
+              Promise.resolve(
+                JSON.stringify({ message: "Request body is required" }),
+              ),
+          } as unknown as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
+      });
+
+      render(<SellerListingPage />);
+      await fillValidForm();
+      submitForm();
+
+      expect(
+        await screen.findByText(
+          /Something went wrong. Please refresh and try again/i,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("shows formatted error for Details array", async () => {
+      (global.fetch as jest.Mock).mockImplementation((url) => {
+        if (typeof url === "string" && url.includes("profile/me")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
+        }
+        if (typeof url === "string" && url.includes("listings")) {
+          return Promise.resolve({
+            ok: false,
+            text: () =>
+              Promise.resolve(
+                JSON.stringify({
+                  Error: "Validation failed",
+                  Details: [
+                    "Title: Title must be 3-255 characters",
+                    "Price: Price is required",
+                  ],
+                }),
+              ),
+          } as unknown as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
+      });
+
+      render(<SellerListingPage />);
+      await fillValidForm();
+      submitForm();
+
+      expect(
+        await screen.findByText(
+          /Please fix the following.*Title must be 3-255 characters.*Price is required/i,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("shows formatted error for errors object", async () => {
+      (global.fetch as jest.Mock).mockImplementation((url) => {
+        if (typeof url === "string" && url.includes("profile/me")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
+        }
+        if (typeof url === "string" && url.includes("listings")) {
+          return Promise.resolve({
+            ok: false,
+            text: () =>
+              Promise.resolve(
+                JSON.stringify({
+                  errors: {
+                    Title: [
+                      "Title is required",
+                      "Title must be at least 3 characters",
+                    ],
+                    Price: "Price must be a positive number",
+                  },
+                }),
+              ),
+          } as unknown as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
+      });
+
+      render(<SellerListingPage />);
+      await fillValidForm();
+      submitForm();
+
+      expect(await screen.findByText(/Title.*Price/i)).toBeInTheDocument();
+    });
+
+    it("shows error for non-JSON response", async () => {
+      (global.fetch as jest.Mock).mockImplementation((url) => {
+        if (typeof url === "string" && url.includes("profile/me")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
+        }
+        if (typeof url === "string" && url.includes("listings")) {
+          return Promise.resolve({
+            ok: false,
+            text: () => Promise.resolve("Internal Server Error"),
+          } as unknown as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
+      });
+
+      render(<SellerListingPage />);
+      await fillValidForm();
+      submitForm();
+
+      expect(
+        await screen.findByText(/Internal Server Error/i),
+      ).toBeInTheDocument();
+    });
+
+    it("handles network error during submission", async () => {
+      (global.fetch as jest.Mock).mockImplementation((url) => {
+        if (typeof url === "string" && url.includes("profile/me")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
+        }
+        if (typeof url === "string" && url.includes("listings")) {
+          return Promise.reject(new TypeError("Failed to fetch"));
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
+      });
+
+      render(<SellerListingPage />);
+      await fillValidForm();
+      submitForm();
+
+      expect(
+        await screen.findByText(
+          /Network error. Please check your connection and try again/i,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("shows fallback error for HTML response", async () => {
+      (global.fetch as jest.Mock).mockImplementation((url) => {
+        if (typeof url === "string" && url.includes("profile/me")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
+        }
+        if (typeof url === "string" && url.includes("listings")) {
+          return Promise.resolve({
+            ok: false,
+            text: () =>
+              Promise.resolve("<html><body>Server Error</body></html>"),
+          } as unknown as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
+      });
+
+      render(<SellerListingPage />);
+      await fillValidForm();
+      submitForm();
+
+      expect(
+        await screen.findByText(/Failed to create listing/i),
+      ).toBeInTheDocument();
+    });
+
+    it("shows fallback error for unrecognized JSON format", async () => {
+      (global.fetch as jest.Mock).mockImplementation((url) => {
+        if (typeof url === "string" && url.includes("profile/me")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "test-profile-id", fsa: "A1A" }),
+          } as unknown as Response);
+        }
+        if (typeof url === "string" && url.includes("listings")) {
+          return Promise.resolve({
+            ok: false,
+            text: () =>
+              Promise.resolve(
+                JSON.stringify({ someUnknownField: "unexpected data" }),
+              ),
+          } as unknown as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+          text: () => Promise.resolve(""),
+        } as unknown as Response);
+      });
+
+      render(<SellerListingPage />);
+      await fillValidForm();
+      submitForm();
+
+      expect(
+        await screen.findByText(/Failed to create listing/i),
       ).toBeInTheDocument();
     });
   });
