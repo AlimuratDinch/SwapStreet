@@ -55,6 +55,47 @@ export type SearchResultsPayload = {
   hasNextPage: boolean;
 };
 
+type LocationLookupResponse = {
+  city?: string;
+  City?: string;
+  province?: string;
+  Province?: string;
+  provinceCode?: string;
+  ProvinceCode?: string;
+};
+
+export async function getLocationLabelByFsa(fsa: string): Promise<string> {
+  if (!fsa) return "";
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/location/lookup/${encodeURIComponent(fsa)}`,
+      {
+        cache: "force-cache",
+      },
+    );
+
+    if (!res.ok) return fsa;
+
+    const data = (await res.json()) as LocationLookupResponse;
+    const city = data.city ?? data.City ?? "";
+    const province =
+      data.provinceCode ??
+      data.ProvinceCode ??
+      data.province ??
+      data.Province ??
+      "";
+
+    if (!city && !province) return fsa;
+    if (!city) return province;
+    if (!province) return city;
+
+    return `${city}, ${province}`;
+  } catch {
+    return fsa;
+  }
+}
+
 export async function getSearchResults(
   params: SearchParams,
 ): Promise<SearchResultsPayload> {

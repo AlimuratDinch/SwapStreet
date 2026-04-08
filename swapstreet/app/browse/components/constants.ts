@@ -49,7 +49,7 @@ export const BRANDS = [
   "Nike",
   "HandM",
   "Zara",
-  "Addidas",
+  "Adidas",
   "Carhartt",
   "Dickies",
   "Puma",
