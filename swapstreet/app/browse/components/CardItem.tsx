@@ -15,6 +15,7 @@ interface CardItemProps {
   imgSrc?: string;
   price: number;
   fsa: string;
+  locationLabel?: string;
   href?: string;
   onSelectListing?: (id: string) => void;
 }
@@ -25,6 +26,7 @@ export function CardItem({
   imgSrc,
   price,
   fsa,
+  locationLabel,
   href,
   onSelectListing,
 }: CardItemProps) {
@@ -110,13 +112,8 @@ export function CardItem({
         )}
       </div>
       <div className="card-item-content">
-        <h4 className="card-item-title">{title}</h4>
         <div className="card-item-price-container">
           <p className="card-item-price">${price}</p>
-          <p className="card-item-fsa">
-            <MapPin size={12} />
-            {fsa}
-          </p>
           <button
             onClick={handleAddToWardrobe}
             disabled={isSaving}
@@ -129,6 +126,11 @@ export function CardItem({
             />
           </button>
         </div>
+        <h4 className="card-item-title">{title}</h4>
+        <p className="card-item-fsa">
+          <MapPin size={12} />
+          {locationLabel || fsa}
+        </p>
       </div>
     </div>
   );

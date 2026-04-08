@@ -17,6 +17,9 @@ jest.mock("next/navigation", () => ({
 // 2. Mock the API Utility
 jest.mock("@/lib/api/browse", () => ({
   getSearchResults: jest.fn(),
+  getLocationLabelByFsa: jest
+    .fn()
+    .mockImplementation(async (fsa: string) => fsa),
 }));
 
 // 3. Mock CardItem
