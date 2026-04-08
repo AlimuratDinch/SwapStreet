@@ -641,7 +641,7 @@ describe("SellerListingPage", () => {
       await fillValidForm();
       submitForm();
       expect(
-        await screen.findByText(/Failed to create listing/i),
+        await screen.findByText(/Image upload failed/i),
       ).toBeInTheDocument();
     });
   });

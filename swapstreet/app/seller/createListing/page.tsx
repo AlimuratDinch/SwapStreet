@@ -90,10 +90,14 @@ async function parseApiError(
  */
 function mapTechnicalErrorToFriendly(technicalError: string): string {
   const errorMap: Record<string, string> = {
-    "Not Verified": "Please verify your email address before creating a listing.",
-    "Invalid Profile ID format": "Session error. Please log out and log back in.",
-    "Profile ID not found in claims": "Session error. Please log out and log back in.",
-    "Request body is required": "Something went wrong. Please refresh and try again.",
+    "Not Verified":
+      "Please verify your email address before creating a listing.",
+    "Invalid Profile ID format":
+      "Session error. Please log out and log back in.",
+    "Profile ID not found in claims":
+      "Session error. Please log out and log back in.",
+    "Request body is required":
+      "Something went wrong. Please refresh and try again.",
     "Validation failed": "Please check your input and try again.",
     "Invalid token": "Your session has expired. Please log in again.",
     "No file uploaded.": "Image file is required. Please select an image.",
@@ -368,7 +372,7 @@ export default function SellerListingPage() {
       router.push("/profile");
     } catch (error) {
       console.error("Create listing error:", error);
-      
+
       // Check if it's a network error
       if (error instanceof TypeError && error.message.includes("fetch")) {
         setError("Network error. Please check your connection and try again.");
