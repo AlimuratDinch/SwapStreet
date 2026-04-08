@@ -27,6 +27,50 @@ type MessagesReadEvent = {
 const cx = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(" ");
 
+function resolveBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+
+  if (typeof globalThis.window !== "undefined") {
+    return globalThis.window.location.origin;
+  }
+
+  return "http://localhost:3000";
+}
+
+function sortMessagesByDate(data: Message[]): Message[] {
+  return data
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(a.sendDate ?? 0).getTime() -
+        new Date(b.sendDate ?? 0).getTime(),
+    );
+}
+
+function getOtherRoleText(isBuyer: boolean, isSeller: boolean): string | null {
+  if (isBuyer) return "Selling";
+  if (isSeller) return "Wants to buy";
+  return null;
+}
+
+function getOtherRating(
+  isBuyer: boolean,
+  isSeller: boolean,
+  room: Chatroom,
+): string {
+  if (isBuyer) {
+    return formatAverage(room.sellerRatingAverage, room.sellerRatingCount ?? 0);
+  }
+
+  if (isSeller) {
+    return formatAverage(room.buyerRatingAverage, room.buyerRatingCount ?? 0);
+  }
+
+  return "No ratings";
+}
+
 function formatAverage(avg?: number | null, count?: number) {
   if (!count || count <= 0 || avg == null) {
     return "No ratings";
@@ -39,7 +83,7 @@ export default function ChatPanel({
   otherName,
   otherImage,
   onRoomUpdate,
-}: ChatPanelProps) {
+}: Readonly<ChatPanelProps>) {
   const searchParams = useSearchParams();
   const { userId, accessToken, isAuthenticated, authLoaded } = useAuth();
   const { markAsRead } = useChatContext();
@@ -66,11 +110,30 @@ export default function ChatPanel({
   const autoSendRef = useRef<string>(searchParams.get("msg") ?? "");
 
   useEffect(() => {
+    const pending = searchParams.get("msg");
+    if (!pending) return;
+    if (typeof globalThis.window === "undefined") return;
+
+    const url = new URL(globalThis.window.location.href);
+    if (!url.searchParams.has("msg")) return;
+
+    url.searchParams.delete("msg");
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    globalThis.window.history.replaceState(
+      globalThis.window.history.state,
+      "",
+      nextUrl,
+    );
+  }, [searchParams]);
+
+  useEffect(() => {
     markAsRead(room.id);
   }, [room.id, messages, markAsRead]);
 
   useEffect(() => {
-    if (authLoaded && !isAuthenticated) router.push("/auth/sign-in");
+    if (!authLoaded) return;
+    if (isAuthenticated) return;
+    router.push("/auth/sign-in");
   }, [authLoaded, isAuthenticated, router]);
 
   useEffect(() => {
@@ -82,28 +145,14 @@ export default function ChatPanel({
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((data: Message[]) =>
-        setMessages(
-          data
-            .slice()
-            .sort(
-              (a, b) =>
-                new Date(a.sendDate ?? 0).getTime() -
-                new Date(b.sendDate ?? 0).getTime(),
-            ),
-        ),
-      )
+      .then((data: Message[]) => setMessages(sortMessagesByDate(data)))
       .catch((e) => console.error("Failed to load messages", e));
   }, [accessToken, room.id]);
 
   useEffect(() => {
     if (!accessToken || !room.id) return;
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL ||
-      (typeof window !== "undefined"
-        ? window.location.origin
-        : "http://localhost:3000");
+    const baseUrl = resolveBaseUrl();
 
     const hubUrl = new URL("/chathub", baseUrl).toString();
 
@@ -128,9 +177,12 @@ export default function ChatPanel({
     });
     connection.on("MessagesRead", (event: MessagesReadEvent) => {
       if (event.chatroomId !== room.id) return;
+      if (event.readerId === userId) return;
       setMessages((prev) =>
         prev.map((m) =>
-          m.readAt == null ? { ...m, readAt: event.readAt } : m,
+          m.author === userId && m.readAt == null
+            ? { ...m, readAt: event.readAt }
+            : m,
         ),
       );
     });
@@ -185,6 +237,15 @@ export default function ChatPanel({
     !closeRequestPending;
   const canRate = !!userId && isDealClosed && !hasRated;
 
+  const handleConfirmClose = () => {
+    if (needsCloseResponse) {
+      void respondToCloseDeal(true);
+      return;
+    }
+
+    void submitCloseDeal();
+  };
+
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || !connectionRef.current || !connected) return;
@@ -216,12 +277,8 @@ export default function ChatPanel({
     }
   }, [isDealClosed, canRate]);
 
-  const otherRoleText = isBuyer ? "Selling" : isSeller ? "Wants to buy" : null;
-  const otherRating = isBuyer
-    ? formatAverage(room.sellerRatingAverage, room.sellerRatingCount ?? 0)
-    : isSeller
-      ? formatAverage(room.buyerRatingAverage, room.buyerRatingCount ?? 0)
-      : "No ratings";
+  const otherRoleText = getOtherRoleText(isBuyer, isSeller);
+  const otherRating = getOtherRating(isBuyer, isSeller, room);
 
   const submitCloseDeal = async () => {
     if (!accessToken) return;
@@ -389,11 +446,7 @@ export default function ChatPanel({
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  needsCloseResponse
-                    ? respondToCloseDeal(true)
-                    : submitCloseDeal()
-                }
+                onClick={handleConfirmClose}
                 disabled={actionBusy}
                 className={styles.btnPrimary}
               >

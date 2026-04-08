@@ -32,6 +32,40 @@ const SafeSelectItem = SelectItem as React.ComponentType<
   }
 >;
 
+const displayLabelMap: Record<string, string> = {
+  HandM: "H&M",
+  XXS: "XXS",
+  XS: "XS",
+  XL: "XL",
+  XXL: "XXL",
+};
+
+const colorMap: Record<string, string> = {
+  Black: "#000000",
+  White: "#FFFFFF",
+  Red: "#EF4444",
+  Blue: "#3B82F6",
+  Green: "#22C55E",
+  Yellow: "#EAB308",
+  Pink: "#EC4899",
+  Purple: "#A855F7",
+  Orange: "#F97316",
+  Brown: "#92400E",
+  Grey: "#6B7280",
+  Beige: "#D4A574",
+  Silver: "#C0C0C0",
+  Gold: "#FFD700",
+  Clear: "#F5F5F5",
+  MultiColor: "linear-gradient(135deg, #FF0000, #00FF00, #0000FF)",
+};
+
+function formatOptionLabel(option: string): string {
+  if (displayLabelMap[option]) {
+    return displayLabelMap[option];
+  }
+  return option.replace(/([A-Z])/g, " $1").trim();
+}
+
 interface FilterSelectProps {
   label: string;
   icon: React.ReactNode;
@@ -64,8 +98,26 @@ export function FilterSelect({
             </SafeSelectItem>
             {options.map((opt) => (
               <SafeSelectItem key={opt} value={opt}>
-                {/* Visual cleanup: "HandM" -> "H and M", "UsedExcellent" -> "Used Excellent" */}
-                {opt.replace(/([A-Z])/g, " $1").trim()}
+                <div className="flex items-center gap-2">
+                  {label === "Colour" && (
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundImage:
+                          opt === "MultiColor"
+                            ? "linear-gradient(90deg, #ef4444 0 33.33%, #22c55e 33.33% 66.66%, #3b82f6 66.66% 100%)"
+                            : undefined,
+                        backgroundColor:
+                          opt === "MultiColor"
+                            ? undefined
+                            : colorMap[opt] || "#CCCCCC",
+                        border:
+                          opt === "White" ? "1px solid #D1D5DB" : undefined,
+                      }}
+                    />
+                  )}
+                  <span>{formatOptionLabel(opt)}</span>
+                </div>
               </SafeSelectItem>
             ))}
           </SafeSelectContent>
