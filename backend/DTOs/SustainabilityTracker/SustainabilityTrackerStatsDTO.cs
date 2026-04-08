@@ -4,15 +4,15 @@ namespace backend.DTOs.SustainabilityTracker;
 
 public class SustainabilityTrackerStatsDTO
 {
-    [JsonPropertyName("avgCO2Kg")]
-    public double AvgCO2Kg { get; set; }
+    [JsonPropertyName("CO2Kg")]
+    public double CO2Kg { get; set; }
     
-    [JsonPropertyName("avgWaterL")]
-    public double AvgWaterL { get; set; }
+    [JsonPropertyName("waterL")]
+    public double WaterL { get; set; }
     
-    [JsonPropertyName("avgElectricityKWh")]
-    public double AvgElectricityKWh { get; set; }
+    [JsonPropertyName("electricityKWh")]
+    public double ElectricityKWh { get; set; }
     
-    [JsonPropertyName("avgToxicChemicals")]
-    public double AvgToxicChemicalsG { get; set; }
+    [JsonPropertyName("toxicChemicals")]
+    public double ToxicChemicalsG { get; set; }
 }

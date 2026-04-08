@@ -1,11 +1,11 @@
 {
-    [
+    "Data": [
         {
             "Name": "Bottoms",
             "AvgCO2Kg": 20.5,
-            "avgWaterL": 8750,
-            "avgElectricityKWh": 30,
-            "avgToxicChemicalsG": 120
+            "AvgWaterL": 8750,
+            "AvgElectricityKWh": 30,
+            "AvgToxicChemicalsG": 120
         },
         {
             "Name": "Tops",
@@ -22,7 +22,7 @@
             "AvgToxicChemicalsG": 150
         },
         {
-            "Name": "Accessories",
+            "Name": "Accessory",
             "AvgCO2Kg": 5.5,
             "AvgWaterL": 1000,
             "AvgElectricityKWh": 7.5,
