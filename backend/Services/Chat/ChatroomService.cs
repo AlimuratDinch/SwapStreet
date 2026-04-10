@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using backend.DbContexts;
 using backend.Contracts;
 using backend.DTOs.Chat;
+using backend.Services;
 
 namespace backend.Services.Chat
 {
@@ -697,7 +698,7 @@ namespace backend.Services.Chat
                 .Select(r => r.Stars)
                 .ToListAsync();
 
-            profile.Rating = ratings.Count == 0 ? 0f : (float)ratings.Average();
+            ProfileVerification.ApplyRatingsToProfile(profile, ratings);
             profile.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
