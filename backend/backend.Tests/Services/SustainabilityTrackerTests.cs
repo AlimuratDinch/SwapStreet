@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using backend.Contracts;
 using backend.DbContexts;
 using backend.DTOs.SustainabilityTracker;
 using backend.Models;
@@ -91,6 +92,7 @@ public class SustainabilityTrackerTests : IDisposable
         }";
 
     private readonly AppDbContext _db;
+    private readonly ISustainabilityTrackerService _service;
     private readonly Guid _userAId = Guid.NewGuid(),
         _userBId = Guid.NewGuid(),
         _userCId = Guid.NewGuid(),
@@ -103,6 +105,22 @@ public class SustainabilityTrackerTests : IDisposable
             .Options;
 
         _db = new AppDbContext(options);
+
+        string source = Path.Combine(
+            System.IO.Directory.GetCurrentDirectory(),
+            @"testSustainabilityData.json"
+        );
+
+        using (StreamWriter s = new StreamWriter(source))
+        {
+            s.Write(jsonData);
+        }
+
+        _service = new SustainabilityTrackerService(
+            _db,
+            source
+        );
+
         SeedTestData();
     }
 
@@ -121,26 +139,9 @@ public class SustainabilityTrackerTests : IDisposable
     );
 
     [Fact]
-    public async Task GetSustainabilityData_SumsImpactsOfIndividualPurchases()
+    public async Task GetSustainabilityData_GetSustainabilityData()
     {
         // Arrange
-
-        string source = Path.Combine(
-            System.IO.Directory.GetCurrentDirectory(),
-            @"testSustainabilityData.json"
-        );
-
-        using (StreamWriter s = new StreamWriter(source))
-        {
-            s.Write(jsonData);
-        }
-
-        SustainabilityTrackerService service = new SustainabilityTrackerService(
-            _db,
-            source
-        );
-        // May throw an exception.
-
         SustainabilityVector sva = new SustainabilityVector
         {
             CO2Kg = _outerwear.AvgCO2Kg + _formalwear.AvgCO2Kg,
@@ -155,7 +156,7 @@ public class SustainabilityTrackerTests : IDisposable
         _db.SaveChanges();
 
         // Act
-        SustainabilityTrackerStatsDTO dto = await service.GetSustainabilityData(_userAId);
+        SustainabilityTrackerStatsDTO dto = await _service.GetSustainabilityData(_userAId);
 
         // Assert
         dto.CO2Kg.Should().Be(_outerwear.AvgCO2Kg + _formalwear.AvgCO2Kg);
@@ -163,6 +164,49 @@ public class SustainabilityTrackerTests : IDisposable
         dto.ElectricityKWh.Should().Be(_outerwear.AvgElectricityKWh + _formalwear.AvgElectricityKWh);
         dto.ToxicChemicalsG.Should().Be(_outerwear.AvgToxicChemicalsG + _formalwear.AvgToxicChemicalsG);
         dto.LandfillKg.Should().Be(_outerwear.AvgLandfillKg + _formalwear.AvgLandfillKg);
+    }
+
+    [Fact]
+    public async Task GetGlobalSustainabilityData_SumsImpactsOfIndividualPurchases()
+    {
+        SustainabilityVector sva = new SustainabilityVector
+        {
+            CO2Kg = 1.0M,
+            WaterL = 2.0M,
+            ElectricityKWh = 3.0M,
+            ToxicChemicalsG = 4.0M,
+            LandfillKg = 5.0M,
+            UserId = _userAId
+        }, svb = new SustainabilityVector
+        {
+            CO2Kg = 1.0M,
+            WaterL = 2.0M,
+            ElectricityKWh = 3.0M,
+            ToxicChemicalsG = 4.0M,
+            LandfillKg = 5.0M,
+            UserId = _userBId
+        }, svc = new SustainabilityVector
+        {
+            CO2Kg = 1.1M,
+            WaterL = 2.1M,
+            ElectricityKWh = 3.1M,
+            ToxicChemicalsG = 4.1M,
+            LandfillKg = 5.1M,
+            UserId = _userCId
+        };
+
+        _db.SustainabilityVectors.AddRange(sva, svb, svc);
+        _db.SaveChanges();
+
+        // Act
+        SustainabilityTrackerStatsDTO dto = await _service.GetGlobalSustainabilityData();
+
+        // Assert
+        dto.CO2Kg.Should().Be(3.1M);
+        dto.WaterL.Should().Be(6.1M);
+        dto.ElectricityKWh.Should().Be(9.1M);
+        dto.ToxicChemicalsG.Should().Be(12.1M);
+        dto.LandfillKg.Should().Be(15.1M);
     }
 
     private void SeedTestData()
