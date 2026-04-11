@@ -89,9 +89,14 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
 
     public async Task<SustainabilityTrackerStatsDTO> GetSustainabilityData(Guid userId)
     {
-        SustainabilityVector sv = _context.SustainabilityVectors
+        SustainabilityVector? sv = _context.SustainabilityVectors
             .AsNoTracking()
-            .First(sv => sv.UserId == userId);
+            .FirstOrDefault(sv => sv.UserId == userId);
+
+        if (sv == null)
+        {
+            return new SustainabilityTrackerStatsDTO();
+        }
 
         SustainabilityTrackerStatsDTO dto = new SustainabilityTrackerStatsDTO
         {
@@ -148,7 +153,8 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
 
     public void UpdateWith(Guid buyerId, Guid sellerId, Listing listing)
     {
-        SustainabilityVector svBuyer = _context.SustainabilityVectors.FirstOrDefault(sv => sv.UserId == buyerId, null);
+        SustainabilityVector? svBuyer = _context.SustainabilityVectors
+            .FirstOrDefault(sv => sv.UserId == buyerId);
 
         if (svBuyer == null)
         {
@@ -156,7 +162,8 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
             _context.SustainabilityVectors.Add(svBuyer);
         }
 
-        SustainabilityVector svSeller = _context.SustainabilityVectors.FirstOrDefault(sv => sv.UserId == sellerId, null);
+        SustainabilityVector? svSeller = _context.SustainabilityVectors
+            .FirstOrDefault(sv => sv.UserId == sellerId);
 
         if (svSeller == null)
         {
@@ -180,6 +187,7 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
             vector.LandfillKg += stats.AvgLandfillKg;
         }
 
+        ++svSeller.Articles;
         ++svBuyer.Articles;
 
         _context.SaveChanges();

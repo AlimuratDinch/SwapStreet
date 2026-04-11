@@ -31,6 +31,8 @@ public class Chatroom
 
     public bool IsDealClosed { get; set; } = false;
 
+    public bool SustainabilityMetricsApplied { get; set; } = false;
+
     public DateTimeOffset? ClosedAt { get; set; }
 
     public bool IsArchived { get; set; } = false;

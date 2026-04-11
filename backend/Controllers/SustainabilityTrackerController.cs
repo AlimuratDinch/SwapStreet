@@ -1,4 +1,5 @@
 using backend.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -6,6 +7,7 @@ namespace backend.Controllers
 {
     [ApiController]
     [Route("api/sustainability")]
+    [Authorize]
     public class SustainabilityTrackerController : ControllerBase
     {
         private readonly ISustainabilityTrackerService _sustainabilityTrackerService;
@@ -29,6 +31,16 @@ namespace backend.Controllers
             }
 
             var data = await _sustainabilityTrackerService.GetSustainabilityData(userId);
+            return Ok(data);
+        }
+
+        /// <summary>
+        /// Get global sustainability metrics for all users.
+        /// </summary>
+        [HttpGet("global")]
+        public async Task<IActionResult> GetGlobalSustainabilityData()
+        {
+            var data = await _sustainabilityTrackerService.GetGlobalSustainabilityData();
             return Ok(data);
         }
 

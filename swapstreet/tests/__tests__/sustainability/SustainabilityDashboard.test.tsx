@@ -79,21 +79,19 @@ describe("SustainabilityDashboard", () => {
   describe("StatCards", () => {
     it("renders all 6 stat cards", () => {
       render(<SustainabilityDashboard />);
-      expect(screen.getByText("82")).toBeInTheDocument();
+
+      const zeroValues = screen.getAllByText("0");
+      expect(zeroValues.length).toBeGreaterThanOrEqual(6);
+
       expect(
         screen.getByText("Metric tons of CO₂ avoided"),
       ).toBeInTheDocument();
-      expect(screen.getByText("8,059")).toBeInTheDocument();
       expect(screen.getByText("Gallons of water saved")).toBeInTheDocument();
-      expect(screen.getByText("132")).toBeInTheDocument();
       expect(screen.getByText("Individual clothes saved")).toBeInTheDocument();
-      expect(screen.getByText("5,287")).toBeInTheDocument();
       expect(screen.getByText("Kwh of electricity saved")).toBeInTheDocument();
-      expect(screen.getByText("2,350")).toBeInTheDocument();
       expect(
         screen.getByText("Kg of toxic dye chemicals avoided"),
       ).toBeInTheDocument();
-      expect(screen.getByText("8,000")).toBeInTheDocument();
       expect(screen.getByText("m² of land preserved")).toBeInTheDocument();
     });
 
