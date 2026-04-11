@@ -22,7 +22,7 @@ namespace backend.Controllers
         /// Get sustainability metrics from authenticated user.
         /// </summary>
         [HttpGet("data")]
-        public async Task<IActionResult> GetUserSustainabilityData()
+        public async Task<IActionResult> GetSustainabilityData()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
@@ -46,16 +46,6 @@ namespace backend.Controllers
                 return Unauthorized("Cannot fetch data using illegal Id.");
             }
 
-            var data = await _sustainabilityTrackerService.GetGlobalSustainabilityData();
-            return Ok(data);
-        }
-
-        /// <summary>
-        /// Get global sustainability metrics for all users.
-        /// </summary>
-        [HttpGet("global")]
-        public async Task<IActionResult> GetGlobalSustainabilityData()
-        {
             var data = await _sustainabilityTrackerService.GetGlobalSustainabilityData();
             return Ok(data);
         }
