@@ -51,7 +51,7 @@ describe("ProfileHeader verified badge", () => {
   it("shows blue check styling when verifiedSeller is true", () => {
     renderHeader(buildProfile({ verifiedSeller: true }));
     const badge = screen.getByLabelText("Verified seller");
-    expect(badge).toHaveClass("text-blue-600");
+    expect(badge).toHaveClass("text-teal-500");
     expect(badge).not.toHaveClass("text-gray-300");
   });
 
@@ -59,6 +59,6 @@ describe("ProfileHeader verified badge", () => {
     renderHeader(buildProfile({ verifiedSeller: false }));
     const badge = screen.getByLabelText("Not verified");
     expect(badge).toHaveClass("text-gray-300");
-    expect(badge).not.toHaveClass("text-blue-600");
+    expect(badge).not.toHaveClass("text-teal-500");
   });
 });
