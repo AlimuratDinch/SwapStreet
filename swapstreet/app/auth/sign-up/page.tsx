@@ -8,8 +8,7 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import FormField from "@/components/auth/FormField";
 import ErrorMessage from "@/components/auth/ErrorMessage";
 import AuthButton from "@/components/auth/AuthButton";
-import OAuthButton from "@/components/auth/OAuthButton";
-import { initiateOAuthSignIn } from "@/lib/api/oauth";
+import GoogleButton from "@/components/auth/GoogleButton";
 
 export default function RegistrationPage() {
   const router = useRouter();
@@ -111,26 +110,6 @@ export default function RegistrationPage() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          <OAuthButton
-            provider="google"
-            variant="signup"
-            onClick={() => initiateOAuthSignIn("google", true)}
-            disabled={loading}
-          />
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500 font-medium">
-                OR
-              </span>
-            </div>
-          </div>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-5">
           <ErrorMessage message={error} />
 
@@ -222,9 +201,26 @@ export default function RegistrationPage() {
             Sign In
           </a>
         </p>
+
+        <div className="mt-6">
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500 font-medium">
+                OR
+              </span>
+            </div>
+          </div>
+
+          <GoogleButton
+            text="Sign up with Google"
+            onClick={() => router.push("/browse")}
+          />
+        </div>
       </div>
 
-      {/* Modal remains the same */}
       {showEmailSentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl text-center">
