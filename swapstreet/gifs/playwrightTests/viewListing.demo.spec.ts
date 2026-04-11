@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 
 test("view listing flow demo (real backend)", async ({ page }) => {
-
   await page.addInitScript(() => {
     window.open = (url) => {
       window.location.href = url as string;
@@ -20,7 +19,11 @@ test("view listing flow demo (real backend)", async ({ page }) => {
   await page.waitForTimeout(2500);
 
   // Click the Black Dress #88 listing
-  await page.locator('[role="button"]').filter({ hasText: "Black Dress #88" }).first().click();
+  await page
+    .locator('[role="button"]')
+    .filter({ hasText: "Black Dress #88" })
+    .first()
+    .click();
 
   // Wait on the listing page
   await expect(page).toHaveURL(/\/listing/, { timeout: 10000 });

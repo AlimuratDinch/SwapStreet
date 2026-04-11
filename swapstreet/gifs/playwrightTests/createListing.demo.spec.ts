@@ -11,7 +11,9 @@ test("create listing flow demo (real backend)", async ({ page }) => {
 
   // Navigate to create listing page
   await page.goto("/seller/createListing", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Create a new listing" })).toBeVisible({ timeout: 10000 });
+  await expect(
+    page.getByRole("heading", { name: "Create a new listing" }),
+  ).toBeVisible({ timeout: 10000 });
   await page.waitForTimeout(1000);
 
   // Fill in title
@@ -19,7 +21,11 @@ test("create listing flow demo (real backend)", async ({ page }) => {
   await page.waitForTimeout(500);
 
   // Fill in description
-  await page.locator("#description").fill("Classic vintage denim jacket in great condition. Barely worn, very comfortable.");
+  await page
+    .locator("#description")
+    .fill(
+      "Classic vintage denim jacket in great condition. Barely worn, very comfortable.",
+    );
   await page.waitForTimeout(500);
 
   // Select category

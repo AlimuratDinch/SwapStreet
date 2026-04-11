@@ -15,11 +15,16 @@ test("chat flow demo (real backend)", async ({ page }) => {
   await page.waitForTimeout(1500);
 
   // Click the first chat in the sidebar
-  await page.locator('button.chatroomButton, [class*="chatroomButton"]').first().click();
+  await page
+    .locator('button.chatroomButton, [class*="chatroomButton"]')
+    .first()
+    .click();
   await page.waitForTimeout(1500);
 
   // Type a message and send it
-  await page.getByPlaceholder("Type Message Here").fill("Hey, is this still available?");
+  await page
+    .getByPlaceholder("Type Message Here")
+    .fill("Hey, is this still available?");
   await page.waitForTimeout(800);
   await page.keyboard.press("Enter");
   await page.waitForTimeout(3000);
