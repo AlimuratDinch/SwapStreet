@@ -4,23 +4,29 @@ using backend.DTOs.SustainabilityTracker;
 using backend.Models;
 using backend.Services.SustainabilityTracker;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.IO;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace backend.Tests;
 
 public class SustainabilityTrackerTests : IDisposable
 {
-    private static readonly Stats _outerwear = new Stats {
-        AvgCO2Kg = 1.0, 
-        AvgWaterL = 2.0, 
-        AvgElectricityKWh = 3.0,
-        AvgToxicChemicalsG = 4.0
-    }, _formalwear = new Stats {
-        AvgCO2Kg = 0.5, 
-        AvgWaterL = 1.5, 
-        AvgElectricityKWh = 2.5,
-        AvgToxicChemicalsG = 3.5
+    private static readonly Stats _outerwear = new Stats
+    {
+        AvgCO2Kg = 1.0M,
+        AvgWaterL = 2.0M,
+        AvgElectricityKWh = 3.0M,
+        AvgToxicChemicalsG = 4.0M,
+        AvgLandfillKg = 5.0M
+    }, _formalwear = new Stats
+    {
+        AvgCO2Kg = 0.5M,
+        AvgWaterL = 1.5M,
+        AvgElectricityKWh = 2.5M,
+        AvgToxicChemicalsG = 3.5M,
+        AvgLandfillKg = 4.5M
     };
     private static readonly string jsonData = @"
         {
@@ -30,59 +36,66 @@ public class SustainabilityTrackerTests : IDisposable
                     ""AvgCO2Kg"": 25,
                     ""AvgWaterL"": 5000,
                     ""AvgElectricityKWh"": 25,
-                    ""AvgToxicChemicalsG"": 120
+                    ""AvgToxicChemicalsG"": 120,
+                    ""AvgLandfillKg"": 1.0
                 },
                 {
                     ""Name"": ""Tops"",
                     ""AvgCO2Kg"": 12.5,
                     ""AvgWaterL"": 2850,
                     ""AvgElectricityKWh"": 15,
-                    ""AvgToxicChemicalsG"": 80
+                    ""AvgToxicChemicalsG"": 80,
+                    ""AvgLandfillKg"": 1.0
                 },
                 {
                     ""Name"": ""Footwear"",
                     ""AvgCO2Kg"": 30,
                     ""AvgWaterL"": 4000,
                     ""AvgElectricityKWh"": 35,
-                    ""AvgToxicChemicalsG"": 150
+                    ""AvgToxicChemicalsG"": 150,
+                    ""AvgLandfillKg"": 1.0
                 },
                 {
                     ""Name"": ""Accessory"",
                     ""AvgCO2Kg"": 5.5,
                     ""AvgWaterL"": 1000,
                     ""AvgElectricityKWh"": 7.5,
-                    ""AvgToxicChemicalsG"": 30
+                    ""AvgToxicChemicalsG"": 30,
+                    ""AvgLandfillKg"": 1.0
                 },
                 {
                     ""Name"": ""Outerwear"",
                     ""AvgCO2Kg"": " + _outerwear.AvgCO2Kg + @",
                     ""AvgWaterL"": " + _outerwear.AvgWaterL + @",
                     ""AvgElectricityKWh"": " + _outerwear.AvgElectricityKWh + @",
-                    ""AvgToxicChemicalsG"": " + _outerwear.AvgToxicChemicalsG + @"
+                    ""AvgToxicChemicalsG"": " + _outerwear.AvgToxicChemicalsG + @",
+                    ""AvgLandfillKg"": " + _outerwear.AvgLandfillKg + @"
                 },
                 {
                     ""Name"": ""Formalwear"",
                     ""AvgCO2Kg"": " + _formalwear.AvgCO2Kg + @",
                     ""AvgWaterL"": " + _formalwear.AvgWaterL + @",
                     ""AvgElectricityKWh"": " + _formalwear.AvgElectricityKWh + @",
-                    ""AvgToxicChemicalsG"": " + _formalwear.AvgToxicChemicalsG + @"
+                    ""AvgToxicChemicalsG"": " + _formalwear.AvgToxicChemicalsG + @",
+                    ""AvgLandfillKg"":  " + _formalwear.AvgLandfillKg + @"
                 },
                 {
                     ""Name"": ""Sportswear"",
                     ""AvgCO2Kg"": 11.5,
                     ""AvgWaterL"": 2500,
                     ""AvgElectricityKWh"": 17.5,
-                    ""AvgToxicChemicalsG"": 90
+                    ""AvgToxicChemicalsG"": 90,
+                    ""AvgLandfillKg"": 1.0
                 }
             ]
         }";
-    
+
     private readonly AppDbContext _db;
     private readonly Guid _userAId = Guid.NewGuid(),
         _userBId = Guid.NewGuid(),
         _userCId = Guid.NewGuid(),
         _userDId = Guid.NewGuid();
-    
+
     public SustainabilityTrackerTests()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -92,55 +105,70 @@ public class SustainabilityTrackerTests : IDisposable
         _db = new AppDbContext(options);
         SeedTestData();
     }
-    
+
     public void Dispose()
     {
         _db.Database.EnsureDeleted();
         _db.Dispose();
     }
-    
+
     private readonly record struct Stats(
-        double AvgCO2Kg, 
-        double AvgWaterL, 
-        double AvgElectricityKWh,
-        double AvgToxicChemicalsG
+        decimal AvgCO2Kg,
+        decimal AvgWaterL,
+        decimal AvgElectricityKWh,
+        decimal AvgToxicChemicalsG,
+        decimal AvgLandfillKg
     );
-    
+
     [Fact]
     public async Task GetSustainabilityData_SumsImpactsOfIndividualPurchases()
     {
         // Arrange
-        
+
         string source = Path.Combine(
             System.IO.Directory.GetCurrentDirectory(),
             @"testSustainabilityData.json"
         );
-        
+
         using (StreamWriter s = new StreamWriter(source))
         {
             s.Write(jsonData);
         }
-        
+
         SustainabilityTrackerService service = new SustainabilityTrackerService(
             _db,
             source
         );
         // May throw an exception.
-        
+
+        SustainabilityVector sva = new SustainabilityVector
+        {
+            CO2Kg = _outerwear.AvgCO2Kg + _formalwear.AvgCO2Kg,
+            WaterL = _outerwear.AvgWaterL + _formalwear.AvgWaterL,
+            ElectricityKWh = _outerwear.AvgElectricityKWh + _formalwear.AvgElectricityKWh,
+            ToxicChemicalsG = _outerwear.AvgToxicChemicalsG + _formalwear.AvgToxicChemicalsG,
+            LandfillKg = _outerwear.AvgLandfillKg + _formalwear.AvgLandfillKg,
+            UserId = _userAId
+        };
+
+        _db.SustainabilityVectors.Add(sva);
+        _db.SaveChanges();
+
         // Act
         SustainabilityTrackerStatsDTO dto = await service.GetSustainabilityData(_userAId);
-        
+
         // Assert
         dto.CO2Kg.Should().Be(_outerwear.AvgCO2Kg + _formalwear.AvgCO2Kg);
         dto.WaterL.Should().Be(_outerwear.AvgWaterL + _formalwear.AvgWaterL);
         dto.ElectricityKWh.Should().Be(_outerwear.AvgElectricityKWh + _formalwear.AvgElectricityKWh);
         dto.ToxicChemicalsG.Should().Be(_outerwear.AvgToxicChemicalsG + _formalwear.AvgToxicChemicalsG);
+        dto.LandfillKg.Should().Be(_outerwear.AvgLandfillKg + _formalwear.AvgLandfillKg);
     }
-    
+
     private void SeedTestData()
     {
         int provinceId = 1, cityId = 1;
-        
+
         var province = new Province
         {
             Id = provinceId,
@@ -156,7 +184,7 @@ public class SustainabilityTrackerTests : IDisposable
             ProvinceId = provinceId
         };
         _db.Cities.Add(city);
-        
+
         Profile profileA = new Profile
         {
             Id = _userAId,
@@ -190,14 +218,14 @@ public class SustainabilityTrackerTests : IDisposable
             FSA = "M5V",
             Status = ProfileStatusEnum.Online
         };
-        
+
         _db.Profiles.AddRange(profileA, profileB, profileC);
-        
+
         Guid listingAId = Guid.NewGuid(),
             listingBId = Guid.NewGuid(),
             listingCId = Guid.NewGuid(),
             listingDId = Guid.NewGuid();
-        
+
         Listing listingA = new Listing
         {
             Id = listingAId,
@@ -216,7 +244,7 @@ public class SustainabilityTrackerTests : IDisposable
             Category = ListingCategory.Formalwear
         };
         _db.Listings.AddRange(listingA, listingB, listingC, listingD);
-        
+
         Chatroom chatroomA = new Chatroom
         {
             Id = Guid.NewGuid(),
@@ -258,10 +286,10 @@ public class SustainabilityTrackerTests : IDisposable
             IsDealClosed = true,
             ClosedAt = DateTimeOffset.UtcNow
         };
-        
+
         _db.Chatrooms.AddRange(chatroomA, chatroomB, chatroomC, chatroomD);
 
         _db.SaveChanges();
     }
-    
+
 }

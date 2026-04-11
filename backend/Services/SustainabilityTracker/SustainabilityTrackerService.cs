@@ -13,15 +13,15 @@ namespace backend.Services.SustainabilityTracker;
 public class SustainabilityTrackerService : ISustainabilityTrackerService
 {
     private readonly AppDbContext _context;
-    private readonly Dictionary<ListingCategory, Stats> listingTypeToStats = 
+    private readonly Dictionary<ListingCategory, Stats> listingTypeToStats =
         new Dictionary<ListingCategory, Stats>();
-    
+
     public SustainabilityTrackerService(AppDbContext context)
         : this(context, getDataPath())
     {
-        
+
     }
-    
+
     private static string getDataPath()
     {
         return Path.Combine(
@@ -33,31 +33,31 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
             @"sustainabilityData.json"
         );
     }
-    
+
     public SustainabilityTrackerService(AppDbContext context, string source)
     {
         _context = context;
-        
+
         string jsonData;
-        
+
         using (StreamReader s = new StreamReader(source))
         {
             jsonData = s.ReadToEnd();
         }
-        
+
         var root = JsonSerializer.Deserialize<ArticleData>(jsonData);
         // May throw an exception if JSON is bad.
-        
+
         try
         {
             foreach (Stats s in root.Data)
             {
-                ListingCategory lc = (ListingCategory) Enum.Parse(
-                    typeof(ListingCategory), 
+                ListingCategory lc = (ListingCategory)Enum.Parse(
+                    typeof(ListingCategory),
                     s.Name
                 );
                 // May throw an exception for a bad JSON file.
-                
+
                 listingTypeToStats.Add(lc, s);
             }
         }
@@ -65,73 +65,119 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
         {
             string errorMessage = "Listing categories in `ListingCategory` "
                 + "enumeration and in sustainability data JSON do not match.";
-            
+
             throw new ArgumentException(errorMessage);
         }
-        
+
     }
-    
+
     private record Stats(
         String Name,
-        double AvgCO2Kg, 
-        double AvgWaterL, 
-        double AvgElectricityKWh, 
-        double AvgToxicChemicalsG);
+        decimal AvgCO2Kg,
+        decimal AvgWaterL,
+        decimal AvgElectricityKWh,
+        decimal AvgToxicChemicalsG,
+        decimal AvgLandfillKg);
 
     private readonly record struct ArticleData(List<Stats> Data);
-    
+
     public async Task<SustainabilityTrackerStatsDTO> GetSustainabilityData(Guid userId)
     {
-        List<ListingCategory> data = getListingCategoryDataFromUser(userId);
-        
-        return sumMetricData(data);
-    }
-    
-    public async Task<List<SustainabilityTrackerStatsDTO>> GetGlobalSustainabilityData()
-    {
-        List<SustainabilityTrackerStatsDTO> data = new List<SustainabilityTrackerStatsDTO>();
-        List<ListingCategory> categoryData = _context.Chatrooms
+        SustainabilityVector sv = _context.SustainabilityVectors
             .AsNoTracking()
-            .Where(c => c.IsDealClosed)
-            .Select(
-                c => c.Listing.Category
-            ).ToList();
-        
-        data.Add(sumMetricData(categoryData));
-        
-        return data;
-    }
-    
-    private List<ListingCategory> getListingCategoryDataFromUser(Guid userId)
-    {
-        var categoryData = _context.Chatrooms
-            .AsNoTracking()
-            .Where(c => c.SellerId == userId || c.BuyerId == userId)
-            .Join(
-                _context.Listings,
-                c => c.ListingId,
-                l => l.Id,
-                (chatroom, listing) => listing.Category
-            ).ToList();
-        
-        return categoryData;
-    }
-    
-    private SustainabilityTrackerStatsDTO sumMetricData(List<ListingCategory> data)
-    {
-        SustainabilityTrackerStatsDTO dto = new SustainabilityTrackerStatsDTO();
-        
-        foreach (ListingCategory lc in data)
+            .First(sv => sv.UserId == userId);
+
+        SustainabilityTrackerStatsDTO dto = new SustainabilityTrackerStatsDTO
         {
-            Stats stats = listingTypeToStats[lc];
-            
-            dto.CO2Kg += stats.AvgCO2Kg;
-            dto.WaterL += stats.AvgWaterL;
-            dto.ElectricityKWh += stats.AvgElectricityKWh;
-            dto.ToxicChemicalsG += stats.AvgToxicChemicalsG;
-        }
-        
+            CO2Kg = sv.CO2Kg,
+            WaterL = sv.WaterL,
+            ElectricityKWh = sv.ElectricityKWh,
+            ToxicChemicalsG = sv.ToxicChemicalsG,
+            LandfillKg = sv.LandfillKg,
+            Articles = sv.Articles
+        };
+
         return dto;
     }
-    
+
+    public async Task<SustainabilityTrackerStatsDTO> GetGlobalSustainabilityData()
+    {
+        decimal co2Kg = _context.SustainabilityVectors
+            .AsNoTracking()
+            .Select(sv => sv.CO2Kg)
+            .Sum();
+        decimal waterL = _context.SustainabilityVectors
+            .AsNoTracking()
+            .Select(sv => sv.WaterL)
+            .Sum();
+        decimal electricityKWh = _context.SustainabilityVectors
+            .AsNoTracking()
+            .Select(sv => sv.ElectricityKWh)
+            .Sum();
+        decimal toxicChemicalsG = _context.SustainabilityVectors
+            .AsNoTracking()
+            .Select(sv => sv.ToxicChemicalsG)
+            .Sum();
+        decimal landfillKg = _context.SustainabilityVectors
+            .AsNoTracking()
+            .Select(sv => sv.LandfillKg)
+            .Sum();
+        int articles = _context.SustainabilityVectors
+            .AsNoTracking()
+            .Select(sv => sv.Articles)
+            .Sum();
+
+        SustainabilityTrackerStatsDTO dto = new SustainabilityTrackerStatsDTO
+        {
+            CO2Kg = co2Kg,
+            WaterL = waterL,
+            ElectricityKWh = electricityKWh,
+            ToxicChemicalsG = toxicChemicalsG,
+            LandfillKg = landfillKg,
+            Articles = articles
+        };
+
+        return dto;
+    }
+
+    public void UpdateWith(Guid buyerId, Guid sellerId, Listing listing)
+    {
+        SustainabilityVector svBuyer = _context.SustainabilityVectors.FirstOrDefault(sv => sv.UserId == buyerId, null);
+
+        if (svBuyer == null)
+        {
+            svBuyer = new SustainabilityVector { UserId = buyerId };
+            _context.SustainabilityVectors.Add(svBuyer);
+        }
+
+        SustainabilityVector svSeller = _context.SustainabilityVectors.FirstOrDefault(sv => sv.UserId == sellerId, null);
+
+        if (svSeller == null)
+        {
+            svSeller = new SustainabilityVector { UserId = sellerId };
+            _context.SustainabilityVectors.Add(svSeller);
+        }
+
+        ReadOnlySpan<SustainabilityVector> vectorData = new[]
+        {
+            svBuyer,
+            svSeller
+        };
+
+        Stats stats = listingTypeToStats[listing.Category];
+        foreach (var vector in vectorData)
+        {
+            vector.CO2Kg += stats.AvgCO2Kg;
+            vector.WaterL += stats.AvgWaterL;
+            vector.ElectricityKWh += stats.AvgElectricityKWh;
+            vector.ToxicChemicalsG += stats.AvgToxicChemicalsG;
+            vector.LandfillKg += stats.AvgLandfillKg;
+        }
+
+        ++svBuyer.Articles;
+
+        _context.SaveChanges();
+
+    }
+
 }

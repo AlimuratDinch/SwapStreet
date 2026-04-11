@@ -9,13 +9,13 @@ namespace backend.Controllers
     public class SustainabilityTrackerController : ControllerBase
     {
         private readonly ISustainabilityTrackerService _sustainabilityTrackerService;
-        
+
         public SustainabilityTrackerController(
             ISustainabilityTrackerService sustainabilityTrackerService)
         {
             _sustainabilityTrackerService = sustainabilityTrackerService;
         }
-        
+
         /// <summary>
         /// Get sustainability metrics from authenticated user.
         /// </summary>
@@ -27,10 +27,10 @@ namespace backend.Controllers
             {
                 return Unauthorized("Cannot fetch data using illegal Id.");
             }
-            
+
             var data = await _sustainabilityTrackerService.GetSustainabilityData(userId);
             return Ok(data);
         }
-        
+
     }
 }

@@ -7,6 +7,7 @@ using backend.DbContexts;
 using backend.Services.Chat;
 using backend.DTOs.Chat;
 using backend.DTOs.Listings;
+using backend.DTOs.SustainabilityTracker;
 using backend.Contracts;
 using backend.DTOs.Image;
 using Microsoft.EntityFrameworkCore;
@@ -59,6 +60,15 @@ namespace backend.Tests.Services
             => Task.CompletedTask;
     }
 
+    internal sealed class FakeSustainabilityTrackerService : ISustainabilityTrackerService
+    {
+        public Task<SustainabilityTrackerStatsDTO> GetSustainabilityData(Guid userId)
+            => Task.FromResult(new SustainabilityTrackerStatsDTO());
+        public Task<SustainabilityTrackerStatsDTO> GetGlobalSustainabilityData()
+            => Task.FromResult(new SustainabilityTrackerStatsDTO());
+        public void UpdateWith(Guid userAId, Guid userBId, Listing listing) { }
+    }
+
     public class ChatServiceTests : IDisposable
     {
         private readonly AppDbContext _db;
@@ -81,7 +91,8 @@ namespace backend.Tests.Services
             _chatroomService = new ChatroomService(
                 _db,
                 new FakeFileStorageService(),
-                new FakeListingCommandService());
+                new FakeListingCommandService(),
+                new FakeSustainabilityTrackerService());
 
             _sellerId = Guid.NewGuid();
             _buyerId = Guid.NewGuid();
@@ -373,7 +384,8 @@ namespace backend.Tests.Services
             _service = new ChatroomService(
                 _db,
                 new FakeFileStorageService(),
-                new FakeListingCommandService());
+                new FakeListingCommandService(),
+                new FakeSustainabilityTrackerService());
 
             _sellerId = Guid.NewGuid();
             _buyerId = Guid.NewGuid();

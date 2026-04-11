@@ -25,6 +25,9 @@ public class AppDbContext : DbContext
     public DbSet<Fsa> Fsas { get; set; } = null!;
     public DbSet<ArticleType> ArticleTypes { get; set; } = null!;
 
+    // --- DbSets for Sustainability Metrics ---
+    public DbSet<SustainabilityVector> SustainabilityVectors { get; set; } = null!;
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     // Protected constructor for inheritance
@@ -259,6 +262,39 @@ public class AppDbContext : DbContext
             .HasOne(ti => ti.Profile)
             .WithMany()
             .HasForeignKey(ti => ti.ProfileId);
+
+        // =======================================================
+        // SUSTAINABILITY METRICS
+        // =======================================================
+        modelBuilder.Entity<SustainabilityVector>().ToTable("sustainability_vectors");
+        modelBuilder.Entity<SustainabilityVector>()
+            .HasOne(sv => sv.User)
+            .WithMany()
+            .HasForeignKey(sv => sv.UserId);
+
+        modelBuilder.Entity<SustainabilityVector>()
+            .Property(sv => sv.CO2Kg)
+            .HasDefaultValue(0);
+
+        modelBuilder.Entity<SustainabilityVector>()
+            .Property(sv => sv.WaterL)
+            .HasDefaultValue(0);
+
+        modelBuilder.Entity<SustainabilityVector>()
+            .Property(sv => sv.ElectricityKWh)
+            .HasDefaultValue(0);
+
+        modelBuilder.Entity<SustainabilityVector>()
+            .Property(sv => sv.ToxicChemicalsG)
+            .HasDefaultValue(0);
+
+        modelBuilder.Entity<SustainabilityVector>()
+            .Property(sv => sv.LandfillKg)
+            .HasDefaultValue(0);
+
+        modelBuilder.Entity<SustainabilityVector>()
+            .Property(sv => sv.Articles)
+            .HasDefaultValue(0);
 
     }
 }

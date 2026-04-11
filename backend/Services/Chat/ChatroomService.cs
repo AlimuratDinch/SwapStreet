@@ -10,15 +10,18 @@ namespace backend.Services.Chat
         private readonly AppDbContext _context;
         private readonly IFileStorageService _fileStorage;
         private readonly IListingCommandService _listingCommandService;
+        private readonly ISustainabilityTrackerService _sustainabilityTrackerService;
 
         public ChatroomService(
             AppDbContext context,
             IFileStorageService fileStorage,
-            IListingCommandService listingCommandService)
+            IListingCommandService listingCommandService,
+            ISustainabilityTrackerService sustainabilityTrackerService)
         {
             _context = context;
             _fileStorage = fileStorage;
             _listingCommandService = listingCommandService;
+            _sustainabilityTrackerService = sustainabilityTrackerService;
         }
 
         public async Task<ChatroomDto?> GetChatroomByIdAsync(Guid chatroomId)
@@ -299,16 +302,24 @@ namespace backend.Services.Chat
                 var alreadyRated = chatroom.Ratings.Any(r => r.ReviewerId == sellerId);
                 if (!alreadyRated)
                 {
+                    Guid buyerId = chatroom.BuyerId;
+
                     _context.ChatRatings.Add(new ChatRating
                     {
                         Id = Guid.NewGuid(),
                         ChatroomId = chatroom.Id,
                         ReviewerId = sellerId,
-                        RevieweeId = chatroom.BuyerId,
+                        RevieweeId = buyerId,
                         Stars = stars.Value,
                         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
                         CreatedAt = DateTimeOffset.UtcNow
                     });
+
+                    _sustainabilityTrackerService.UpdateWith(
+                        sellerId,
+                        buyerId,
+                        chatroom.Listing
+                    );
 
                     revieweeIdForRecalc = chatroom.BuyerId;
                 }
