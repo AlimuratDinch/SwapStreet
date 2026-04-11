@@ -195,7 +195,7 @@ namespace backend.Services
                 .Select(r => r.Stars)
                 .ToListAsync();
 
-            profile.Rating = ratings.Count == 0 ? 0f : (float)ratings.Average();
+            ProfileVerification.ApplyRatingsToProfile(profile, ratings);
             profile.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

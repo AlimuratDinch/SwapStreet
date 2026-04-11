@@ -67,7 +67,6 @@ export function ProfileHeader({
               <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
                 {fullName}
               </h1>
-              {/* TODO: NO FEATURE TO VERIFY USERS YET */}
               <BadgeCheck
                 className={`h-6 w-6 shrink-0 ${profile.verifiedSeller ? "text-teal-500" : "text-gray-300"}`}
                 aria-label={
