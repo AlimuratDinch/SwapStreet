@@ -5,6 +5,8 @@ import SustainabilityDashboard, {
   CustomTooltip,
 } from "@/app/sustainability/page";
 
+const mockGetItem = jest.fn();
+
 // Mock the Header component
 jest.mock("@/components/common/Header", () => ({
   Header: () => <div data-testid="header">Header</div>,
@@ -45,9 +47,18 @@ describe("SustainabilityDashboard", () => {
     // Mock current date to April (month index 3)
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-04-15").getTime());
+    mockGetItem.mockReset();
+    jest.spyOn(Storage.prototype, "getItem").mockImplementation((key) => {
+      if (key === "accessToken") {
+        return mockGetItem();
+      }
+      return null;
+    });
+    global.fetch = jest.fn();
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.useRealTimers();
   });
 
@@ -138,6 +149,123 @@ describe("SustainabilityDashboard", () => {
       expect(iconContainers[3]).toHaveClass("bg-yellow-50", "text-yellow-400");
       expect(iconContainers[4]).toHaveClass("bg-purple-50", "text-purple-400");
       expect(iconContainers[5]).toHaveClass("bg-red-50", "text-red-400");
+    });
+
+    it("selects the last stat card when clicked", () => {
+      const { container } = render(<SustainabilityDashboard />);
+      const cards = container.querySelectorAll(".cursor-pointer");
+
+      fireEvent.click(cards[5]);
+
+      expect(cards[5]).toHaveClass("border-blue-500", "shadow-md");
+      expect(cards[0]).toHaveClass("border-gray-200");
+    });
+  });
+
+  describe("Data Loading", () => {
+    it("keeps the empty state when no access token is available", () => {
+      mockGetItem.mockReturnValue(null);
+
+      render(<SustainabilityDashboard />);
+
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(screen.getAllByText("0").length).toBeGreaterThanOrEqual(6);
+    });
+
+    it("maps API stats with canonical keys", async () => {
+      mockGetItem.mockReturnValue("token-123");
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            CO2Kg: 12,
+            WaterL: 34,
+            ElectricityKWh: 56,
+            ToxicChemicalsG: 78,
+            LandfillKg: 90,
+            Articles: 11,
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            CO2Kg: 120,
+            WaterL: 340,
+            ElectricityKWh: 560,
+            ToxicChemicalsG: 780,
+            LandfillKg: 900,
+            Articles: 110,
+          }),
+        });
+
+      render(<SustainabilityDashboard />);
+
+      expect(await screen.findByText("12")).toBeInTheDocument();
+      expect(screen.getByText("34")).toBeInTheDocument();
+      expect(screen.getByText("11")).toBeInTheDocument();
+      expect(screen.getByText("56")).toBeInTheDocument();
+      expect(screen.getByText("78")).toBeInTheDocument();
+      expect(screen.getByText("90")).toBeInTheDocument();
+    });
+
+    it("maps API stats with lowercase fallback keys", async () => {
+      mockGetItem.mockReturnValue("token-123");
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            co2Kg: 1,
+            waterL: 2,
+            electricityKWh: 3,
+            toxicChemicals: 4,
+            landfillKg: 5,
+            articles: 6,
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            co2Kg: 10,
+            waterL: 20,
+            electricityKWh: 30,
+            toxicChemicals: 40,
+            landfillKg: 50,
+            articles: 60,
+          }),
+        });
+
+      render(<SustainabilityDashboard />);
+
+      expect(await screen.findByText("1")).toBeInTheDocument();
+      expect(screen.getByText("2")).toBeInTheDocument();
+      expect(screen.getByText("3")).toBeInTheDocument();
+      expect(screen.getByText("4")).toBeInTheDocument();
+      expect(screen.getByText("5")).toBeInTheDocument();
+      expect(screen.getByText("6")).toBeInTheDocument();
+    });
+
+    it("keeps default stats when the fetch request fails", async () => {
+      mockGetItem.mockReturnValue("token-123");
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("boom"));
+
+      render(<SustainabilityDashboard />);
+
+      expect(await screen.findAllByText("0")).not.toHaveLength(0);
+      expect(global.fetch).toHaveBeenCalled();
+    });
+    it("ignores non-ok responses from both sustainability endpoints", async () => {
+      mockGetItem.mockReturnValue("token-123");
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({ ok: false, json: async () => ({}) })
+        .mockResolvedValueOnce({ ok: false, json: async () => ({}) });
+
+      render(<SustainabilityDashboard />);
+
+      expect(await screen.findAllByText("0")).not.toHaveLength(0);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -327,6 +455,15 @@ describe("SustainabilityDashboard", () => {
       fireEvent.keyDown(firstCard!, { key: " " });
       expect(firstCard).toHaveAttribute("aria-pressed", "true");
       expect(secondCard).toHaveAttribute("aria-pressed", "false");
+    });
+    it("ignores non-activating keyboard input on stat cards", () => {
+      const { container } = render(<SustainabilityDashboard />);
+      const cards = container.querySelectorAll(".cursor-pointer");
+
+      fireEvent.keyDown(cards[1], { key: "Escape" });
+
+      expect(cards[0]).toHaveClass("border-blue-500", "shadow-md");
+      expect(cards[1]).toHaveClass("border-gray-200");
     });
   });
 });
