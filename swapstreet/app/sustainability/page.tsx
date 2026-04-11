@@ -151,7 +151,9 @@ export default function SustainabilityDashboard() {
   const [selectedBar, setSelectedBar] = useState<number>(currentMonth);
   const [selectedCard, setSelectedCard] = useState<number>(0);
   const [userStats, setUserStats] = useState<SustainabilityStats>(EMPTY_STATS);
-  const [globalStats, setGlobalStats] = useState<SustainabilityStats | null>(null);
+  const [globalStats, setGlobalStats] = useState<SustainabilityStats | null>(
+    null,
+  );
 
   useEffect(() => {
     const accessToken = sessionStorage.getItem("accessToken");
@@ -174,7 +176,10 @@ export default function SustainabilityDashboard() {
         }
 
         if (globalRes.ok) {
-          const globalData = (await globalRes.json()) as Record<string, unknown>;
+          const globalData = (await globalRes.json()) as Record<
+            string,
+            unknown
+          >;
           setGlobalStats(mapStats(globalData));
         }
       })

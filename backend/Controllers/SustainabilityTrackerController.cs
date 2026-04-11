@@ -33,7 +33,7 @@ namespace backend.Controllers
             var data = await _sustainabilityTrackerService.GetSustainabilityData(userId);
             return Ok(data);
         }
-        
+
         /// <summary>
         /// Get sustainability metrics from all users.
         /// </summary>
