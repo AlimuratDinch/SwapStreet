@@ -118,7 +118,7 @@ export default function BrowsePage() {
 
 function BrowseSkeleton() {
   return (
-    <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 overflow-hidden">
+    <div className="p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 overflow-hidden">
       {[...Array(12)].map((_, i) => (
         <div key={i} className="flex flex-col gap-3">
           <div className="aspect-square bg-gray-200 animate-pulse rounded-md" />
