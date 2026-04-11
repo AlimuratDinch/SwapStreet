@@ -134,7 +134,7 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
             ElectricityKWh = electricityKWh,
             ToxicChemicalsG = toxicChemicalsG,
             LandfillKg = landfillKg,
-            Articles = articles
+            Articles = articles / 2
         };
 
         return dto;
@@ -175,6 +175,7 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
         }
 
         ++svBuyer.Articles;
+        ++svSeller.Articles;
 
         _context.SaveChanges();
 
