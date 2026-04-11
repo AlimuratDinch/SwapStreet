@@ -25,18 +25,24 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
     private static string getDataPath()
     {
         return Path.Combine(
-            @"..",
-            @"..",
-            @"..",
-            @"Services",
-            @"SustainabilityTracker",
-            @"sustainabilityData.json"
+            AppContext.BaseDirectory,
+            "Services",
+            "SustainabilityTracker",
+            "sustainabilityData.json"
         );
     }
 
     public SustainabilityTrackerService(AppDbContext context, string source)
     {
         _context = context;
+
+        if (!File.Exists(source))
+        {
+            throw new FileNotFoundException(
+                $"Sustainability data file was not found at '{source}'.",
+                source
+            );
+        }
 
         string jsonData;
 
