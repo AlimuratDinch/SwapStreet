@@ -4,6 +4,7 @@ using backend.DbContexts;
 using backend.Contracts;
 using backend.Services;
 using backend.Services.Auth;
+using backend.Services.SustainabilityTracker;
 using backend.Contracts.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -395,6 +396,7 @@ static void RegisterServices(WebApplicationBuilder builder)
     builder.Services.AddScoped<IListingSearchService, ListingSearchService>();
     builder.Services.AddScoped<IListingCommandService, ListingCommandService>();
     builder.Services.AddScoped<IWishlistService, WishlistService>();
+    builder.Services.AddScoped<ISustainabilityTrackerService, SustainabilityTrackerService>();
 
     // Chat Services
     builder.Services.AddScoped<IChatroomService, ChatroomService>();

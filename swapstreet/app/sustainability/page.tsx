@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Cloud,
   Droplets,
@@ -22,12 +22,31 @@ import {
 } from "recharts";
 import { Header } from "@/components/common/Header";
 
-// --- Types ---
-
 interface ChartData {
   name: string;
   value: number;
-  highlighted?: boolean;
+}
+
+interface SustainabilityStats {
+  CO2Kg: number;
+  WaterL: number;
+  ElectricityKWh: number;
+  ToxicChemicalsG: number;
+  LandfillKg: number;
+  Articles: number;
+}
+
+function mapStats(raw: Record<string, unknown>): SustainabilityStats {
+  return {
+    CO2Kg: Number(raw.CO2Kg ?? raw.co2Kg ?? 0),
+    WaterL: Number(raw.WaterL ?? raw.waterL ?? 0),
+    ElectricityKWh: Number(raw.ElectricityKWh ?? raw.electricityKWh ?? 0),
+    ToxicChemicalsG: Number(
+      raw.ToxicChemicalsG ?? raw.toxicChemicalsG ?? raw.toxicChemicals ?? 0,
+    ),
+    LandfillKg: Number(raw.LandfillKg ?? raw.landfillKg ?? 0),
+    Articles: Number(raw.Articles ?? raw.articles ?? 0),
+  };
 }
 
 interface StatCardProps {
@@ -39,7 +58,14 @@ interface StatCardProps {
   onClick: () => void;
 }
 
-// --- Mock Data (Updated to months) ---
+const EMPTY_STATS: SustainabilityStats = {
+  CO2Kg: 0,
+  WaterL: 0,
+  ElectricityKWh: 0,
+  ToxicChemicalsG: 0,
+  LandfillKg: 0,
+  Articles: 0,
+};
 
 const DATA: ChartData[] = [
   { name: "Jan", value: 65 },
@@ -124,6 +150,43 @@ export default function SustainabilityDashboard() {
 
   const [selectedBar, setSelectedBar] = useState<number>(currentMonth);
   const [selectedCard, setSelectedCard] = useState<number>(0);
+  const [userStats, setUserStats] = useState<SustainabilityStats>(EMPTY_STATS);
+  const [globalStats, setGlobalStats] = useState<SustainabilityStats | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const accessToken = sessionStorage.getItem("accessToken");
+    if (!accessToken) {
+      return;
+    }
+
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+    };
+
+    Promise.all([
+      fetch("/api/sustainability/data", { headers }),
+      fetch("/api/sustainability/global", { headers }),
+    ])
+      .then(async ([userRes, globalRes]) => {
+        if (userRes.ok) {
+          const userData = (await userRes.json()) as Record<string, unknown>;
+          setUserStats(mapStats(userData));
+        }
+
+        if (globalRes.ok) {
+          const globalData = (await globalRes.json()) as Record<
+            string,
+            unknown
+          >;
+          setGlobalStats(mapStats(globalData));
+        }
+      })
+      .catch(() => {
+        // Keep the default empty state if the backend is temporarily unavailable.
+      });
+  }, []);
 
   const handleBarClick = (index: number) => {
     setSelectedBar(index);
@@ -139,11 +202,10 @@ export default function SustainabilityDashboard() {
         <p className="text-gray-500">Detailed insights into your impact</p>
       </header>
 
-      {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         <StatCard
           icon={Cloud}
-          value="82"
+          value={userStats.CO2Kg.toLocaleString()}
           label="Metric tons of CO₂ avoided"
           colorClass="bg-green-50 text-green-500"
           isSelected={selectedCard === 0}
@@ -151,7 +213,7 @@ export default function SustainabilityDashboard() {
         />
         <StatCard
           icon={Droplets}
-          value="8,059"
+          value={userStats.WaterL.toLocaleString()}
           label="Gallons of water saved"
           colorClass="bg-blue-50 text-blue-400"
           isSelected={selectedCard === 1}
@@ -159,7 +221,7 @@ export default function SustainabilityDashboard() {
         />
         <StatCard
           icon={Shirt}
-          value="132"
+          value={userStats.Articles.toLocaleString()}
           label="Individual clothes saved"
           colorClass="bg-orange-50 text-orange-400"
           isSelected={selectedCard === 2}
@@ -167,7 +229,7 @@ export default function SustainabilityDashboard() {
         />
         <StatCard
           icon={Zap}
-          value="5,287"
+          value={userStats.ElectricityKWh.toLocaleString()}
           label="Kwh of electricity saved"
           colorClass="bg-yellow-50 text-yellow-400"
           isSelected={selectedCard === 3}
@@ -175,7 +237,7 @@ export default function SustainabilityDashboard() {
         />
         <StatCard
           icon={Pipette}
-          value="2,350"
+          value={userStats.ToxicChemicalsG.toLocaleString()}
           label="Kg of toxic dye chemicals avoided"
           colorClass="bg-purple-50 text-purple-400"
           isSelected={selectedCard === 4}
@@ -183,7 +245,7 @@ export default function SustainabilityDashboard() {
         />
         <StatCard
           icon={Mountain}
-          value="8,000"
+          value={userStats.LandfillKg.toLocaleString()}
           label="m² of land preserved"
           colorClass="bg-red-50 text-red-400"
           isSelected={selectedCard === 5}
@@ -198,7 +260,6 @@ export default function SustainabilityDashboard() {
             Track your performance changes and environmental progress over time
           </p>
         </div>
-
         <div className="bg-white border-2 border-gray-200 rounded-xl p-4 md:p-8">
           <div className="mb-10">
             <h3 className="text-xl font-semibold text-gray-800">
