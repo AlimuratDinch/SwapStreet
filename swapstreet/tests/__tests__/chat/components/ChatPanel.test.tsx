@@ -558,9 +558,7 @@ describe("ChatPanel Component", () => {
       fireEvent.click(ratingButtons[2]);
     });
 
-    expect(
-      screen.getByPlaceholderText("Optional description"),
-    ).toBeEnabled();
+    expect(screen.getByPlaceholderText("Optional description")).toBeEnabled();
 
     const submitButton = screen.getByText("Submit rating");
 
@@ -792,7 +790,10 @@ describe("ChatPanel Component", () => {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
       }
       if (url.includes("/finalize-close")) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve(archivedRoom) });
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(archivedRoom),
+        });
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     });

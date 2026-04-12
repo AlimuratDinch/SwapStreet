@@ -185,13 +185,11 @@ describe("ChatLayout", () => {
     setupFetch();
     window.HTMLElement.prototype.scrollIntoView = jest.fn();
 
-    (signalR.HubConnectionBuilder as jest.Mock).mockImplementation(
-      () => ({
-        withUrl: jest.fn().mockReturnThis(),
-        withAutomaticReconnect: jest.fn().mockReturnThis(),
-        build: jest.fn().mockReturnValue(mockConnection),
-      }),
-    );
+    (signalR.HubConnectionBuilder as jest.Mock).mockImplementation(() => ({
+      withUrl: jest.fn().mockReturnThis(),
+      withAutomaticReconnect: jest.fn().mockReturnThis(),
+      build: jest.fn().mockReturnValue(mockConnection),
+    }));
   });
 
   // Authentication
