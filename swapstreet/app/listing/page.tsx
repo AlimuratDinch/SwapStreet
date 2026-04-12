@@ -33,26 +33,16 @@ const API_BASE = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
 ).replace(/\/api$/, "");
 
-/**
- * Fixes double-prefixed URLs produced by the backend, e.g.:
- *   "http://localhost/public/http://localhost/public/profile/xxx.jpg"
- * becomes:
- *   "http://localhost:8080/public/profile/xxx.jpg"
- */
 function resolveImageUrl(raw?: string | null): string {
   if (!raw) return "/images/default-avatar-icon.jpg";
 
-  // Find the last occurrence of "http" — if it's not at index 0,
-  // the URL has been double-prefixed. Slice from the last "http".
   const lastHttpIndex = raw.lastIndexOf("http", raw.length - 5);
   const cleanUrl = lastHttpIndex > 0 ? raw.slice(lastHttpIndex) : raw;
 
   if (cleanUrl.startsWith("http")) {
-    // Replace whatever host is there with the correct API base
     return cleanUrl.replace(/^https?:\/\/[^/]+/, API_BASE);
   }
 
-  // Relative path — just prepend API_BASE
   return `${API_BASE}${cleanUrl}`;
 }
 
