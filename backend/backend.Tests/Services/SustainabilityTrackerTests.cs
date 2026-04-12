@@ -176,6 +176,7 @@ public class SustainabilityTrackerTests : IDisposable
             ElectricityKWh = 3.0M,
             ToxicChemicalsG = 4.0M,
             LandfillKg = 5.0M,
+            Articles = 2,
             UserId = _userAId
         }, svb = new SustainabilityVector
         {
@@ -184,6 +185,7 @@ public class SustainabilityTrackerTests : IDisposable
             ElectricityKWh = 3.0M,
             ToxicChemicalsG = 4.0M,
             LandfillKg = 5.0M,
+            Articles = 2,
             UserId = _userBId
         }, svc = new SustainabilityVector
         {
@@ -192,6 +194,7 @@ public class SustainabilityTrackerTests : IDisposable
             ElectricityKWh = 3.1M,
             ToxicChemicalsG = 4.1M,
             LandfillKg = 5.1M,
+            Articles = 2,
             UserId = _userCId
         };
 
@@ -207,6 +210,7 @@ public class SustainabilityTrackerTests : IDisposable
         dto.ElectricityKWh.Should().Be(9.1M);
         dto.ToxicChemicalsG.Should().Be(12.1M);
         dto.LandfillKg.Should().Be(15.1M);
+        dto.Articles.Should().Be(3);
     }
 
     private void SeedTestData()

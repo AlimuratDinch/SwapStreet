@@ -1,5 +1,6 @@
 using backend.Contracts;
 using backend.DbContexts;
+using backend.DTOs.Chat;
 using backend.DTOs.SustainabilityTracker;
 using backend.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -145,10 +146,25 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
             ElectricityKWh = electricityKWh,
             ToxicChemicalsG = toxicChemicalsG,
             LandfillKg = landfillKg,
-            Articles = articles
+            Articles = articles / 2
         };
 
         return dto;
+    }
+
+    public ListingSustainabilityImpactDto GetImpactForListing(Listing listing)
+    {
+        Stats stats = listingTypeToStats[listing.Category];
+
+        return new ListingSustainabilityImpactDto
+        {
+            CO2Kg = stats.AvgCO2Kg,
+            WaterL = stats.AvgWaterL,
+            ElectricityKWh = stats.AvgElectricityKWh,
+            ToxicChemicalsG = stats.AvgToxicChemicalsG,
+            LandfillKg = stats.AvgLandfillKg,
+            Articles = 1
+        };
     }
 
     public void UpdateWith(Guid buyerId, Guid sellerId, Listing listing)

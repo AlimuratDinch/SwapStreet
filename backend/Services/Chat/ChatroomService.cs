@@ -133,6 +133,8 @@ namespace backend.Services.Chat
                     ClosedAt = c.ClosedAt,
                     IsArchived = c.IsArchived,
                     ArchivedAt = c.ArchivedAt,
+                    ArchivedBySeller = c.ArchivedBySeller,
+                    ArchivedByBuyer = c.ArchivedByBuyer,
                     IsFrozen = c.IsFrozen,
                     FrozenReason = c.FrozenReason,
                     CloseRequestedById = c.CloseRequestedById,
@@ -143,6 +145,7 @@ namespace backend.Services.Chat
                     SellerRatingCount = sellerStats.Item2,
                     BuyerRatingAverage = buyerStats.Item1,
                     BuyerRatingCount = buyerStats.Item2,
+                    ListingSustainabilityImpact = ResolveListingImpact(c),
                     Ratings = c.Ratings
                         .OrderBy(r => r.CreatedAt)
                         .Select(MapRatingDto)
@@ -418,8 +421,6 @@ namespace backend.Services.Chat
 
                 chatroom.IsDealClosed = true;
                 chatroom.ClosedAt = DateTimeOffset.UtcNow;
-                chatroom.IsArchived = true;
-                chatroom.ArchivedAt = DateTimeOffset.UtcNow;
                 chatroom.CloseRequestedById = null;
                 chatroom.CloseRequestedAt = null;
                 chatroom.IsFrozen = false;
@@ -430,7 +431,53 @@ namespace backend.Services.Chat
 
             await _context.SaveChangesAsync();
 
-            if (chatroom.IsDealClosed && chatroom.ListingId.HasValue)
+            return (await GetChatroomByIdAsync(chatroom.Id))!;
+        }
+
+        public async Task<ChatroomDto> FinalizeClosedDealAsync(Guid chatroomId, Guid userId)
+        {
+            var chatroom = await _context.Chatrooms
+                .FirstOrDefaultAsync(c => c.Id == chatroomId);
+
+            if (chatroom == null)
+            {
+                throw new ArgumentException("Chatroom not found");
+            }
+
+            if (chatroom.SellerId != userId && chatroom.BuyerId != userId)
+            {
+                throw new UnauthorizedAccessException("User does not belong to this chatroom");
+            }
+
+            if (!chatroom.IsDealClosed)
+            {
+                throw new InvalidOperationException("Deal must be closed before finalizing");
+            }
+
+            if (!chatroom.IsArchived)
+            {
+                if (chatroom.SellerId == userId)
+                {
+                    chatroom.ArchivedBySeller = true;
+                }
+                else
+                {
+                    chatroom.ArchivedByBuyer = true;
+                }
+
+                if (chatroom.ArchivedBySeller && chatroom.ArchivedByBuyer)
+                {
+                    chatroom.IsArchived = true;
+                    chatroom.ArchivedAt = DateTimeOffset.UtcNow;
+                }
+            }
+
+            chatroom.IsFrozen = false;
+            chatroom.FrozenReason = null;
+
+            await _context.SaveChangesAsync();
+
+            if (chatroom.ListingId.HasValue)
             {
                 var listingId = chatroom.ListingId.Value;
                 var otherChats = await _context.Chatrooms
@@ -670,6 +717,8 @@ namespace backend.Services.Chat
                 ClosedAt = chatroom.ClosedAt,
                 IsArchived = chatroom.IsArchived,
                 ArchivedAt = chatroom.ArchivedAt,
+                ArchivedBySeller = chatroom.ArchivedBySeller,
+                ArchivedByBuyer = chatroom.ArchivedByBuyer,
                 IsFrozen = chatroom.IsFrozen,
                 FrozenReason = chatroom.FrozenReason,
                 CloseRequestedById = chatroom.CloseRequestedById,
@@ -680,6 +729,7 @@ namespace backend.Services.Chat
                 SellerRatingCount = sellerStats.Item2,
                 BuyerRatingAverage = buyerStats.Item1,
                 BuyerRatingCount = buyerStats.Item2,
+                ListingSustainabilityImpact = ResolveListingImpact(chatroom),
                 Ratings = chatroom.Ratings
                     .OrderBy(r => r.CreatedAt)
                     .Select(MapRatingDto)
@@ -734,8 +784,46 @@ namespace backend.Services.Chat
                 return;
             }
 
+            var impact = _sustainabilityTrackerService.GetImpactForListing(listing);
+            chatroom.ListingImpactCO2Kg = impact.CO2Kg;
+            chatroom.ListingImpactWaterL = impact.WaterL;
+            chatroom.ListingImpactElectricityKWh = impact.ElectricityKWh;
+            chatroom.ListingImpactToxicChemicalsG = impact.ToxicChemicalsG;
+            chatroom.ListingImpactLandfillKg = impact.LandfillKg;
+            chatroom.ListingImpactArticles = impact.Articles;
+
             chatroom.SustainabilityMetricsApplied = true;
             _sustainabilityTrackerService.UpdateWith(chatroom.BuyerId, chatroom.SellerId, listing);
+        }
+
+        private ListingSustainabilityImpactDto? ResolveListingImpact(Chatroom chatroom)
+        {
+            if (chatroom.Listing != null)
+            {
+                return _sustainabilityTrackerService.GetImpactForListing(chatroom.Listing);
+            }
+
+            if (
+                chatroom.ListingImpactCO2Kg is not decimal co2Kg ||
+                chatroom.ListingImpactWaterL is not decimal waterL ||
+                chatroom.ListingImpactElectricityKWh is not decimal electricityKWh ||
+                chatroom.ListingImpactToxicChemicalsG is not decimal toxicChemicalsG ||
+                chatroom.ListingImpactLandfillKg is not decimal landfillKg ||
+                chatroom.ListingImpactArticles is not int articles
+            )
+            {
+                return null;
+            }
+
+            return new ListingSustainabilityImpactDto
+            {
+                CO2Kg = co2Kg,
+                WaterL = waterL,
+                ElectricityKWh = electricityKWh,
+                ToxicChemicalsG = toxicChemicalsG,
+                LandfillKg = landfillKg,
+                Articles = articles
+            };
         }
     }
 }
