@@ -37,6 +37,12 @@ namespace backend.DTOs.Chat
         [JsonPropertyName("archivedAt")]
         public DateTimeOffset? ArchivedAt { get; set; }
 
+        [JsonPropertyName("archivedBySeller")]
+        public bool ArchivedBySeller { get; set; }
+
+        [JsonPropertyName("archivedByBuyer")]
+        public bool ArchivedByBuyer { get; set; }
+
         [JsonPropertyName("isFrozen")]
         public bool IsFrozen { get; set; }
 

@@ -445,6 +445,12 @@ static async Task InitializeDatabaseAsync(WebApplication app)
         {
             await authDb.Database.MigrateAsync();
         }
+
+        if (appDb.Database.IsRelational())
+        {
+            await EnsureChatroomArchiveColumnsAsync(appDb);
+        }
+
         await DatabaseSeeder.SeedAsync(
             appDb,
             services,
@@ -458,6 +464,41 @@ static async Task InitializeDatabaseAsync(WebApplication app)
         app.Logger.LogError(ex, "Database initialization failed");
         throw;
     }
+}
+
+static async Task EnsureChatroomArchiveColumnsAsync(AppDbContext appDb)
+{
+    await appDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"chatrooms\" ADD COLUMN IF NOT EXISTS \"ArchivedBySeller\" boolean NOT NULL DEFAULT false;"
+    );
+
+    await appDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"chatrooms\" ADD COLUMN IF NOT EXISTS \"ArchivedByBuyer\" boolean NOT NULL DEFAULT false;"
+    );
+
+    await appDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"chatrooms\" ADD COLUMN IF NOT EXISTS \"ListingImpactCO2Kg\" numeric NULL;"
+    );
+
+    await appDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"chatrooms\" ADD COLUMN IF NOT EXISTS \"ListingImpactWaterL\" numeric NULL;"
+    );
+
+    await appDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"chatrooms\" ADD COLUMN IF NOT EXISTS \"ListingImpactElectricityKWh\" numeric NULL;"
+    );
+
+    await appDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"chatrooms\" ADD COLUMN IF NOT EXISTS \"ListingImpactToxicChemicalsG\" numeric NULL;"
+    );
+
+    await appDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"chatrooms\" ADD COLUMN IF NOT EXISTS \"ListingImpactLandfillKg\" numeric NULL;"
+    );
+
+    await appDb.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"chatrooms\" ADD COLUMN IF NOT EXISTS \"ListingImpactArticles\" integer NULL;"
+    );
 }
 
 static async Task InitializeMinio(WebApplication app)

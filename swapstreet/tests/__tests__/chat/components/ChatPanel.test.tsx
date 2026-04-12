@@ -671,6 +671,51 @@ describe("ChatPanel Component", () => {
     });
   });
 
+  it("does not reopen rating modal after dismissing feedback", async () => {
+    const closedRoom: Chatroom = {
+      ...mockRoom,
+      isDealClosed: true,
+      ratings: [],
+    };
+
+    render(<ChatPanel {...mockProps} room={closedRoom} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Leave a rating")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("No rating"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
+      expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
+    });
+
+    const closeDealUpdatedCall = (mockConnection.on as jest.Mock).mock.calls.find(
+      (call) => call[0] === "CloseDealUpdated",
+    );
+    expect(closeDealUpdatedCall).toBeTruthy();
+
+    const closeDealUpdatedHandler = closeDealUpdatedCall?.[1] as (
+      room: Chatroom,
+    ) => void;
+
+    act(() => {
+      closeDealUpdatedHandler({
+        ...closedRoom,
+        isDealClosed: true,
+        isArchived: false,
+        ratings: [],
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
+    });
+  });
+
   it("opens sustainability impact modal even when room has no listing", async () => {
     const noListingRoom: Chatroom = {
       ...mockRoom,

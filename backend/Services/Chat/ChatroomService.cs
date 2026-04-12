@@ -133,6 +133,8 @@ namespace backend.Services.Chat
                     ClosedAt = c.ClosedAt,
                     IsArchived = c.IsArchived,
                     ArchivedAt = c.ArchivedAt,
+                    ArchivedBySeller = c.ArchivedBySeller,
+                    ArchivedByBuyer = c.ArchivedByBuyer,
                     IsFrozen = c.IsFrozen,
                     FrozenReason = c.FrozenReason,
                     CloseRequestedById = c.CloseRequestedById,
@@ -143,9 +145,7 @@ namespace backend.Services.Chat
                     SellerRatingCount = sellerStats.Item2,
                     BuyerRatingAverage = buyerStats.Item1,
                     BuyerRatingCount = buyerStats.Item2,
-                    ListingSustainabilityImpact = c.Listing != null
-                        ? _sustainabilityTrackerService.GetImpactForListing(c.Listing)
-                        : null,
+                    ListingSustainabilityImpact = ResolveListingImpact(c),
                     Ratings = c.Ratings
                         .OrderBy(r => r.CreatedAt)
                         .Select(MapRatingDto)
@@ -456,8 +456,20 @@ namespace backend.Services.Chat
 
             if (!chatroom.IsArchived)
             {
-                chatroom.IsArchived = true;
-                chatroom.ArchivedAt = DateTimeOffset.UtcNow;
+                if (chatroom.SellerId == userId)
+                {
+                    chatroom.ArchivedBySeller = true;
+                }
+                else
+                {
+                    chatroom.ArchivedByBuyer = true;
+                }
+
+                if (chatroom.ArchivedBySeller && chatroom.ArchivedByBuyer)
+                {
+                    chatroom.IsArchived = true;
+                    chatroom.ArchivedAt = DateTimeOffset.UtcNow;
+                }
             }
 
             chatroom.IsFrozen = false;
@@ -705,6 +717,8 @@ namespace backend.Services.Chat
                 ClosedAt = chatroom.ClosedAt,
                 IsArchived = chatroom.IsArchived,
                 ArchivedAt = chatroom.ArchivedAt,
+                ArchivedBySeller = chatroom.ArchivedBySeller,
+                ArchivedByBuyer = chatroom.ArchivedByBuyer,
                 IsFrozen = chatroom.IsFrozen,
                 FrozenReason = chatroom.FrozenReason,
                 CloseRequestedById = chatroom.CloseRequestedById,
@@ -715,9 +729,7 @@ namespace backend.Services.Chat
                 SellerRatingCount = sellerStats.Item2,
                 BuyerRatingAverage = buyerStats.Item1,
                 BuyerRatingCount = buyerStats.Item2,
-                ListingSustainabilityImpact = chatroom.Listing != null
-                    ? _sustainabilityTrackerService.GetImpactForListing(chatroom.Listing)
-                    : null,
+                ListingSustainabilityImpact = ResolveListingImpact(chatroom),
                 Ratings = chatroom.Ratings
                     .OrderBy(r => r.CreatedAt)
                     .Select(MapRatingDto)
@@ -772,8 +784,46 @@ namespace backend.Services.Chat
                 return;
             }
 
+            var impact = _sustainabilityTrackerService.GetImpactForListing(listing);
+            chatroom.ListingImpactCO2Kg = impact.CO2Kg;
+            chatroom.ListingImpactWaterL = impact.WaterL;
+            chatroom.ListingImpactElectricityKWh = impact.ElectricityKWh;
+            chatroom.ListingImpactToxicChemicalsG = impact.ToxicChemicalsG;
+            chatroom.ListingImpactLandfillKg = impact.LandfillKg;
+            chatroom.ListingImpactArticles = impact.Articles;
+
             chatroom.SustainabilityMetricsApplied = true;
             _sustainabilityTrackerService.UpdateWith(chatroom.BuyerId, chatroom.SellerId, listing);
+        }
+
+        private ListingSustainabilityImpactDto? ResolveListingImpact(Chatroom chatroom)
+        {
+            if (chatroom.Listing != null)
+            {
+                return _sustainabilityTrackerService.GetImpactForListing(chatroom.Listing);
+            }
+
+            if (
+                chatroom.ListingImpactCO2Kg is not decimal co2Kg ||
+                chatroom.ListingImpactWaterL is not decimal waterL ||
+                chatroom.ListingImpactElectricityKWh is not decimal electricityKWh ||
+                chatroom.ListingImpactToxicChemicalsG is not decimal toxicChemicalsG ||
+                chatroom.ListingImpactLandfillKg is not decimal landfillKg ||
+                chatroom.ListingImpactArticles is not int articles
+            )
+            {
+                return null;
+            }
+
+            return new ListingSustainabilityImpactDto
+            {
+                CO2Kg = co2Kg,
+                WaterL = waterL,
+                ElectricityKWh = electricityKWh,
+                ToxicChemicalsG = toxicChemicalsG,
+                LandfillKg = landfillKg,
+                Articles = articles
+            };
         }
     }
 }

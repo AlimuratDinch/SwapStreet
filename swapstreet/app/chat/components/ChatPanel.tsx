@@ -108,10 +108,17 @@ export default function ChatPanel({
   const [ratingStars, setRatingStars] = useState<number | null>(null);
   const [ratingDescription, setRatingDescription] = useState("");
   const [isConfirmCloseOpen, setIsConfirmCloseOpen] = useState(false);
+  const [ratingPromptDismissed, setRatingPromptDismissed] = useState(false);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const autoSendRef = useRef<string>(searchParams.get("msg") ?? "");
+  const ratingPromptDismissedRef = useRef(false);
+
+  const updateRatingPromptDismissed = useCallback((dismissed: boolean) => {
+    ratingPromptDismissedRef.current = dismissed;
+    setRatingPromptDismissed(dismissed);
+  }, []);
 
   useEffect(() => {
     const pending = searchParams.get("msg");
@@ -175,10 +182,16 @@ export default function ChatPanel({
     connection.on("Error", (err: string) => setError(err));
     connection.on("CloseDealUpdated", (updated: Chatroom) => {
       onRoomUpdate(updated);
+      const updatedRatings = updated.ratings ?? [];
+      const updatedHasRated =
+        !!userId && updatedRatings.some((r) => r.reviewerId === userId);
+
       if (
         updated.id === room.id &&
         updated.isDealClosed &&
-        !updated.isArchived
+        !updated.isArchived &&
+        !updatedHasRated &&
+        !ratingPromptDismissedRef.current
       ) {
         setIsRatingModalOpen(true);
       }
@@ -218,7 +231,7 @@ export default function ChatPanel({
       connection.invoke("LeaveChatroom", room.id).catch(() => {});
       connection.stop();
     };
-  }, [accessToken, room.id, onRoomUpdate]);
+  }, [accessToken, room.id, onRoomUpdate, userId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -244,6 +257,7 @@ export default function ChatPanel({
     !isFrozen &&
     !closeRequestPending;
   const canRate = !!userId && isDealClosed && !isArchived && !hasRated;
+  const shouldPromptForRating = canRate && !ratingPromptDismissed;
 
   const handleConfirmClose = () => {
     if (needsCloseResponse) {
@@ -285,10 +299,14 @@ export default function ChatPanel({
   }, [needsCloseResponse]);
 
   useEffect(() => {
-    if (isDealClosed && canRate) {
+    updateRatingPromptDismissed(false);
+  }, [room.id, updateRatingPromptDismissed]);
+
+  useEffect(() => {
+    if (shouldPromptForRating) {
       setIsRatingModalOpen(true);
     }
-  }, [isDealClosed, canRate]);
+  }, [shouldPromptForRating]);
 
   const otherRoleText = getOtherRoleText(isBuyer, isSeller);
   const otherRating = getOtherRating(isBuyer, isSeller, room);
@@ -350,6 +368,7 @@ export default function ChatPanel({
       setRatingDescription("");
       setIsRatingModalOpen(false);
       setHoveredRatingStar(null);
+      updateRatingPromptDismissed(true);
       setImpactMetrics(
         updatedRoom.listingSustainabilityImpact ??
           room.listingSustainabilityImpact ??
@@ -572,6 +591,7 @@ export default function ChatPanel({
                   setRatingStars(null);
                   setRatingDescription("");
                   setHoveredRatingStar(null);
+                  updateRatingPromptDismissed(true);
                   void openImpactModal();
                 }}
                 className={styles.btnSecondary}

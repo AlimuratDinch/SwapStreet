@@ -998,6 +998,104 @@ namespace backend.Tests.Services
         }
 
         [Fact]
+        public async Task GetChatroomByIdAsync_ShouldReturnImpactSnapshot_WhenListingIsDeleted()
+        {
+            var listingId = Guid.NewGuid();
+            _db.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Test jeans",
+                Description = "Denim",
+                Price = 15m,
+                Size = ListingSize.M,
+                Condition = ListingCondition.UsedGood,
+                Brand = ListingBrand.Nike,
+                Colour = ListingColour.Blue,
+                Category = ListingCategory.Bottoms,
+                ProfileId = _sellerId,
+                FSA = "M5V"
+            });
+            await _db.SaveChangesAsync();
+
+            var chatroom = await _service.CreateChatroomAsync(new CreateChatroomDto
+            {
+                SellerId = _sellerId,
+                BuyerId = _buyerId,
+                ListingId = listingId
+            });
+
+            await _service.RequestCloseDealAsync(chatroom.Id, _sellerId);
+            await _service.RespondToCloseDealAsync(chatroom.Id, _buyerId, true);
+
+            var deletedListing = await _db.Listings.FirstAsync(l => l.Id == listingId);
+            _db.Listings.Remove(deletedListing);
+            await _db.SaveChangesAsync();
+
+            var result = await _service.GetChatroomByIdAsync(chatroom.Id);
+
+            result.Should().NotBeNull();
+            result!.ListingSustainabilityImpact.Should().NotBeNull();
+            result.ListingSustainabilityImpact!.CO2Kg.Should().Be(0);
+            result.ListingSustainabilityImpact.WaterL.Should().Be(0);
+            result.ListingSustainabilityImpact.ElectricityKWh.Should().Be(0);
+            result.ListingSustainabilityImpact.ToxicChemicalsG.Should().Be(0);
+            result.ListingSustainabilityImpact.LandfillKg.Should().Be(0);
+            result.ListingSustainabilityImpact.Articles.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task FinalizeClosedDealAsync_ShouldArchiveOnlyAfterBothUsersFinalize()
+        {
+            var listingId = Guid.NewGuid();
+            _db.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Test hoodie",
+                Description = "Warm hoodie",
+                Price = 18m,
+                Size = ListingSize.M,
+                Condition = ListingCondition.UsedGood,
+                Brand = ListingBrand.Nike,
+                Colour = ListingColour.Black,
+                Category = ListingCategory.Tops,
+                ProfileId = _sellerId,
+                FSA = "M5V"
+            });
+            await _db.SaveChangesAsync();
+
+            var chatroom = await _service.CreateChatroomAsync(new CreateChatroomDto
+            {
+                SellerId = _sellerId,
+                BuyerId = _buyerId,
+                ListingId = listingId
+            });
+
+            await _service.RequestCloseDealAsync(chatroom.Id, _sellerId);
+            await _service.RespondToCloseDealAsync(chatroom.Id, _buyerId, true);
+
+            var sellerArchive = await _service.FinalizeClosedDealAsync(chatroom.Id, _sellerId);
+
+            sellerArchive.IsArchived.Should().BeFalse();
+            sellerArchive.ArchivedBySeller.Should().BeTrue();
+            sellerArchive.ArchivedByBuyer.Should().BeFalse();
+
+            var midState = await _db.Chatrooms.FirstAsync(c => c.Id == chatroom.Id);
+            midState.IsArchived.Should().BeFalse();
+            midState.ArchivedBySeller.Should().BeTrue();
+            midState.ArchivedByBuyer.Should().BeFalse();
+
+            var buyerArchive = await _service.FinalizeClosedDealAsync(chatroom.Id, _buyerId);
+
+            buyerArchive.IsArchived.Should().BeTrue();
+            buyerArchive.ArchivedBySeller.Should().BeTrue();
+            buyerArchive.ArchivedByBuyer.Should().BeTrue();
+
+            var persisted = await _db.Chatrooms.FirstAsync(c => c.Id == chatroom.Id);
+            persisted.IsArchived.Should().BeTrue();
+            persisted.ArchivedAt.Should().NotBeNull();
+        }
+
+        [Fact]
         public async Task CloseDealAsync_ShouldApplySustainabilityOnlyOnce_WhenCalledMultipleTimes()
         {
             // Arrange

@@ -107,6 +107,12 @@ namespace backend.Migrations
                     b.Property<DateTimeOffset?>("ArchivedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("ArchivedByBuyer")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ArchivedBySeller")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("BuyerId")
                         .HasColumnType("uuid");
 
@@ -143,6 +149,24 @@ namespace backend.Migrations
 
                     b.Property<Guid?>("ListingId")
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("ListingImpactArticles")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("ListingImpactCO2Kg")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ListingImpactElectricityKWh")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ListingImpactLandfillKg")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ListingImpactToxicChemicalsG")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ListingImpactWaterL")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("ListingImageSnapshotPath")
                         .HasMaxLength(512)

@@ -33,11 +33,27 @@ public class Chatroom
 
     public bool SustainabilityMetricsApplied { get; set; } = false;
 
+    public decimal? ListingImpactCO2Kg { get; set; }
+
+    public decimal? ListingImpactWaterL { get; set; }
+
+    public decimal? ListingImpactElectricityKWh { get; set; }
+
+    public decimal? ListingImpactToxicChemicalsG { get; set; }
+
+    public decimal? ListingImpactLandfillKg { get; set; }
+
+    public int? ListingImpactArticles { get; set; }
+
     public DateTimeOffset? ClosedAt { get; set; }
 
     public bool IsArchived { get; set; } = false;
 
     public DateTimeOffset? ArchivedAt { get; set; }
+
+    public bool ArchivedBySeller { get; set; } = false;
+
+    public bool ArchivedByBuyer { get; set; } = false;
 
     public bool IsFrozen { get; set; } = false;
 
