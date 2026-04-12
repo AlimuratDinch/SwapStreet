@@ -20,6 +20,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Header } from "@/components/common/Header";
+import AnimatedCounter from "@/components/AnimatedCounter";
 
 interface ChartData {
   name: string;
@@ -50,7 +51,7 @@ function mapStats(raw: Record<string, unknown>): SustainabilityStats {
 
 interface StatCardProps {
   icon: LucideIcon;
-  value: string;
+  value: React.ReactNode;
   label: string;
   colorClass: string;
 }
@@ -278,37 +279,37 @@ export default function SustainabilityDashboard() {
         <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
           <StatCard
             icon={Cloud}
-            value={activeStats.CO2Kg.toLocaleString()}
+            value={<AnimatedCounter target={activeStats.CO2Kg} />}
             label="Kg of CO2 avoided"
             colorClass="bg-green-50 text-green-500"
           />
           <StatCard
             icon={Droplets}
-            value={activeStats.WaterL.toLocaleString()}
+            value={<AnimatedCounter target={activeStats.WaterL} />}
             label="Liters of water saved"
             colorClass="bg-blue-50 text-blue-400"
           />
           <StatCard
             icon={Shirt}
-            value={activeStats.Articles.toLocaleString()}
+            value={<AnimatedCounter target={activeStats.Articles} />}
             label="Individual clothes saved"
             colorClass="bg-orange-50 text-orange-400"
           />
           <StatCard
             icon={Zap}
-            value={activeStats.ElectricityKWh.toLocaleString()}
+            value={<AnimatedCounter target={activeStats.ElectricityKWh} />}
             label="Kwh of electricity saved"
             colorClass="bg-yellow-50 text-yellow-400"
           />
           <StatCard
             icon={Pipette}
-            value={activeStats.ToxicChemicalsG.toLocaleString()}
+            value={<AnimatedCounter target={activeStats.ToxicChemicalsG} />}
             label="Grams of toxic dye chemicals avoided"
             colorClass="bg-purple-50 text-purple-400"
           />
           <StatCard
             icon={Trash2}
-            value={(activeStats.LandfillKg * 1000).toLocaleString()}
+            value={<AnimatedCounter target={activeStats.LandfillKg * 1000} />}
             label="Grams not ending up in a landfill"
             colorClass="bg-red-50 text-red-400"
           />

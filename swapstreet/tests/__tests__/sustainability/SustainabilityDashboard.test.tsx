@@ -1,11 +1,22 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SustainabilityDashboard, {
   CustomTooltip,
 } from "@/app/sustainability/page";
 
 const mockGetItem = jest.fn();
+
+const flushAnimatedCounters = async () => {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+
+  act(() => {
+    jest.advanceTimersByTime(2500);
+  });
+};
 
 // Mock the Header component
 jest.mock("@/components/common/Header", () => ({
@@ -95,15 +106,17 @@ describe("SustainabilityDashboard", () => {
       expect(zeroValues.length).toBeGreaterThanOrEqual(6);
 
       expect(
-        screen.getByText("Metric tons of CO₂ avoided"),
+        screen.getByText("Kg of CO2 avoided"),
       ).toBeInTheDocument();
-      expect(screen.getByText("Gallons of water saved")).toBeInTheDocument();
+      expect(screen.getByText("Liters of water saved")).toBeInTheDocument();
       expect(screen.getByText("Individual clothes saved")).toBeInTheDocument();
       expect(screen.getByText("Kwh of electricity saved")).toBeInTheDocument();
       expect(
-        screen.getByText("Kg of toxic dye chemicals avoided"),
+        screen.getByText("Grams of toxic dye chemicals avoided"),
       ).toBeInTheDocument();
-      expect(screen.getByText("m² of land preserved")).toBeInTheDocument();
+      expect(
+        screen.getByText("Grams not ending up in a landfill"),
+      ).toBeInTheDocument();
     });
 
     it("highlights the first card by default", () => {
@@ -201,12 +214,14 @@ describe("SustainabilityDashboard", () => {
 
       render(<SustainabilityDashboard />);
 
-      expect(await screen.findByText("12")).toBeInTheDocument();
+      await flushAnimatedCounters();
+
+      expect(screen.getByText("12")).toBeInTheDocument();
       expect(screen.getByText("34")).toBeInTheDocument();
       expect(screen.getByText("11")).toBeInTheDocument();
       expect(screen.getByText("56")).toBeInTheDocument();
       expect(screen.getByText("78")).toBeInTheDocument();
-      expect(screen.getByText("90")).toBeInTheDocument();
+      expect(screen.getByText("90,000")).toBeInTheDocument();
     });
 
     it("maps API stats with lowercase fallback keys", async () => {
@@ -238,11 +253,13 @@ describe("SustainabilityDashboard", () => {
 
       render(<SustainabilityDashboard />);
 
-      expect(await screen.findByText("1")).toBeInTheDocument();
+  await flushAnimatedCounters();
+
+  expect(screen.getByText("1")).toBeInTheDocument();
       expect(screen.getByText("2")).toBeInTheDocument();
       expect(screen.getByText("3")).toBeInTheDocument();
       expect(screen.getByText("4")).toBeInTheDocument();
-      expect(screen.getByText("5")).toBeInTheDocument();
+      expect(screen.getByText("5,000")).toBeInTheDocument();
       expect(screen.getByText("6")).toBeInTheDocument();
     });
 
@@ -427,7 +444,7 @@ describe("SustainabilityDashboard", () => {
       render(<SustainabilityDashboard />);
 
       const firstCard = screen
-        .getByText("Metric tons of CO₂ avoided")
+        .getByText("Kg of CO2 avoided")
         .closest('[role="button"]');
 
       expect(firstCard).toBeInTheDocument();
@@ -439,10 +456,10 @@ describe("SustainabilityDashboard", () => {
       render(<SustainabilityDashboard />);
 
       const firstCard = screen
-        .getByText("Metric tons of CO₂ avoided")
+        .getByText("Kg of CO2 avoided")
         .closest('[role="button"]');
       const secondCard = screen
-        .getByText("Gallons of water saved")
+        .getByText("Liters of water saved")
         .closest('[role="button"]');
 
       expect(firstCard).toHaveAttribute("aria-pressed", "true");
