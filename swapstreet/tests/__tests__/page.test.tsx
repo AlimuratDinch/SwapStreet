@@ -9,6 +9,12 @@ import {
 import Home from "@/app/page";
 import "@testing-library/jest-dom";
 
+const createJsonResponse = (ok: boolean, data: unknown) =>
+  Promise.resolve({
+    ok,
+    json: async () => data,
+  });
+
 // --- IntersectionObserver mock ---
 let intersectionObserverCallback: any = null;
 
@@ -40,6 +46,9 @@ global.cancelAnimationFrame = (id: number) => {
 describe("Home Page", () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    global.fetch = jest.fn().mockResolvedValue(
+      createJsonResponse(false, {}),
+    ) as jest.Mock;
   });
 
   afterEach(() => {
@@ -94,24 +103,113 @@ describe("Home Page", () => {
   it("runs typewriter effect until completion", async () => {
     render(<Home />);
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(10000);
+      await Promise.resolve();
     });
 
     await waitFor(() => {
-      expect(intersectionObserverCallback).toBeDefined();
+      expect(
+        screen.getByText("Ready to Transform Your Wardrobe?"),
+      ).toBeInTheDocument();
     });
   });
 
-  it("triggers chart animation and completes bar updates", () => {
+  it("fetches public stats and monthly impact data", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(
+        createJsonResponse(true, {
+          Articles: 12,
+          CO2Kg: 34,
+          WaterL: 56,
+          AccountsCreated: 78,
+        }),
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse(true, {
+          MonthlyImpact: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60],
+        }),
+      );
+
     render(<Home />);
 
-    act(() => {
-      jest.advanceTimersByTime(5000);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(2500);
+      await Promise.resolve();
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/sustainability/public"),
+    );
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/sustainability/public/monthly-impact"),
+    );
+    await waitFor(() => {
+      expect(screen.getAllByText("12").length).toBeGreaterThan(1);
+    });
+    expect(screen.getAllByText("34").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("56").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("78").length).toBeGreaterThan(0);
+  });
+
+  it("handles non-ok public data responses without updating stats", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(createJsonResponse(false, {}))
+      .mockResolvedValueOnce(createJsonResponse(false, {}));
+
+    render(<Home />);
+
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+    });
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(screen.getAllByText("0").length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("triggers chart animation and completes bar updates", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(
+        createJsonResponse(true, {
+          Articles: 0,
+          CO2Kg: 0,
+          WaterL: 0,
+          AccountsCreated: 0,
+        }),
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse(true, {
+          MonthlyImpact: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        }),
+      );
+
+    render(<Home />);
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(6000);
+      await Promise.resolve();
     });
 
     const bars = document.querySelectorAll('[class*="bg-gradient-to-t"]');
-    expect(bars.length).toBeGreaterThan(0);
+    expect(bars.length).toBe(12);
+    await waitFor(() => {
+      expect(
+        Array.from(bars).some((bar) =>
+          bar.getAttribute("style")?.includes("height: 100%"),
+        ),
+      ).toBe(true);
+    });
   });
 
   it("runs guide visibility stagger animation", async () => {
@@ -126,12 +224,36 @@ describe("Home Page", () => {
     });
   });
 
-  it("carousel RAF animation executes and loops", () => {
-    const { container } = render(<Home />);
-    const carousel = container.querySelector('[class*="flex gap"]');
+  it("carousel RAF animation executes and loops", async () => {
+    let boundingRectCall = 0;
+    const boundingRectSpy = jest
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(() =>
+        ({
+          x: 0,
+          y: 0,
+          top: 0,
+          left: boundingRectCall++ % 2 === 0 ? 0 : 2,
+          right: boundingRectCall % 2 === 0 ? 1 : 3,
+          bottom: 1,
+          width: 1,
+          height: 1,
+          toJSON: () => ({}),
+        } as DOMRect),
+      );
 
-    act(() => {
+    const { container } = render(<Home />);
+    const carousel = container.querySelector(
+      '[class*="flex gap"]',
+    ) as HTMLElement | null;
+    const appendChildSpy = carousel
+      ? jest.spyOn(carousel, "appendChild")
+      : null;
+
+    await act(async () => {
+      await Promise.resolve();
       jest.advanceTimersByTime(2000);
+      await Promise.resolve();
     });
 
     if (carousel) {
@@ -139,7 +261,16 @@ describe("Home Page", () => {
       fireEvent.mouseLeave(carousel);
     }
 
-    expect(true).toBe(true);
+    await waitFor(() => {
+      expect(carousel?.style.transform).toContain("translate3d");
+    });
+
+    await waitFor(() => {
+      expect(appendChildSpy?.mock.calls.length ?? 0).toBeGreaterThan(0);
+    });
+
+    appendChildSpy?.mockRestore();
+    boundingRectSpy.mockRestore();
   });
 
   it("covers RAF cleanup on unmount", () => {

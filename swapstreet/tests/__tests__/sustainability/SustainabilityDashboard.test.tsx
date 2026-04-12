@@ -119,59 +119,36 @@ describe("SustainabilityDashboard", () => {
       ).toBeInTheDocument();
     });
 
-    it("highlights the first card by default", () => {
+    it("renders the stat card icon colors", () => {
       const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".border-2");
+      const cards = container.querySelectorAll(".relative.rounded-xl");
 
-      expect(cards[0]).toHaveClass("border-blue-500", "shadow-md");
-      expect(cards[1]).toHaveClass("border-gray-200");
-    });
+      expect(cards).toHaveLength(6);
 
-    it("changes selected card when clicking on a different card", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
-
-      // Click on the second card (Gallons of water saved)
-      fireEvent.click(cards[1]);
-
-      expect(cards[0]).toHaveClass("border-gray-200");
-      expect(cards[1]).toHaveClass("border-blue-500", "shadow-md");
-    });
-
-    it("allows clicking between multiple cards", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
-
-      // Click third card
-      fireEvent.click(cards[2]);
-      expect(cards[2]).toHaveClass("border-blue-500", "shadow-md");
-
-      // Click fifth card
-      fireEvent.click(cards[4]);
-      expect(cards[2]).toHaveClass("border-gray-200");
-      expect(cards[4]).toHaveClass("border-blue-500", "shadow-md");
-    });
-
-    it("applies correct color classes to each card", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const iconContainers = container.querySelectorAll(".rounded-full");
-
-      expect(iconContainers[0]).toHaveClass("bg-green-50", "text-green-500");
-      expect(iconContainers[1]).toHaveClass("bg-blue-50", "text-blue-400");
-      expect(iconContainers[2]).toHaveClass("bg-orange-50", "text-orange-400");
-      expect(iconContainers[3]).toHaveClass("bg-yellow-50", "text-yellow-400");
-      expect(iconContainers[4]).toHaveClass("bg-purple-50", "text-purple-400");
-      expect(iconContainers[5]).toHaveClass("bg-red-50", "text-red-400");
-    });
-
-    it("selects the last stat card when clicked", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
-
-      fireEvent.click(cards[5]);
-
-      expect(cards[5]).toHaveClass("border-blue-500", "shadow-md");
-      expect(cards[0]).toHaveClass("border-gray-200");
+      expect(cards[0].querySelector(".rounded-full")).toHaveClass(
+        "bg-green-50",
+        "text-green-500",
+      );
+      expect(cards[1].querySelector(".rounded-full")).toHaveClass(
+        "bg-blue-50",
+        "text-blue-400",
+      );
+      expect(cards[2].querySelector(".rounded-full")).toHaveClass(
+        "bg-orange-50",
+        "text-orange-400",
+      );
+      expect(cards[3].querySelector(".rounded-full")).toHaveClass(
+        "bg-yellow-50",
+        "text-yellow-400",
+      );
+      expect(cards[4].querySelector(".rounded-full")).toHaveClass(
+        "bg-purple-50",
+        "text-purple-400",
+      );
+      expect(cards[5].querySelector(".rounded-full")).toHaveClass(
+        "bg-red-50",
+        "text-red-400",
+      );
     });
   });
 
@@ -307,66 +284,64 @@ describe("SustainabilityDashboard", () => {
       expect(screen.getByTestId("cartesian-grid")).toBeInTheDocument();
       expect(screen.getByTestId("tooltip")).toBeInTheDocument();
     });
-
-    it("highlights the current month (April) by default", () => {
-      render(<SustainabilityDashboard />);
-      const cells = screen.getAllByTestId("bar-cell");
-
-      // April is index 3 (0-indexed)
-      expect(cells[3]).toHaveAttribute("data-fill", "#0D9488"); // Teal color
-      expect(cells[0]).toHaveAttribute("data-fill", "#E5E7EB"); // Gray color
-    });
-
-    it("changes highlighted bar when clicking on a bar", () => {
-      render(<SustainabilityDashboard />);
-      const cells = screen.getAllByTestId("bar-cell");
-
-      // Click on January (index 0)
-      fireEvent.click(cells[0]);
-
-      expect(cells[0]).toHaveAttribute("data-fill", "#0D9488");
-      expect(cells[3]).toHaveAttribute("data-fill", "#E5E7EB");
-    });
-
-    it("allows toggling between different bars", () => {
-      render(<SustainabilityDashboard />);
-      const cells = screen.getAllByTestId("bar-cell");
-
-      // Click on June (index 5)
-      fireEvent.click(cells[5]);
-      expect(cells[5]).toHaveAttribute("data-fill", "#0D9488");
-
-      // Click on December (index 11)
-      fireEvent.click(cells[11]);
-      expect(cells[5]).toHaveAttribute("data-fill", "#E5E7EB");
-      expect(cells[11]).toHaveAttribute("data-fill", "#0D9488");
-    });
   });
 
   describe("CustomTooltip", () => {
     it("renders tooltip with correct data when active", () => {
-      const mockPayload = [{ name: "Apr", value: 40 }];
+      render(
+        <CustomTooltip
+          active={true}
+          label="Apr"
+          stats={{
+            CO2Kg: 40,
+            WaterL: 80,
+            ElectricityKWh: 120,
+            ToxicChemicalsG: 160,
+            LandfillKg: 2,
+            Articles: 10,
+          }}
+        />,
+      );
 
-      render(<CustomTooltip active={true} payload={mockPayload} />);
-
-      expect(screen.getByText("40")).toBeInTheDocument();
       expect(screen.getByText("Apr 2026")).toBeInTheDocument();
+      expect(screen.getByText("Current month metric breakdown")).toBeInTheDocument();
+      expect(screen.getByText("40")).toBeInTheDocument();
     });
 
     it("returns null when not active", () => {
       const { container } = render(
-        <CustomTooltip active={false} payload={[]} />,
+        <CustomTooltip
+          active={false}
+          stats={{
+            CO2Kg: 0,
+            WaterL: 0,
+            ElectricityKWh: 0,
+            ToxicChemicalsG: 0,
+            LandfillKg: 0,
+            Articles: 0,
+          }}
+        />,
       );
 
       expect(container.firstChild).toBeNull();
     });
 
-    it("returns null when payload is empty", () => {
-      const { container } = render(
-        <CustomTooltip active={true} payload={[]} />,
+    it("shows the empty-state message when active data is zero", () => {
+      const { getByText } = render(
+        <CustomTooltip
+          active={true}
+          stats={{
+            CO2Kg: 0,
+            WaterL: 0,
+            ElectricityKWh: 0,
+            ToxicChemicalsG: 0,
+            LandfillKg: 0,
+            Articles: 0,
+          }}
+        />,
       );
 
-      expect(container.firstChild).toBeNull();
+      expect(getByText("No data for this month")).toBeInTheDocument();
     });
   });
 
@@ -375,7 +350,18 @@ describe("SustainabilityDashboard", () => {
       const { container } = render(<SustainabilityDashboard />);
       const mainDiv = container.firstChild;
 
-      expect(mainDiv).toHaveClass("p-4", "md:p-8", "pt-20", "md:pt-24");
+      expect(mainDiv).toHaveClass(
+        "flex",
+        "h-screen",
+        "flex-col",
+        "overflow-hidden",
+        "bg-gray-50",
+        "px-3",
+        "pt-20",
+        "font-sans",
+        "md:px-6",
+        "md:pt-24",
+      );
     });
 
     it("applies responsive grid classes to stat cards", () => {
@@ -383,46 +369,23 @@ describe("SustainabilityDashboard", () => {
       const grid = container.querySelector(".grid");
 
       expect(grid).toHaveClass(
-        "grid-cols-1",
-        "md:grid-cols-2",
+        "grid-cols-2",
         "lg:grid-cols-3",
       );
     });
   });
 
   describe("Integration Tests", () => {
-    it("maintains independent state for card selection and bar selection", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
-      const cells = screen.getAllByTestId("bar-cell");
+    it("switches between individual and platform views", () => {
+      render(<SustainabilityDashboard />);
 
-      // Click on card 3
-      fireEvent.click(cards[3]);
-      expect(cards[3]).toHaveClass("border-blue-500");
+      expect(screen.getByText("Individual View")).toBeInTheDocument();
 
-      // Click on bar 7
-      fireEvent.click(cells[7]);
-      expect(cells[7]).toHaveAttribute("data-fill", "#0D9488");
+      fireEvent.click(screen.getByRole("button", { name: "Platform" }));
+      expect(screen.getByText("Platform View")).toBeInTheDocument();
 
-      // Verify both selections are maintained
-      expect(cards[3]).toHaveClass("border-blue-500");
-      expect(cells[7]).toHaveAttribute("data-fill", "#0D9488");
-    });
-
-    it("handles multiple interactions correctly", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
-      const cells = screen.getAllByTestId("bar-cell");
-
-      // Series of interactions
-      fireEvent.click(cards[1]); // Click card 2
-      fireEvent.click(cells[2]); // Click bar 3
-      fireEvent.click(cards[4]); // Click card 5
-      fireEvent.click(cells[9]); // Click bar 10
-
-      // Verify final state
-      expect(cards[4]).toHaveClass("border-blue-500");
-      expect(cells[9]).toHaveAttribute("data-fill", "#0D9488");
+      fireEvent.click(screen.getByRole("button", { name: "Individual" }));
+      expect(screen.getByText("Individual View")).toBeInTheDocument();
     });
   });
 
@@ -440,47 +403,25 @@ describe("SustainabilityDashboard", () => {
       expect(h3).toHaveTextContent("Monthly Usage");
     });
 
-    it("stat cards are keyboard accessible", () => {
+    it("renders accessible view toggle buttons", () => {
       render(<SustainabilityDashboard />);
 
-      const firstCard = screen
-        .getByText("Kg of CO2 avoided")
-        .closest('[role="button"]');
-
-      expect(firstCard).toBeInTheDocument();
-      expect(firstCard).toHaveAttribute("tabindex", "0");
-      expect(firstCard).toHaveAttribute("aria-pressed", "true");
+      expect(
+        screen.getByRole("button", { name: "Individual" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Platform" }),
+      ).toBeInTheDocument();
     });
 
-    it("changes selected card with Enter and Space keyboard events", () => {
+    it("toggles the view buttons with clicks", () => {
       render(<SustainabilityDashboard />);
 
-      const firstCard = screen
-        .getByText("Kg of CO2 avoided")
-        .closest('[role="button"]');
-      const secondCard = screen
-        .getByText("Liters of water saved")
-        .closest('[role="button"]');
+      fireEvent.click(screen.getByRole("button", { name: "Platform" }));
+      expect(screen.getByText("Platform View")).toBeInTheDocument();
 
-      expect(firstCard).toHaveAttribute("aria-pressed", "true");
-      expect(secondCard).toHaveAttribute("aria-pressed", "false");
-
-      fireEvent.keyDown(secondCard!, { key: "Enter" });
-      expect(secondCard).toHaveAttribute("aria-pressed", "true");
-      expect(firstCard).toHaveAttribute("aria-pressed", "false");
-
-      fireEvent.keyDown(firstCard!, { key: " " });
-      expect(firstCard).toHaveAttribute("aria-pressed", "true");
-      expect(secondCard).toHaveAttribute("aria-pressed", "false");
-    });
-    it("ignores non-activating keyboard input on stat cards", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
-
-      fireEvent.keyDown(cards[1], { key: "Escape" });
-
-      expect(cards[0]).toHaveClass("border-blue-500", "shadow-md");
-      expect(cards[1]).toHaveClass("border-gray-200");
+      fireEvent.click(screen.getByRole("button", { name: "Individual" }));
+      expect(screen.getByText("Individual View")).toBeInTheDocument();
     });
   });
 });
