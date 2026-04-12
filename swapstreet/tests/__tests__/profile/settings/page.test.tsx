@@ -29,7 +29,7 @@ describe("Settings Page", () => {
       render(<SettingsPage />);
     });
 
-    const labels = ["Settings", "Sustainability Tracking", "Delete Account"];
+    const labels = ["Settings", "Delete Account"];
 
     for (const label of labels) {
       const elementData = screen.getAllByText(label);
@@ -124,26 +124,4 @@ describe("Settings Page", () => {
     });
   });
 
-  it("toggles the sustainability tracking feature", async () => {
-    act(() => {
-      render(<SettingsPage />);
-    });
-
-    const toggle = screen.getByRole("button", {
-      name: "",
-    });
-
-    expect(toggle).toHaveAttribute("id", "toggleSustainabilityTracking");
-    expect(toggle.className).toContain("bg-teal-500");
-
-    await act(async () => {
-      fireEvent.click(toggle);
-    });
-    expect(toggle.className).toContain("bg-gray-300");
-
-    await act(async () => {
-      fireEvent.click(toggle);
-    });
-    expect(toggle.className).toContain("bg-teal-500");
-  });
 });
