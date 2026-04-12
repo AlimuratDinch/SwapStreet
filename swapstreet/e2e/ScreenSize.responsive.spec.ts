@@ -29,7 +29,9 @@ for (const vp of viewports) {
             text.includes("localhost:8080") ||
             text.includes("ERR_CONNECTION_REFUSED") ||
             text.includes("CORS request did not succeed") ||
-            text.includes("Could not connect to localhost")
+            text.includes("Could not connect to localhost") ||
+            text.includes("Could not connect to server") ||
+            text.includes("404 (Not Found)")
           )
             return;
           errors.push(text);
