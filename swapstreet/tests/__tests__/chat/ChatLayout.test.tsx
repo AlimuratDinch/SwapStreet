@@ -8,6 +8,7 @@ import {
   act,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import * as signalR from "@microsoft/signalr";
 import ChatLayout from "@/app/chat/ChatLayout";
 
 // Mocks
@@ -42,19 +43,7 @@ const mockConnection = {
   invoke: mockInvoke,
 };
 
-const mockBuild = jest.fn().mockReturnValue(mockConnection);
-
-jest.mock(
-  "@microsoft/signalr",
-  () => ({
-    HubConnectionBuilder: jest.fn().mockImplementation(() => ({
-      withUrl: jest.fn().mockReturnThis(),
-      withAutomaticReconnect: jest.fn().mockReturnThis(),
-      build: mockBuild,
-    })),
-  }),
-  { virtual: true },
-);
+jest.mock("@microsoft/signalr");
 
 // Auth mock
 let mockAuthState = {
@@ -195,6 +184,14 @@ describe("ChatLayout", () => {
     global.fetch = jest.fn();
     setupFetch();
     window.HTMLElement.prototype.scrollIntoView = jest.fn();
+
+    (signalR.HubConnectionBuilder as jest.Mock).mockImplementation(
+      () => ({
+        withUrl: jest.fn().mockReturnThis(),
+        withAutomaticReconnect: jest.fn().mockReturnThis(),
+        build: jest.fn().mockReturnValue(mockConnection),
+      }),
+    );
   });
 
   // Authentication
