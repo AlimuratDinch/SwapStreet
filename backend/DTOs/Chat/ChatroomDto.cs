@@ -70,6 +70,9 @@ namespace backend.DTOs.Chat
         [JsonPropertyName("ratings")]
         public List<ChatRatingDto> Ratings { get; set; } = new List<ChatRatingDto>();
 
+        [JsonPropertyName("listingSustainabilityImpact")]
+        public ListingSustainabilityImpactDto? ListingSustainabilityImpact { get; set; }
+
         [JsonPropertyName("messages")]
         public List<MessageDto> Messages { get; set; } = new List<MessageDto>();
     }

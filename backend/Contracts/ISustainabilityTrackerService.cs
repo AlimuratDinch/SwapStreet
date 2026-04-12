@@ -9,6 +9,7 @@ namespace backend.Contracts
     {
         Task<SustainabilityTrackerStatsDTO> GetSustainabilityData(Guid userId);
         Task<SustainabilityTrackerStatsDTO> GetGlobalSustainabilityData();
+        backend.DTOs.Chat.ListingSustainabilityImpactDto GetImpactForListing(Listing listing);
         void UpdateWith(Guid userAId, Guid userBId, Listing listing);
     }
 }

@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Cloud,
   Droplets,
   Shirt,
   Zap,
   Pipette,
-  Mountain,
+  Trash2,
   LucideIcon,
 } from "lucide-react";
 import {
@@ -18,13 +18,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
 import { Header } from "@/components/common/Header";
 
 interface ChartData {
   name: string;
-  value: number;
+  total: number;
 }
 
 interface SustainabilityStats {
@@ -54,8 +53,6 @@ interface StatCardProps {
   value: string;
   label: string;
   colorClass: string;
-  isSelected: boolean;
-  onClick: () => void;
 }
 
 const EMPTY_STATS: SustainabilityStats = {
@@ -67,92 +64,137 @@ const EMPTY_STATS: SustainabilityStats = {
   Articles: 0,
 };
 
-const DATA: ChartData[] = [
-  { name: "Jan", value: 65 },
-  { name: "Feb", value: 45 },
-  { name: "Mar", value: 25 },
-  { name: "Apr", value: 40 },
-  { name: "May", value: 48 },
-  { name: "Jun", value: 60 },
-  { name: "Jul", value: 38 },
-  { name: "Aug", value: 55 },
-  { name: "Sep", value: 70 },
-  { name: "Oct", value: 82 },
-  { name: "Nov", value: 95 },
-  { name: "Dec", value: 62 },
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
-
-// --- Sub-components ---
 
 const StatCard: React.FC<StatCardProps> = ({
   icon: Icon,
   value,
   label,
   colorClass,
-  isSelected,
-  onClick,
 }) => {
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onClick();
-    }
-  };
-
   return (
-    <div
-      className={`relative p-6 bg-white border-2 rounded-xl transition-all cursor-pointer ${
-        isSelected ? "border-blue-500 shadow-md" : "border-gray-200"
-      }`}
-      onClick={onClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-pressed={isSelected}
-    >
-      <div className="flex items-center gap-4">
-        <div className={`p-4 rounded-full ${colorClass}`}>
-          <Icon size={32} className="stroke-[1.5]" />
+    <div className="relative rounded-xl border-2 border-gray-200 bg-white p-3 transition-all md:p-4">
+      <div className="flex items-center gap-2 md:gap-3">
+        <div className={`rounded-full p-2.5 md:p-3 ${colorClass}`}>
+          <Icon size={22} className="stroke-[1.5]" />
         </div>
         <div>
-          <div className="text-2xl font-bold text-gray-800">{value}</div>
-          <div className="text-sm text-gray-500 leading-tight">{label}</div>
+          <div className="text-lg font-bold text-gray-800 md:text-xl">
+            {value}
+          </div>
+          <div className="text-xs leading-tight text-gray-500 md:text-sm">
+            {label}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-// Custom Tooltip Component
 export const CustomTooltip = ({
   active,
-  payload,
+  label,
+  stats,
 }: {
   active?: boolean;
-  payload?: ChartData[];
+  label?: string;
+  stats: SustainabilityStats;
 }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-gray-200 p-3 rounded shadow-lg border border-gray-300">
-        <p className="text-sm font-bold text-gray-800">{payload[0].value}</p>
-        <p className="text-xs text-gray-600">{payload[0].name} 2026</p>
-      </div>
-    );
+  if (!active) {
+    return null;
   }
-  return null;
+
+  const unitByMetric: Record<string, string> = {
+    "Kg of CO2 avoided": "Kg",
+    "Liters of water saved": "Liters",
+    "Clothes saved": "items",
+    "Electricity saved": "kWh",
+    "Toxic chemicals avoided": "kg",
+    "Landfill avoided": "g",
+  };
+
+  const rows = [
+    { name: "Kg of CO2 avoided", value: stats.CO2Kg },
+    { name: "Liters of water saved", value: stats.WaterL },
+    { name: "Clothes saved", value: stats.Articles },
+    { name: "Electricity saved", value: stats.ElectricityKWh },
+    { name: "Toxic chemicals avoided", value: stats.ToxicChemicalsG },
+    { name: "Landfill avoided", value: stats.LandfillKg * 1000 },
+  ];
+
+  const hasData = rows.some((item) => item.value > 0);
+
+  return (
+    <div className="rounded border border-gray-300 bg-gray-200 p-3 shadow-lg">
+      <p className="text-sm font-bold text-gray-800">{label} 2026</p>
+      <p className="text-xs text-gray-600">
+        {hasData ? "Current month metric breakdown" : "No data for this month"}
+      </p>
+      {hasData && (
+        <div className="mt-2 space-y-1">
+          {rows.map((item) => (
+            <p
+              key={item.name}
+              className="flex items-center justify-between gap-3 text-xs text-gray-700"
+            >
+              <span>
+                {item.name}
+                {unitByMetric[item.name] ? ` (${unitByMetric[item.name]})` : ""}
+              </span>
+              <span className="font-semibold">{item.value.toLocaleString()}</span>
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
-// --- Main Component ---
-
 export default function SustainabilityDashboard() {
-  // Get current month (0-11, so April = 3)
   const currentMonth = new Date().getMonth();
 
-  const [selectedBar, setSelectedBar] = useState<number>(currentMonth);
-  const [selectedCard, setSelectedCard] = useState<number>(0);
+  const [selectedView, setSelectedView] = useState<"individual" | "platform">(
+    "individual",
+  );
   const [userStats, setUserStats] = useState<SustainabilityStats>(EMPTY_STATS);
   const [globalStats, setGlobalStats] = useState<SustainabilityStats | null>(
     null,
+  );
+
+  const activeStats =
+    selectedView === "individual" ? userStats : globalStats ?? EMPTY_STATS;
+
+  const activeViewLabel =
+    selectedView === "individual" ? "Individual View" : "Platform View";
+
+  const chartData: ChartData[] = useMemo(
+    () =>
+      MONTHS.map((name, index) => ({
+        name,
+        total:
+          index === currentMonth
+            ? activeStats.CO2Kg +
+              activeStats.WaterL +
+              activeStats.Articles +
+              activeStats.ElectricityKWh +
+              activeStats.ToxicChemicalsG +
+              activeStats.LandfillKg * 1000
+            : 0,
+      })),
+    [activeStats, currentMonth],
   );
 
   useEffect(() => {
@@ -188,127 +230,143 @@ export default function SustainabilityDashboard() {
       });
   }, []);
 
-  const handleBarClick = (index: number) => {
-    setSelectedBar(index);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-20 md:pt-24 font-sans">
+    <div className="flex h-screen flex-col overflow-hidden bg-gray-50 px-3 pt-20 font-sans md:px-6 md:pt-24">
       <Header />
-      <header className="mb-12">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Sustainability Overview
-        </h1>
-        <p className="text-gray-500">Detailed insights into your impact</p>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        <StatCard
-          icon={Cloud}
-          value={userStats.CO2Kg.toLocaleString()}
-          label="Metric tons of CO₂ avoided"
-          colorClass="bg-green-50 text-green-500"
-          isSelected={selectedCard === 0}
-          onClick={() => setSelectedCard(0)}
-        />
-        <StatCard
-          icon={Droplets}
-          value={userStats.WaterL.toLocaleString()}
-          label="Gallons of water saved"
-          colorClass="bg-blue-50 text-blue-400"
-          isSelected={selectedCard === 1}
-          onClick={() => setSelectedCard(1)}
-        />
-        <StatCard
-          icon={Shirt}
-          value={userStats.Articles.toLocaleString()}
-          label="Individual clothes saved"
-          colorClass="bg-orange-50 text-orange-400"
-          isSelected={selectedCard === 2}
-          onClick={() => setSelectedCard(2)}
-        />
-        <StatCard
-          icon={Zap}
-          value={userStats.ElectricityKWh.toLocaleString()}
-          label="Kwh of electricity saved"
-          colorClass="bg-yellow-50 text-yellow-400"
-          isSelected={selectedCard === 3}
-          onClick={() => setSelectedCard(3)}
-        />
-        <StatCard
-          icon={Pipette}
-          value={userStats.ToxicChemicalsG.toLocaleString()}
-          label="Kg of toxic dye chemicals avoided"
-          colorClass="bg-purple-50 text-purple-400"
-          isSelected={selectedCard === 4}
-          onClick={() => setSelectedCard(4)}
-        />
-        <StatCard
-          icon={Mountain}
-          value={userStats.LandfillKg.toLocaleString()}
-          label="m² of land preserved"
-          colorClass="bg-red-50 text-red-400"
-          isSelected={selectedCard === 5}
-          onClick={() => setSelectedCard(5)}
-        />
-      </div>
-
-      <section>
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Impact Summary</h2>
-          <p className="text-gray-500">
-            Track your performance changes and environmental progress over time
-          </p>
-        </div>
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-4 md:p-8">
-          <div className="mb-10">
-            <h3 className="text-xl font-semibold text-gray-800">
-              Monthly Usage
-            </h3>
-          </div>
-
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={DATA}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+      <div className="mx-auto flex w-full max-w-[1200px] flex-1 min-h-0 flex-col">
+        <header className="mb-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 md:text-2xl">
+                Sustainability Overview
+              </h1>
+              <p className="text-sm text-gray-500">
+                Detailed insights into your impact
+              </p>
+            </div>
+            <div className="inline-flex rounded-full border border-gray-200 bg-white p-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setSelectedView("individual")}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  selectedView === "individual"
+                    ? "bg-teal-500 text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
               >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#F3F4F6"
-                />
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                  dy={10}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                />
-                <Tooltip
-                  cursor={{ fill: "#F9FAFB" }}
-                  content={<CustomTooltip />}
-                />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
-                  {DATA.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={selectedBar === index ? "#0D9488" : "#E5E7EB"}
-                      className="transition-all duration-300 hover:opacity-80 cursor-pointer"
-                      onClick={() => handleBarClick(index)}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                Individual
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedView("platform")}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  selectedView === "platform"
+                    ? "bg-teal-500 text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Platform
+              </button>
+            </div>
           </div>
+        </header>
+
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          {activeViewLabel}
         </div>
-      </section>
+
+        <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <StatCard
+            icon={Cloud}
+            value={activeStats.CO2Kg.toLocaleString()}
+            label="Kg of CO2 avoided"
+            colorClass="bg-green-50 text-green-500"
+          />
+          <StatCard
+            icon={Droplets}
+            value={activeStats.WaterL.toLocaleString()}
+            label="Liters of water saved"
+            colorClass="bg-blue-50 text-blue-400"
+          />
+          <StatCard
+            icon={Shirt}
+            value={activeStats.Articles.toLocaleString()}
+            label="Individual clothes saved"
+            colorClass="bg-orange-50 text-orange-400"
+          />
+          <StatCard
+            icon={Zap}
+            value={activeStats.ElectricityKWh.toLocaleString()}
+            label="Kwh of electricity saved"
+            colorClass="bg-yellow-50 text-yellow-400"
+          />
+          <StatCard
+            icon={Pipette}
+            value={activeStats.ToxicChemicalsG.toLocaleString()}
+            label="Grams of toxic dye chemicals avoided"
+            colorClass="bg-purple-50 text-purple-400"
+          />
+          <StatCard
+            icon={Trash2}
+            value={(activeStats.LandfillKg * 1000).toLocaleString()}
+            label="Grams not ending up in a landfill"
+            colorClass="bg-red-50 text-red-400"
+          />
+        </div>
+
+        <section>
+          <div className="mb-3">
+            <h2 className="text-xl font-bold text-gray-900">Impact Summary</h2>
+            <p className="text-sm text-gray-500">
+              Track your performance changes and environmental progress over time
+            </p>
+          </div>
+          <div className="rounded-xl border-2 border-gray-200 bg-white p-4 md:p-5">
+            <div className="mb-3">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Monthly Usage
+              </h3>
+            </div>
+
+            <div className="h-[220px] w-full md:h-[255px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 6, right: 6, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#F3F4F6"
+                  />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                    dy={8}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#9CA3AF", fontSize: 11 }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "#F9FAFB" }}
+                    content={<CustomTooltip stats={activeStats} />}
+                  />
+                  <Bar
+                    dataKey="total"
+                    name="Monthly impact"
+                    fill="#14B8A6"
+                    barSize={32}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

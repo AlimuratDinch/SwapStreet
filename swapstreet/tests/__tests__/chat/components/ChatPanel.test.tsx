@@ -62,6 +62,14 @@ describe("ChatPanel Component", () => {
     sellerRatingCount: 10,
     buyerRatingAverage: 4.0,
     buyerRatingCount: 8,
+    listingSustainabilityImpact: {
+      CO2Kg: 12.5,
+      waterL: 2850,
+      electricityKWh: 22,
+      toxicChemicals: 250,
+      landfillKg: 0.5,
+      articles: 1,
+    },
     frozenReason: null,
   };
 
@@ -522,7 +530,12 @@ describe("ChatPanel Component", () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ ...mockRoom, isDealClosed: true }),
+        json: () =>
+          Promise.resolve({
+            ...mockRoom,
+            isDealClosed: true,
+            listingSustainabilityImpact: mockRoom.listingSustainabilityImpact,
+          }),
       });
 
     const closedRoom: Chatroom = {
@@ -559,6 +572,12 @@ describe("ChatPanel Component", () => {
           body: expect.stringContaining('"stars":3'),
         }),
       );
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Sustainability impact"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -650,6 +669,55 @@ describe("ChatPanel Component", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
+      expect(
+        screen.getByText("Sustainability impact"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("opens sustainability impact modal even when room has no listing", async () => {
+    const noListingRoom: Chatroom = {
+      ...mockRoom,
+      listingId: null,
+      listingTitle: null,
+      listingSustainabilityImpact: null,
+      isDealClosed: true,
+      ratings: [],
+    };
+
+    render(<ChatPanel {...mockProps} room={noListingRoom} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Leave a rating")).toBeInTheDocument();
+    });
+
+    const noRatingButton = screen.getByText("No rating");
+
+    await act(async () => {
+      fireEvent.click(noRatingButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
+      expect(
+        screen.getByText("No impact data is available for this transaction."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("does not prompt for feedback on archived closed rooms", async () => {
+    const archivedClosedRoom: Chatroom = {
+      ...mockRoom,
+      isDealClosed: true,
+      isArchived: true,
+      ratings: [],
+    };
+
+    render(<ChatPanel {...mockProps} room={archivedClosedRoom} />);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
+      expect(screen.queryByText("Sustainability impact")).not.toBeInTheDocument();
     });
   });
 

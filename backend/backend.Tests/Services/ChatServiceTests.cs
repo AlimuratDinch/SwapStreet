@@ -46,11 +46,20 @@ namespace backend.Tests.Services
 
     internal sealed class FakeListingCommandService : IListingCommandService
     {
+        public int DeleteListingCallCount { get; private set; }
+        public Guid? LastDeletedListingId { get; private set; }
+        public Guid? LastDeletedProfileId { get; private set; }
+
         public Task<Guid> CreateListingAsync(CreateListingRequestDto request, CancellationToken cancellationToken = default)
             => Task.FromResult(Guid.NewGuid());
 
         public Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
+        {
+            DeleteListingCallCount++;
+            LastDeletedListingId = listingId;
+            LastDeletedProfileId = profileId;
+            return Task.CompletedTask;
+        }
 
         public Task DeleteAllFromUserAsync(Guid listingId) => Task.CompletedTask;
         public Task UpdateListingAsync(Guid listingId, Guid profileId, UpdateListingRequestDto request, CancellationToken cancellationToken = default)
@@ -71,6 +80,16 @@ namespace backend.Tests.Services
             => Task.FromResult(new SustainabilityTrackerStatsDTO());
         public Task<SustainabilityTrackerStatsDTO> GetGlobalSustainabilityData()
             => Task.FromResult(new SustainabilityTrackerStatsDTO());
+        public ListingSustainabilityImpactDto GetImpactForListing(Listing listing)
+            => new ListingSustainabilityImpactDto
+            {
+                CO2Kg = 0,
+                WaterL = 0,
+                ElectricityKWh = 0,
+                ToxicChemicalsG = 0,
+                LandfillKg = 0,
+                Articles = 1
+            };
         public void UpdateWith(Guid userAId, Guid userBId, Listing listing)
         {
             UpdateCallCount++;
@@ -85,6 +104,7 @@ namespace backend.Tests.Services
         private readonly AppDbContext _db;
         private readonly ChatService _chatService;
         private readonly ChatroomService _chatroomService;
+        private readonly FakeListingCommandService _listingCommandService;
         private readonly Guid _sellerId;
         private readonly Guid _buyerId;
         private readonly Guid _chatroomId;
@@ -99,10 +119,11 @@ namespace backend.Tests.Services
 
             _db = new AppDbContext(options);
             _chatService = new ChatService(_db);
+            _listingCommandService = new FakeListingCommandService();
             _chatroomService = new ChatroomService(
                 _db,
                 new FakeFileStorageService(),
-                new FakeListingCommandService(),
+                _listingCommandService,
                 new FakeSustainabilityTrackerService());
 
             _sellerId = Guid.NewGuid();

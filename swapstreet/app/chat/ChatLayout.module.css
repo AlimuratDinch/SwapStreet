@@ -590,6 +590,39 @@
   cursor: not-allowed;
 }
 
+.impactMetricsList {
+  margin-top: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.impactLoading {
+  margin-top: 1rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.impactMetricRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+  color: #374151;
+  background: #ffffff;
+}
+
+.impactMetricRow:nth-child(even) {
+  background: #f9fafb;
+}
+
+.impactMetricRow strong {
+  color: #111827;
+  font-weight: 600;
+}
+
 .starFilledSmall {
   width: 0.875rem;
   height: 0.875rem;

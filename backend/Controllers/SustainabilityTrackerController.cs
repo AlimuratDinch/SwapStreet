@@ -12,8 +12,7 @@ namespace backend.Controllers
     {
         private readonly ISustainabilityTrackerService _sustainabilityTrackerService;
 
-        public SustainabilityTrackerController(
-            ISustainabilityTrackerService sustainabilityTrackerService)
+        public SustainabilityTrackerController(ISustainabilityTrackerService sustainabilityTrackerService)
         {
             _sustainabilityTrackerService = sustainabilityTrackerService;
         }

@@ -143,6 +143,9 @@ namespace backend.Services.Chat
                     SellerRatingCount = sellerStats.Item2,
                     BuyerRatingAverage = buyerStats.Item1,
                     BuyerRatingCount = buyerStats.Item2,
+                    ListingSustainabilityImpact = c.Listing != null
+                        ? _sustainabilityTrackerService.GetImpactForListing(c.Listing)
+                        : null,
                     Ratings = c.Ratings
                         .OrderBy(r => r.CreatedAt)
                         .Select(MapRatingDto)
@@ -418,8 +421,6 @@ namespace backend.Services.Chat
 
                 chatroom.IsDealClosed = true;
                 chatroom.ClosedAt = DateTimeOffset.UtcNow;
-                chatroom.IsArchived = true;
-                chatroom.ArchivedAt = DateTimeOffset.UtcNow;
                 chatroom.CloseRequestedById = null;
                 chatroom.CloseRequestedAt = null;
                 chatroom.IsFrozen = false;
@@ -430,7 +431,41 @@ namespace backend.Services.Chat
 
             await _context.SaveChangesAsync();
 
-            if (chatroom.IsDealClosed && chatroom.ListingId.HasValue)
+            return (await GetChatroomByIdAsync(chatroom.Id))!;
+        }
+
+        public async Task<ChatroomDto> FinalizeClosedDealAsync(Guid chatroomId, Guid userId)
+        {
+            var chatroom = await _context.Chatrooms
+                .FirstOrDefaultAsync(c => c.Id == chatroomId);
+
+            if (chatroom == null)
+            {
+                throw new ArgumentException("Chatroom not found");
+            }
+
+            if (chatroom.SellerId != userId && chatroom.BuyerId != userId)
+            {
+                throw new UnauthorizedAccessException("User does not belong to this chatroom");
+            }
+
+            if (!chatroom.IsDealClosed)
+            {
+                throw new InvalidOperationException("Deal must be closed before finalizing");
+            }
+
+            if (!chatroom.IsArchived)
+            {
+                chatroom.IsArchived = true;
+                chatroom.ArchivedAt = DateTimeOffset.UtcNow;
+            }
+
+            chatroom.IsFrozen = false;
+            chatroom.FrozenReason = null;
+
+            await _context.SaveChangesAsync();
+
+            if (chatroom.ListingId.HasValue)
             {
                 var listingId = chatroom.ListingId.Value;
                 var otherChats = await _context.Chatrooms
@@ -680,6 +715,9 @@ namespace backend.Services.Chat
                 SellerRatingCount = sellerStats.Item2,
                 BuyerRatingAverage = buyerStats.Item1,
                 BuyerRatingCount = buyerStats.Item2,
+                ListingSustainabilityImpact = chatroom.Listing != null
+                    ? _sustainabilityTrackerService.GetImpactForListing(chatroom.Listing)
+                    : null,
                 Ratings = chatroom.Ratings
                     .OrderBy(r => r.CreatedAt)
                     .Select(MapRatingDto)
