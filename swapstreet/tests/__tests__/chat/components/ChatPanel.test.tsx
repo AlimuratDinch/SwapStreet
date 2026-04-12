@@ -693,9 +693,9 @@ describe("ChatPanel Component", () => {
       expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
     });
 
-    const closeDealUpdatedCall = (mockConnection.on as jest.Mock).mock.calls.find(
-      (call) => call[0] === "CloseDealUpdated",
-    );
+    const closeDealUpdatedCall = (
+      mockConnection.on as jest.Mock
+    ).mock.calls.find((call) => call[0] === "CloseDealUpdated");
     expect(closeDealUpdatedCall).toBeTruthy();
 
     const closeDealUpdatedHandler = closeDealUpdatedCall?.[1] as (
