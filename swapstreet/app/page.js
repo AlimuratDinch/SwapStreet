@@ -63,7 +63,10 @@ export default function LandingPage() {
       return;
     }
 
-    const statsEndpoint = new URL("/api/sustainability/public", window.location.origin);
+    const statsEndpoint = new URL(
+      "/api/sustainability/public",
+      window.location.origin,
+    );
     const monthlyImpactEndpoint = new URL(
       "/api/sustainability/public/monthly-impact",
       window.location.origin,
@@ -80,7 +83,9 @@ export default function LandingPage() {
             clothesSaved: Number(data.Articles ?? data.articles ?? 0),
             co2Reduced: Number(data.CO2Kg ?? data.cO2Kg ?? data.co2Kg ?? 0),
             waterSaved: Number(data.WaterL ?? data.waterL ?? 0),
-            usersActive: Number(data.AccountsCreated ?? data.accountsCreated ?? 0),
+            usersActive: Number(
+              data.AccountsCreated ?? data.accountsCreated ?? 0,
+            ),
           });
         }
 
@@ -89,7 +94,7 @@ export default function LandingPage() {
           const rawValues = Array.isArray(
             monthlyData.MonthlyImpact ?? monthlyData.monthlyImpact,
           )
-            ? monthlyData.MonthlyImpact ?? monthlyData.monthlyImpact
+            ? (monthlyData.MonthlyImpact ?? monthlyData.monthlyImpact)
             : [];
 
           const monthlyCounts = Array.from({ length: 12 }, (_, index) =>
@@ -99,7 +104,9 @@ export default function LandingPage() {
           const maxCount = Math.max(...monthlyCounts, 0);
           const normalizedValues =
             maxCount > 0
-              ? monthlyCounts.map((value) => Math.round((value / maxCount) * 100))
+              ? monthlyCounts.map((value) =>
+                  Math.round((value / maxCount) * 100),
+                )
               : monthlyCounts;
 
           setMonthlyValues(normalizedValues);
@@ -535,17 +542,13 @@ export default function LandingPage() {
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                <AnimatedCounter
-                  target={environmentalStats.co2Reduced}
-                />
+                <AnimatedCounter target={environmentalStats.co2Reduced} />
               </div>
               <div className="text-sm text-white/80">Kg of CO2 Reduced</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                <AnimatedCounter
-                  target={environmentalStats.waterSaved}
-                />
+                <AnimatedCounter target={environmentalStats.waterSaved} />
               </div>
               <div className="text-sm text-white/80">Liters of Water Saved</div>
             </div>

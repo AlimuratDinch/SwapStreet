@@ -123,5 +123,4 @@ describe("Settings Page", () => {
       expect(global.alert).toHaveBeenCalledTimes(1);
     });
   });
-
 });

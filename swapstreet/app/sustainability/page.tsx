@@ -155,7 +155,9 @@ export const CustomTooltip = ({
                 {item.name}
                 {unitByMetric[item.name] ? ` (${unitByMetric[item.name]})` : ""}
               </span>
-              <span className="font-semibold">{item.value.toLocaleString()}</span>
+              <span className="font-semibold">
+                {item.value.toLocaleString()}
+              </span>
             </p>
           ))}
         </div>
@@ -176,7 +178,7 @@ export default function SustainabilityDashboard() {
   );
 
   const activeStats =
-    selectedView === "individual" ? userStats : globalStats ?? EMPTY_STATS;
+    selectedView === "individual" ? userStats : (globalStats ?? EMPTY_STATS);
 
   const activeViewLabel =
     selectedView === "individual" ? "Individual View" : "Platform View";
@@ -319,7 +321,8 @@ export default function SustainabilityDashboard() {
           <div className="mb-3">
             <h2 className="text-xl font-bold text-gray-900">Impact Summary</h2>
             <p className="text-sm text-gray-500">
-              Track your performance changes and environmental progress over time
+              Track your performance changes and environmental progress over
+              time
             </p>
           </div>
           <div className="rounded-xl border-2 border-gray-200 bg-white p-4 md:p-5">

@@ -105,9 +105,7 @@ describe("SustainabilityDashboard", () => {
       const zeroValues = screen.getAllByText("0");
       expect(zeroValues.length).toBeGreaterThanOrEqual(6);
 
-      expect(
-        screen.getByText("Kg of CO2 avoided"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Kg of CO2 avoided")).toBeInTheDocument();
       expect(screen.getByText("Liters of water saved")).toBeInTheDocument();
       expect(screen.getByText("Individual clothes saved")).toBeInTheDocument();
       expect(screen.getByText("Kwh of electricity saved")).toBeInTheDocument();
@@ -230,9 +228,9 @@ describe("SustainabilityDashboard", () => {
 
       render(<SustainabilityDashboard />);
 
-  await flushAnimatedCounters();
+      await flushAnimatedCounters();
 
-  expect(screen.getByText("1")).toBeInTheDocument();
+      expect(screen.getByText("1")).toBeInTheDocument();
       expect(screen.getByText("2")).toBeInTheDocument();
       expect(screen.getByText("3")).toBeInTheDocument();
       expect(screen.getByText("4")).toBeInTheDocument();
@@ -304,7 +302,9 @@ describe("SustainabilityDashboard", () => {
       );
 
       expect(screen.getByText("Apr 2026")).toBeInTheDocument();
-      expect(screen.getByText("Current month metric breakdown")).toBeInTheDocument();
+      expect(
+        screen.getByText("Current month metric breakdown"),
+      ).toBeInTheDocument();
       expect(screen.getByText("40")).toBeInTheDocument();
     });
 
@@ -368,10 +368,7 @@ describe("SustainabilityDashboard", () => {
       const { container } = render(<SustainabilityDashboard />);
       const grid = container.querySelector(".grid");
 
-      expect(grid).toHaveClass(
-        "grid-cols-2",
-        "lg:grid-cols-3",
-      );
+      expect(grid).toHaveClass("grid-cols-2", "lg:grid-cols-3");
     });
   });
 

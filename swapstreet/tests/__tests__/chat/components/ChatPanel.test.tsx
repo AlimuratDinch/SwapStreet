@@ -575,9 +575,7 @@ describe("ChatPanel Component", () => {
     });
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Sustainability impact"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
     });
   });
 
@@ -669,9 +667,7 @@ describe("ChatPanel Component", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
-      expect(
-        screen.getByText("Sustainability impact"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
     });
   });
 
@@ -717,7 +713,9 @@ describe("ChatPanel Component", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
-      expect(screen.queryByText("Sustainability impact")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Sustainability impact"),
+      ).not.toBeInTheDocument();
     });
   });
 

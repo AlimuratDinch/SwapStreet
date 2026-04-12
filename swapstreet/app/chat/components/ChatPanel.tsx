@@ -175,7 +175,11 @@ export default function ChatPanel({
     connection.on("Error", (err: string) => setError(err));
     connection.on("CloseDealUpdated", (updated: Chatroom) => {
       onRoomUpdate(updated);
-      if (updated.id === room.id && updated.isDealClosed && !updated.isArchived) {
+      if (
+        updated.id === room.id &&
+        updated.isDealClosed &&
+        !updated.isArchived
+      ) {
         setIsRatingModalOpen(true);
       }
     });
@@ -367,15 +371,12 @@ export default function ChatPanel({
     setIsFinalizeBusy(true);
     setActionError(null);
     try {
-      const res = await fetch(
-        `/api/chat/chatrooms/${room.id}/finalize-close`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+      const res = await fetch(`/api/chat/chatrooms/${room.id}/finalize-close`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
-      );
+      });
 
       const body = await res.json().catch(() => null);
       if (!res.ok) {
@@ -609,7 +610,9 @@ export default function ChatPanel({
                 </div>
                 <div className={styles.impactMetricRow}>
                   <span>Electricity saved</span>
-                  <strong>{impactToDisplay.electricityKWh.toFixed(2)} kWh</strong>
+                  <strong>
+                    {impactToDisplay.electricityKWh.toFixed(2)} kWh
+                  </strong>
                 </div>
                 <div className={styles.impactMetricRow}>
                   <span>Toxic chemicals avoided</span>
@@ -617,7 +620,9 @@ export default function ChatPanel({
                 </div>
                 <div className={styles.impactMetricRow}>
                   <span>Landfill diverted</span>
-                  <strong>{(impactToDisplay.landfillKg * 1000).toFixed(2)} g</strong>
+                  <strong>
+                    {(impactToDisplay.landfillKg * 1000).toFixed(2)} g
+                  </strong>
                 </div>
                 <div className={styles.impactMetricRow}>
                   <span>Articles reused</span>

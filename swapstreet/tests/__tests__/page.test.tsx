@@ -46,9 +46,9 @@ global.cancelAnimationFrame = (id: number) => {
 describe("Home Page", () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    global.fetch = jest.fn().mockResolvedValue(
-      createJsonResponse(false, {}),
-    ) as jest.Mock;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(createJsonResponse(false, {})) as jest.Mock;
   });
 
   afterEach(() => {
@@ -228,18 +228,19 @@ describe("Home Page", () => {
     let boundingRectCall = 0;
     const boundingRectSpy = jest
       .spyOn(HTMLElement.prototype, "getBoundingClientRect")
-      .mockImplementation(() =>
-        ({
-          x: 0,
-          y: 0,
-          top: 0,
-          left: boundingRectCall++ % 2 === 0 ? 0 : 2,
-          right: boundingRectCall % 2 === 0 ? 1 : 3,
-          bottom: 1,
-          width: 1,
-          height: 1,
-          toJSON: () => ({}),
-        } as DOMRect),
+      .mockImplementation(
+        () =>
+          ({
+            x: 0,
+            y: 0,
+            top: 0,
+            left: boundingRectCall++ % 2 === 0 ? 0 : 2,
+            right: boundingRectCall % 2 === 0 ? 1 : 3,
+            bottom: 1,
+            width: 1,
+            height: 1,
+            toJSON: () => ({}),
+          }) as DOMRect,
       );
 
     const { container } = render(<Home />);
