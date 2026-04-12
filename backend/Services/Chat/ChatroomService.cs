@@ -11,15 +11,18 @@ namespace backend.Services.Chat
         private readonly AppDbContext _context;
         private readonly IFileStorageService _fileStorage;
         private readonly IListingCommandService _listingCommandService;
+        private readonly ISustainabilityTrackerService _sustainabilityTrackerService;
 
         public ChatroomService(
             AppDbContext context,
             IFileStorageService fileStorage,
-            IListingCommandService listingCommandService)
+            IListingCommandService listingCommandService,
+            ISustainabilityTrackerService sustainabilityTrackerService)
         {
             _context = context;
             _fileStorage = fileStorage;
             _listingCommandService = listingCommandService;
+            _sustainabilityTrackerService = sustainabilityTrackerService;
         }
 
         public async Task<ChatroomDto?> GetChatroomByIdAsync(Guid chatroomId)
@@ -270,6 +273,7 @@ namespace backend.Services.Chat
         public async Task<ChatroomDto> CloseDealAsync(Guid chatroomId, Guid sellerId, int? stars = null, string? description = null)
         {
             var chatroom = await _context.Chatrooms
+                .Include(c => c.Listing)
                 .Include(c => c.Ratings)
                 .FirstOrDefaultAsync(c => c.Id == chatroomId);
 
@@ -289,6 +293,8 @@ namespace backend.Services.Chat
                 chatroom.ClosedAt = DateTimeOffset.UtcNow;
             }
 
+            await ApplySustainabilityForClosedDealAsync(chatroom);
+
             Guid? revieweeIdForRecalc = null;
             if (stars.HasValue)
             {
@@ -300,12 +306,14 @@ namespace backend.Services.Chat
                 var alreadyRated = chatroom.Ratings.Any(r => r.ReviewerId == sellerId);
                 if (!alreadyRated)
                 {
+                    Guid buyerId = chatroom.BuyerId;
+
                     _context.ChatRatings.Add(new ChatRating
                     {
                         Id = Guid.NewGuid(),
                         ChatroomId = chatroom.Id,
                         ReviewerId = sellerId,
-                        RevieweeId = chatroom.BuyerId,
+                        RevieweeId = buyerId,
                         Stars = stars.Value,
                         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
                         CreatedAt = DateTimeOffset.UtcNow
@@ -416,6 +424,8 @@ namespace backend.Services.Chat
                 chatroom.CloseRequestedAt = null;
                 chatroom.IsFrozen = false;
                 chatroom.FrozenReason = null;
+
+                await ApplySustainabilityForClosedDealAsync(chatroom);
             }
 
             await _context.SaveChangesAsync();
@@ -702,6 +712,30 @@ namespace backend.Services.Chat
             profile.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+        }
+
+        private async Task ApplySustainabilityForClosedDealAsync(Chatroom chatroom)
+        {
+            if (!chatroom.IsDealClosed || chatroom.SustainabilityMetricsApplied || !chatroom.ListingId.HasValue)
+            {
+                return;
+            }
+
+            var listing = chatroom.Listing;
+            if (listing == null)
+            {
+                listing = await _context.Listings
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(l => l.Id == chatroom.ListingId.Value);
+            }
+
+            if (listing == null)
+            {
+                return;
+            }
+
+            chatroom.SustainabilityMetricsApplied = true;
+            _sustainabilityTrackerService.UpdateWith(chatroom.BuyerId, chatroom.SellerId, listing);
         }
     }
 }

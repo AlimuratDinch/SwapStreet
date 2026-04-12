@@ -1,0 +1,60 @@
+{
+    "Data": [
+        {
+            "Name": "Bottoms",
+            "AvgCO2Kg": 20.5,
+            "AvgWaterL": 8750,
+            "AvgElectricityKWh": 30,
+            "AvgToxicChemicalsG": 120,
+            "AvgLandfillKg": 1.0
+        },
+        {
+            "Name": "Tops",
+            "AvgCO2Kg": 12.5,
+            "AvgWaterL": 2850,
+            "AvgElectricityKWh": 15,
+            "AvgToxicChemicalsG": 80,
+            "AvgLandfillKg": 0.5
+        },
+        {
+            "Name": "Footwear",
+            "AvgCO2Kg": 30,
+            "AvgWaterL": 4000,
+            "AvgElectricityKWh": 35,
+            "AvgToxicChemicalsG": 150,
+            "AvgLandfillKg": 0.75
+        },
+        {
+            "Name": "Accessory",
+            "AvgCO2Kg": 5.5,
+            "AvgWaterL": 1000,
+            "AvgElectricityKWh": 7.5,
+            "AvgToxicChemicalsG": 30,
+            "AvgLandfillKg": 0.1
+        },
+        {
+            "Name": "Outerwear",
+            "AvgCO2Kg": 25,
+            "AvgWaterL": 5000,
+            "AvgElectricityKWh": 25,
+            "AvgToxicChemicalsG": 120,
+            "AvgLandfillKg": 1.0
+        },
+        {
+            "Name": "Formalwear",
+            "AvgCO2Kg": 24,
+            "AvgWaterL": 6500,
+            "AvgElectricityKWh": 27.5,
+            "AvgToxicChemicalsG": 140,
+            "AvgLandfillKg": 1.2
+        },
+        {
+            "Name": "Sportswear",
+            "AvgCO2Kg": 11.5,
+            "AvgWaterL": 2500,
+            "AvgElectricityKWh": 17.5,
+            "AvgToxicChemicalsG": 90,
+            "AvgLandfillKg": 0.4
+        }
+    ]
+}
