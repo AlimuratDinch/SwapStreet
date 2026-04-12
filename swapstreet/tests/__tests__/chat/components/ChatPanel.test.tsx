@@ -558,6 +558,10 @@ describe("ChatPanel Component", () => {
       fireEvent.click(ratingButtons[2]);
     });
 
+    expect(
+      screen.getByPlaceholderText("Optional description"),
+    ).toBeEnabled();
+
     const submitButton = screen.getByText("Submit rating");
 
     await act(async () => {
@@ -576,6 +580,10 @@ describe("ChatPanel Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
+      expect(screen.getByText("CO2 avoided")).toBeInTheDocument();
+      expect(screen.getByText("12.50 kg")).toBeInTheDocument();
+      expect(screen.getByText("Water saved")).toBeInTheDocument();
+      expect(screen.getByText("2850.00 L")).toBeInTheDocument();
     });
   });
 
@@ -761,6 +769,58 @@ describe("ChatPanel Component", () => {
       expect(
         screen.queryByText("Sustainability impact"),
       ).not.toBeInTheDocument();
+    });
+  });
+
+  it("archives the chatroom from the sustainability impact modal", async () => {
+    const closedRoom: Chatroom = {
+      ...mockRoom,
+      isDealClosed: true,
+      ratings: [],
+    };
+
+    const archivedRoom: Chatroom = {
+      ...closedRoom,
+      isArchived: true,
+      archivedAt: new Date().toISOString(),
+      archivedBySeller: true,
+      archivedByBuyer: true,
+    };
+
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes("/messages")) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      if (url.includes("/finalize-close")) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(archivedRoom) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    render(<ChatPanel {...mockProps} room={closedRoom} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Leave a rating")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("No rating"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Archive Chatroom"));
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/finalize-close"),
+        expect.objectContaining({ method: "POST" }),
+      );
+      expect(mockProps.onRoomUpdate).toHaveBeenCalledWith(archivedRoom);
     });
   });
 

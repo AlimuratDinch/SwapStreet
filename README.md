@@ -1,6 +1,5 @@
 # SwapStreet
 
-[![Vercel Status](https://therealsujitk-vercel-badge.vercel.app/?app=swapstreet)](https://swap-street.vercel.app)
 [![codecov](https://codecov.io/gh/AlimuratDinch/SwapStreet/branch/main/graph/badge.svg)](https://codecov.io/gh/AlimuratDinch/SwapStreet)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=swapstreet&metric=alert_status)](https://sonarcloud.io/dashboard?id=swapstreet)
 
