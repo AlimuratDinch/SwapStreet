@@ -146,7 +146,7 @@ public class SustainabilityTrackerService : ISustainabilityTrackerService
             ElectricityKWh = electricityKWh,
             ToxicChemicalsG = toxicChemicalsG,
             LandfillKg = landfillKg,
-            Articles = articles
+            Articles = articles / 2
         };
 
         return dto;
