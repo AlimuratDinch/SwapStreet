@@ -114,7 +114,9 @@ describe("RegistrationPage - Google Button Integration", () => {
         target: { value: "password123" },
       });
       fireEvent.click(
-        screen.getByRole("checkbox", { name: /i agree to the use of cookies/i })
+        screen.getByRole("checkbox", {
+          name: /i agree to the use of cookies/i,
+        }),
       );
       fireEvent.click(screen.getByRole("button", { name: /^sign up$/i }));
 
@@ -125,10 +127,10 @@ describe("RegistrationPage - Google Button Integration", () => {
       render(<RegistrationPage />);
 
       expect(
-        screen.getByRole("button", { name: /^sign up$/i })
+        screen.getByRole("button", { name: /^sign up$/i }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /sign up with google/i })
+        screen.getByRole("button", { name: /sign up with google/i }),
       ).toBeInTheDocument();
     });
   });

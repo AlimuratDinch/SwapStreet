@@ -13,12 +13,6 @@ jest.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ accessToken: jest.fn(), logout: mockLogout }),
 }));
 
-jest.mock("@/lib/api/oauth", () => ({
-  getLinkedAccounts: jest.fn().mockResolvedValue({ linkedAccounts: [] }),
-  unlinkAccount: jest.fn(),
-  initiateOAuthLink: jest.fn(),
-}));
-
 describe("Settings Page", () => {
   afterEach(() => {
     jest.restoreAllMocks();

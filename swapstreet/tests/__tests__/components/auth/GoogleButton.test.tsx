@@ -17,7 +17,7 @@ describe("GoogleButton", () => {
 
   it("renders Google logo SVG", () => {
     const { container } = render(
-      <GoogleButton text="Sign in with Google" onClick={mockOnClick} />
+      <GoogleButton text="Sign in with Google" onClick={mockOnClick} />,
     );
 
     const svg = container.querySelector("svg");

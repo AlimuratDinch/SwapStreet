@@ -119,10 +119,10 @@ describe("LoginPage - Google Button Integration", () => {
       render(<LoginPage />);
 
       expect(
-        screen.getByRole("button", { name: /^sign in$/i })
+        screen.getByRole("button", { name: /^sign in$/i }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /continue with google/i })
+        screen.getByRole("button", { name: /continue with google/i }),
       ).toBeInTheDocument();
     });
   });
