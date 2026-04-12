@@ -16,7 +16,9 @@ test.describe("Landing page tests", () => {
     await page.goto("/");
     await expect(page.getByText(/Clothes Saved/i)).toBeVisible();
     await expect(page.getByText(/CO2 Reduced/i)).toBeVisible();
-    await expect(page.getByText("Liters of Water Saved", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Liters of Water Saved", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText(/Active Users/i)).toBeVisible();
   });
 
