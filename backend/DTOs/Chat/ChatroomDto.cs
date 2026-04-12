@@ -37,6 +37,12 @@ namespace backend.DTOs.Chat
         [JsonPropertyName("archivedAt")]
         public DateTimeOffset? ArchivedAt { get; set; }
 
+        [JsonPropertyName("archivedBySeller")]
+        public bool ArchivedBySeller { get; set; }
+
+        [JsonPropertyName("archivedByBuyer")]
+        public bool ArchivedByBuyer { get; set; }
+
         [JsonPropertyName("isFrozen")]
         public bool IsFrozen { get; set; }
 
@@ -69,6 +75,9 @@ namespace backend.DTOs.Chat
 
         [JsonPropertyName("ratings")]
         public List<ChatRatingDto> Ratings { get; set; } = new List<ChatRatingDto>();
+
+        [JsonPropertyName("listingSustainabilityImpact")]
+        public ListingSustainabilityImpactDto? ListingSustainabilityImpact { get; set; }
 
         [JsonPropertyName("messages")]
         public List<MessageDto> Messages { get; set; } = new List<MessageDto>();

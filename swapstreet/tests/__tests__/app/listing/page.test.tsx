@@ -1123,4 +1123,153 @@ describe("Listing Page", () => {
       initialCallCount,
     );
   });
+
+  // ─── resolveImageUrl & seller avatar tests ───────────────────────────────────
+
+  it("renders seller avatar using profileImageUrl field", async () => {
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+    });
+    const avatar = screen.getByAltText("John Doe") as HTMLImageElement;
+    // profileImageUrl is a full http URL — resolveImageUrl replaces the host
+    // with API_BASE but keeps the path, so the src must contain the filename
+    expect(avatar.src).toContain("avatar.jpg");
+  });
+
+  it("falls back to profileImagePath when profileImageUrl is absent", async () => {
+    const listing = {
+      ...mockListing,
+      seller: {
+        ...mockListing.seller,
+        profileImageUrl: undefined,
+        profileImagePath: "http://example.com/path-avatar.jpg",
+      },
+    };
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(listing),
+    });
+
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+    });
+    const avatar = screen.getByAltText("John Doe") as HTMLImageElement;
+    expect(avatar.src).toContain("path-avatar.jpg");
+  });
+
+  it("uses default avatar when both profileImageUrl and profileImagePath are absent", async () => {
+    const listing = {
+      ...mockListing,
+      seller: {
+        ...mockListing.seller,
+        profileImageUrl: undefined,
+        profileImagePath: undefined,
+      },
+    };
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(listing),
+    });
+
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+    });
+    const avatar = screen.getByAltText("John Doe") as HTMLImageElement;
+    expect(avatar.src).toContain("default-avatar-icon.jpg");
+  });
+
+  it("fixes double-prefixed profileImageUrl from backend", async () => {
+    // Simulates the exact broken URL the backend produces
+    const doubleUrl =
+      "http://localhost/public/http://localhost/public/profile/fe0f10e6_400x400.jpg";
+    const listing = {
+      ...mockListing,
+      seller: {
+        ...mockListing.seller,
+        profileImageUrl: doubleUrl,
+      },
+    };
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(listing),
+    });
+
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+    });
+    const avatar = screen.getByAltText("John Doe") as HTMLImageElement;
+    // Must NOT contain the double http:// pattern
+    expect(avatar.src).not.toMatch(/https?:\/\/[^/]+\/public\/https?:\/\//);
+    // Must still point to the correct image filename
+    expect(avatar.src).toContain("fe0f10e6_400x400.jpg");
+  });
+
+  it("handles relative profileImageUrl path", async () => {
+    const listing = {
+      ...mockListing,
+      seller: {
+        ...mockListing.seller,
+        profileImageUrl: "/public/profile/relative-avatar.jpg",
+      },
+    };
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(listing),
+    });
+
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+    });
+    const avatar = screen.getByAltText("John Doe") as HTMLImageElement;
+    expect(avatar.src).toContain("relative-avatar.jpg");
+  });
+
+  it("onError falls back to default avatar on broken image", async () => {
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+    });
+    const avatar = screen.getByAltText("John Doe") as HTMLImageElement;
+    fireEvent.error(avatar);
+    expect(avatar.src).toContain("default-avatar-icon.jpg");
+  });
+
+  it("onError does not loop when default avatar also fails", async () => {
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+    });
+    const avatar = screen.getByAltText("John Doe") as HTMLImageElement;
+    // First error — sets default
+    fireEvent.error(avatar);
+    expect(avatar.src).toContain("default-avatar-icon.jpg");
+    // Second error (default avatar also broken) — src must not change
+    const srcAfterFirstError = avatar.src;
+    fireEvent.error(avatar);
+    expect(avatar.src).toBe(srcAfterFirstError);
+  });
+
+  it("renders seller avatar alt text correctly", async () => {
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByAltText("John Doe")).toBeInTheDocument();
+    });
+  });
+
+  it("renders seller avatar alt as Seller when no seller", async () => {
+    const listing = { ...mockListing, seller: null };
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(listing),
+    });
+    render(<ListingPage />);
+    await waitFor(() => {
+      expect(screen.getByAltText("Seller")).toBeInTheDocument();
+    });
+  });
 });

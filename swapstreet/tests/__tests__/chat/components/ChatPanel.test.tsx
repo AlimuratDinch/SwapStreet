@@ -62,6 +62,14 @@ describe("ChatPanel Component", () => {
     sellerRatingCount: 10,
     buyerRatingAverage: 4.0,
     buyerRatingCount: 8,
+    listingSustainabilityImpact: {
+      CO2Kg: 12.5,
+      waterL: 2850,
+      electricityKWh: 22,
+      toxicChemicals: 250,
+      landfillKg: 0.5,
+      articles: 1,
+    },
     frozenReason: null,
   };
 
@@ -522,7 +530,12 @@ describe("ChatPanel Component", () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ ...mockRoom, isDealClosed: true }),
+        json: () =>
+          Promise.resolve({
+            ...mockRoom,
+            isDealClosed: true,
+            listingSustainabilityImpact: mockRoom.listingSustainabilityImpact,
+          }),
       });
 
     const closedRoom: Chatroom = {
@@ -545,6 +558,8 @@ describe("ChatPanel Component", () => {
       fireEvent.click(ratingButtons[2]);
     });
 
+    expect(screen.getByPlaceholderText("Optional description")).toBeEnabled();
+
     const submitButton = screen.getByText("Submit rating");
 
     await act(async () => {
@@ -559,6 +574,14 @@ describe("ChatPanel Component", () => {
           body: expect.stringContaining('"stars":3'),
         }),
       );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
+      expect(screen.getByText("CO2 avoided")).toBeInTheDocument();
+      expect(screen.getByText("12.50 kg")).toBeInTheDocument();
+      expect(screen.getByText("Water saved")).toBeInTheDocument();
+      expect(screen.getByText("2850.00 L")).toBeInTheDocument();
     });
   });
 
@@ -650,6 +673,155 @@ describe("ChatPanel Component", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
+    });
+  });
+
+  it("does not reopen rating modal after dismissing feedback", async () => {
+    const closedRoom: Chatroom = {
+      ...mockRoom,
+      isDealClosed: true,
+      ratings: [],
+    };
+
+    render(<ChatPanel {...mockProps} room={closedRoom} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Leave a rating")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("No rating"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
+      expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
+    });
+
+    const closeDealUpdatedCall = (
+      mockConnection.on as jest.Mock
+    ).mock.calls.find((call) => call[0] === "CloseDealUpdated");
+    expect(closeDealUpdatedCall).toBeTruthy();
+
+    const closeDealUpdatedHandler = closeDealUpdatedCall?.[1] as (
+      room: Chatroom,
+    ) => void;
+
+    act(() => {
+      closeDealUpdatedHandler({
+        ...closedRoom,
+        isDealClosed: true,
+        isArchived: false,
+        ratings: [],
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
+    });
+  });
+
+  it("opens sustainability impact modal even when room has no listing", async () => {
+    const noListingRoom: Chatroom = {
+      ...mockRoom,
+      listingId: null,
+      listingTitle: null,
+      listingSustainabilityImpact: null,
+      isDealClosed: true,
+      ratings: [],
+    };
+
+    render(<ChatPanel {...mockProps} room={noListingRoom} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Leave a rating")).toBeInTheDocument();
+    });
+
+    const noRatingButton = screen.getByText("No rating");
+
+    await act(async () => {
+      fireEvent.click(noRatingButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
+      expect(
+        screen.getByText("No impact data is available for this transaction."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("does not prompt for feedback on archived closed rooms", async () => {
+    const archivedClosedRoom: Chatroom = {
+      ...mockRoom,
+      isDealClosed: true,
+      isArchived: true,
+      ratings: [],
+    };
+
+    render(<ChatPanel {...mockProps} room={archivedClosedRoom} />);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Leave a rating")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Sustainability impact"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("archives the chatroom from the sustainability impact modal", async () => {
+    const closedRoom: Chatroom = {
+      ...mockRoom,
+      isDealClosed: true,
+      ratings: [],
+    };
+
+    const archivedRoom: Chatroom = {
+      ...closedRoom,
+      isArchived: true,
+      archivedAt: new Date().toISOString(),
+      archivedBySeller: true,
+      archivedByBuyer: true,
+    };
+
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes("/messages")) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      if (url.includes("/finalize-close")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(archivedRoom),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    render(<ChatPanel {...mockProps} room={closedRoom} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Leave a rating")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("No rating"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Sustainability impact")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("Archive Chatroom"));
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/finalize-close"),
+        expect.objectContaining({ method: "POST" }),
+      );
+      expect(mockProps.onRoomUpdate).toHaveBeenCalledWith(archivedRoom);
     });
   });
 

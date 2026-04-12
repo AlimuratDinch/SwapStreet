@@ -60,6 +60,10 @@
   <None Update="Data\TestImages\**">
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </None>
+  <None Update="Services\SustainabilityTracker\sustainabilityData.json">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+  </None>
 </ItemGroup>
 
 

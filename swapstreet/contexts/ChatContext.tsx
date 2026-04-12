@@ -35,6 +35,13 @@ type Message = {
   sendDate: string | null;
 };
 
+type ChatNotificationEvent = {
+  chatroomId: string;
+  senderId: string;
+  content: string;
+  sendDate: string | null;
+};
+
 // ──────────────────────── Context ────────────────────────
 
 type ChatContextValue = {
@@ -71,6 +78,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   // Store chatroom owner to resolve sender
   const chatroomsRef = useRef<Chatroom[]>([]);
+
+  const joinedChatroomIdsRef = useRef<Set<string>>(new Set());
   // Cache resolved names/images (avoid re-fetching)
   const profileCacheRef = useRef<
     Record<string, { name: string; image: string | null }>
@@ -181,6 +190,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           connection.stop();
           return;
         }
+
         // Join all chatrooms
         for (const room of chatrooms) {
           await connection.invoke("JoinChatroom", room.id).catch(() => {});

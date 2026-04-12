@@ -7,6 +7,7 @@ using backend.DbContexts;
 using backend.Services.Chat;
 using backend.DTOs.Chat;
 using backend.DTOs.Listings;
+using backend.DTOs.SustainabilityTracker;
 using backend.Contracts;
 using backend.DTOs.Image;
 using Microsoft.EntityFrameworkCore;
@@ -45,11 +46,20 @@ namespace backend.Tests.Services
 
     internal sealed class FakeListingCommandService : IListingCommandService
     {
+        public int DeleteListingCallCount { get; private set; }
+        public Guid? LastDeletedListingId { get; private set; }
+        public Guid? LastDeletedProfileId { get; private set; }
+
         public Task<Guid> CreateListingAsync(CreateListingRequestDto request, CancellationToken cancellationToken = default)
             => Task.FromResult(Guid.NewGuid());
 
         public Task DeleteListingAsync(Guid listingId, Guid profileId, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
+        {
+            DeleteListingCallCount++;
+            LastDeletedListingId = listingId;
+            LastDeletedProfileId = profileId;
+            return Task.CompletedTask;
+        }
 
         public Task DeleteAllFromUserAsync(Guid listingId) => Task.CompletedTask;
         public Task UpdateListingAsync(Guid listingId, Guid profileId, UpdateListingRequestDto request, CancellationToken cancellationToken = default)
@@ -59,11 +69,42 @@ namespace backend.Tests.Services
             => Task.CompletedTask;
     }
 
+    internal sealed class FakeSustainabilityTrackerService : ISustainabilityTrackerService
+    {
+        public int UpdateCallCount { get; private set; }
+        public Guid? LastBuyerId { get; private set; }
+        public Guid? LastSellerId { get; private set; }
+        public Listing? LastListing { get; private set; }
+
+        public Task<SustainabilityTrackerStatsDTO> GetSustainabilityData(Guid userId)
+            => Task.FromResult(new SustainabilityTrackerStatsDTO());
+        public Task<SustainabilityTrackerStatsDTO> GetGlobalSustainabilityData()
+            => Task.FromResult(new SustainabilityTrackerStatsDTO());
+        public ListingSustainabilityImpactDto GetImpactForListing(Listing listing)
+            => new ListingSustainabilityImpactDto
+            {
+                CO2Kg = 0,
+                WaterL = 0,
+                ElectricityKWh = 0,
+                ToxicChemicalsG = 0,
+                LandfillKg = 0,
+                Articles = 1
+            };
+        public void UpdateWith(Guid userAId, Guid userBId, Listing listing)
+        {
+            UpdateCallCount++;
+            LastBuyerId = userAId;
+            LastSellerId = userBId;
+            LastListing = listing;
+        }
+    }
+
     public class ChatServiceTests : IDisposable
     {
         private readonly AppDbContext _db;
         private readonly ChatService _chatService;
         private readonly ChatroomService _chatroomService;
+        private readonly FakeListingCommandService _listingCommandService;
         private readonly Guid _sellerId;
         private readonly Guid _buyerId;
         private readonly Guid _chatroomId;
@@ -78,10 +119,12 @@ namespace backend.Tests.Services
 
             _db = new AppDbContext(options);
             _chatService = new ChatService(_db);
+            _listingCommandService = new FakeListingCommandService();
             _chatroomService = new ChatroomService(
                 _db,
                 new FakeFileStorageService(),
-                new FakeListingCommandService());
+                _listingCommandService,
+                new FakeSustainabilityTrackerService());
 
             _sellerId = Guid.NewGuid();
             _buyerId = Guid.NewGuid();
@@ -357,6 +400,7 @@ namespace backend.Tests.Services
     {
         private readonly AppDbContext _db;
         private readonly ChatroomService _service;
+        private readonly FakeSustainabilityTrackerService _sustainabilityTrackerService;
         private readonly Guid _sellerId;
         private readonly Guid _buyerId;
         private readonly Guid _thirdUserId;
@@ -370,10 +414,12 @@ namespace backend.Tests.Services
                 .Options;
 
             _db = new AppDbContext(options);
+            _sustainabilityTrackerService = new FakeSustainabilityTrackerService();
             _service = new ChatroomService(
                 _db,
                 new FakeFileStorageService(),
-                new FakeListingCommandService());
+                new FakeListingCommandService(),
+                _sustainabilityTrackerService);
 
             _sellerId = Guid.NewGuid();
             _buyerId = Guid.NewGuid();
@@ -905,6 +951,187 @@ namespace backend.Tests.Services
                 .And
                 .ContainSingle(m => m.Content == "In C, Message 2");
             // Said chatroom only contains two messages.
+        }
+
+        [Fact]
+        public async Task RespondToCloseDealAsync_ShouldApplySustainability_WhenBothUsersConfirm()
+        {
+            // Arrange
+            var listingId = Guid.NewGuid();
+            _db.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Test tee",
+                Description = "Cotton t-shirt",
+                Price = 10m,
+                Size = ListingSize.M,
+                Condition = ListingCondition.UsedExcellent,
+                Brand = ListingBrand.Nike,
+                Colour = ListingColour.Black,
+                Category = ListingCategory.Tops,
+                ProfileId = _sellerId,
+                FSA = "M5V"
+            });
+            await _db.SaveChangesAsync();
+
+            var chatroom = await _service.CreateChatroomAsync(new CreateChatroomDto
+            {
+                SellerId = _sellerId,
+                BuyerId = _buyerId,
+                ListingId = listingId
+            });
+
+            await _service.RequestCloseDealAsync(chatroom.Id, _sellerId);
+
+            // Act
+            var closed = await _service.RespondToCloseDealAsync(chatroom.Id, _buyerId, true);
+
+            // Assert
+            closed.IsDealClosed.Should().BeTrue();
+            _sustainabilityTrackerService.UpdateCallCount.Should().Be(1);
+            _sustainabilityTrackerService.LastBuyerId.Should().Be(_buyerId);
+            _sustainabilityTrackerService.LastSellerId.Should().Be(_sellerId);
+            _sustainabilityTrackerService.LastListing.Should().NotBeNull();
+
+            var persisted = await _db.Chatrooms.FirstAsync(c => c.Id == chatroom.Id);
+            persisted.SustainabilityMetricsApplied.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GetChatroomByIdAsync_ShouldReturnImpactSnapshot_WhenListingIsDeleted()
+        {
+            var listingId = Guid.NewGuid();
+            _db.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Test jeans",
+                Description = "Denim",
+                Price = 15m,
+                Size = ListingSize.M,
+                Condition = ListingCondition.UsedGood,
+                Brand = ListingBrand.Nike,
+                Colour = ListingColour.Blue,
+                Category = ListingCategory.Bottoms,
+                ProfileId = _sellerId,
+                FSA = "M5V"
+            });
+            await _db.SaveChangesAsync();
+
+            var chatroom = await _service.CreateChatroomAsync(new CreateChatroomDto
+            {
+                SellerId = _sellerId,
+                BuyerId = _buyerId,
+                ListingId = listingId
+            });
+
+            await _service.RequestCloseDealAsync(chatroom.Id, _sellerId);
+            await _service.RespondToCloseDealAsync(chatroom.Id, _buyerId, true);
+
+            var deletedListing = await _db.Listings.FirstAsync(l => l.Id == listingId);
+            _db.Listings.Remove(deletedListing);
+            await _db.SaveChangesAsync();
+
+            var result = await _service.GetChatroomByIdAsync(chatroom.Id);
+
+            result.Should().NotBeNull();
+            result!.ListingSustainabilityImpact.Should().NotBeNull();
+            result.ListingSustainabilityImpact!.CO2Kg.Should().Be(0);
+            result.ListingSustainabilityImpact.WaterL.Should().Be(0);
+            result.ListingSustainabilityImpact.ElectricityKWh.Should().Be(0);
+            result.ListingSustainabilityImpact.ToxicChemicalsG.Should().Be(0);
+            result.ListingSustainabilityImpact.LandfillKg.Should().Be(0);
+            result.ListingSustainabilityImpact.Articles.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task FinalizeClosedDealAsync_ShouldArchiveOnlyAfterBothUsersFinalize()
+        {
+            var listingId = Guid.NewGuid();
+            _db.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Test hoodie",
+                Description = "Warm hoodie",
+                Price = 18m,
+                Size = ListingSize.M,
+                Condition = ListingCondition.UsedGood,
+                Brand = ListingBrand.Nike,
+                Colour = ListingColour.Black,
+                Category = ListingCategory.Tops,
+                ProfileId = _sellerId,
+                FSA = "M5V"
+            });
+            await _db.SaveChangesAsync();
+
+            var chatroom = await _service.CreateChatroomAsync(new CreateChatroomDto
+            {
+                SellerId = _sellerId,
+                BuyerId = _buyerId,
+                ListingId = listingId
+            });
+
+            await _service.RequestCloseDealAsync(chatroom.Id, _sellerId);
+            await _service.RespondToCloseDealAsync(chatroom.Id, _buyerId, true);
+
+            var sellerArchive = await _service.FinalizeClosedDealAsync(chatroom.Id, _sellerId);
+
+            sellerArchive.IsArchived.Should().BeFalse();
+            sellerArchive.ArchivedBySeller.Should().BeTrue();
+            sellerArchive.ArchivedByBuyer.Should().BeFalse();
+
+            var midState = await _db.Chatrooms.FirstAsync(c => c.Id == chatroom.Id);
+            midState.IsArchived.Should().BeFalse();
+            midState.ArchivedBySeller.Should().BeTrue();
+            midState.ArchivedByBuyer.Should().BeFalse();
+
+            var buyerArchive = await _service.FinalizeClosedDealAsync(chatroom.Id, _buyerId);
+
+            buyerArchive.IsArchived.Should().BeTrue();
+            buyerArchive.ArchivedBySeller.Should().BeTrue();
+            buyerArchive.ArchivedByBuyer.Should().BeTrue();
+
+            var persisted = await _db.Chatrooms.FirstAsync(c => c.Id == chatroom.Id);
+            persisted.IsArchived.Should().BeTrue();
+            persisted.ArchivedAt.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task CloseDealAsync_ShouldApplySustainabilityOnlyOnce_WhenCalledMultipleTimes()
+        {
+            // Arrange
+            var listingId = Guid.NewGuid();
+            _db.Listings.Add(new Listing
+            {
+                Id = listingId,
+                Title = "Test jacket",
+                Description = "Vintage jacket",
+                Price = 25m,
+                Size = ListingSize.L,
+                Condition = ListingCondition.LikeNew,
+                Brand = ListingBrand.Nike,
+                Colour = ListingColour.Blue,
+                Category = ListingCategory.Outerwear,
+                ProfileId = _sellerId,
+                FSA = "M5V"
+            });
+            await _db.SaveChangesAsync();
+
+            var chatroom = await _service.CreateChatroomAsync(new CreateChatroomDto
+            {
+                SellerId = _sellerId,
+                BuyerId = _buyerId,
+                ListingId = listingId
+            });
+
+            // Act
+            await _service.CloseDealAsync(chatroom.Id, _sellerId);
+            await _service.CloseDealAsync(chatroom.Id, _sellerId, stars: 5, description: "Smooth transaction");
+
+            // Assert
+            _sustainabilityTrackerService.UpdateCallCount.Should().Be(1);
+
+            var persisted = await _db.Chatrooms.FirstAsync(c => c.Id == chatroom.Id);
+            persisted.SustainabilityMetricsApplied.Should().BeTrue();
         }
     }
 }

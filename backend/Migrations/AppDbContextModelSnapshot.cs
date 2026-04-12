@@ -61,70 +61,6 @@ namespace backend.Migrations
                     b.ToTable("brands", (string)null);
                 });
 
-            modelBuilder.Entity("Chatroom", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ArchivedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("BuyerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ClosedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("CloseConfirmedByBuyer")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("CloseConfirmedBySeller")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid?>("CloseRequestedById")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("CloseRequestedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("CreationTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FrozenReason")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<bool>("IsArchived")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsDealClosed")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsFrozen")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid?>("ListingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ListingImageSnapshotPath")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<Guid>("SellerId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BuyerId");
-
-                    b.HasIndex("ListingId");
-
-                    b.HasIndex("SellerId");
-
-                    b.ToTable("chatrooms", (string)null);
-                });
-
             modelBuilder.Entity("ChatRating", b =>
                 {
                     b.Property<Guid>("Id")
@@ -152,14 +88,105 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChatroomId", "ReviewerId")
-                        .IsUnique();
-
                     b.HasIndex("RevieweeId");
 
                     b.HasIndex("ReviewerId");
 
+                    b.HasIndex("ChatroomId", "ReviewerId")
+                        .IsUnique();
+
                     b.ToTable("chat_ratings", (string)null);
+                });
+
+            modelBuilder.Entity("Chatroom", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("ArchivedByBuyer")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ArchivedBySeller")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("BuyerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("CloseConfirmedByBuyer")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CloseConfirmedBySeller")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("CloseRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CloseRequestedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("CreationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FrozenReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDealClosed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFrozen")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("ListingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("ListingImpactArticles")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("ListingImpactCO2Kg")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ListingImpactElectricityKWh")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ListingImpactLandfillKg")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ListingImpactToxicChemicalsG")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal?>("ListingImpactWaterL")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("ListingImageSnapshotPath")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("SustainabilityMetricsApplied")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuyerId");
+
+                    b.HasIndex("ListingId");
+
+                    b.HasIndex("SellerId");
+
+                    b.ToTable("chatrooms", (string)null);
                 });
 
             modelBuilder.Entity("City", b =>
@@ -470,6 +497,52 @@ namespace backend.Migrations
                     b.ToTable("provinces", (string)null);
                 });
 
+            modelBuilder.Entity("SustainabilityVector", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Articles")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<decimal>("CO2Kg")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(10,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("ElectricityKWh")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(10,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("LandfillKg")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(10,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("ToxicChemicalsG")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(10,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("WaterL")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(10,2)")
+                        .HasDefaultValue(0m);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("sustainability_vectors", (string)null);
+                });
+
             modelBuilder.Entity("TryOnImage", b =>
                 {
                     b.Property<int>("Id")
@@ -520,32 +593,6 @@ namespace backend.Migrations
                     b.ToTable("wishlists", (string)null);
                 });
 
-            modelBuilder.Entity("Chatroom", b =>
-                {
-                    b.HasOne("Listing", "Listing")
-                        .WithMany()
-                        .HasForeignKey("ListingId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Profile", "Buyer")
-                        .WithMany()
-                        .HasForeignKey("BuyerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Profile", "Seller")
-                        .WithMany()
-                        .HasForeignKey("SellerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Listing");
-
-                    b.Navigation("Buyer");
-
-                    b.Navigation("Seller");
-                });
-
             modelBuilder.Entity("ChatRating", b =>
                 {
                     b.HasOne("Chatroom", "Chatroom")
@@ -571,6 +618,32 @@ namespace backend.Migrations
                     b.Navigation("Reviewee");
 
                     b.Navigation("Reviewer");
+                });
+
+            modelBuilder.Entity("Chatroom", b =>
+                {
+                    b.HasOne("Profile", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Listing", "Listing")
+                        .WithMany()
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Profile", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Buyer");
+
+                    b.Navigation("Listing");
+
+                    b.Navigation("Seller");
                 });
 
             modelBuilder.Entity("City", b =>
@@ -664,6 +737,17 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.Navigation("City");
+                });
+
+            modelBuilder.Entity("SustainabilityVector", b =>
+                {
+                    b.HasOne("Profile", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TryOnImage", b =>

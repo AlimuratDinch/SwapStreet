@@ -239,6 +239,42 @@ namespace backend.Controllers
             }
         }
 
+        [HttpPost("chatrooms/{chatroomId}/finalize-close")]
+        public async Task<IActionResult> FinalizeCloseDeal(Guid chatroomId)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var chatroom = await _chatroomService.FinalizeClosedDealAsync(chatroomId, userId);
+                await _hubContext.Clients.Group($"chatroom-{chatroomId}")
+                    .SendAsync("CloseDealUpdated", chatroom);
+
+                if (chatroom.IsDealClosed && chatroom.ListingId.HasValue)
+                {
+                    var related = await _chatroomService.GetChatroomsByListingAsync(chatroom.ListingId.Value);
+                    foreach (var room in related)
+                    {
+                        await _hubContext.Clients.Group($"chatroom-{room.Id}")
+                            .SendAsync("CloseDealUpdated", room);
+                    }
+                }
+
+                return Ok(chatroom);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
         /// <summary>
         /// Get messages for a chatroom with pagination
         /// </summary>

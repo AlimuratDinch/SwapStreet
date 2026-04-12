@@ -124,6 +124,15 @@ namespace backend.Hubs
                 // Broadcast to all clients in the chatroom group
                 var groupName = GetGroupName(chatroomId);
                 await Clients.Group(groupName).SendAsync("ReceiveMessage", messageDto);
+
+                var recipientId = chatroom.SellerId == userId ? chatroom.BuyerId : chatroom.SellerId;
+                await Clients.User(recipientId.ToString()).SendAsync("ReceiveChatNotification", new
+                {
+                    chatroomId = messageDto.ChatroomId,
+                    senderId = userId.ToString(),
+                    content = messageDto.Content,
+                    sendDate = messageDto.SendDate
+                });
             }
             catch (ArgumentException ex)
             {

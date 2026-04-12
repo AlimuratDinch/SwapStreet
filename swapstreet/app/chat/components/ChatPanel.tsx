@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useChatContext } from "@/contexts/ChatContext";
 import styles from "../ChatLayout.module.css";
 import Avatar from "./Avatar";
-import type { Chatroom, Message } from "./types";
+import type { Chatroom, ListingSustainabilityImpact, Message } from "./types";
 
 type ChatPanelProps = {
   room: Chatroom;
@@ -27,6 +27,50 @@ type MessagesReadEvent = {
 const cx = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(" ");
 
+function resolveBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+
+  if (typeof globalThis.window !== "undefined") {
+    return globalThis.window.location.origin;
+  }
+
+  return "http://localhost:3000";
+}
+
+function sortMessagesByDate(data: Message[]): Message[] {
+  return data
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(a.sendDate ?? 0).getTime() -
+        new Date(b.sendDate ?? 0).getTime(),
+    );
+}
+
+function getOtherRoleText(isBuyer: boolean, isSeller: boolean): string | null {
+  if (isBuyer) return "Selling";
+  if (isSeller) return "Wants to buy";
+  return null;
+}
+
+function getOtherRating(
+  isBuyer: boolean,
+  isSeller: boolean,
+  room: Chatroom,
+): string {
+  if (isBuyer) {
+    return formatAverage(room.sellerRatingAverage, room.sellerRatingCount ?? 0);
+  }
+
+  if (isSeller) {
+    return formatAverage(room.buyerRatingAverage, room.buyerRatingCount ?? 0);
+  }
+
+  return "No ratings";
+}
+
 function formatAverage(avg?: number | null, count?: number) {
   if (!count || count <= 0 || avg == null) {
     return "No ratings";
@@ -39,7 +83,7 @@ export default function ChatPanel({
   otherName,
   otherImage,
   onRoomUpdate,
-}: ChatPanelProps) {
+}: Readonly<ChatPanelProps>) {
   const searchParams = useSearchParams();
   const { userId, accessToken, isAuthenticated, authLoaded } = useAuth();
   const { markAsRead } = useChatContext();
@@ -52,6 +96,10 @@ export default function ChatPanel({
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [isImpactModalOpen, setIsImpactModalOpen] = useState(false);
+  const [isFinalizeBusy, setIsFinalizeBusy] = useState(false);
+  const [impactMetrics, setImpactMetrics] =
+    useState<ListingSustainabilityImpact | null>(null);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [hoveredRatingStar, setHoveredRatingStar] = useState<number | null>(
     null,
@@ -60,17 +108,43 @@ export default function ChatPanel({
   const [ratingStars, setRatingStars] = useState<number | null>(null);
   const [ratingDescription, setRatingDescription] = useState("");
   const [isConfirmCloseOpen, setIsConfirmCloseOpen] = useState(false);
+  const [ratingPromptDismissed, setRatingPromptDismissed] = useState(false);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const autoSendRef = useRef<string>(searchParams.get("msg") ?? "");
+  const ratingPromptDismissedRef = useRef(false);
+
+  const updateRatingPromptDismissed = useCallback((dismissed: boolean) => {
+    ratingPromptDismissedRef.current = dismissed;
+    setRatingPromptDismissed(dismissed);
+  }, []);
+
+  useEffect(() => {
+    const pending = searchParams.get("msg");
+    if (!pending) return;
+    if (typeof globalThis.window === "undefined") return;
+
+    const url = new URL(globalThis.window.location.href);
+    if (!url.searchParams.has("msg")) return;
+
+    url.searchParams.delete("msg");
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    globalThis.window.history.replaceState(
+      globalThis.window.history.state,
+      "",
+      nextUrl,
+    );
+  }, [searchParams]);
 
   useEffect(() => {
     markAsRead(room.id);
   }, [room.id, messages, markAsRead]);
 
   useEffect(() => {
-    if (authLoaded && !isAuthenticated) router.push("/auth/sign-in");
+    if (!authLoaded) return;
+    if (isAuthenticated) return;
+    router.push("/auth/sign-in");
   }, [authLoaded, isAuthenticated, router]);
 
   useEffect(() => {
@@ -82,28 +156,14 @@ export default function ChatPanel({
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((data: Message[]) =>
-        setMessages(
-          data
-            .slice()
-            .sort(
-              (a, b) =>
-                new Date(a.sendDate ?? 0).getTime() -
-                new Date(b.sendDate ?? 0).getTime(),
-            ),
-        ),
-      )
+      .then((data: Message[]) => setMessages(sortMessagesByDate(data)))
       .catch((e) => console.error("Failed to load messages", e));
   }, [accessToken, room.id]);
 
   useEffect(() => {
     if (!accessToken || !room.id) return;
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL ||
-      (typeof window !== "undefined"
-        ? window.location.origin
-        : "http://localhost:3000");
+    const baseUrl = resolveBaseUrl();
 
     const hubUrl = new URL("/chathub", baseUrl).toString();
 
@@ -122,15 +182,28 @@ export default function ChatPanel({
     connection.on("Error", (err: string) => setError(err));
     connection.on("CloseDealUpdated", (updated: Chatroom) => {
       onRoomUpdate(updated);
-      if (updated.id === room.id && updated.isDealClosed) {
+      const updatedRatings = updated.ratings ?? [];
+      const updatedHasRated =
+        !!userId && updatedRatings.some((r) => r.reviewerId === userId);
+
+      if (
+        updated.id === room.id &&
+        updated.isDealClosed &&
+        !updated.isArchived &&
+        !updatedHasRated &&
+        !ratingPromptDismissedRef.current
+      ) {
         setIsRatingModalOpen(true);
       }
     });
     connection.on("MessagesRead", (event: MessagesReadEvent) => {
       if (event.chatroomId !== room.id) return;
+      if (event.readerId === userId) return;
       setMessages((prev) =>
         prev.map((m) =>
-          m.readAt == null ? { ...m, readAt: event.readAt } : m,
+          m.author === userId && m.readAt == null
+            ? { ...m, readAt: event.readAt }
+            : m,
         ),
       );
     });
@@ -158,7 +231,7 @@ export default function ChatPanel({
       connection.invoke("LeaveChatroom", room.id).catch(() => {});
       connection.stop();
     };
-  }, [accessToken, room.id, onRoomUpdate]);
+  }, [accessToken, room.id, onRoomUpdate, userId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -183,7 +256,17 @@ export default function ChatPanel({
     !isArchived &&
     !isFrozen &&
     !closeRequestPending;
-  const canRate = !!userId && isDealClosed && !hasRated;
+  const canRate = !!userId && isDealClosed && !isArchived && !hasRated;
+  const shouldPromptForRating = canRate && !ratingPromptDismissed;
+
+  const handleConfirmClose = () => {
+    if (needsCloseResponse) {
+      void respondToCloseDeal(true);
+      return;
+    }
+
+    void submitCloseDeal();
+  };
 
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
@@ -204,6 +287,11 @@ export default function ChatPanel({
     }
   };
 
+  const openImpactModal = useCallback(() => {
+    setImpactMetrics(room.listingSustainabilityImpact ?? null);
+    setIsImpactModalOpen(true);
+  }, [room.listingSustainabilityImpact]);
+
   useEffect(() => {
     if (needsCloseResponse) {
       setIsConfirmCloseOpen(true);
@@ -211,17 +299,17 @@ export default function ChatPanel({
   }, [needsCloseResponse]);
 
   useEffect(() => {
-    if (isDealClosed && canRate) {
+    updateRatingPromptDismissed(false);
+  }, [room.id, updateRatingPromptDismissed]);
+
+  useEffect(() => {
+    if (shouldPromptForRating) {
       setIsRatingModalOpen(true);
     }
-  }, [isDealClosed, canRate]);
+  }, [shouldPromptForRating]);
 
-  const otherRoleText = isBuyer ? "Selling" : isSeller ? "Wants to buy" : null;
-  const otherRating = isBuyer
-    ? formatAverage(room.sellerRatingAverage, room.sellerRatingCount ?? 0)
-    : isSeller
-      ? formatAverage(room.buyerRatingAverage, room.buyerRatingCount ?? 0)
-      : "No ratings";
+  const otherRoleText = getOtherRoleText(isBuyer, isSeller);
+  const otherRating = getOtherRating(isBuyer, isSeller, room);
 
   const submitCloseDeal = async () => {
     if (!accessToken) return;
@@ -274,17 +362,55 @@ export default function ChatPanel({
         throw new Error(body?.error ?? body?.Error ?? `HTTP ${res.status}`);
       }
 
-      onRoomUpdate(body as Chatroom);
+      const updatedRoom = body as Chatroom;
+      onRoomUpdate(updatedRoom);
       setRatingStars(null);
       setRatingDescription("");
       setIsRatingModalOpen(false);
       setHoveredRatingStar(null);
+      updateRatingPromptDismissed(true);
+      setImpactMetrics(
+        updatedRoom.listingSustainabilityImpact ??
+          room.listingSustainabilityImpact ??
+          null,
+      );
+      setIsImpactModalOpen(true);
     } catch (e) {
       setActionError(
         e instanceof Error ? e.message : "Failed to submit rating",
       );
     } finally {
       setActionBusy(false);
+    }
+  };
+
+  const finalizeClose = async () => {
+    if (!accessToken) return;
+
+    setIsFinalizeBusy(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/chat/chatrooms/${room.id}/finalize-close`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(body?.error ?? body?.Error ?? `HTTP ${res.status}`);
+      }
+
+      onRoomUpdate(body as Chatroom);
+      setIsImpactModalOpen(false);
+      setImpactMetrics(null);
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : "Failed to finalize close",
+      );
+    } finally {
+      setIsFinalizeBusy(false);
     }
   };
 
@@ -319,6 +445,9 @@ export default function ChatPanel({
   };
 
   if (!authLoaded || !isAuthenticated) return null;
+
+  const impactToDisplay =
+    impactMetrics ?? room.listingSustainabilityImpact ?? null;
 
   return (
     <div className={styles.chatPanel}>
@@ -389,11 +518,7 @@ export default function ChatPanel({
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  needsCloseResponse
-                    ? respondToCloseDeal(true)
-                    : submitCloseDeal()
-                }
+                onClick={handleConfirmClose}
                 disabled={actionBusy}
                 className={styles.btnPrimary}
               >
@@ -466,6 +591,8 @@ export default function ChatPanel({
                   setRatingStars(null);
                   setRatingDescription("");
                   setHoveredRatingStar(null);
+                  updateRatingPromptDismissed(true);
+                  void openImpactModal();
                 }}
                 className={styles.btnSecondary}
               >
@@ -478,6 +605,65 @@ export default function ChatPanel({
                 className={styles.btnPrimary}
               >
                 {actionBusy ? "Submitting..." : "Submit rating"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isImpactModalOpen && (
+        <div className={cx(styles.promptWrapper, styles.promptWrapperRating)}>
+          <div className={styles.promptCard}>
+            <h3 className={styles.promptTitle}>Sustainability impact</h3>
+            <p className={styles.promptSubtext}>
+              Impact generated by this transaction.
+            </p>
+            {impactToDisplay ? (
+              <div className={styles.impactMetricsList}>
+                <div className={styles.impactMetricRow}>
+                  <span>CO2 avoided</span>
+                  <strong>{impactToDisplay.CO2Kg.toFixed(2)} kg</strong>
+                </div>
+                <div className={styles.impactMetricRow}>
+                  <span>Water saved</span>
+                  <strong>{impactToDisplay.waterL.toFixed(2)} L</strong>
+                </div>
+                <div className={styles.impactMetricRow}>
+                  <span>Electricity saved</span>
+                  <strong>
+                    {impactToDisplay.electricityKWh.toFixed(2)} kWh
+                  </strong>
+                </div>
+                <div className={styles.impactMetricRow}>
+                  <span>Toxic chemicals avoided</span>
+                  <strong>{impactToDisplay.toxicChemicals.toFixed(2)} g</strong>
+                </div>
+                <div className={styles.impactMetricRow}>
+                  <span>Landfill diverted</span>
+                  <strong>
+                    {(impactToDisplay.landfillKg * 1000).toFixed(2)} g
+                  </strong>
+                </div>
+                <div className={styles.impactMetricRow}>
+                  <span>Articles reused</span>
+                  <strong>{impactToDisplay.articles}</strong>
+                </div>
+              </div>
+            ) : (
+              <p className={styles.promptText}>
+                No impact data is available for this transaction.
+              </p>
+            )}
+            <div className={styles.promptActions}>
+              <button
+                type="button"
+                onClick={() => {
+                  void finalizeClose();
+                }}
+                disabled={isFinalizeBusy}
+                className={styles.btnPrimary}
+              >
+                {isFinalizeBusy ? "Archiving..." : "Archive Chatroom"}
               </button>
             </div>
           </div>

@@ -17,6 +17,15 @@ export type ChatRating = {
   createdAt: string;
 };
 
+export type ListingSustainabilityImpact = {
+  CO2Kg: number;
+  waterL: number;
+  electricityKWh: number;
+  toxicChemicals: number;
+  landfillKg: number;
+  articles: number;
+};
+
 export type Chatroom = {
   id: string;
   sellerId: string;
@@ -39,5 +48,6 @@ export type Chatroom = {
   buyerRatingAverage?: number | null;
   buyerRatingCount?: number;
   ratings?: ChatRating[];
+  listingSustainabilityImpact?: ListingSustainabilityImpact | null;
   messages: Message[];
 };

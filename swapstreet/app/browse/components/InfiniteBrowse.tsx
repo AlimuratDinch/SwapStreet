@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CardItem } from "./CardItem";
 import {
   getSearchResults,
+  getLocationLabelByFsa,
   SearchParams,
   type BrowseSearchResultItem,
 } from "@/lib/api/browse";
@@ -29,6 +30,9 @@ export default function InfiniteBrowse({
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [hasNext, setHasNext] = useState(initialHasNext);
   const [isLoading, setIsLoading] = useState(false);
+  const [locationLabels, setLocationLabels] = useState<Record<string, string>>(
+    {},
+  );
 
   const router = useRouter();
 
@@ -45,6 +49,38 @@ export default function InfiniteBrowse({
     setCursor(initialCursor);
     setHasNext(initialHasNext);
   }, [initialItems, initialCursor, initialHasNext]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const uniqueFsas = Array.from(
+      new Set(items.map((item) => item.fsa).filter((fsa) => Boolean(fsa))),
+    );
+
+    const missingFsas = uniqueFsas.filter((fsa) => !locationLabels[fsa]);
+    if (missingFsas.length === 0) return;
+
+    const resolveLocations = async () => {
+      const entries = await Promise.all(
+        missingFsas.map(
+          async (fsa) => [fsa, await getLocationLabelByFsa(fsa)] as const,
+        ),
+      );
+
+      if (isCancelled) return;
+
+      setLocationLabels((prev) => ({
+        ...prev,
+        ...Object.fromEntries(entries),
+      }));
+    };
+
+    void resolveLocations();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [items, locationLabels]);
 
   // 4. Fetch Logic
   const loadMore = useCallback(async () => {
@@ -89,7 +125,7 @@ export default function InfiniteBrowse({
   return (
     <main className="flex-1 h-full overflow-y-auto p-6">
       {/* The Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 auto-rows-max">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 auto-rows-max">
         {items.map((item, index) => (
           <CardItem
             key={`${item.id}-${index}`} // Composite key to prevent collisions
@@ -98,6 +134,7 @@ export default function InfiniteBrowse({
             imgSrc={item.images?.[0]?.imageUrl}
             price={item.price ?? 0}
             fsa={item.fsa}
+            locationLabel={locationLabels[item.fsa] ?? item.fsa}
             onSelectListing={handleSelectListing}
           />
         ))}

@@ -20,6 +20,141 @@ function revokeBlobUrl(url: string) {
   }
 }
 
+/**
+ * Parse API error response and extract user-friendly message
+ */
+async function parseApiError(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  try {
+    const text = await response.text();
+    if (!text) return fallback;
+
+    try {
+      const errorData = JSON.parse(text);
+
+      // Check for validation errors with Details array first (highest priority)
+      if (errorData.Details && Array.isArray(errorData.Details)) {
+        const detailMessages = errorData.Details.map((detail: string) => {
+          // Clean up field names like "Title: " from messages
+          return detail.replace(/^[A-Za-z]+:\s*/, "");
+        }).join("; ");
+        return `Please fix the following: ${detailMessages}`;
+      }
+
+      // Handle validation errors object (second priority)
+      if (errorData.errors && typeof errorData.errors === "object") {
+        const validationErrors = Object.entries(errorData.errors)
+          .map(([key, value]) => {
+            if (Array.isArray(value)) {
+              return `${key}: ${value.join(", ")}`;
+            }
+            return `${key}: ${value}`;
+          })
+          .join("; ");
+        return validationErrors || fallback;
+      }
+
+      // Check for Error field (capitalized)
+      if (errorData.Error && typeof errorData.Error === "string") {
+        return mapTechnicalErrorToFriendly(errorData.Error);
+      }
+
+      // Check for error field (lowercase)
+      if (errorData.error && typeof errorData.error === "string") {
+        return mapTechnicalErrorToFriendly(errorData.error);
+      }
+
+      // Check for message field
+      if (errorData.message && typeof errorData.message === "string") {
+        return mapTechnicalErrorToFriendly(errorData.message);
+      }
+
+      // If JSON parsed but no recognizable error format
+      return fallback;
+    } catch {
+      // Not JSON, return the text if it looks like a message
+      if (text && !text.startsWith("<") && !text.startsWith("{")) {
+        return mapTechnicalErrorToFriendly(text);
+      }
+      return fallback;
+    }
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Map technical error messages to user-friendly ones
+ */
+function mapTechnicalErrorToFriendly(technicalError: string): string {
+  const errorMap: Record<string, string> = {
+    "Not Verified":
+      "Please verify your email address before creating a listing.",
+    "Invalid Profile ID format":
+      "Session error. Please log out and log back in.",
+    "Profile ID not found in claims":
+      "Session error. Please log out and log back in.",
+    "Request body is required":
+      "Something went wrong. Please refresh and try again.",
+    "Validation failed": "Please check your input and try again.",
+    "Invalid token": "Your session has expired. Please log in again.",
+    "No file uploaded.": "Image file is required. Please select an image.",
+    "No file uploaded": "Image file is required. Please select an image.",
+  };
+
+  // Check for exact match
+  if (errorMap[technicalError]) {
+    return errorMap[technicalError];
+  }
+
+  // Check for partial matches
+  const lowerError = technicalError.toLowerCase();
+  if (lowerError.includes("not verified") || lowerError.includes("verify")) {
+    return "Please verify your email address before creating a listing.";
+  }
+  if (lowerError.includes("token") || lowerError.includes("unauthorized")) {
+    return "Your session has expired. Please log in again.";
+  }
+  if (lowerError.includes("profile id")) {
+    return "Session error. Please log out and log back in.";
+  }
+  if (lowerError.includes("file size") || lowerError.includes("too large")) {
+    return "Image file is too large. Please use a smaller image (under 5MB).";
+  }
+  if (lowerError.includes("invalid") && lowerError.includes("format")) {
+    return "Invalid file format. Please upload a valid image file.";
+  }
+
+  // Return original message if no mapping found (it might already be user-friendly)
+  return technicalError;
+}
+
+/**
+ * Get status-specific error messages
+ */
+function getStatusSpecificMessage(status: number, context: string): string {
+  switch (status) {
+    case 400:
+      return `Invalid ${context}. Please check your input and try again.`;
+    case 401:
+      return "Your session has expired. Please log in again.";
+    case 403:
+      return "You don't have permission to perform this action. Please verify your email.";
+    case 404:
+      return "Resource not found. Please refresh the page and try again.";
+    case 413:
+      return "File is too large. Please use smaller images.";
+    case 500:
+      return "Server error. Please try again later.";
+    case 503:
+      return "Service temporarily unavailable. Please try again in a moment.";
+    default:
+      return `Failed to ${context}. Please try again.`;
+  }
+}
+
 type PendingListingImage = {
   id: string;
   file: File;
@@ -60,8 +195,11 @@ export default function SellerListingPage() {
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Image upload failed");
+        const errorMessage = await parseApiError(
+          res,
+          getStatusSpecificMessage(res.status, "upload image"),
+        );
+        throw new Error(errorMessage);
       }
     }
   }
@@ -216,8 +354,11 @@ export default function SellerListingPage() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        setError(errorText || "Failed to create listing");
+        const errorMessage = await parseApiError(
+          response,
+          getStatusSpecificMessage(response.status, "create listing"),
+        );
+        setError(errorMessage);
         setIsSubmitting(false);
         return;
       }
@@ -230,8 +371,17 @@ export default function SellerListingPage() {
       // Redirect to own profile so listings refetch and the new item shows without a manual refresh
       router.push("/profile");
     } catch (error) {
-      console.error(error);
-      setError("Failed to create listing");
+      console.error("Create listing error:", error);
+
+      // Check if it's a network error
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        setError("Network error. Please check your connection and try again.");
+      } else if (error instanceof Error) {
+        // Use the error message (which has already been processed by parseApiError in uploadListingImages)
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }

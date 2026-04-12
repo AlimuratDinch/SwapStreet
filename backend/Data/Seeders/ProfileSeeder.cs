@@ -22,7 +22,7 @@ namespace backend.Data.Seed
             {
                 Id = TestProfileId,
                 Status = ProfileStatusEnum.Online,
-                VerifiedSeller = true,
+                VerifiedSeller = false,
                 FirstName = "Test",
                 LastName = "Seller",
                 Rating = 5.0f,
