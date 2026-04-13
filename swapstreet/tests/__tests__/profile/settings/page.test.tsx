@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import SettingsPage from "@/app/profile/settings/page";
 import "@testing-library/jest-dom";
 
@@ -19,9 +25,11 @@ describe("Settings Page", () => {
   });
 
   it("renders all menu options", () => {
-    render(<SettingsPage />);
+    act(() => {
+      render(<SettingsPage />);
+    });
 
-    const labels = ["Settings", "Sustainability Tracking", "Delete Account"];
+    const labels = ["Settings", "Delete Account"];
 
     for (const label of labels) {
       const elementData = screen.getAllByText(label);
@@ -38,24 +46,36 @@ describe("Settings Page", () => {
       .fn()
       .mockResolvedValue({ ok: true } as unknown as Response);
 
-    render(<SettingsPage />);
+    act(() => {
+      render(<SettingsPage />);
+    });
 
     const deleteAccount = screen.getByRole("button", {
       name: "Delete Account",
     });
     expect(deleteAccount).toBeInTheDocument();
 
-    fireEvent.click(deleteAccount);
+    await act(async () => {
+      fireEvent.click(deleteAccount);
+    });
 
     const deleteConfirmationInput = screen.getByLabelText(
       "Type DELETE to confirm",
     );
-    fireEvent.change(deleteConfirmationInput, { target: { value: "DELETE" } });
+
+    await act(async () => {
+      fireEvent.change(deleteConfirmationInput, {
+        target: { value: "DELETE" },
+      });
+    });
 
     const confirmDeleteButton = screen.getByRole("button", {
       name: "Delete permanently",
     });
-    fireEvent.click(confirmDeleteButton);
+
+    await act(async () => {
+      fireEvent.click(confirmDeleteButton);
+    });
 
     await waitFor(() => {
       expect(mockLogout).toHaveBeenCalledTimes(1);
@@ -69,43 +89,38 @@ describe("Settings Page", () => {
     } as unknown as Response);
     global.alert = jest.fn();
 
-    render(<SettingsPage />);
+    act(() => {
+      render(<SettingsPage />);
+    });
 
     const deleteAccount = screen.getByRole("button", {
       name: "Delete Account",
     });
 
-    fireEvent.click(deleteAccount);
+    await act(async () => {
+      fireEvent.click(deleteAccount);
+    });
 
     const deleteConfirmationInput = screen.getByLabelText(
       "Type DELETE to confirm",
     );
-    fireEvent.change(deleteConfirmationInput, { target: { value: "DELETE" } });
+
+    await act(async () => {
+      fireEvent.change(deleteConfirmationInput, {
+        target: { value: "DELETE" },
+      });
+    });
 
     const confirmDeleteButton = screen.getByRole("button", {
       name: "Delete permanently",
     });
-    fireEvent.click(confirmDeleteButton);
+
+    await act(async () => {
+      fireEvent.click(confirmDeleteButton);
+    });
 
     await waitFor(() => {
       expect(global.alert).toHaveBeenCalledTimes(1);
     });
-  });
-
-  it("toggles the sustainability tracking feature", () => {
-    render(<SettingsPage />);
-
-    const toggle = screen.getByRole("button", {
-      name: "",
-    });
-
-    expect(toggle).toHaveAttribute("id", "toggleSustainabilityTracking");
-    expect(toggle.className).toContain("bg-teal-500");
-
-    fireEvent.click(toggle);
-    expect(toggle.className).toContain("bg-gray-300");
-
-    fireEvent.click(toggle);
-    expect(toggle.className).toContain("bg-teal-500");
   });
 });

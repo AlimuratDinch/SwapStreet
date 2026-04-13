@@ -1,9 +1,22 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import SustainabilityDashboard, {
   CustomTooltip,
 } from "@/app/sustainability/page";
+
+const mockGetItem = jest.fn();
+
+const flushAnimatedCounters = async () => {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+
+  act(() => {
+    jest.advanceTimersByTime(2500);
+  });
+};
 
 // Mock the Header component
 jest.mock("@/components/common/Header", () => ({
@@ -45,9 +58,18 @@ describe("SustainabilityDashboard", () => {
     // Mock current date to April (month index 3)
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-04-15").getTime());
+    mockGetItem.mockReset();
+    jest.spyOn(Storage.prototype, "getItem").mockImplementation((key) => {
+      if (key === "accessToken") {
+        return mockGetItem();
+      }
+      return null;
+    });
+    global.fetch = jest.fn();
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.useRealTimers();
   });
 
@@ -79,67 +101,163 @@ describe("SustainabilityDashboard", () => {
   describe("StatCards", () => {
     it("renders all 6 stat cards", () => {
       render(<SustainabilityDashboard />);
-      expect(screen.getByText("82")).toBeInTheDocument();
-      expect(
-        screen.getByText("Metric tons of CO₂ avoided"),
-      ).toBeInTheDocument();
-      expect(screen.getByText("8,059")).toBeInTheDocument();
-      expect(screen.getByText("Gallons of water saved")).toBeInTheDocument();
-      expect(screen.getByText("132")).toBeInTheDocument();
+
+      const zeroValues = screen.getAllByText("0");
+      expect(zeroValues.length).toBeGreaterThanOrEqual(6);
+
+      expect(screen.getByText("Kg of CO2 avoided")).toBeInTheDocument();
+      expect(screen.getByText("Liters of water saved")).toBeInTheDocument();
       expect(screen.getByText("Individual clothes saved")).toBeInTheDocument();
-      expect(screen.getByText("5,287")).toBeInTheDocument();
       expect(screen.getByText("Kwh of electricity saved")).toBeInTheDocument();
-      expect(screen.getByText("2,350")).toBeInTheDocument();
       expect(
-        screen.getByText("Kg of toxic dye chemicals avoided"),
+        screen.getByText("Grams of toxic dye chemicals avoided"),
       ).toBeInTheDocument();
-      expect(screen.getByText("8,000")).toBeInTheDocument();
-      expect(screen.getByText("m² of land preserved")).toBeInTheDocument();
+      expect(
+        screen.getByText("Grams not ending up in a landfill"),
+      ).toBeInTheDocument();
     });
 
-    it("highlights the first card by default", () => {
+    it("renders the stat card icon colors", () => {
       const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".border-2");
+      const cards = container.querySelectorAll(".relative.rounded-xl");
 
-      expect(cards[0]).toHaveClass("border-blue-500", "shadow-md");
-      expect(cards[1]).toHaveClass("border-gray-200");
+      expect(cards).toHaveLength(6);
+
+      expect(cards[0].querySelector(".rounded-full")).toHaveClass(
+        "bg-green-50",
+        "text-green-500",
+      );
+      expect(cards[1].querySelector(".rounded-full")).toHaveClass(
+        "bg-blue-50",
+        "text-blue-400",
+      );
+      expect(cards[2].querySelector(".rounded-full")).toHaveClass(
+        "bg-orange-50",
+        "text-orange-400",
+      );
+      expect(cards[3].querySelector(".rounded-full")).toHaveClass(
+        "bg-yellow-50",
+        "text-yellow-400",
+      );
+      expect(cards[4].querySelector(".rounded-full")).toHaveClass(
+        "bg-purple-50",
+        "text-purple-400",
+      );
+      expect(cards[5].querySelector(".rounded-full")).toHaveClass(
+        "bg-red-50",
+        "text-red-400",
+      );
+    });
+  });
+
+  describe("Data Loading", () => {
+    it("keeps the empty state when no access token is available", () => {
+      mockGetItem.mockReturnValue(null);
+
+      render(<SustainabilityDashboard />);
+
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(screen.getAllByText("0").length).toBeGreaterThanOrEqual(6);
     });
 
-    it("changes selected card when clicking on a different card", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
+    it("maps API stats with canonical keys", async () => {
+      mockGetItem.mockReturnValue("token-123");
 
-      // Click on the second card (Gallons of water saved)
-      fireEvent.click(cards[1]);
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            CO2Kg: 12,
+            WaterL: 34,
+            ElectricityKWh: 56,
+            ToxicChemicalsG: 78,
+            LandfillKg: 90,
+            Articles: 11,
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            CO2Kg: 120,
+            WaterL: 340,
+            ElectricityKWh: 560,
+            ToxicChemicalsG: 780,
+            LandfillKg: 900,
+            Articles: 110,
+          }),
+        });
 
-      expect(cards[0]).toHaveClass("border-gray-200");
-      expect(cards[1]).toHaveClass("border-blue-500", "shadow-md");
+      render(<SustainabilityDashboard />);
+
+      await flushAnimatedCounters();
+
+      expect(screen.getByText("12")).toBeInTheDocument();
+      expect(screen.getByText("34")).toBeInTheDocument();
+      expect(screen.getByText("11")).toBeInTheDocument();
+      expect(screen.getByText("56")).toBeInTheDocument();
+      expect(screen.getByText("78")).toBeInTheDocument();
+      expect(screen.getByText("90,000")).toBeInTheDocument();
     });
 
-    it("allows clicking between multiple cards", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
+    it("maps API stats with lowercase fallback keys", async () => {
+      mockGetItem.mockReturnValue("token-123");
 
-      // Click third card
-      fireEvent.click(cards[2]);
-      expect(cards[2]).toHaveClass("border-blue-500", "shadow-md");
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            co2Kg: 1,
+            waterL: 2,
+            electricityKWh: 3,
+            toxicChemicals: 4,
+            landfillKg: 5,
+            articles: 6,
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            co2Kg: 10,
+            waterL: 20,
+            electricityKWh: 30,
+            toxicChemicals: 40,
+            landfillKg: 50,
+            articles: 60,
+          }),
+        });
 
-      // Click fifth card
-      fireEvent.click(cards[4]);
-      expect(cards[2]).toHaveClass("border-gray-200");
-      expect(cards[4]).toHaveClass("border-blue-500", "shadow-md");
+      render(<SustainabilityDashboard />);
+
+      await flushAnimatedCounters();
+
+      expect(screen.getByText("1")).toBeInTheDocument();
+      expect(screen.getByText("2")).toBeInTheDocument();
+      expect(screen.getByText("3")).toBeInTheDocument();
+      expect(screen.getByText("4")).toBeInTheDocument();
+      expect(screen.getByText("5,000")).toBeInTheDocument();
+      expect(screen.getByText("6")).toBeInTheDocument();
     });
 
-    it("applies correct color classes to each card", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const iconContainers = container.querySelectorAll(".rounded-full");
+    it("keeps default stats when the fetch request fails", async () => {
+      mockGetItem.mockReturnValue("token-123");
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("boom"));
 
-      expect(iconContainers[0]).toHaveClass("bg-green-50", "text-green-500");
-      expect(iconContainers[1]).toHaveClass("bg-blue-50", "text-blue-400");
-      expect(iconContainers[2]).toHaveClass("bg-orange-50", "text-orange-400");
-      expect(iconContainers[3]).toHaveClass("bg-yellow-50", "text-yellow-400");
-      expect(iconContainers[4]).toHaveClass("bg-purple-50", "text-purple-400");
-      expect(iconContainers[5]).toHaveClass("bg-red-50", "text-red-400");
+      render(<SustainabilityDashboard />);
+
+      expect(await screen.findAllByText("0")).not.toHaveLength(0);
+      expect(global.fetch).toHaveBeenCalled();
+    });
+    it("ignores non-ok responses from both sustainability endpoints", async () => {
+      mockGetItem.mockReturnValue("token-123");
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({ ok: false, json: async () => ({}) })
+        .mockResolvedValueOnce({ ok: false, json: async () => ({}) });
+
+      render(<SustainabilityDashboard />);
+
+      expect(await screen.findAllByText("0")).not.toHaveLength(0);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -164,66 +282,66 @@ describe("SustainabilityDashboard", () => {
       expect(screen.getByTestId("cartesian-grid")).toBeInTheDocument();
       expect(screen.getByTestId("tooltip")).toBeInTheDocument();
     });
-
-    it("highlights the current month (April) by default", () => {
-      render(<SustainabilityDashboard />);
-      const cells = screen.getAllByTestId("bar-cell");
-
-      // April is index 3 (0-indexed)
-      expect(cells[3]).toHaveAttribute("data-fill", "#0D9488"); // Teal color
-      expect(cells[0]).toHaveAttribute("data-fill", "#E5E7EB"); // Gray color
-    });
-
-    it("changes highlighted bar when clicking on a bar", () => {
-      render(<SustainabilityDashboard />);
-      const cells = screen.getAllByTestId("bar-cell");
-
-      // Click on January (index 0)
-      fireEvent.click(cells[0]);
-
-      expect(cells[0]).toHaveAttribute("data-fill", "#0D9488");
-      expect(cells[3]).toHaveAttribute("data-fill", "#E5E7EB");
-    });
-
-    it("allows toggling between different bars", () => {
-      render(<SustainabilityDashboard />);
-      const cells = screen.getAllByTestId("bar-cell");
-
-      // Click on June (index 5)
-      fireEvent.click(cells[5]);
-      expect(cells[5]).toHaveAttribute("data-fill", "#0D9488");
-
-      // Click on December (index 11)
-      fireEvent.click(cells[11]);
-      expect(cells[5]).toHaveAttribute("data-fill", "#E5E7EB");
-      expect(cells[11]).toHaveAttribute("data-fill", "#0D9488");
-    });
   });
 
   describe("CustomTooltip", () => {
     it("renders tooltip with correct data when active", () => {
-      const mockPayload = [{ name: "Apr", value: 40 }];
+      render(
+        <CustomTooltip
+          active={true}
+          label="Apr"
+          stats={{
+            CO2Kg: 40,
+            WaterL: 80,
+            ElectricityKWh: 120,
+            ToxicChemicalsG: 160,
+            LandfillKg: 2,
+            Articles: 10,
+          }}
+        />,
+      );
 
-      render(<CustomTooltip active={true} payload={mockPayload} />);
-
-      expect(screen.getByText("40")).toBeInTheDocument();
       expect(screen.getByText("Apr 2026")).toBeInTheDocument();
+      expect(
+        screen.getByText("Current month metric breakdown"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("40")).toBeInTheDocument();
     });
 
     it("returns null when not active", () => {
       const { container } = render(
-        <CustomTooltip active={false} payload={[]} />,
+        <CustomTooltip
+          active={false}
+          stats={{
+            CO2Kg: 0,
+            WaterL: 0,
+            ElectricityKWh: 0,
+            ToxicChemicalsG: 0,
+            LandfillKg: 0,
+            Articles: 0,
+          }}
+        />,
       );
 
       expect(container.firstChild).toBeNull();
     });
 
-    it("returns null when payload is empty", () => {
-      const { container } = render(
-        <CustomTooltip active={true} payload={[]} />,
+    it("shows the empty-state message when active data is zero", () => {
+      const { getByText } = render(
+        <CustomTooltip
+          active={true}
+          stats={{
+            CO2Kg: 0,
+            WaterL: 0,
+            ElectricityKWh: 0,
+            ToxicChemicalsG: 0,
+            LandfillKg: 0,
+            Articles: 0,
+          }}
+        />,
       );
 
-      expect(container.firstChild).toBeNull();
+      expect(getByText("No data for this month")).toBeInTheDocument();
     });
   });
 
@@ -232,54 +350,39 @@ describe("SustainabilityDashboard", () => {
       const { container } = render(<SustainabilityDashboard />);
       const mainDiv = container.firstChild;
 
-      expect(mainDiv).toHaveClass("p-4", "md:p-8", "pt-20", "md:pt-24");
+      expect(mainDiv).toHaveClass(
+        "flex",
+        "h-screen",
+        "flex-col",
+        "overflow-hidden",
+        "bg-gray-50",
+        "px-3",
+        "pt-20",
+        "font-sans",
+        "md:px-6",
+        "md:pt-24",
+      );
     });
 
     it("applies responsive grid classes to stat cards", () => {
       const { container } = render(<SustainabilityDashboard />);
       const grid = container.querySelector(".grid");
 
-      expect(grid).toHaveClass(
-        "grid-cols-1",
-        "md:grid-cols-2",
-        "lg:grid-cols-3",
-      );
+      expect(grid).toHaveClass("grid-cols-2", "lg:grid-cols-3");
     });
   });
 
   describe("Integration Tests", () => {
-    it("maintains independent state for card selection and bar selection", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
-      const cells = screen.getAllByTestId("bar-cell");
+    it("switches between individual and platform views", () => {
+      render(<SustainabilityDashboard />);
 
-      // Click on card 3
-      fireEvent.click(cards[3]);
-      expect(cards[3]).toHaveClass("border-blue-500");
+      expect(screen.getByText("Individual View")).toBeInTheDocument();
 
-      // Click on bar 7
-      fireEvent.click(cells[7]);
-      expect(cells[7]).toHaveAttribute("data-fill", "#0D9488");
+      fireEvent.click(screen.getByRole("button", { name: "Platform" }));
+      expect(screen.getByText("Platform View")).toBeInTheDocument();
 
-      // Verify both selections are maintained
-      expect(cards[3]).toHaveClass("border-blue-500");
-      expect(cells[7]).toHaveAttribute("data-fill", "#0D9488");
-    });
-
-    it("handles multiple interactions correctly", () => {
-      const { container } = render(<SustainabilityDashboard />);
-      const cards = container.querySelectorAll(".cursor-pointer");
-      const cells = screen.getAllByTestId("bar-cell");
-
-      // Series of interactions
-      fireEvent.click(cards[1]); // Click card 2
-      fireEvent.click(cells[2]); // Click bar 3
-      fireEvent.click(cards[4]); // Click card 5
-      fireEvent.click(cells[9]); // Click bar 10
-
-      // Verify final state
-      expect(cards[4]).toHaveClass("border-blue-500");
-      expect(cells[9]).toHaveAttribute("data-fill", "#0D9488");
+      fireEvent.click(screen.getByRole("button", { name: "Individual" }));
+      expect(screen.getByText("Individual View")).toBeInTheDocument();
     });
   });
 
@@ -297,38 +400,25 @@ describe("SustainabilityDashboard", () => {
       expect(h3).toHaveTextContent("Monthly Usage");
     });
 
-    it("stat cards are keyboard accessible", () => {
+    it("renders accessible view toggle buttons", () => {
       render(<SustainabilityDashboard />);
 
-      const firstCard = screen
-        .getByText("Metric tons of CO₂ avoided")
-        .closest('[role="button"]');
-
-      expect(firstCard).toBeInTheDocument();
-      expect(firstCard).toHaveAttribute("tabindex", "0");
-      expect(firstCard).toHaveAttribute("aria-pressed", "true");
+      expect(
+        screen.getByRole("button", { name: "Individual" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Platform" }),
+      ).toBeInTheDocument();
     });
 
-    it("changes selected card with Enter and Space keyboard events", () => {
+    it("toggles the view buttons with clicks", () => {
       render(<SustainabilityDashboard />);
 
-      const firstCard = screen
-        .getByText("Metric tons of CO₂ avoided")
-        .closest('[role="button"]');
-      const secondCard = screen
-        .getByText("Gallons of water saved")
-        .closest('[role="button"]');
+      fireEvent.click(screen.getByRole("button", { name: "Platform" }));
+      expect(screen.getByText("Platform View")).toBeInTheDocument();
 
-      expect(firstCard).toHaveAttribute("aria-pressed", "true");
-      expect(secondCard).toHaveAttribute("aria-pressed", "false");
-
-      fireEvent.keyDown(secondCard!, { key: "Enter" });
-      expect(secondCard).toHaveAttribute("aria-pressed", "true");
-      expect(firstCard).toHaveAttribute("aria-pressed", "false");
-
-      fireEvent.keyDown(firstCard!, { key: " " });
-      expect(firstCard).toHaveAttribute("aria-pressed", "true");
-      expect(secondCard).toHaveAttribute("aria-pressed", "false");
+      fireEvent.click(screen.getByRole("button", { name: "Individual" }));
+      expect(screen.getByText("Individual View")).toBeInTheDocument();
     });
   });
 });

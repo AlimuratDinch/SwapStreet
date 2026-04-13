@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using backend.DbContexts;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260411012735_SustainabilityVector")]
+    partial class SustainabilityVector
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -107,12 +110,6 @@ namespace backend.Migrations
                     b.Property<DateTimeOffset?>("ArchivedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("ArchivedByBuyer")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("ArchivedBySeller")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid>("BuyerId")
                         .HasColumnType("uuid");
 
@@ -150,33 +147,12 @@ namespace backend.Migrations
                     b.Property<Guid?>("ListingId")
                         .HasColumnType("uuid");
 
-                    b.Property<int?>("ListingImpactArticles")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal?>("ListingImpactCO2Kg")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal?>("ListingImpactElectricityKWh")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal?>("ListingImpactLandfillKg")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal?>("ListingImpactToxicChemicalsG")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal?>("ListingImpactWaterL")
-                        .HasColumnType("numeric");
-
                     b.Property<string>("ListingImageSnapshotPath")
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
                     b.Property<Guid>("SellerId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("SustainabilityMetricsApplied")
-                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 

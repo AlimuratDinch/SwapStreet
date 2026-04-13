@@ -16,7 +16,9 @@ test.describe("Landing page tests", () => {
     await page.goto("/");
     await expect(page.getByText(/Clothes Saved/i)).toBeVisible();
     await expect(page.getByText(/CO2 Reduced/i)).toBeVisible();
-    await expect(page.getByText(/Liters Saved/i)).toBeVisible();
+    await expect(
+      page.getByText("Liters of Water Saved", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText(/Active Users/i)).toBeVisible();
   });
 
@@ -65,10 +67,10 @@ test.describe("Landing page tests", () => {
     page,
   }) => {
     await page.goto("/");
-    // stabilize network and fonts before measuring layout
-    await page.waitForLoadState("networkidle");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await page.evaluate(() => (document as any).fonts?.ready);
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500);
 
     // no horizontal scroll
     const scrollWidth = await page.evaluate(

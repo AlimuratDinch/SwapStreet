@@ -42,6 +42,14 @@ export default function LandingPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [wordIndex, setWordIndex] = useState(0);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [environmentalStats, setEnvironmentalStats] = useState({
+    clothesSaved: 0,
+    co2Reduced: 0,
+    waterSaved: 0,
+    usersActive: 0,
+  });
+  const [monthlyValues, setMonthlyValues] = useState(Array(12).fill(0));
+  const hasMonthlyValues = monthlyValues.some((value) => value > 0);
   const heroWords = [
     "Endless Outfits",
     "Sustainable Fashion",
@@ -50,13 +58,62 @@ export default function LandingPage() {
     "Personalized Looks",
   ];
 
-  // Simulated data for environmental impact (REPLACE WITH REAL DATA FROM BACKEND)
-  const environmentalStats = {
-    clothesSaved: 245680,
-    co2Reduced: 892.5,
-    waterSaved: 1456.7,
-    usersActive: 89432,
-  };
+  useEffect(() => {
+    if (typeof fetch !== "function") {
+      return;
+    }
+
+    const statsEndpoint = new URL(
+      "/api/sustainability/public",
+      window.location.origin,
+    );
+    const monthlyImpactEndpoint = new URL(
+      "/api/sustainability/public/monthly-impact",
+      window.location.origin,
+    );
+
+    Promise.all([
+      fetch(statsEndpoint.toString()),
+      fetch(monthlyImpactEndpoint.toString()),
+    ])
+      .then(async ([statsResponse, monthlyResponse]) => {
+        if (statsResponse.ok) {
+          const data = await statsResponse.json();
+          setEnvironmentalStats({
+            clothesSaved: Number(data.Articles ?? data.articles ?? 0),
+            co2Reduced: Number(data.CO2Kg ?? data.cO2Kg ?? data.co2Kg ?? 0),
+            waterSaved: Number(data.WaterL ?? data.waterL ?? 0),
+            usersActive: Number(
+              data.AccountsCreated ?? data.accountsCreated ?? 0,
+            ),
+          });
+        }
+
+        if (monthlyResponse.ok) {
+          const monthlyData = await monthlyResponse.json();
+          const rawValues = Array.isArray(
+            monthlyData.MonthlyImpact ?? monthlyData.monthlyImpact,
+          )
+            ? (monthlyData.MonthlyImpact ?? monthlyData.monthlyImpact)
+            : [];
+
+          const monthlyCounts = Array.from({ length: 12 }, (_, index) =>
+            Number(rawValues[index] ?? 0),
+          );
+
+          const maxCount = Math.max(...monthlyCounts, 0);
+          const normalizedValues =
+            maxCount > 0
+              ? monthlyCounts.map((value) =>
+                  Math.round((value / maxCount) * 100),
+                )
+              : monthlyCounts;
+
+          setMonthlyValues(normalizedValues);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const features = [
     {
@@ -131,8 +188,6 @@ export default function LandingPage() {
     },
   ];
 
-  // Monthly Impact Growth data (REPLACE WITH REAL DATA FROM BACKEND)
-  const monthlyValues = [40, 55, 60, 75, 85, 90, 95, 88, 92, 100, 105, 110];
   const monthLabels = [
     "Jan",
     "Feb",
@@ -157,6 +212,38 @@ export default function LandingPage() {
     (_, i) => (currentMonthIndex - 5 + i + 12) % 12,
   );
   const prevSixSet = new Set(prevSix);
+
+  const animateMonthlyBars = () => {
+    setBarHeights(Array(12).fill(0));
+
+    monthlyValues.forEach((targetHeight, index) => {
+      setTimeout(() => {
+        let currentHeight = 0;
+        const duration = 800;
+        const increment = targetHeight / (duration / 16);
+
+        const animateBar = () => {
+          currentHeight += increment;
+          if (currentHeight >= targetHeight) {
+            setBarHeights((prev) => {
+              const newHeights = [...prev];
+              newHeights[index] = targetHeight;
+              return newHeights;
+            });
+          } else {
+            setBarHeights((prev) => {
+              const newHeights = [...prev];
+              newHeights[index] = currentHeight;
+              return newHeights;
+            });
+            requestAnimationFrame(animateBar);
+          }
+        };
+
+        animateBar();
+      }, index * 100);
+    });
+  };
 
   // Smooth infinite scroll (features carousel)
   useEffect(() => {
@@ -212,38 +299,8 @@ export default function LandingPage() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && !chartAnimated) {
+          if (entry.isIntersecting && !chartAnimated && hasMonthlyValues) {
             setChartAnimated(true);
-            // Animate each bar sequentially
-            monthlyValues.forEach((targetHeight, index) => {
-              /* istanbul ignore next -- staggered timeouts sequence */
-              setTimeout(() => {
-                let currentHeight = 0;
-                const duration = 800;
-                const increment = targetHeight / (duration / 16);
-
-                const animateBar = () => {
-                  currentHeight += increment;
-                  /* istanbul ignore next -- animation completion timing */
-                  if (currentHeight >= targetHeight) {
-                    setBarHeights((prev) => {
-                      const newHeights = [...prev];
-                      newHeights[index] = targetHeight;
-                      return newHeights;
-                    });
-                  } else {
-                    setBarHeights((prev) => {
-                      const newHeights = [...prev];
-                      newHeights[index] = currentHeight;
-                      return newHeights;
-                    });
-                    /* istanbul ignore next -- RAF */
-                    requestAnimationFrame(animateBar);
-                  }
-                };
-                animateBar();
-              }, index * 100);
-            });
             observer.disconnect();
           }
         });
@@ -257,7 +314,13 @@ export default function LandingPage() {
     }
 
     return () => observer.disconnect();
-  }, [chartAnimated]);
+  }, [chartAnimated, hasMonthlyValues, monthlyValues]);
+
+  useEffect(() => {
+    if (chartAnimated && hasMonthlyValues) {
+      animateMonthlyBars();
+    }
+  }, [chartAnimated, hasMonthlyValues, monthlyValues]);
 
   // Animate Guide Section
   useEffect(() => {
@@ -473,33 +536,25 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-16">
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                <AnimatedCounter target={environmentalStats.clothesSaved} />+
+                <AnimatedCounter target={environmentalStats.clothesSaved} />
               </div>
               <div className="text-sm text-white/80">Clothes Saved</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                <AnimatedCounter
-                  target={environmentalStats.co2Reduced}
-                  decimals={1}
-                />
-                T
+                <AnimatedCounter target={environmentalStats.co2Reduced} />
               </div>
-              <div className="text-sm text-white/80">CO2 Reduced</div>
+              <div className="text-sm text-white/80">Kg of CO2 Reduced</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                <AnimatedCounter
-                  target={environmentalStats.waterSaved}
-                  decimals={1}
-                />
-                M
+                <AnimatedCounter target={environmentalStats.waterSaved} />
               </div>
-              <div className="text-sm text-white/80">Liters Saved</div>
+              <div className="text-sm text-white/80">Liters of Water Saved</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-teal-400">
-                <AnimatedCounter target={environmentalStats.usersActive} />+
+                <AnimatedCounter target={environmentalStats.usersActive} />
               </div>
               <div className="text-sm text-white/80">Active Users</div>
             </div>
@@ -600,12 +655,10 @@ export default function LandingPage() {
               <div className="text-4xl font-bold text-green-600 mb-2">
                 <AnimatedCounter
                   target={environmentalStats.co2Reduced}
-                  decimals={1}
                   triggerOnView={true}
                 />
-                T
               </div>
-              <p className="text-green-600">CO2 emissions prevented</p>
+              <p className="text-green-600">Kg of CO2 emissions prevented</p>
             </Card>
 
             <Card className="text-center p-8 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
@@ -616,10 +669,8 @@ export default function LandingPage() {
               <div className="text-4xl font-bold text-blue-600 mb-2">
                 <AnimatedCounter
                   target={environmentalStats.waterSaved}
-                  decimals={1}
                   triggerOnView={true}
                 />
-                M
               </div>
               <p className="text-blue-600">
                 Liters of water saved from production
