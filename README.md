@@ -3,16 +3,14 @@
 [![codecov](https://codecov.io/gh/AlimuratDinch/SwapStreet/branch/main/graph/badge.svg)](https://codecov.io/gh/AlimuratDinch/SwapStreet)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=swapstreet&metric=alert_status)](https://sonarcloud.io/dashboard?id=swapstreet)
 
-## Product Demo
-[SWAPSTREET Video Demo](https://drive.google.com/file/d/1L4cA14vKWZ4HPJrBnsa_4RdevloLQnVY/view?usp=sharing)
+## Demo & Deployment
+- [SWAPSTREET Video Demo](https://drive.google.com/file/d/1FGnenGkIZOwL4g2q4LnAHUGLxV2LnyZ6/view?usp=sharing)
+- [swapstreet.ca](https://swapstreet.ca/)
 
-## Deployment
-[swapstreet.ca](https://swapstreet.ca/)
-
-## Release Demos
+## Release Presentations
 - [Release 1](https://drive.google.com/file/d/1Fg40fxtmJ5qpnbLegLKkTHmqGPsn3B3i/view?usp=sharing)  
 - [Release 2](https://drive.google.com/file/d/1MHEXG4C85XE_gmDWyNeA2yooyW76ip4_/view?usp=sharing)  
-- Release 3  
+- [Release 3](https://drive.google.com/file/d/1VYDco7B38Fe9W6b4XqYzgnxIYRuSlmms/view?usp=sharing)
 
 ## Project Summary
 SwapStreet is a web and mobile marketplace for refurbished and second-hand clothing, designed to make fashion more affordable, accessible and sustainable. 
@@ -165,6 +163,5 @@ docker compose -f docker-compose.local.staging.yml up --build
 | Ali Zedan               | 40174606  | alizedan1
 
 ## Additional Documentation
-https://bookstack.nekzampehomelab.org/
-
-Location data retrieved from: https://simplemaps.com/data/canada-cities
+- https://bookstack.nekzampehomelab.org/
+- Location data retrieved from: https://simplemaps.com/data/canada-cities
